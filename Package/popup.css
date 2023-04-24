@@ -1,0 +1,58 @@
+body {
+    width: 400px;
+}
+
+/* list-group-item */
+.list {
+    color: #70757A;
+    word-break: break-all;
+    max-width: 100%;
+    cursor: pointer;
+}
+
+.list:hover {
+    color: #4285F4;
+    background-color: #F6FAFE;
+    border: 1px solid #4285F4 !important;
+}
+
+/* arrow icon */
+li i {
+    display: none;
+}
+
+li:hover i {
+    display: inline;
+}
+
+/* buttons */
+.maps-btn {
+    background-color: #4285F4;
+    border: 1px solid #4285F4;
+}
+
+#clearButton {
+    background-color: #DADCE0;
+    border: 1px solid #DADCE0;
+    color: #727A83;
+}
+
+#clearButton:hover {
+    background-color: #DB4437;
+    border: 1px solid #DB4437;
+    color: #ffffff;
+}
+
+/* scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #DADCE0;
+    border-radius: 10px;
+}
