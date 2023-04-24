@@ -1,4 +1,4 @@
-# maps-extension
+# google-maps-extension
 > Speed up your Google Maps search flow!
 
 ---
