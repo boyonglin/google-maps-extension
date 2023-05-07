@@ -66,8 +66,8 @@ function handleSelectedText(selectedText) {
     }
     selectedTextList.push(selectedText);
 
-    // If the number of items in selectedTextList exceeds 8, keep only the last 8 items
-    if (selectedTextList.length > 8) {
+    // If the number of items in selectedTextList exceeds 5, keep only the last 5 items
+    if (selectedTextList.length > 5) {
       selectedTextList.shift();
     }
 
