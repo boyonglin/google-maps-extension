@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Google Maps (fast)",
-  "version": "1.1.3",
+  "version": "1.2.0",
   "description": "Speed up your Google Maps search flow!",
   "icons": {
     "16": "images/icon-16.png",
