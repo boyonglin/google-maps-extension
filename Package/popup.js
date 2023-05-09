@@ -1,6 +1,7 @@
 const emptyMessage = document.getElementById('emptyMessage');
 const clearButton = document.getElementById('clearButton');
 const selectedTextListContainer = document.getElementById('selectedTextList');
+const searchInput = document.getElementById('search-input');
 
 // Read selected text list from storage
 chrome.storage.local.get("selectedTextList", ({ selectedTextList }) => {
@@ -46,7 +47,7 @@ clearButton.addEventListener('click', () => {
     selectedTextListContainer.innerHTML = '';
     // Send a message to background.js to request clearing of selected text list data
     chrome.runtime.sendMessage({ action: 'clearSelectedTextList' });
-    
+
     // Clear all selectedTextList data
     chrome.storage.local.set({ selectedTextList: [] }, () => {
         clearButton.disabled = true;
@@ -55,3 +56,12 @@ clearButton.addEventListener('click', () => {
         emptyMessage.innerHTML = 'Cleared up! &#128077;&#127997;';
     });
 });
+
+if (searchInput) {
+    // Listen to the event that the user presses the enter key
+    searchInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            chrome.runtime.sendMessage({ searchTerm: searchInput.value, action: 'searchInput' });
+        }
+    });
+}

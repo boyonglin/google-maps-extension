@@ -22,7 +22,8 @@
     "activeTab",
     "tabs",
     "contextMenus",
-    "storage"
+    "storage",
+    "input"
   ],
   "background": {
     "service_worker": "background.js"

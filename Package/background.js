@@ -51,6 +51,32 @@ function handleSelectedText(selectedText) {
   const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
   chrome.tabs.create({ url: searchUrl });
 
+  updateTextList(selectedText);
+}
+
+// Track the runtime.onMessage event
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+  // Check if the action in the message is "clearSelectedTextList"
+  if (request.action === 'clearSelectedTextList') {
+    // Perform the operation to clear the selected text list data
+    chrome.storage.local.set({ selectedTextList: [] });
+    // Send a response message to popup.js indicating that the clear operation is completed
+    sendResponse({ message: 'Selected text list cleared.' });
+  }
+
+  else if (request.action === 'searchInput') {
+    var searchTerm = request.searchTerm;
+    // If the user has entered a keyword, search
+    if (searchTerm) {
+      const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(searchTerm)}`;
+      chrome.tabs.create({ url: searchUrl });
+      updateTextList(searchTerm);
+    }
+  }
+});
+
+function updateTextList(selectedText) {
   // Store the selected text to storage
   chrome.storage.local.get("selectedTextList", ({ selectedTextList }) => {
     // If selectedTextList is not set, initialize as an empty array
@@ -74,15 +100,4 @@ function handleSelectedText(selectedText) {
     // Store the updated selectedTextList to storage
     chrome.storage.local.set({ selectedTextList });
   });
-}
-
-// Track the runtime.onMessage event
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // Check if the action in the message is "clearSelectedTextList"
-  if (request.action === 'clearSelectedTextList') {
-    // Perform the operation to clear the selected text list data
-    chrome.storage.local.set({ selectedTextList: [] });
-    // Send a response message to popup.js indicating that the clear operation is completed
-    sendResponse({ message: 'Selected text list cleared.' });
-  }
-});
+};
