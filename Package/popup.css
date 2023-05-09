@@ -1,7 +1,9 @@
+@import url('https://fonts.cdnfonts.com/css/satoshi');
+
 body {
     width: 400px;
     color: #202833;
-    font-family: 'Lato', sans-serif;
+    font-family: 'Satoshi', sans-serif;
 }
 
 /* search bar */
