@@ -57,11 +57,16 @@ clearButton.addEventListener('click', () => {
     });
 });
 
+// Track keypress events on the search bar
 if (searchInput) {
-    // Listen to the event that the user presses the enter key
     searchInput.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
-            chrome.runtime.sendMessage({ searchTerm: searchInput.value, action: 'searchInput' });
+            if (searchInput.value.trim() === '') {
+                // If it contains only blanks, prevent the default behavior of the event and do not allow submission
+                event.preventDefault();
+            } else {
+                chrome.runtime.sendMessage({ searchTerm: searchInput.value, action: 'searchInput' });
+            }
         }
     });
 }
