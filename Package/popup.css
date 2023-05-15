@@ -1,8 +1,19 @@
 @import url('https://fonts.cdnfonts.com/css/satoshi');
 
+:root {
+    --primary-color: #4285F4;
+    --border-color: #DEE2E6;
+    --danger-color: #DB4437;
+    --background-color: #FFFFFF;
+    --gray-800: #202833;
+    --gray-600: #70757A;
+    --gray-400: #DADCE0;
+    --gray-200: #F6FAFE;
+}
+
 body {
     width: 400px;
-    color: #202833;
+    color: var(--gray-800);
     font-family: 'Satoshi', sans-serif;
 }
 
@@ -10,7 +21,7 @@ body {
 .brand {
     border-top-left-radius: 32px;
     border-bottom-left-radius: 32px;
-    background-color: #fff;
+    background-color: var(--background-color);
 }
 
 .input-group-prepend {
@@ -24,14 +35,14 @@ body {
 }
 
 .form-control::placeholder {
-    color: #727A83;
+    color: var(--gray-600);
     font-weight: light;
 }
 
 .form-control:focus {
-    color: #727A83;
-    background-color: #fff;
-    border-color: #ced4da;
+    color: var(--gray-600);
+    background-color: var(--background-color);
+    border-color: var(--border-color);
     outline: none;
     box-shadow: none;
 }
@@ -46,16 +57,20 @@ body {
 
 /* list-group-item */
 .list {
-    color: #70757A;
+    color: var(--gray-600);
     word-break: break-all;
     max-width: 100%;
     cursor: pointer;
 }
 
 .list:hover {
-    color: #4285F4;
-    background-color: #F6FAFE;
-    border: 1px solid #4285F4 !important;
+    color: var(--primary-color);
+    background-color: var(--gray-200);
+    border: 1px solid var(--primary-color) !important;
+}
+
+#selectedTextList {
+    max-height: 290px;
 }
 
 /* arrow icon */
@@ -69,20 +84,20 @@ li:hover i {
 
 /* buttons */
 .maps-btn {
-    background-color: #4285F4;
-    border: 1px solid #4285F4;
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
 }
 
 #clearButton {
-    background-color: #DADCE0;
-    border: 1px solid #DADCE0;
-    color: #727A83;
+    background-color: var(--gray-400);
+    border: 1px solid var(--gray-400);
+    color: var(--gray-600);
 }
 
 #clearButton:hover {
-    background-color: #DB4437;
-    border: 1px solid #DB4437;
-    color: #ffffff;
+    background-color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+    color: var(--background-color);
 }
 
 /* scrollbar */
@@ -95,6 +110,6 @@ li:hover i {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #DADCE0;
+    background: var(--gray-400);
     border-radius: 10px;
 }
