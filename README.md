@@ -8,17 +8,16 @@ Search for anywhere from any webpage by Google Maps (fast).
 ---
 
 ## Contents
-- [Framework](#framework)
-- [Set Up](#set-up)
-- [Shortcut](#shortcut)
-- [Features](#features)
-- [Structure](#structure)
+- Extension
+    - [Features](#features)
+    - [Usage Demo](#usage-demo)
+- Developer
+    - [Set Up](#set-up)
+    - [Shortcut](#shortcut)
+- Project
+    - [Framework](#framework)
+    - [Structure](#structure)
 - [Reference](#reference)
-
----
-
-## Framework
-- Bootstrap 5.3.0
 
 ---
 
@@ -26,6 +25,11 @@ Search for anywhere from any webpage by Google Maps (fast).
 - Quick search using shortcuts (Ctrl+Shift+S / ⌘+Shift+S) or right-click on the highlighted text.
 - Click the extension to access your search history (up to 16) and Google Maps.
 - Text search before accessing the Google Maps page.
+
+---
+
+## Usage Demo
+Youtube Links: https://youtu.be/3S3xlCGoDJ8
 
 ---
 
@@ -48,6 +52,11 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
 ![keyboard_shortcuts](https://github.com/boyonglin/google-maps-extension/assets/56038738/783c9cbc-4e9f-4818-b075-e0da69efacf0)
 3. Click the input field and type the shortcut  
 ![type_the_shortcut](https://github.com/boyonglin/google-maps-extension/assets/56038738/248921af-ee7e-42af-ab2b-080bf03190b0)
+
+---
+
+## Framework
+- Bootstrap 5.3.0
 
 ---
 
