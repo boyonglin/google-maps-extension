@@ -34,12 +34,19 @@ chrome.storage.local.get("selectedTextList", ({ selectedTextList }) => {
 
 // Track the click event on li elements
 selectedTextListContainer.addEventListener('click', function (event) {
+    let liElement;
     if (event.target.tagName === 'LI') {
-        const selectedText = event.target.textContent;
-        const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
-        // Open in a new window
-        window.open(searchUrl, '_blank');
+        liElement = event.target;
+    } else if (event.target.parentElement.tagName === 'LI') {
+        liElement = event.target.parentElement;
+    } else {
+        return;
     }
+
+    const selectedText = liElement.textContent;
+    const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
+    // Open in a new window
+    window.open(searchUrl, '_blank');
 });
 
 // Track the click event on clear button
