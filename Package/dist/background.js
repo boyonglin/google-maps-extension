@@ -6,7 +6,7 @@ var maxListLength = 16;
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "myContextMenuId",
-    title: "Search with Google Maps (fast)",
+    title: "Search by Google Maps (fast)",
     contexts: ["selection"]
   });
 });

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Google Maps (fast)",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Speed up your Google Maps search flow!",
   "icons": {
     "16": "images/icon-16.png",
@@ -24,7 +24,7 @@
     "storage"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "dist/background.js"
   },
   "commands": {
     "run-search": {
@@ -32,7 +32,7 @@
         "default": "Ctrl+Shift+S",
         "mac": "Command+Shift+S"
       },
-      "description": "Search with Google Maps (fast)"
+      "description": "Search by Google Maps (fast)"
     }
   },
   "content_scripts": [
@@ -41,7 +41,7 @@
         "<all_urls>"
       ],
       "js": [
-        "contentScript.js"
+        "dist/contentScript.js"
       ],
       "run_at": "document_end"
     }
