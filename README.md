@@ -29,7 +29,7 @@ Search for anywhere from any webpage by Google Maps (fast).
 ---
 
 ## Usage Demo
-Youtube Links: https://youtu.be/3S3xlCGoDJ8
+Youtube URL: https://youtu.be/3S3xlCGoDJ8
 
 ---
 
