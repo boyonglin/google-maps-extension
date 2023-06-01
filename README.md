@@ -22,12 +22,10 @@ Search for anywhere from any webpage by Google Maps (fast).
 ---
 
 ## Features
-- Quick search using shortcuts (Ctrl+Shift+S / ⌘+Shift+S) or right-click on the highlighted text.
-- Click the extension to access your search history (up to 16) and Google Maps.
-- Text search before accessing the Google Maps page.
-
-### To-do
-- [ ] Add to favorites
+- [x] Quick search using shortcuts (Ctrl+Shift+S / ⌘+Shift+S) or right-click on the highlighted text.
+- [x] Click the extension to access your search history (up to 16) and Google Maps.
+- [x] Text search before accessing the Google Maps page.
+- [ ] Add to Favorites
 
 ---
 
