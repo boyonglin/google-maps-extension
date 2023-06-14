@@ -1,9 +1,6 @@
 # google-maps-extension
-> Speed up your Google Maps search flow!
-
----
-
-Search for anywhere from any webpage by Google Maps (fast).
+> Speed up your Google Maps search flow!  
+> Search for anywhere from any webpage by Google Maps (fast).
 
 ---
 
