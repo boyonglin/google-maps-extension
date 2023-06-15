@@ -1,6 +1,6 @@
 // Define and initialize selectedTextList as an empty array
 let selectedTextList = [];
-var maxListLength = 16;
+var maxListLength = 10;
 
 // Create the right-click context menu item
 chrome.runtime.onInstalled.addListener(() => {
@@ -93,7 +93,7 @@ function updateTextList(selectedText) {
     }
     selectedTextList.push(selectedText);
 
-    // If the number of items in selectedTextList exceeds 16, keep only the last 16 items
+    // If the number of items in selectedTextList exceeds maxListLength, keep only the last items
     if (selectedTextList.length > maxListLength) {
       selectedTextList.shift();
     }
