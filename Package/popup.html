@@ -16,15 +16,47 @@
                 <div class="input-group-prepend">
                     <span class="input-group-text brand"><img src="images/icon-32.png" alt="badge"></span>
                 </div>
-                <input type="text" class="form-control" placeholder="Quick Search" autofocus id="search-input">
+                <input type="text" class="form-control" autocomplete="off" placeholder="Quick Search" autofocus
+                    id="searchInput">
             </div>
         </header>
-        <section class="py-4">
-            <h6 class="my-0 mb-3">Search History</h6>
-            <p id="emptyMessage" class="text-muted text-center pt-3 pb-4">Simply highlight text and search!
+        <section class="pt-3 pb-4">
+            <div class="container mb-3">
+                <div class="row justify-content-between">
+                    <div class="col-auto d-flex align-items-center px-0">
+                        <h6 id="title" class="my-0">Search History</h6>
+                    </div>
+                    <div class="col-auto ml-auto d-flex align-items-center px-0">
+                        <div class="row g-1">
+                            <div class="col">
+                                <button type="button" id="searchHistoryButton"
+                                    class="btn btn-outline-secondary active-button" aria-label="Search History">
+                                    <i class="bi bi-clock-fill"></i>
+                                </button>
+                            </div>
+                            <div class="col">
+                                <button type="button" id="favoriteListButton" class="btn btn-outline-secondary"
+                                    aria-label="Favorite List">
+                                    <i class="bi bi-patch-check-fill"></i>
+                                </button>
+                            </div>
+                            <div class="col">
+                                <button type="button" id="deleteHistoryButton" class="btn btn-outline-secondary"
+                                    aria-label="Delete History">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p id="emptyMessage" class="text-muted text-center pt-3 pb-4">Highlight text and search!
                 <br> Your history will be saved here. &#128076;&#127997;
             </p>
-            <div id="selectedTextList" class="overflow-auto mb-4"></div>
+            <p id="favoriteEmptyMessage" class="text-muted text-center pt-3 pb-4">Click and save your favorite spots here! &#128076;&#127997;
+            </p>
+            <div id="searchHistoryList" class="overflow-auto mb-4"></div>
+            <div id="favoriteList" class="overflow-auto mb-4" style="display: none;"></div>
             <div class="d-flex justify-content-evenly mt-3">
                 <button id="clearButton" class="btn me-3"><i class="bi bi-trash-fill me-2"></i>Clear</button>
                 <a href="https://www.google.com/maps/" target="_blank" class="btn btn-primary maps-btn flex-fill">

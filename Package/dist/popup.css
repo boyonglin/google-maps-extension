@@ -1,20 +1,27 @@
-@import url('https://fonts.cdnfonts.com/css/satoshi');
+@import url("https://fonts.cdnfonts.com/css/satoshi");
 
 :root {
-    --primary-color: #4285F4;
-    --border-color: #DEE2E6;
-    --danger-color: #DB4437;
-    --background-color: #FFFFFF;
+    --primary-color: #4285f4;
+    --border-color: #dee2e6;
+    --danger-color: #db4437;
+    --danger-color-500: #EDA19B;
+    --background-color: #ffffff;
     --gray-800: #202833;
-    --gray-600: #70757A;
-    --gray-400: #DADCE0;
-    --gray-200: #F6FAFE;
+    --gray-600: #70757a;
+    --gray-400: #dadce0;
+    --gray-200: #f6fafe;
+    --google-green: #0f9d58;
+    --google-green-500: #87cdab;
+    --google-green-bg: #f7fffb;
+    --google-yellow: #f4b400;
+    --google-yellow-500: #F9D980;
+    --google-yellow-bg: #fffdf7;
 }
 
 body {
     width: 400px;
     color: var(--gray-800);
-    font-family: 'Satoshi', sans-serif;
+    font-family: "Satoshi", sans-serif;
 }
 
 /* search bar */
@@ -56,30 +63,47 @@ body {
 }
 
 /* list-group-item */
-.list {
+.list-group-item {
     color: var(--gray-600);
     word-break: break-all;
     max-width: 100%;
     cursor: pointer;
 }
 
-.list:hover {
-    color: var(--primary-color);
-    background-color: var(--gray-200);
-    border: 1px solid var(--primary-color) !important;
+.history-list:hover {
+    color: var(--google-green);
+    background-color: var(--google-green-bg);
+    border: 1px solid var(--google-green) !important;
 }
 
-#selectedTextList {
-    max-height: 290px;
+.favorite-list:hover {
+    color: var(--google-yellow);
+    background-color: var(--google-yellow-bg);
+    border: 1px solid var(--google-yellow) !important;
 }
 
-/* arrow icon */
+#searchHistoryList {
+    max-height: 280px;
+}
+
+/* list icon */
 li i {
     display: none;
+    opacity: 0.5;
 }
 
 li:hover i {
     display: inline;
+}
+
+li i:hover {
+    opacity: 1;
+}
+
+li i.matched {
+    display: inline;
+    opacity: 1;
+    pointer-events: none;
 }
 
 /* buttons */
@@ -98,6 +122,82 @@ li:hover i {
     background-color: var(--danger-color);
     border: 1px solid var(--danger-color);
     color: var(--background-color);
+}
+
+#searchHistoryButton,
+#favoriteListButton,
+#deleteHistoryButton {
+    border: none;
+    color: var(--gray-600);
+    position: relative;
+}
+
+.btn-outline-secondary:hover::after,
+.btn-outline-secondary.active-button::after {
+    content: "";
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 2.5px;
+    border-radius: 2px;
+}
+
+#searchHistoryButton:hover,
+#searchHistoryButton.active-button {
+    background-color: transparent;
+    color: var(--google-green);
+}
+
+#searchHistoryButton:hover::after,
+#searchHistoryButton.active-button::after {
+    background-color: var(--google-green);
+}
+
+#searchHistoryButton.active-button:focus-visible {
+    background-color: transparent;
+    box-shadow: 0 0 0 4px var(--google-green-500);
+}
+
+#favoriteListButton:hover,
+#favoriteListButton.active-button {
+    background-color: transparent;
+    color: var(--google-yellow);
+}
+
+#favoriteListButton:hover::after,
+#favoriteListButton.active-button::after {
+    background-color: var(--google-yellow);
+}
+
+#favoriteListButton.active-button:focus-visible {
+    background-color: transparent;
+    box-shadow: 0 0 0 4px var(--google-yellow-500);
+}
+
+#deleteHistoryButton:hover,
+#deleteHistoryButton.active-button {
+    background-color: transparent;
+    color: var(--danger-color);
+}
+
+#deleteHistoryButton:hover::after,
+#deleteHistoryButton.active-button::after {
+    background-color: var(--danger-color);
+}
+
+#deleteHistoryButton.active-button:focus-visible {
+    background-color: transparent;
+    box-shadow: 0 0 0 4px var(--danger-color-500);
+}
+
+#searchHistoryButton:focus, #favoriteListButton:focus, #deleteHistoryButton:focus {
+    background-color: transparent;
+}
+
+.active-button {
+    pointer-events: none;
 }
 
 /* scrollbar */

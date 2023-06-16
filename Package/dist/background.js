@@ -1,5 +1,5 @@
-// Define and initialize selectedTextList as an empty array
-let selectedTextList = [];
+let searchHistoryList = [];
+let favoriteList = [];
 var maxListLength = 10;
 
 // Create the right-click context menu item
@@ -58,10 +58,11 @@ function handleSelectedText(selectedText) {
 // Track the runtime.onMessage event
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-  // Check if the action in the message is "clearSelectedTextList"
-  if (request.action === 'clearSelectedTextList') {
+  // Check if the action in the message is "clearSearchHistoryList"
+  if (request.action === 'clearSearchHistoryList') {
     // Perform the operation to clear the selected text list data
-    chrome.storage.local.set({ selectedTextList: [] });
+    chrome.storage.local.set({ searchHistoryList: [] });
+    chrome.storage.local.set({ favoriteList: [] });
     // Send a response message to popup.js indicating that the clear operation is completed
     sendResponse({ message: 'Selected text list cleared.' });
   }
@@ -75,30 +76,56 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       updateTextList(searchTerm);
     }
   }
+  
+  else if (request.action === 'addToFavoriteList') {
+    const selectedText = request.selectedText;
+    addToFavoriteList(selectedText);
+  }
 });
 
 function updateTextList(selectedText) {
   // Store the selected text to storage
-  chrome.storage.local.get("selectedTextList", ({ selectedTextList }) => {
-    // If selectedTextList is not set, initialize as an empty array
-    if (!selectedTextList) {
-      selectedTextList = [];
+  chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
+    // If searchHistoryList is not set, initialize as an empty array
+    if (!searchHistoryList) {
+      searchHistoryList = [];
     }
 
-    // If already exists in selectedTextList, remove the old one
-    // Add the newly selected text to selectedTextList
-    const index = selectedTextList.findIndex(item => item === selectedText);
+    // If already exists in searchHistoryList, remove the old one
+    // Add the newly selected text to searchHistoryList
+    const index = searchHistoryList.findIndex(item => item === selectedText);
     if (index !== -1) {
-      selectedTextList.splice(index, 1);
+      searchHistoryList.splice(index, 1);
     }
-    selectedTextList.push(selectedText);
+    searchHistoryList.push(selectedText);
 
-    // If the number of items in selectedTextList exceeds maxListLength, keep only the last items
-    if (selectedTextList.length > maxListLength) {
-      selectedTextList.shift();
+    // If the number of items in searchHistoryList exceeds maxListLength, keep only the last items
+    if (searchHistoryList.length > maxListLength) {
+      searchHistoryList.shift();
     }
 
-    // Store the updated selectedTextList to storage
-    chrome.storage.local.set({ selectedTextList });
+    // Store the updated searchHistoryList to storage
+    chrome.storage.local.set({ searchHistoryList });
   });
 };
+
+function addToFavoriteList(selectedText) {
+  // Store the selected text to storage as part of the favorite list
+  chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+    // If favoriteList is not set, initialize as an empty array
+    if (!favoriteList) {
+      favoriteList = [];
+    }
+
+    // If already exists in favoriteList, remove the old one
+    // Add the newly selected text to favoriteList
+    const index = favoriteList.findIndex(item => item === selectedText);
+    if (index !== -1) {
+      favoriteList.splice(index, 1);
+    }
+    favoriteList.push(selectedText);
+
+    // Store the updated favoriteList to storage
+    chrome.storage.local.set({ favoriteList });
+  });
+}
