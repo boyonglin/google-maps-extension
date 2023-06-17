@@ -27,36 +27,41 @@ if (searchInput) {
   });
 }
 
-// Executed after the document has finished loading
-document.addEventListener("DOMContentLoaded", function () {
-  const historyCheckboxes = searchHistoryListContainer.querySelectorAll("input");
-  const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
+function attachEventListenersToFavorites() {
   const favoriteCheckboxes = favoriteListContainer.querySelectorAll("input");
   const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
-
-  historyCheckboxes.forEach((checkbox, index) => {
-    checkbox.addEventListener("click", function () {
-      const li = historyLiElements[index];
-
-      if (this.checked) {
-        li.classList.add("checked-list");
-      } else {
-        li.classList.remove("checked-list");
-      }
-    });
-  });
 
   favoriteCheckboxes.forEach((checkbox, index) => {
     checkbox.addEventListener("click", function () {
       const li = favoriteLiElements[index];
 
-      if (this.checked) {
+      if (checkbox.checked) {
         li.classList.add("checked-list");
       } else {
         li.classList.remove("checked-list");
       }
     });
   });
+}
+
+// Executed after the document has finished loading
+document.addEventListener("DOMContentLoaded", function () {
+  const historyCheckboxes = searchHistoryListContainer.querySelectorAll("input");
+  const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
+
+  historyCheckboxes.forEach((checkbox, index) => {
+    checkbox.addEventListener("click", function () {
+      const li = historyLiElements[index];
+
+      if (checkbox.checked) {
+        li.classList.add("checked-list");
+      } else {
+        li.classList.remove("checked-list");
+      }
+    });
+  });
+
+  attachEventListenersToFavorites();
 });
 
 // Track the click event on the lists button
@@ -81,6 +86,7 @@ searchHistoryButton.addEventListener("click", function () {
   favoriteEmptyMessage.style.display = "none";
 
   updateInput();
+  attachEventListenersToFavorites();
 });
 
 favoriteListButton.addEventListener("click", function () {
@@ -102,6 +108,7 @@ favoriteListButton.addEventListener("click", function () {
   clearButton.setAttribute("aria-disabled", "true");
 
   updateInput();
+  attachEventListenersToFavorites();
 });
 
 deleteHistoryButton.addEventListener("click", function () {
@@ -253,6 +260,10 @@ searchHistoryListContainer.addEventListener("click", function (event) {
     // Add the selected text to the favorite list
     addToFavoriteList(selectedText);
     event.target.className = "bi bi-patch-check-fill matched spring-animation";
+
+    setTimeout(function () {
+      event.target.classList.remove("spring-animation");
+    }, 500);
     chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
       updateFavoriteListContainer(favoriteList);
     });
