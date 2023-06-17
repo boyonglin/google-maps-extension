@@ -8,8 +8,56 @@ const searchHistoryButton = document.getElementById("searchHistoryButton");
 const favoriteListButton = document.getElementById("favoriteListButton");
 const deleteHistoryButton = document.getElementById("deleteHistoryButton");
 const titleElement = document.getElementById("title");
-let [hasHistory, hasFavorite]  = [false, false];
-let favoriteIndices = [];
+let [hasHistory, hasFavorite] = [false, false];
+
+// Track keypress events on the search bar
+if (searchInput) {
+  searchInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      if (searchInput.value.trim() === "") {
+        // If it contains only blanks, prevent the default behavior of the event and do not allow submission
+        event.preventDefault();
+      } else {
+        chrome.runtime.sendMessage({
+          searchTerm: searchInput.value,
+          action: "searchInput",
+        });
+      }
+    }
+  });
+}
+
+// Executed after the document has finished loading
+document.addEventListener("DOMContentLoaded", function () {
+  const historyCheckboxes = searchHistoryListContainer.querySelectorAll("input");
+  const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
+  const favoriteCheckboxes = favoriteListContainer.querySelectorAll("input");
+  const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
+
+  historyCheckboxes.forEach((checkbox, index) => {
+    checkbox.addEventListener("click", function () {
+      const li = historyLiElements[index];
+
+      if (this.checked) {
+        li.classList.add("checked-list");
+      } else {
+        li.classList.remove("checked-list");
+      }
+    });
+  });
+
+  favoriteCheckboxes.forEach((checkbox, index) => {
+    checkbox.addEventListener("click", function () {
+      const li = favoriteLiElements[index];
+
+      if (this.checked) {
+        li.classList.add("checked-list");
+      } else {
+        li.classList.remove("checked-list");
+      }
+    });
+  });
+});
 
 // Track the click event on the lists button
 searchHistoryButton.addEventListener("click", function () {
@@ -23,8 +71,16 @@ searchHistoryButton.addEventListener("click", function () {
   titleElement.textContent = "Search History";
   if (!hasHistory) {
     emptyMessage.style.display = "block";
+    clearButton.disabled = true;
+    clearButton.setAttribute("aria-disabled", "true");
+  } else {
+    emptyMessage.style.display = "none";
+    clearButton.disabled = false;
+    clearButton.setAttribute("aria-disabled", "false");
   }
   favoriteEmptyMessage.style.display = "none";
+
+  updateInput();
 });
 
 favoriteListButton.addEventListener("click", function () {
@@ -38,21 +94,66 @@ favoriteListButton.addEventListener("click", function () {
   titleElement.textContent = "Favorite List";
   if (!hasFavorite) {
     favoriteEmptyMessage.style.display = "block";
+  } else {
+    favoriteEmptyMessage.style.display = "none";
   }
   emptyMessage.style.display = "none";
+  clearButton.disabled = true;
+  clearButton.setAttribute("aria-disabled", "true");
+
+  updateInput();
 });
 
 deleteHistoryButton.addEventListener("click", function () {
+  const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
+  const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
+
   if (deleteHistoryButton.classList.contains("active-button")) {
     deleteHistoryButton.classList.remove("active-button");
+
+    if (searchHistoryButton.classList.contains("active-button")) {
+      deleteFromHistoryList();
+    } else {
+      deleteFromFavoriteList();
+    }
+
+    updateInput();
+
   } else {
     deleteHistoryButton.classList.add("active-button");
     deleteHistoryButton.style.pointerEvents = "auto";
+
+    historyLiElements.forEach((li) => {
+      const checkbox = li.querySelector("input");
+      const favoriteIcon = li.querySelector("i");
+
+      checkbox.classList.remove("d-none");
+      favoriteIcon.classList.add("d-none")
+
+      li.classList.add("delete-list");
+      li.classList.remove("history-list");
+    });
+    favoriteLiElements.forEach((li) => {
+      const checkbox = li.querySelector("input");
+      const favoriteIcon = li.querySelector("i");
+
+      checkbox.classList.remove("d-none");
+      favoriteIcon.classList.add("d-none")
+
+      li.classList.add("delete-list");
+      li.classList.remove("favorite-list");
+    });
+
+    // if (searchHistoryButton.classList.contains("active-button")) {
+    //   favoriteListButton.disabled = true;
+    // } else {
+    //   searchHistoryButton.disabled = true;
+    // }
   }
 });
 
 // Read selected text list from storage
-chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
+chrome.storage.local.get(["searchHistoryList", "favoriteList"], ({ searchHistoryList, favoriteList }) => {
   if (searchHistoryList && searchHistoryList.length > 0) {
     emptyMessage.style.display = "none";
     favoriteEmptyMessage.style.display = "none";
@@ -72,9 +173,16 @@ chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
       li.appendChild(span);
 
       const favoriteIcon = document.createElement("i");
-      favoriteIcon.className = "bi bi-patch-plus-fill";
-
+      favoriteIcon.className = favoriteList && favoriteList.includes(selectedText) ? "bi bi-patch-check-fill matched" : "bi bi-patch-plus-fill";
       li.appendChild(favoriteIcon);
+
+      const checkbox = document.createElement("input");
+      checkbox.className = "form-check-input d-none";
+      checkbox.type = "checkbox";
+      checkbox.value = "delete";
+      checkbox.id = "checkDelete";
+      li.appendChild(checkbox);
+
       ul.appendChild(li);
     });
     searchHistoryListContainer.appendChild(ul);
@@ -83,6 +191,7 @@ chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
     favoriteEmptyMessage.style.display = "none";
     hasHistory = false;
     clearButton.disabled = true;
+    clearButton.setAttribute("aria-disabled", "true");
   }
 });
 
@@ -107,8 +216,15 @@ chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
 
       const favoriteIcon = document.createElement("i");
       favoriteIcon.className = "bi bi-patch-check-fill matched";
-
       li.appendChild(favoriteIcon);
+
+      const checkbox = document.createElement("input");
+      checkbox.className = "form-check-input d-none";
+      checkbox.type = "checkbox";
+      checkbox.value = "delete";
+      checkbox.id = "checkDelete";
+      li.appendChild(checkbox);
+
       ul.appendChild(li);
     });
     favoriteListContainer.appendChild(ul);
@@ -129,18 +245,43 @@ searchHistoryListContainer.addEventListener("click", function (event) {
   }
 
   const selectedText = liElement.textContent;
-  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
-    selectedText
-  )}`;
+  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
+
 
   // Check if the clicked element has the "bi" class (indicating it is the icon)
   if (event.target.classList.contains("bi")) {
     // Add the selected text to the favorite list
     addToFavoriteList(selectedText);
-    // Change the favorite icon
-    event.target.classList.replace("bi-patch-plus-fill", "bi-patch-check-fill");
+    event.target.className = "bi bi-patch-check-fill matched spring-animation";
+    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+      updateFavoriteListContainer(favoriteList);
+    });
+  } else if (event.target.classList.contains("form-check-input")) {
+    return;
   } else {
     // Open in a new window
+    window.open(searchUrl, "_blank");
+  }
+});
+
+favoriteListContainer.addEventListener("click", function (event) {
+  let liElement;
+  if (event.target.tagName === "LI") {
+    liElement = event.target;
+  } else if (event.target.parentElement.tagName === "LI") {
+    liElement = event.target.parentElement;
+  } else {
+    return;
+  }
+
+  const selectedText = liElement.textContent;
+  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
+
+  if (event.target.classList.contains("bi")) {
+    return;
+  } else if (event.target.classList.contains("form-check-input")) {
+    return;
+  } else {
     window.open(searchUrl, "_blank");
   }
 });
@@ -150,21 +291,10 @@ function addToFavoriteList(selectedText) {
   chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
 }
 
-// Function to check if an item exists in the search history list
-function isInFavoriteHistoryList(selectedText) {
-  const favoriteListItems = favoriteListContainer.getElementsByTagName("li");
-  for (let i = 0; i < favoriteListItems.length; i++) {
-    const listItem = favoriteListItems[i];
-    if (listItem.textContent === selectedText) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // Track the click event on clear button
 clearButton.addEventListener("click", () => {
   searchHistoryListContainer.innerHTML = "";
+  hasHistory = false;
   // Send a message to background.js to request clearing of selected text list data
   chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
 
@@ -177,19 +307,149 @@ clearButton.addEventListener("click", () => {
   });
 });
 
-// Track keypress events on the search bar
-if (searchInput) {
-  searchInput.addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-      if (searchInput.value.trim() === "") {
-        // If it contains only blanks, prevent the default behavior of the event and do not allow submission
-        event.preventDefault();
-      } else {
-        chrome.runtime.sendMessage({
-          searchTerm: searchInput.value,
-          action: "searchInput",
-        });
+// Update the favorite list container
+function updateFavoriteListContainer(favoriteList) {
+  favoriteListContainer.innerHTML = "";
+
+  if (favoriteList && favoriteList.length > 0) {
+    favoriteEmptyMessage.style.display = "none";
+    emptyMessage.style.display = "none";
+    hasFavorite = true;
+
+    const ul = document.createElement("ul");
+    ul.className = "list-group d-flex flex-column-reverse";
+
+    // Create list item from new selectedText
+    favoriteList.forEach((selectedText) => {
+      const li = document.createElement("li");
+      li.className =
+        "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between";
+
+      const span = document.createElement("span");
+      span.textContent = selectedText;
+      li.appendChild(span);
+
+      const favoriteIcon = document.createElement("i");
+      favoriteIcon.className = "bi bi-patch-check-fill matched";
+      li.appendChild(favoriteIcon);
+
+      const checkbox = document.createElement("input");
+      checkbox.className = "form-check-input d-none";
+      checkbox.type = "checkbox";
+      checkbox.value = "delete";
+      checkbox.id = "checkDelete";
+      li.appendChild(checkbox);
+
+      ul.appendChild(li);
+    });
+    favoriteListContainer.appendChild(ul);
+  } else {
+    hasFavorite = false;
+  }
+}
+
+// Track the storage change event
+chrome.storage.onChanged.addListener((changes) => {
+  const favoriteListChange = changes.favoriteList;
+
+  if (favoriteListChange && favoriteListChange.newValue) {
+    // Update the favorite list container
+    updateFavoriteListContainer(favoriteListChange.newValue);
+  }
+});
+
+function updateInput() {
+  const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
+  const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
+
+  historyLiElements.forEach((li) => {
+    const checkbox = li.querySelector("input");
+    const favoriteIcon = li.querySelector("i");
+
+    checkbox.classList.add("d-none");
+    favoriteIcon.classList.remove("d-none")
+
+    li.classList.remove("checked-list");
+    checkbox.checked = false;
+
+    li.classList.remove("delete-list");
+    li.classList.add("history-list");
+  });
+  favoriteLiElements.forEach((li) => {
+    const checkbox = li.querySelector("input");
+    const favoriteIcon = li.querySelector("i");
+
+    checkbox.classList.add("d-none");
+    favoriteIcon.classList.remove("d-none")
+
+    li.classList.remove("checked-list");
+    checkbox.checked = false;
+
+    li.classList.remove("delete-list");
+    li.classList.add("favorite-list");
+  });
+}
+
+function deleteFromHistoryList() {
+  const checkedBoxes = searchHistoryListContainer.querySelectorAll("input:checked");
+  const selectedTexts = [];
+
+  // Delete checked items from the lists
+  checkedBoxes.forEach((checkbox) => {
+
+    // Get the corresponding list item (parent element of the checkbox)
+    const listItem = checkbox.closest("li");
+    const selectedText = listItem.querySelector("span").textContent;
+    selectedTexts.push(selectedText);
+
+    // Remove the list item from the DOM
+    listItem.remove();
+  });
+
+  chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
+    // Filter out the selected texts from the search history list
+    const updatedList = searchHistoryList.filter((item) => !selectedTexts.includes(item));
+    chrome.storage.local.set({ searchHistoryList: updatedList });
+
+    if (updatedList.length === 0) {
+      emptyMessage.innerHTML = "Cleared up! &#128077;&#127997;";
+      emptyMessage.style.display = "block";
+      hasHistory = false;
+      clearButton.disabled = true;
+      clearButton.setAttribute("aria-disabled", "true");
+    }
+  });
+}
+
+function deleteFromFavoriteList() {
+  const checkedBoxes = favoriteListContainer.querySelectorAll("input:checked");
+  const selectedTexts = [];
+
+  checkedBoxes.forEach((checkbox) => {
+    const listItem = checkbox.closest("li");
+    const selectedText = listItem.querySelector("span").textContent;
+    selectedTexts.push(selectedText);
+    listItem.remove();
+
+    const historyIElements = searchHistoryListContainer.querySelectorAll("i");
+
+    historyIElements.forEach((icon) => {
+      const spanText = icon.parentElement.querySelector("span").textContent;
+      if (selectedText === spanText) {
+        // Change the class name of the icon to "bi bi-patch-plus-fill"
+        icon.className = "bi bi-patch-plus-fill";
       }
+    });
+  });
+
+  chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+    const updatedList = favoriteList.filter((item) => !selectedTexts.includes(item));
+    chrome.storage.local.set({ favoriteList: updatedList });
+
+    if (updatedList.length === 0) {
+      favoriteEmptyMessage.innerHTML = "Cleared up! &#128077;&#127997;";
+      favoriteEmptyMessage.style.display = "block";
+      hasFavorite = false;
     }
   });
 }

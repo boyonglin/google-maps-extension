@@ -1,215 +1,288 @@
 @import url("https://fonts.cdnfonts.com/css/satoshi");
 
 :root {
-    --primary-color: #4285f4;
-    --border-color: #dee2e6;
-    --danger-color: #db4437;
-    --danger-color-500: #EDA19B;
-    --background-color: #ffffff;
-    --gray-800: #202833;
-    --gray-600: #70757a;
-    --gray-400: #dadce0;
-    --gray-200: #f6fafe;
-    --google-green: #0f9d58;
-    --google-green-500: #87cdab;
-    --google-green-bg: #f7fffb;
-    --google-yellow: #f4b400;
-    --google-yellow-500: #F9D980;
-    --google-yellow-bg: #fffdf7;
+  --primary-color: #4285f4;
+  --border-color: #dee2e6;
+  --danger-color: #db4437;
+  --danger-color-500: #eda19b;
+  --danger-color-bg: #fff8f7;
+  --background-color: #ffffff;
+  --gray-800: #202833;
+  --gray-600: #70757a;
+  --gray-400: #dadce0;
+  --gray-200: #f6fafe;
+  --google-green: #0f9d58;
+  --google-green-500: #87cdab;
+  --google-green-bg: #f7fffb;
+  --google-yellow: #f4b400;
+  --google-yellow-500: #f9d980;
+  --google-yellow-bg: #fffdf7;
 }
 
 body {
-    width: 400px;
-    color: var(--gray-800);
-    font-family: "Satoshi", sans-serif;
+  width: 400px;
+  color: var(--gray-800);
+  font-family: "Satoshi", sans-serif;
 }
 
 /* search bar */
 .brand {
-    border-top-left-radius: 32px;
-    border-bottom-left-radius: 32px;
-    background-color: var(--background-color);
+  border-top-left-radius: 32px;
+  border-bottom-left-radius: 32px;
+  background-color: var(--background-color);
 }
 
 .input-group-prepend {
-    margin-right: -2px;
+  margin-right: -2px;
 }
 
 .form-control {
-    border-left: 0;
-    border-top-right-radius: 32px;
-    border-bottom-right-radius: 32px;
+  border-left: 0;
+  border-top-right-radius: 32px;
+  border-bottom-right-radius: 32px;
 }
 
 .form-control::placeholder {
-    color: var(--gray-600);
-    font-weight: light;
+  color: var(--gray-600);
+  font-weight: light;
 }
 
 .form-control:focus {
-    color: var(--gray-600);
-    background-color: var(--background-color);
-    border-color: var(--border-color);
-    outline: none;
-    box-shadow: none;
+  color: var(--gray-600);
+  background-color: var(--background-color);
+  border-color: var(--border-color);
+  outline: none;
+  box-shadow: none;
 }
 
 .form-control:focus::placeholder {
-    opacity: 0;
+  opacity: 0;
 }
 
 .input-group-text.brand img {
-    transform: scale(0.65);
+  transform: scale(0.65);
 }
 
 /* list-group-item */
 .list-group-item {
-    color: var(--gray-600);
-    word-break: break-all;
-    max-width: 100%;
-    cursor: pointer;
+  color: var(--gray-600);
+  word-break: break-all;
+  max-width: 100%;
+  cursor: pointer;
 }
 
 .history-list:hover {
-    color: var(--google-green);
-    background-color: var(--google-green-bg);
-    border: 1px solid var(--google-green) !important;
+  color: var(--google-green);
+  background-color: var(--google-green-bg);
+  border: 1px solid var(--google-green) !important;
 }
 
 .favorite-list:hover {
-    color: var(--google-yellow);
-    background-color: var(--google-yellow-bg);
-    border: 1px solid var(--google-yellow) !important;
+  color: var(--google-yellow);
+  background-color: var(--google-yellow-bg);
+  border: 1px solid var(--google-yellow) !important;
 }
 
-#searchHistoryList {
-    max-height: 280px;
+.delete-list:hover {
+  color: var(--danger-color);
+  background-color: var(--danger-color-bg);
+  border: 1px solid var(--danger-color) !important;
+}
+
+.checked-list {
+  color: var(--danger-color);
+  background-color: var(--danger-color-bg);
+  border: 1px solid var(--danger-color) !important;
+}
+
+#searchHistoryList,
+#favoriteList {
+  max-height: 280px;
 }
 
 /* list icon */
 li i {
-    display: none;
-    opacity: 0.5;
+  display: none;
+  opacity: 0.5;
 }
 
 li:hover i {
-    display: inline;
+  display: inline;
 }
 
 li i:hover {
-    opacity: 1;
+  opacity: 1;
 }
 
 li i.matched {
-    display: inline;
-    opacity: 1;
-    pointer-events: none;
+  display: inline;
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* checkbox */
+.form-check-input {
+  border-color: var(--border-color);
+  min-width: 16px;
+  min-height: 16px;
+}
+
+.form-check-input:focus-visible {
+  box-shadow: 0 0 0 0px var(--danger-color-500);
+  border-color: var(--danger-color);
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 0px var(--danger-color-500);
+  border-color: var(--border-color);
+}
+
+.form-check-input:checked {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+li:hover .form-check-input {
+  border-color: var(--danger-color-500);
 }
 
 /* buttons */
 .maps-btn {
-    background-color: var(--primary-color);
-    border: 1px solid var(--primary-color);
+  background-color: var(--primary-color);
+  border: 1px solid var(--primary-color);
 }
 
 #clearButton {
-    background-color: var(--gray-400);
-    border: 1px solid var(--gray-400);
-    color: var(--gray-600);
+  background-color: var(--gray-400);
+  border: 1px solid var(--gray-400);
+  color: var(--gray-600);
 }
 
 #clearButton:hover {
-    background-color: var(--danger-color);
-    border: 1px solid var(--danger-color);
-    color: var(--background-color);
+  background-color: var(--danger-color);
+  border: 1px solid var(--danger-color);
+  color: var(--background-color);
 }
 
 #searchHistoryButton,
 #favoriteListButton,
 #deleteHistoryButton {
-    border: none;
-    color: var(--gray-600);
-    position: relative;
+  border: none;
+  color: var(--gray-600);
+  position: relative;
 }
 
 .btn-outline-secondary:hover::after,
 .btn-outline-secondary.active-button::after {
-    content: "";
-    position: absolute;
-    bottom: 0px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 10px;
-    height: 2.5px;
-    border-radius: 2px;
+  content: "";
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 2.5px;
+  border-radius: 2px;
 }
 
 #searchHistoryButton:hover,
 #searchHistoryButton.active-button {
-    background-color: transparent;
-    color: var(--google-green);
+  background-color: transparent;
+  color: var(--google-green);
 }
 
 #searchHistoryButton:hover::after,
 #searchHistoryButton.active-button::after {
-    background-color: var(--google-green);
+  background-color: var(--google-green);
 }
 
 #searchHistoryButton.active-button:focus-visible {
-    background-color: transparent;
-    box-shadow: 0 0 0 4px var(--google-green-500);
+  background-color: transparent;
+  box-shadow: 0 0 0 4px var(--google-green-500);
 }
 
 #favoriteListButton:hover,
 #favoriteListButton.active-button {
-    background-color: transparent;
-    color: var(--google-yellow);
+  background-color: transparent;
+  color: var(--google-yellow);
 }
 
 #favoriteListButton:hover::after,
 #favoriteListButton.active-button::after {
-    background-color: var(--google-yellow);
+  background-color: var(--google-yellow);
 }
 
 #favoriteListButton.active-button:focus-visible {
-    background-color: transparent;
-    box-shadow: 0 0 0 4px var(--google-yellow-500);
+  background-color: transparent;
+  box-shadow: 0 0 0 4px var(--google-yellow-500);
 }
 
 #deleteHistoryButton:hover,
 #deleteHistoryButton.active-button {
-    background-color: transparent;
-    color: var(--danger-color);
+  background-color: transparent;
+  color: var(--danger-color);
 }
 
 #deleteHistoryButton:hover::after,
 #deleteHistoryButton.active-button::after {
-    background-color: var(--danger-color);
+  background-color: var(--danger-color);
 }
 
 #deleteHistoryButton.active-button:focus-visible {
-    background-color: transparent;
-    box-shadow: 0 0 0 4px var(--danger-color-500);
+  background-color: transparent;
+  box-shadow: 0 0 0 4px var(--danger-color-500);
 }
 
-#searchHistoryButton:focus, #favoriteListButton:focus, #deleteHistoryButton:focus {
-    background-color: transparent;
+#searchHistoryButton:focus,
+#favoriteListButton:focus,
+#deleteHistoryButton:focus {
+  background-color: transparent;
 }
 
 .active-button {
-    pointer-events: none;
+  pointer-events: none;
 }
 
 /* scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    border-radius: 4px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--gray-400);
-    border-radius: 10px;
+  background: var(--gray-400);
+  border-radius: 10px;
+}
+
+/* animation  */
+.spring-animation {
+  animation: springAnimation 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes springAnimation {
+  0% {
+    transform: scale(1);
+  }
+
+  20% {
+    transform: scale(1.1);
+  }
+
+  40% {
+    transform: scale(0.9);
+  }
+
+  60% {
+    transform: scale(1.05);
+  }
+
+  80% {
+    transform: scale(0.95);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
