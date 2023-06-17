@@ -1,4 +1,4 @@
-# google-maps-extension
+![patch-plus-fill](https://github.com/boyonglin/google-maps-extension/assets/56038738/6bdcd9d0-2487-4cc1-9178-99069d293766)# google-maps-extension
 > Speed up your Google Maps search flow!
 > Search for anywhere from any webpage by Google Maps (fast).
 
@@ -22,9 +22,9 @@
 - [x] Quick search using shortcuts (Ctrl+Shift+S / ⌘+Shift+S) or right-click on the highlighted text.
 - [x] Use shortcuts (Alt+Shift+S / Ctrl+Shift+S) or click the icon to open the extension and start searching.
 - [x] Open the extension to access your Search History (up to 10) and redirect to Google Maps.
-- [x] Click the &#xF4BB; icon to save your spots in Favorite List for quick access without limitation.
+- [x] Click the `Patch plus` icon to save your spots in Favorite List for quick access without limitation.
 - [x] Switch to Delete Mode to cross out your Search History or Favorite List individually.
-- [ ] Organize favorite list
+- [ ] Organize the favorite list
 
 ---
 
