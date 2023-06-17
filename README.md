@@ -23,7 +23,7 @@
 - [x] Use shortcuts (Alt+Shift+S / Ctrl+Shift+S) or click the icon to open the extension and start searching.
 - [x] Open the extension to access your Search History (up to 10) and redirect to Google Maps.
 - [x] Click the `Patch plus` icon to save your spots in Favorite List for quick access without limitation.
-- [x] Switch to Delete Mode to cross out your Search History or Favorite List individually.
+- [x] Switch to Delete Mode to individually cross out your Search History or Favorite List.
 - [ ] Organize the favorite list
 
 ---
