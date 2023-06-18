@@ -1,13 +1,21 @@
 const emptyMessage = document.getElementById("emptyMessage");
 const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
-const clearButton = document.getElementById("clearButton");
 const searchInput = document.getElementById("searchInput");
+const titleElement = document.getElementById("title");
+
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
 const favoriteListContainer = document.getElementById("favoriteList");
 const searchHistoryButton = document.getElementById("searchHistoryButton");
 const favoriteListButton = document.getElementById("favoriteListButton");
 const deleteHistoryButton = document.getElementById("deleteHistoryButton");
-const titleElement = document.getElementById("title");
+
+const normalButtonGroup = document.getElementById("normalButtonGroup");
+const deleteButtonGroup = document.getElementById("deleteButtonGroup");
+const clearButton = document.getElementById("clearButton");
+const cancelButton = document.getElementById("cancelButton");
+const deleteButton = document.getElementById("deleteButton");
+const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
+
 let [hasHistory, hasFavorite] = [false, false];
 
 // Track keypress events on the search bar
@@ -27,23 +35,6 @@ if (searchInput) {
   });
 }
 
-function attachEventListenersToFavorites() {
-  const favoriteCheckboxes = favoriteListContainer.querySelectorAll("input");
-  const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
-
-  favoriteCheckboxes.forEach((checkbox, index) => {
-    checkbox.addEventListener("click", function () {
-      const li = favoriteLiElements[index];
-
-      if (checkbox.checked) {
-        li.classList.add("checked-list");
-      } else {
-        li.classList.remove("checked-list");
-      }
-    });
-  });
-}
-
 // Executed after the document has finished loading
 document.addEventListener("DOMContentLoaded", function () {
   const historyCheckboxes = searchHistoryListContainer.querySelectorAll("input");
@@ -58,11 +49,32 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         li.classList.remove("checked-list");
       }
+
+      updateDeleteCount();
     });
   });
 
   attachEventListenersToFavorites();
 });
+
+function attachEventListenersToFavorites() {
+  const favoriteCheckboxes = favoriteListContainer.querySelectorAll("input");
+  const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
+
+  favoriteCheckboxes.forEach((checkbox, index) => {
+    checkbox.addEventListener("click", function () {
+      const li = favoriteLiElements[index];
+
+      if (checkbox.checked) {
+        li.classList.add("checked-list");
+      } else {
+        li.classList.remove("checked-list");
+      }
+
+      updateDeleteCount()
+    });
+  });
+}
 
 // Track the click event on the lists button
 searchHistoryButton.addEventListener("click", function () {
@@ -116,19 +128,12 @@ deleteHistoryButton.addEventListener("click", function () {
   const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
 
   if (deleteHistoryButton.classList.contains("active-button")) {
-    deleteHistoryButton.classList.remove("active-button");
-
-    if (searchHistoryButton.classList.contains("active-button")) {
-      deleteFromHistoryList();
-    } else {
-      deleteFromFavoriteList();
-    }
-
-    updateInput();
-
+    backToNormal();
   } else {
     deleteHistoryButton.classList.add("active-button");
     deleteHistoryButton.style.pointerEvents = "auto";
+    normalButtonGroup.classList.add("d-none");
+    deleteButtonGroup.classList.remove("d-none");
 
     historyLiElements.forEach((li) => {
       const checkbox = li.querySelector("input");
@@ -151,12 +156,25 @@ deleteHistoryButton.addEventListener("click", function () {
       li.classList.remove("favorite-list");
     });
 
-    // if (searchHistoryButton.classList.contains("active-button")) {
-    //   favoriteListButton.disabled = true;
-    // } else {
-    //   searchHistoryButton.disabled = true;
-    // }
+    if (searchHistoryButton.classList.contains("active-button")) {
+      favoriteListButton.disabled = true;
+      updateDeleteCount();
+    } else {
+      searchHistoryButton.disabled = true;
+      updateDeleteCount();
+    }
   }
+});
+
+cancelButton.addEventListener("click", backToNormal);
+
+deleteButton.addEventListener("click", function () {
+  if (searchHistoryButton.classList.contains("active-button")) {
+    deleteFromHistoryList();
+  } else {
+    deleteFromFavoriteList();
+  }
+  backToNormal();
 });
 
 // Read selected text list from storage
@@ -463,4 +481,47 @@ function deleteFromFavoriteList() {
       hasFavorite = false;
     }
   });
+}
+
+// Update the delete count based on checked checkboxes
+function updateDeleteCount() {
+  if (searchHistoryButton.classList.contains("active-button")) {
+    const checkedCount = searchHistoryListContainer.querySelectorAll("input:checked").length;
+    if (checkedCount > 0) {
+      deleteButtonSpan.textContent = `${checkedCount}`;
+      deleteButton.classList.remove("disabled");
+      deleteButton.setAttribute("aria-disabled", "false");
+    } else {
+      deleteButtonSpan.textContent = "";
+      deleteButton.classList.add("disabled");
+      deleteButton.setAttribute("aria-disabled", "true");
+    }
+  } else {
+    const checkedCount = favoriteListContainer.querySelectorAll("input:checked").length;
+    if (checkedCount > 0) {
+      deleteButtonSpan.textContent = `${checkedCount}`;
+      deleteButton.classList.remove("disabled");
+      deleteButton.setAttribute("aria-disabled", "false");
+    } else {
+      deleteButtonSpan.textContent = "";
+      deleteButton.classList.add("disabled");
+      deleteButton.setAttribute("aria-disabled", "true");
+    }
+  }
+}
+
+function backToNormal() {
+  deleteHistoryButton.classList.remove("active-button");
+  normalButtonGroup.classList.remove("d-none");
+  deleteButtonGroup.classList.add("d-none");
+
+  if (searchHistoryButton.classList.contains("active-button")) {
+    favoriteListButton.disabled = false;
+    favoriteListButton.setAttribute("aria-disabled", "false");
+  } else {
+    searchHistoryButton.disabled = false;
+    searchHistoryButton.setAttribute("aria-disabled", "false");
+  }
+
+  updateInput();
 }

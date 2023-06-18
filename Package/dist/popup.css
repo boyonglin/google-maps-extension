@@ -147,12 +147,18 @@ li:hover .form-check-input {
 }
 
 /* buttons */
-.maps-btn {
+.btn-maps {
   background-color: var(--primary-color);
   border: 1px solid var(--primary-color);
 }
 
-#clearButton {
+.btn-delete {
+  background-color: var(--danger-color);
+  border: 1px solid var(--danger-color);
+}
+
+#clearButton,
+#cancelButton {
   background-color: var(--gray-400);
   border: 1px solid var(--gray-400);
   color: var(--gray-600);
@@ -161,6 +167,17 @@ li:hover .form-check-input {
 #clearButton:hover {
   background-color: var(--danger-color);
   border: 1px solid var(--danger-color);
+  color: var(--background-color);
+}
+
+#clearButton:focus-visible {
+  background-color: var(--gray-400);
+  box-shadow: 0 0 0 4px var(--gray-200);
+}
+
+#cancelButton:hover {
+  background-color: var(--gray-600);
+  border: 1px solid var(--gray-600);
   color: var(--background-color);
 }
 
