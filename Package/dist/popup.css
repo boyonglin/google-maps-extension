@@ -259,6 +259,12 @@ li:hover .form-check-input {
   pointer-events: none;
 }
 
+/* Modal */
+.modal-xs {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
 /* scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

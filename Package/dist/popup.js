@@ -465,7 +465,6 @@ function deleteFromFavoriteList() {
     historyIElements.forEach((icon) => {
       const spanText = icon.parentElement.querySelector("span").textContent;
       if (selectedText === spanText) {
-        // Change the class name of the icon to "bi bi-patch-plus-fill"
         icon.className = "bi bi-patch-plus-fill";
       }
     });
