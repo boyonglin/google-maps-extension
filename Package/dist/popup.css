@@ -265,6 +265,10 @@ li:hover .form-check-input {
   margin: 0 auto;
 }
 
+.modal-body p:hover {
+  text-decoration: var(--border-color) underline;
+}
+
 /* scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

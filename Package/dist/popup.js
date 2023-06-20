@@ -524,3 +524,20 @@ function backToNormal() {
 
   updateInput();
 }
+
+// Shortcuts configuration link
+const configureElements = document.querySelectorAll('.modal-body p');
+
+for (var i = 0; i < configureElements.length; i++) {
+  configureElements[i].onclick = function(event) {
+    // Detect user browser
+    let userAgent = navigator.userAgent;
+    if (/Chrome/i.test(userAgent)) {
+      chrome.tabs.create({url: 'chrome://extensions/shortcuts'});
+    } else if (/Opera|OPR\//i.test(userAgent)) {
+      chrome.tabs.create({url: 'opera://extensions/shortcuts'});
+    }
+
+    event.preventDefault();
+  };
+}
