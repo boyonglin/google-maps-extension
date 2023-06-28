@@ -37,6 +37,10 @@ if (searchInput) {
 
 // Executed after the document has finished loading
 document.addEventListener("DOMContentLoaded", function () {
+  if(!hasHistory) {
+    emptyMessage.style.display = "block";
+  }
+
   const historyCheckboxes = searchHistoryListContainer.querySelectorAll("input");
   const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
 
@@ -272,7 +276,6 @@ searchHistoryListContainer.addEventListener("click", function (event) {
   const selectedText = liElement.textContent;
   const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
 
-
   // Check if the clicked element has the "bi" class (indicating it is the icon)
   if (event.target.classList.contains("bi")) {
     // Add the selected text to the favorite list
@@ -315,11 +318,6 @@ favoriteListContainer.addEventListener("click", function (event) {
   }
 });
 
-function addToFavoriteList(selectedText) {
-  // Send a message to background.js to add the selected text to the favorite list
-  chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
-}
-
 // Track the click event on clear button
 clearButton.addEventListener("click", () => {
   searchHistoryListContainer.innerHTML = "";
@@ -335,6 +333,21 @@ clearButton.addEventListener("click", () => {
     emptyMessage.innerHTML = "Cleared up! &#128077;&#127997;";
   });
 });
+
+// Track the storage change event
+chrome.storage.onChanged.addListener((changes) => {
+  const favoriteListChange = changes.favoriteList;
+
+  if (favoriteListChange && favoriteListChange.newValue) {
+    // Update the favorite list container
+    updateFavoriteListContainer(favoriteListChange.newValue);
+  }
+});
+
+function addToFavoriteList(selectedText) {
+  // Send a message to background.js to add the selected text to the favorite list
+  chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
+}
 
 // Update the favorite list container
 function updateFavoriteListContainer(favoriteList) {
@@ -376,16 +389,6 @@ function updateFavoriteListContainer(favoriteList) {
     hasFavorite = false;
   }
 }
-
-// Track the storage change event
-chrome.storage.onChanged.addListener((changes) => {
-  const favoriteListChange = changes.favoriteList;
-
-  if (favoriteListChange && favoriteListChange.newValue) {
-    // Update the favorite list container
-    updateFavoriteListContainer(favoriteListChange.newValue);
-  }
-});
 
 function updateInput() {
   const historyLiElements = searchHistoryListContainer.querySelectorAll("li");

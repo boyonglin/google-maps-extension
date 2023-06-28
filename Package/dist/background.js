@@ -50,29 +50,23 @@ function handleSelectedText(selectedText) {
   }
 
   // Use chrome.tabs.create to open a new tab for search
-  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
-    selectedText
-  )}`;
+  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
   chrome.tabs.create({ url: searchUrl });
 
   updateTextList(selectedText);
 }
 
 // Track the runtime.onMessage event
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request) => {
   // Check if the action in the message is "clearSearchHistoryList"
   if (request.action === "clearSearchHistoryList") {
     // Perform the operation to clear the selected text list data
     chrome.storage.local.set({ searchHistoryList: [] });
-    // Send a response message to popup.js indicating that the clear operation is completed
-    sendResponse({ message: "Selected text list cleared." });
   } else if (request.action === "searchInput") {
     var searchTerm = request.searchTerm;
     // If the user has entered a keyword, search
     if (searchTerm) {
-      const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
-        searchTerm
-      )}`;
+      const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(searchTerm)}`;
       chrome.tabs.create({ url: searchUrl });
       updateTextList(searchTerm);
     }
