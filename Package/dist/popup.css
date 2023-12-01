@@ -183,7 +183,7 @@ li:hover .form-check-input {
 
 #searchHistoryButton,
 #favoriteListButton,
-#deleteHistoryButton {
+#deleteListButton {
   border: none;
   color: var(--gray-600);
   position: relative;
@@ -233,25 +233,25 @@ li:hover .form-check-input {
   box-shadow: 0 0 0 4px var(--google-yellow-500);
 }
 
-#deleteHistoryButton:hover,
-#deleteHistoryButton.active-button {
+#deleteListButton:hover,
+#deleteListButton.active-button {
   background-color: transparent;
   color: var(--danger-color);
 }
 
-#deleteHistoryButton:hover::after,
-#deleteHistoryButton.active-button::after {
+#deleteListButton:hover::after,
+#deleteListButton.active-button::after {
   background-color: var(--danger-color);
 }
 
-#deleteHistoryButton.active-button:focus-visible {
+#deleteListButton.active-button:focus-visible {
   background-color: transparent;
   box-shadow: 0 0 0 4px var(--danger-color-500);
 }
 
 #searchHistoryButton:focus,
 #favoriteListButton:focus,
-#deleteHistoryButton:focus {
+#deleteListButton:focus {
   background-color: transparent;
 }
 

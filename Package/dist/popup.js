@@ -7,7 +7,7 @@ const searchHistoryListContainer = document.getElementById("searchHistoryList");
 const favoriteListContainer = document.getElementById("favoriteList");
 const searchHistoryButton = document.getElementById("searchHistoryButton");
 const favoriteListButton = document.getElementById("favoriteListButton");
-const deleteHistoryButton = document.getElementById("deleteHistoryButton");
+const deleteListButton = document.getElementById("deleteListButton");
 
 const normalButtonGroup = document.getElementById("normalButtonGroup");
 const deleteButtonGroup = document.getElementById("deleteButtonGroup");
@@ -87,7 +87,7 @@ searchHistoryButton.addEventListener("click", function () {
 
   searchHistoryButton.classList.add("active-button");
   favoriteListButton.classList.remove("active-button");
-  deleteHistoryButton.classList.remove("active-button");
+  deleteListButton.classList.remove("active-button");
 
   titleElement.textContent = "Search History";
   if (!hasHistory) {
@@ -111,7 +111,7 @@ favoriteListButton.addEventListener("click", function () {
 
   favoriteListButton.classList.add("active-button");
   searchHistoryButton.classList.remove("active-button");
-  deleteHistoryButton.classList.remove("active-button");
+  deleteListButton.classList.remove("active-button");
 
   titleElement.textContent = "Favorite List";
   if (!hasFavorite) {
@@ -127,15 +127,15 @@ favoriteListButton.addEventListener("click", function () {
   attachEventListenersToFavorites();
 });
 
-deleteHistoryButton.addEventListener("click", function () {
+deleteListButton.addEventListener("click", function () {
   const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
   const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
 
-  if (deleteHistoryButton.classList.contains("active-button")) {
+  if (deleteListButton.classList.contains("active-button")) {
     backToNormal();
   } else {
-    deleteHistoryButton.classList.add("active-button");
-    deleteHistoryButton.style.pointerEvents = "auto";
+    deleteListButton.classList.add("active-button");
+    deleteListButton.style.pointerEvents = "auto";
     normalButtonGroup.classList.add("d-none");
     deleteButtonGroup.classList.remove("d-none");
 
@@ -273,26 +273,37 @@ searchHistoryListContainer.addEventListener("click", function (event) {
     return;
   }
 
-  const selectedText = liElement.textContent;
-  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
-
-  // Check if the clicked element has the "bi" class (indicating it is the icon)
-  if (event.target.classList.contains("bi")) {
-    // Add the selected text to the favorite list
-    addToFavoriteList(selectedText);
-    event.target.className = "bi bi-patch-check-fill matched spring-animation";
-
-    setTimeout(function () {
-      event.target.classList.remove("spring-animation");
-    }, 500);
-    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-      updateFavoriteListContainer(favoriteList);
-    });
-  } else if (event.target.classList.contains("form-check-input")) {
-    return;
+  if (liElement.classList.contains("delete-list")) {
+    if (event.target.classList.contains("form-check-input")) {
+      return;
+    } else {
+      liElement.classList.toggle("checked-list");
+      const checkbox = liElement.querySelector("input");
+      checkbox.checked = !checkbox.checked;
+      updateDeleteCount();
+    }
   } else {
-    // Open in a new window
-    window.open(searchUrl, "_blank");
+    const selectedText = liElement.textContent;
+    const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
+
+    // Check if the clicked element has the "bi" class (indicating it is the icon)
+    if (event.target.classList.contains("bi")) {
+      // Add the selected text to the favorite list
+      addToFavoriteList(selectedText);
+      event.target.className = "bi bi-patch-check-fill matched spring-animation";
+
+      setTimeout(function () {
+        event.target.classList.remove("spring-animation");
+      }, 500);
+      chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+        updateFavoriteListContainer(favoriteList);
+      });
+    } else if (event.target.classList.contains("form-check-input")) {
+      return;
+    } else {
+      // Open in a new window
+      window.open(searchUrl, "_blank");
+    }
   }
 });
 
@@ -306,15 +317,26 @@ favoriteListContainer.addEventListener("click", function (event) {
     return;
   }
 
-  const selectedText = liElement.textContent;
-  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
-
-  if (event.target.classList.contains("bi")) {
-    return;
-  } else if (event.target.classList.contains("form-check-input")) {
-    return;
+  if (liElement.classList.contains("delete-list")) {
+    if (event.target.classList.contains("form-check-input")) {
+      return;
+    } else {
+      liElement.classList.toggle("checked-list");
+      const checkbox = liElement.querySelector("input");
+      checkbox.checked = !checkbox.checked;
+      updateDeleteCount();
+    }
   } else {
-    window.open(searchUrl, "_blank");
+    const selectedText = liElement.textContent;
+    const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
+
+    if (event.target.classList.contains("bi")) {
+      return;
+    } else if (event.target.classList.contains("form-check-input")) {
+      return;
+    } else {
+      window.open(searchUrl, "_blank");
+    }
   }
 });
 
@@ -513,7 +535,7 @@ function updateDeleteCount() {
 }
 
 function backToNormal() {
-  deleteHistoryButton.classList.remove("active-button");
+  deleteListButton.classList.remove("active-button");
   normalButtonGroup.classList.remove("d-none");
   deleteButtonGroup.classList.add("d-none");
 
