@@ -1,7 +1,7 @@
 const emptyMessage = document.getElementById("emptyMessage");
 const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
 const searchInput = document.getElementById("searchInput");
-const titleElement = document.getElementById("title");
+const subtitleElement = document.getElementById("subtitle");
 
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
 const favoriteListContainer = document.getElementById("favoriteList");
@@ -89,7 +89,7 @@ searchHistoryButton.addEventListener("click", function () {
   favoriteListButton.classList.remove("active-button");
   deleteListButton.classList.remove("active-button");
 
-  titleElement.textContent = "Search History";
+  subtitleElement.textContent = "Search History";
   if (!hasHistory) {
     emptyMessage.style.display = "block";
     clearButton.disabled = true;
@@ -113,7 +113,7 @@ favoriteListButton.addEventListener("click", function () {
   searchHistoryButton.classList.remove("active-button");
   deleteListButton.classList.remove("active-button");
 
-  titleElement.textContent = "Favorite List";
+  subtitleElement.textContent = "Favorite List";
   if (!hasFavorite) {
     favoriteEmptyMessage.style.display = "block";
   } else {
@@ -566,3 +566,8 @@ for (var i = 0; i < configureElements.length; i++) {
     event.preventDefault();
   };
 }
+
+// Quicklink
+window.addEventListener('load', () => {
+  quicklink.listen();
+});
