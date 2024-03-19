@@ -53,22 +53,19 @@ function handleSelectedText(selectedText) {
   const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
   chrome.tabs.create({ url: searchUrl });
 
-  updateTextList(selectedText);
+  updateHistoryList(selectedText);
 }
 
 // Track the runtime.onMessage event
 chrome.runtime.onMessage.addListener((request) => {
-  // Check if the action in the message is "clearSearchHistoryList"
   if (request.action === "clearSearchHistoryList") {
-    // Perform the operation to clear the selected text list data
     chrome.storage.local.set({ searchHistoryList: [] });
   } else if (request.action === "searchInput") {
     var searchTerm = request.searchTerm;
-    // If the user has entered a keyword, search
     if (searchTerm) {
       const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(searchTerm)}`;
       chrome.tabs.create({ url: searchUrl });
-      updateTextList(searchTerm);
+      updateHistoryList(searchTerm);
     }
   } else if (request.action === "addToFavoriteList") {
     const selectedText = request.selectedText;
@@ -76,49 +73,55 @@ chrome.runtime.onMessage.addListener((request) => {
   }
 });
 
-function updateTextList(selectedText) {
-  // Store the selected text to storage
+// Add the selected text to history list
+function updateHistoryList(selectedText) {
   chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
-    // If searchHistoryList is not set, initialize as an empty array
+    // Initialize
     if (!searchHistoryList) {
       searchHistoryList = [];
     }
 
-    // If already exists in searchHistoryList, remove the old one
-    // Add the newly selected text to searchHistoryList
-    const index = searchHistoryList.findIndex((item) => item === selectedText);
+    // Remove and rejoin existing selected text item
+    const index = searchHistoryList.indexOf(selectedText);
     if (index !== -1) {
       searchHistoryList.splice(index, 1);
     }
     searchHistoryList.push(selectedText);
 
-    // If the number of items in searchHistoryList exceeds maxListLength, keep only the last items
+    // Keep only the last {maxListLength} items
     if (searchHistoryList.length > maxListLength) {
       searchHistoryList.shift();
     }
 
-    // Store the updated searchHistoryList to storage
+    // Updated searchHistoryList to storage
     chrome.storage.local.set({ searchHistoryList });
   });
 }
 
+// Add the target item to favorite list
 function addToFavoriteList(selectedText) {
-  // Store the selected text to storage as part of the favorite list
   chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-    // If favoriteList is not set, initialize as an empty array
     if (!favoriteList) {
       favoriteList = [];
     }
 
-    // If already exists in favoriteList, remove the old one
-    // Add the newly selected text to favoriteList
-    const index = favoriteList.findIndex((item) => item === selectedText);
+    const index = favoriteList.indexOf(selectedText);
     if (index !== -1) {
       favoriteList.splice(index, 1);
     }
     favoriteList.push(selectedText);
 
-    // Store the updated favoriteList to storage
     chrome.storage.local.set({ favoriteList });
   });
+}
+
+// Prevent delay when opening popup
+const preloadHTML = async () => {
+  if (!await chrome.offscreen.hasDocument()) {
+      await chrome.offscreen.createDocument({
+          url: "popup.html",
+          reasons: [chrome.offscreen.Reason.DISPLAY_MEDIA],
+          justification: "Helps with faster load times of popup"
+      })
+  }
 }

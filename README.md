@@ -25,7 +25,7 @@
 - [x] Open the extension to access your Search History (up to 10) and redirect to Google Maps.
 - [x] Click the ![patch-plus-fill](https://github.com/boyonglin/google-maps-extension/assets/56038738/f55606b7-c6f7-4ef1-81dc-bedca0567e21) icon to save your spots in Favorite List for quick access without limitation.
 - [x] Switch to Delete Mode to individually cross out your Search History or Favorite List.
-- [ ] Organize the favorite list
+- [ ] Save the favorite list
 - [ ] Undo the deletion
 
 ---
