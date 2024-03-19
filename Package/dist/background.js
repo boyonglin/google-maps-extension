@@ -88,7 +88,7 @@ function updateHistoryList(selectedText) {
     }
     searchHistoryList.push(selectedText);
 
-    // Keep only the last {maxListLength} items
+    // Trim excess items
     if (searchHistoryList.length > maxListLength) {
       searchHistoryList.shift();
     }
