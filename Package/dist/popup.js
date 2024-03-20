@@ -566,8 +566,3 @@ for (var i = 0; i < configureElements.length; i++) {
     event.preventDefault();
   };
 }
-
-// Quicklink
-window.addEventListener('load', () => {
-  quicklink.listen();
-});
