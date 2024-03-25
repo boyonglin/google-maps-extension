@@ -24,7 +24,7 @@
 - [x] Search bar in the popup window
 - [x] Record search history
 - [x] Save the favorite spot
-- [x] Delete Mode
+- [x] Delete mode
 - [x] Save the favorite list
 - [ ] Undo the deletion
 
