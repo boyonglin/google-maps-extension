@@ -50,7 +50,9 @@ function handleSelectedText(selectedText) {
   }
 
   // Use chrome.tabs.create to open a new tab for search
-  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
+  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
+    selectedText
+  )}`;
   chrome.tabs.create({ url: searchUrl });
 
   updateHistoryList(selectedText);
@@ -63,7 +65,9 @@ chrome.runtime.onMessage.addListener((request) => {
   } else if (request.action === "searchInput") {
     var searchTerm = request.searchTerm;
     if (searchTerm) {
-      const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(searchTerm)}`;
+      const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
+        searchTerm
+      )}`;
       chrome.tabs.create({ url: searchUrl });
       updateHistoryList(searchTerm);
     }
@@ -117,11 +121,11 @@ function addToFavoriteList(selectedText) {
 
 // Prevent delay when opening popup
 const preloadHTML = async () => {
-  if (!await chrome.offscreen.hasDocument()) {
-      await chrome.offscreen.createDocument({
-          url: "popup.html",
-          reasons: [chrome.offscreen.Reason.DISPLAY_MEDIA],
-          justification: "Helps with faster load times of popup"
-      })
+  if (!(await chrome.offscreen.hasDocument())) {
+    await chrome.offscreen.createDocument({
+      url: "popup.html",
+      reasons: [chrome.offscreen.Reason.DISPLAY_MEDIA],
+      justification: "Helps with faster load times of popup",
+    });
   }
-}
+};
