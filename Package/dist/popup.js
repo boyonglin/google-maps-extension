@@ -168,21 +168,17 @@ deleteListButton.addEventListener("click", function () {
 
 exportButton.addEventListener("click", function () {
   chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-    if (favoriteList && favoriteList.length > 0) {
-      const json = JSON.stringify(favoriteList);
+    const json = JSON.stringify(favoriteList);
 
-      const blob = new Blob([json], {
-        type: "application/json",
-      });
+    const blob = new Blob([json], {
+      type: "application/json",
+    });
 
-      // Create a temporary anchor element and trigger the download
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "favoriteList.json";
-      a.click();
-    } else {
-      alert("No favorite items to export.");
-    }
+    // Create a temporary anchor element and trigger the download
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "favoriteList.json";
+    a.click();
   });
 });
 
@@ -199,10 +195,9 @@ fileInput.addEventListener("change", function (event) {
   reader.onload = function (event) {
     try {
       const importedData = JSON.parse(event.target.result);
-      // Update favoriteList in Chrome storage
       chrome.storage.local.set({ favoriteList: importedData });
     } catch (error) {
-      alert("Please retry or report the issues: ", error);
+      alert("Please retry or report the issue: ", error);
     }
   };
 
