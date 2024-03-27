@@ -25,8 +25,8 @@
 - [x] Record search history
 - [x] Save the favorite spot
 - [x] Delete mode
-- [x] Save the favorite list
-- [ ] Undo the deletion
+- [x] Export the favorite list
+- [ ] Chinese Language
 
 ---
 
@@ -63,6 +63,9 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
 ---
 
 ## Structure
+- `_locales/`: Message localized for current locale
+    - `en/`: English (default)
+    - `zh_TW/`: Chinese (Taiwan)
 - `dist/`: JavaScript & CSS resources
     - `popup.js`: JS for the popup window
     - `popup.css`: CSS for the popup window
@@ -74,5 +77,6 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
 ---
 
 ## Reference
-- [Extensions - Chrome Developers](https://developer.chrome.com/docs/extensions/)
+- [Extensions - Chrome for Developers](https://developer.chrome.com/docs/extensions/)
 - [Chrome Extension 開發與實作 - 羅拉拉](https://ithelp.ithome.com.tw/articles/10186017)
+- [Localizing Your Chrome Extension - Shahed Nasser](https://levelup.gitconnected.com/localizing-your-chrome-extension-an-easy-tutorial-b0892e225576)

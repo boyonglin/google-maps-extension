@@ -6,14 +6,13 @@ var maxListLength = 10;
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "myContextMenuId",
-    title: "Search by Google Maps (fast)",
+    title: chrome.i18n.getMessage("contextMenus"),
     contexts: ["selection"],
   });
 });
 
 // Track the right-click event
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  // Check if clicked menu item ID matches the ID defined in manifest.json
   if (info.menuItemId === "myContextMenuId") {
     const selectedText = info.selectionText;
     handleSelectedText(selectedText);

@@ -3,10 +3,10 @@
 
 <head>
     <title>Search History List</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="dist/popup.css">
-    <link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="dist/popup.css" />
+    <link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet" />
 </head>
 
 <body class="d-flex">
@@ -14,17 +14,19 @@
         <header class="d-flex align-items-center border-bottom pb-4">
             <div class="input-group">
                 <div class="input-group-prepend">
-                    <span class="input-group-text brand"><img src="images/icon-32.png" alt="badge"></span>
+                    <span class="input-group-text brand"><img src="images/icon-32.png" alt="badge" /></span>
                 </div>
-                <input type="text" class="form-control" autocomplete="off" placeholder="Search Bar" autofocus
-                    id="searchInput">
+                <input type="text" class="form-control" autocomplete="off" placeholder="Search Google Maps" autofocus
+                    id="searchInput" />
             </div>
         </header>
         <section class="pt-3 pb-4">
             <div class="container mb-3">
                 <div class="row justify-content-between">
                     <div class="col-auto d-flex align-items-center px-0">
-                        <h6 id="subtitle" class="my-0">Search History</h6>
+                        <h6 id="subtitle" class="my-0" data-locale="searchHistorySubtitle">
+                            Search History
+                        </h6>
                     </div>
                     <div class="col-auto ml-auto d-flex align-items-center px-0">
                         <div class="row g-1">
@@ -50,41 +52,50 @@
                     </div>
                 </div>
             </div>
-            <p id="emptyMessage" class="text-muted text-center pt-3 pb-4">Highlight text and search!
-                <br> Your history will be saved here. &#128076;&#127997;
+            <p id="emptyMessage" class="text-muted text-center pt-3 pb-4" data-locale="historyEmptyMsg">
+                Highlight text and search!<br />
+                Your history will be saved here. &#128076;&#127997;
             </p>
-            <p id="favoriteEmptyMessage" class="text-muted text-center pt-3 pb-4">Click and save your favorite spots
-                here! &#128076;&#127997;
+            <p id="favoriteEmptyMessage" class="text-muted text-center pt-3 pb-4" data-locale="favoriteEmptyMsg">
+                Click PATCH and save your favorite spots here! &#128076;&#127997;
             </p>
             <div id="searchHistoryList" class="overflow-auto mb-4"></div>
-            <div id="favoriteList" class="overflow-auto mb-4" style="display: none;"></div>
+            <div id="favoriteList" class="overflow-auto mb-4" style="display: none"></div>
             <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3">
                 <button id="clearButton" class="btn me-3 w-25">
-                    <i class="bi bi-trash-fill me-2"></i>Clear</button>
+                    <i class="bi bi-trash-fill me-2"></i><span data-locale="clearButtonText">Clear</span>
+                </button>
                 <a href="https://www.google.com/maps/" target="_blank" class="btn btn-primary btn-maps flex-fill">
-                    <i class="bi bi-geo-alt-fill me-2"></i>Google Maps</a>
+                    <i class="bi bi-geo-alt-fill me-2"></i><span data-locale="mapsButtonText">Google Maps</span></a>
             </div>
             <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none">
-                <button id="cancelButton" class="btn me-3 btn-secondary w-25">Cancel</button>
+                <button id="cancelButton" class="btn me-3 btn-secondary w-25" data-locale="cancelButtonText">
+                    Cancel
+                </button>
                 <a id="deleteButton" class="btn btn-danger btn-delete flex-fill">
-                    <i class="bi bi-trash-fill me-2"></i>Delete <span></span> spot(s)</a>
+                    <i class="bi bi-trash-fill me-2"></i><span></span></a>
             </div>
             <div id="exportButtonGroup" class="d-flex justify-content-evenly mt-3 d-none">
                 <button id="exportButton" class="btn btn-light me-3 w-50">
-                    <i class="bi bi-download me-2"></i>Export</button>
+                    <i class="bi bi-download me-2"></i><span data-locale="exportBtnText">Export</span>
+                </button>
                 <button id="importButton" class="btn btn-light w-50">
-                    <i class="bi bi-upload me-2"></i>Import</button>
-                <input type="file" id="fileInput" style="display: none;" accept=".json">
+                    <i class="bi bi-upload me-2"></i><span data-locale="importBtnText">Import</span>
+                </button>
+                <input type="file" id="fileInput" style="display: none" accept=".json" />
             </div>
         </section>
         <footer>
             <ul class="nav justify-content-center border-top">
-                <li type="button" class="nav-item"><a href="https://bento.me/clancylin" target="_blank"
-                        class="nav-link px-2 text-muted">Author</a></li>
-                <li type="button" class="nav-item"><a href="https://github.com/boyonglin/google-maps-extension"
-                        target="_blank" class="nav-link px-2 text-muted">GitHub</a></li>
+                <li type="button" class="nav-item">
+                    <a href="https://bento.me/clancylin" target="_blank" class="nav-link px-2 text-muted" data-locale="authorBtnText">Author</a>
+                </li>
+                <li type="button" class="nav-item">
+                    <a href="https://github.com/boyonglin/google-maps-extension" target="_blank"
+                        class="nav-link px-2 text-muted" data-locale="githubBtnText">GitHub</a>
+                </li>
                 <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#tipsModal">
-                    <span class="nav-link px-2 text-muted">Tips</span>
+                    <span class="nav-link px-2 text-muted" data-locale="tipBtnText">Tip</span>
                 </li>
             </ul>
         </footer>
@@ -92,17 +103,21 @@
             <div class="modal-dialog modal-dialog-centered modal-xs">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-6" id="tipsModalLabel">Shortcuts</h1>
+                        <h1 class="modal-title fs-6" id="tipsModalLabel" data-locale="shortcutsTitle">Shortcuts</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="d-flex justify-content-between">
-                            <h2 class="fs-6 fw-normal">Quick Search</h2>
-                            <p type="button" class="text-muted">Ctrl+Shift+S / &#8984;+Shift+S</p>
+                            <h2 class="fs-6 fw-normal" data-locale="quickSearchKeyLabel">Quick Search</h2>
+                            <p type="button" class="text-muted">
+                                Ctrl+Shift+S / &#8984;+Shift+S
+                            </p>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <h2 class="fs-6 fw-normal">Search Bar</h2>
-                            <p type="button" class="text-muted">Alt+Shift+S / &#8997;+Shift+S</p>
+                            <h2 class="fs-6 fw-normal" data-locale="searchBarKeyLabel">Search Bar</h2>
+                            <p type="button" class="text-muted">
+                                Alt+Shift+S / &#8997;+Shift+S
+                            </p>
                         </div>
                     </div>
                 </div>

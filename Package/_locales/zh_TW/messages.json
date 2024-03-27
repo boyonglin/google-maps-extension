@@ -1,0 +1,67 @@
+{
+  "contextMenus": {
+    "message": "透過 Google Maps (fast) 搜尋"
+  },
+  "searchInputPlaceholder": {
+    "message": "搜尋 Google 地圖"
+  },
+  "searchHistorySubtitle": {
+    "message": "搜尋記錄"
+  },
+  "favoriteListSubtitle": {
+    "message": "收藏列表"
+  },
+  "historyEmptyMsg": {
+    "message": "反白文字並快速搜尋！\n你的搜尋紀錄會保存在這裡\uD83D\uDC4C\uD83C\uDFFD"
+  },
+  "favoriteEmptyMsg": {
+    "message": "點擊地點右邊圖標加入收藏！\uD83D\uDC4C\uD83C\uDFFD"
+  },
+  "clearButtonText": {
+    "message": "清除"
+  },
+  "mapsButtonText": {
+    "message": "Google 地圖"
+  },
+  "cancelButtonText": {
+    "message": "取消"
+  },
+  "deleteButtonTextEmpty": {
+    "message": "刪除地點"
+  },
+  "deleteButtonText": {
+    "message": "刪除 $checkedCount$ 個地點",
+    "placeholders": {
+      "checkedCount": {
+        "content": "$1"
+      }
+    }
+  },
+  "exportBtnText": {
+    "message": "匯出"
+  },
+  "importBtnText": {
+    "message": "匯入"
+  },
+  "shortcutsTitle": {
+    "message": "鍵盤快速鍵"
+  },
+  "quickSearchKeyLabel": {
+    "message": "快速搜尋"
+  },
+  "searchBarKeyLabel": {
+    "message": "搜尋方塊"
+  },
+  "authorBtnText": {
+    "message": "作者"
+  },
+  "githubBtnText": {
+    "message": "開放原始碼"
+  },
+  "tipBtnText": {
+    "message": "提示"
+  },
+  "clearedUPMsg": {
+    "message": "清除完畢！\uD83D\uDC4D\uD83C\uDFFD"
+  }
+}

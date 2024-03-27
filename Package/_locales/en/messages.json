@@ -1,0 +1,88 @@
+{
+  "contextMenus": {
+    "message": "Search by Google Maps (fast)",
+    "description": "right-click context menu msg"
+  },
+  "searchInputPlaceholder": {
+    "message": "Search Google Maps",
+    "description": "popup search input placeholder"
+  },
+  "searchHistorySubtitle": {
+    "message": "Search History",
+    "description": "popup search history subtitle"
+  },
+  "favoriteListSubtitle": {
+    "message": "Favorite List",
+    "description": "popup favorite list subtitle"
+  },
+  "historyEmptyMsg": {
+    "message": "Highlight text and search!\n Your history will be saved here. \uD83D\uDC4C\uD83C\uDFFD",
+    "description": "popup no search history message"
+  },
+  "favoriteEmptyMsg": {
+    "message": "Click PATCH and save your favorite spots here! \uD83D\uDC4C\uD83C\uDFFD",
+    "description": "popup no favorite list message"
+  },
+  "clearButtonText": {
+    "message": "Clear",
+    "description": "popup clear button text"
+  },
+  "mapsButtonText": {
+    "message": "Google Maps",
+    "description": "popup google maps button text"
+  },
+  "cancelButtonText": {
+    "message": "Cancel",
+    "description": "popup cancel button text"
+  },
+  "deleteButtonTextEmpty": {
+    "message": "Delete spot(s)",
+    "description": "popup empty states delete button text"
+  },
+  "deleteButtonText": {
+    "message": "Delete $checkedCount$ spot(s)",
+    "description": "popup delete button text passed with checked count",
+    "placeholders": {
+      "checkedCount": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
+  "exportBtnText": {
+    "message": "Export",
+    "description": "popup export button text"
+  },
+  "importBtnText": {
+    "message": "Import",
+    "description": "popup import button text"
+  },
+  "shortcutsTitle": {
+    "message": "Shortcuts",
+    "description": "popup tips shortcuts title"
+  },
+  "quickSearchKeyLabel": {
+    "message": "Quick Search",
+    "description": "popup tips quick search key label"
+  },
+  "searchBarKeyLabel": {
+    "message": "Search Bar",
+    "description": "popup tips search bar key label"
+  },
+  "authorBtnText": {
+    "message": "Author",
+    "description": "popup author button text"
+  },
+  "githubBtnText": {
+    "message": "GitHub",
+    "description": "popup github button text"
+  },
+  "tipBtnText": {
+    "message": "Tip",
+    "description": "popup tip button text"
+  },
+  "clearedUPMsg": {
+    "message": "Cleared up! \uD83D\uDC4D\uD83C\uDFFD",
+    "description": "popup cleared up message"
+  }
+}

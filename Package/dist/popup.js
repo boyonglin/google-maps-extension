@@ -83,7 +83,7 @@ searchHistoryButton.addEventListener("click", function () {
   favoriteListButton.classList.remove("active-button");
   deleteListButton.classList.remove("active-button");
 
-  subtitleElement.textContent = "Search History";
+  subtitleElement.textContent = chrome.i18n.getMessage("searchHistorySubtitle");
   if (!hasHistory) {
     emptyMessage.style.display = "block";
     clearButton.disabled = true;
@@ -109,7 +109,7 @@ favoriteListButton.addEventListener("click", function () {
   searchHistoryButton.classList.remove("active-button");
   deleteListButton.classList.remove("active-button");
 
-  subtitleElement.textContent = "Favorite List";
+  subtitleElement.textContent = chrome.i18n.getMessage("favoriteListSubtitle");
   if (!hasFavorite) {
     favoriteEmptyMessage.style.display = "block";
   } else {
@@ -398,7 +398,7 @@ clearButton.addEventListener("click", () => {
     clearButton.disabled = true;
     clearButton.setAttribute("aria-disabled", "true");
     emptyMessage.style.display = "block";
-    emptyMessage.innerHTML = "Cleared up! &#128077;&#127997;";
+    emptyMessage.innerHTML = chrome.i18n.getMessage('clearedUpMsg');
   });
 });
 
@@ -456,7 +456,6 @@ function updateFavoriteListContainer(favoriteList) {
     favoriteListContainer.appendChild(ul);
 
     attachEventListeners(favoriteListContainer);
-
   } else {
     hasFavorite = false;
     exportButton.disabled = true;
@@ -511,7 +510,7 @@ function deleteFromHistoryList() {
     chrome.storage.local.set({ searchHistoryList: updatedList });
 
     if (updatedList.length === 0) {
-      emptyMessage.innerHTML = "Cleared up! &#128077;&#127997;";
+      emptyMessage.innerHTML = chrome.i18n.getMessage('clearedUpMsg');
       emptyMessage.style.display = "block";
       hasHistory = false;
       clearButton.disabled = true;
@@ -547,7 +546,7 @@ function deleteFromFavoriteList() {
     chrome.storage.local.set({ favoriteList: updatedList });
 
     if (updatedList.length === 0) {
-      favoriteEmptyMessage.innerHTML = "Cleared up! &#128077;&#127997;";
+      favoriteEmptyMessage.innerHTML = chrome.i18n.getMessage('clearedUpMsg');
       favoriteEmptyMessage.style.display = "block";
       hasFavorite = false;
       exportButton.disabled = true;
@@ -557,17 +556,22 @@ function deleteFromFavoriteList() {
 
 // Update the delete count based on checked checkboxes
 function updateDeleteCount() {
-  const historyCheckedCount = searchHistoryListContainer.querySelectorAll("input:checked").length;
-  const favoriteCheckedCount = favoriteListContainer.querySelectorAll("input:checked").length;
+  const historyCheckedCount =
+    searchHistoryListContainer.querySelectorAll("input:checked").length;
+  const favoriteCheckedCount =
+    favoriteListContainer.querySelectorAll("input:checked").length;
 
-  const checkedCount = searchHistoryButton.classList.contains("active-button") ? historyCheckedCount : favoriteCheckedCount;
+  const checkedCount = searchHistoryButton.classList.contains("active-button")
+    ? historyCheckedCount
+    : favoriteCheckedCount;
 
   if (checkedCount > 0) {
-    deleteButtonSpan.textContent = `${checkedCount}`;
+    // turn const to string
+    deleteButtonSpan.textContent = chrome.i18n.getMessage('deleteButtonText', checkedCount + '');
     deleteButton.classList.remove("disabled");
     deleteButton.setAttribute("aria-disabled", "false");
   } else {
-    deleteButtonSpan.textContent = "";
+    deleteButtonSpan.textContent = chrome.i18n.getMessage('deleteButtonTextEmpty');
     deleteButton.classList.add("disabled");
     deleteButton.setAttribute("aria-disabled", "true");
   }
@@ -607,3 +611,10 @@ for (var i = 0; i < configureElements.length; i++) {
     event.preventDefault();
   };
 }
+
+// Localization
+document.querySelectorAll("[data-locale]").forEach((elem) => {
+  elem.innerText = chrome.i18n.getMessage(elem.dataset.locale);
+});
+
+searchInput.placeholder = chrome.i18n.getMessage("searchInputPlaceholder");
