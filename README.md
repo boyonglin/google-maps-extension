@@ -26,7 +26,7 @@
 - [x] Save the favorite spot
 - [x] Delete mode
 - [x] Export the favorite list
-- [ ] Chinese Language
+- [x] Chinese Language
 
 ---
 
