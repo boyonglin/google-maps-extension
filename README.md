@@ -1,6 +1,5 @@
 # google-maps-extension
 > Speed up your Google Maps search flow!
-
 > Search and save right in your browser using Google Maps (fast).
 
 ---

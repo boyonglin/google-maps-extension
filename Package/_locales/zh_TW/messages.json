@@ -9,13 +9,13 @@
     "message": "搜尋記錄"
   },
   "favoriteListSubtitle": {
-    "message": "收藏列表"
+    "message": "收藏清單"
   },
   "historyEmptyMsg": {
-    "message": "反白文字並快速搜尋！\n你的搜尋紀錄會保存在這裡\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "反白文字並快速搜尋！\n你的搜尋記錄會保存在這裡\uD83D\uDC4C\uD83C\uDFFD"
   },
   "favoriteEmptyMsg": {
-    "message": "點擊地點右邊圖標加入收藏！\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "點擊地點右邊圖標來加入收藏清單！\uD83D\uDC4C\uD83C\uDFFD"
   },
   "clearBtnText": {
     "message": "清除"

@@ -16,11 +16,11 @@
     "description": "popup favorite list subtitle"
   },
   "historyEmptyMsg": {
-    "message": "Highlight text and search!\n Your history will be saved here. \uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Highlight TEXT and search!\n Your history will be kept here. \uD83D\uDC4C\uD83C\uDFFD",
     "description": "popup no search history message"
   },
   "favoriteEmptyMsg": {
-    "message": "Click PATCH and save your favorite spots here! \uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Click right PATCH to save!\n Your favorite spots will be kept here. \uD83D\uDC4C\uD83C\uDFFD",
     "description": "popup no favorite list message"
   },
   "clearBtnText": {
