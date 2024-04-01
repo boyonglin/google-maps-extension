@@ -23,23 +23,23 @@
     "message": "Click PATCH and save your favorite spots here! \uD83D\uDC4C\uD83C\uDFFD",
     "description": "popup no favorite list message"
   },
-  "clearButtonText": {
+  "clearBtnText": {
     "message": "Clear",
     "description": "popup clear button text"
   },
-  "mapsButtonText": {
+  "mapsBtnText": {
     "message": "Google Maps",
     "description": "popup google maps button text"
   },
-  "cancelButtonText": {
+  "cancelBtnText": {
     "message": "Cancel",
     "description": "popup cancel button text"
   },
-  "deleteButtonTextEmpty": {
+  "deleteBtnTextEmpty": {
     "message": "Delete spot(s)",
     "description": "popup empty states delete button text"
   },
-  "deleteButtonText": {
+  "deleteBtnText": {
     "message": "Delete $checkedCount$ spot(s)",
     "description": "popup delete button text passed with checked count",
     "placeholders": {
@@ -81,7 +81,7 @@
     "message": "Tip",
     "description": "popup tip button text"
   },
-  "clearedUPMsg": {
+  "clearedUpMsg": {
     "message": "Cleared up! \uD83D\uDC4D\uD83C\uDFFD",
     "description": "popup cleared up message"
   }

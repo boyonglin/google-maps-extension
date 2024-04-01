@@ -567,11 +567,11 @@ function updateDeleteCount() {
 
   if (checkedCount > 0) {
     // turn const to string
-    deleteButtonSpan.textContent = chrome.i18n.getMessage('deleteButtonText', checkedCount + '');
+    deleteButtonSpan.textContent = chrome.i18n.getMessage('deleteBtnText', checkedCount + '');
     deleteButton.classList.remove("disabled");
     deleteButton.setAttribute("aria-disabled", "false");
   } else {
-    deleteButtonSpan.textContent = chrome.i18n.getMessage('deleteButtonTextEmpty');
+    deleteButtonSpan.textContent = chrome.i18n.getMessage('deleteBtnTextEmpty');
     deleteButton.classList.add("disabled");
     deleteButton.setAttribute("aria-disabled", "true");
   }

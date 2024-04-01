@@ -17,19 +17,19 @@
   "favoriteEmptyMsg": {
     "message": "點擊地點右邊圖標加入收藏！\uD83D\uDC4C\uD83C\uDFFD"
   },
-  "clearButtonText": {
+  "clearBtnText": {
     "message": "清除"
   },
-  "mapsButtonText": {
+  "mapsBtnText": {
     "message": "Google 地圖"
   },
-  "cancelButtonText": {
+  "cancelBtnText": {
     "message": "取消"
   },
-  "deleteButtonTextEmpty": {
+  "deleteBtnTextEmpty": {
     "message": "刪除地點"
   },
-  "deleteButtonText": {
+  "deleteBtnText": {
     "message": "刪除 $checkedCount$ 個地點",
     "placeholders": {
       "checkedCount": {
@@ -61,7 +61,7 @@
   "tipBtnText": {
     "message": "提示"
   },
-  "clearedUPMsg": {
+  "clearedUpMsg": {
     "message": "清除完畢！\uD83D\uDC4D\uD83C\uDFFD"
   }
 }
