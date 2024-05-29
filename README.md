@@ -54,6 +54,8 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
 ![keyboard_shortcuts](https://github.com/boyonglin/google-maps-extension/assets/56038738/783c9cbc-4e9f-4818-b075-e0da69efacf0)
 3. Click the input field and type the shortcut\
 ![type_the_shortcut](https://github.com/boyonglin/google-maps-extension/assets/56038738/248921af-ee7e-42af-ab2b-080bf03190b0)
+4. Change to "Global" level (if necessary)\
+![shortcut level](https://github.com/boyonglin/google-maps-extension/assets/56038738/295e0d03-7a85-4851-8037-1ac574f1b99d)
 
 ---
 
