@@ -177,7 +177,7 @@ exportButton.addEventListener("click", function () {
     // Create a temporary anchor element and trigger the download
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "favoriteList.json";
+    a.download = "GoogleMapsFast_FavoriteList.json";
     a.click();
   });
 });
