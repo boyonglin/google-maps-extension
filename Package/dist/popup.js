@@ -618,3 +618,17 @@ document.querySelectorAll("[data-locale]").forEach((elem) => {
 });
 
 searchInput.placeholder = chrome.i18n.getMessage("searchInputPlaceholder");
+
+// Ignore pressing the Enter key which means confirmation
+let isComposing = false;
+document.getElementById('searchInput').addEventListener('compositionstart', () => {
+    isComposing = true;
+});
+document.getElementById('searchInput').addEventListener('compositionend', () => {
+    isComposing = false;
+});
+document.addEventListener("keydown", (e) => {
+  if(e.key === 'Enter' && isComposing) {
+    e.stopPropagation();
+  }
+}, true)
