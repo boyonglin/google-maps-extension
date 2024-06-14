@@ -52,6 +52,9 @@
   "searchBarKeyLabel": {
     "message": "搜尋方塊"
   },
+  "shortcutsNote": {
+    "message": "你可以點擊上面的組合鍵來設定擴充功能的快捷鍵"
+  },
   "authorBtnText": {
     "message": "作者"
   },

@@ -69,6 +69,10 @@
     "message": "Search Bar",
     "description": "popup tips search bar key label"
   },
+  "shortcutsNote": {
+    "message": "You can click key combinations above to set extensions shortcuts.",
+    "description": "popup tips shortcuts note"
+  },
   "authorBtnText": {
     "message": "Author",
     "description": "popup author button text"
