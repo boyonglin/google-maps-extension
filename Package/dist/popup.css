@@ -10,6 +10,7 @@
   --gray-800: #202833;
   --gray-600: #70757a;
   --gray-400: #dadce0;
+  --gray-300: #eff1f3;
   --gray-200: #f6fafe;
   --google-green: #0f9d58;
   --google-green-500: #87cdab;
@@ -17,10 +18,16 @@
   --google-yellow: #f4b400;
   --google-yellow-500: #f9d980;
   --google-yellow-bg: #fffdf7;
+  --google-purple-hover: #6C61A4;
+  --google-purple: #8779CD;
+  --google-purple-500: #C3BCE6;
+  --google-purple-bg: #FAFAFD;
 }
 
-body {
+html, body {
   width: 400px;
+  box-sizing: border-box;
+  overflow: auto;
   color: var(--gray-800);
   font-family: "Satoshi", sans-serif;
 }
@@ -36,18 +43,18 @@ body {
   margin-right: -2px;
 }
 
-.form-control {
+#searchInput {
   border-left: 0;
   border-top-right-radius: 32px;
   border-bottom-right-radius: 32px;
 }
 
-.form-control::placeholder {
+#searchInput::placeholder {
   color: var(--gray-600);
   font-weight: light;
 }
 
-.form-control:focus {
+#searchInput:focus {
   color: var(--gray-600);
   background-color: var(--background-color);
   border-color: var(--border-color);
@@ -55,8 +62,53 @@ body {
   box-shadow: none;
 }
 
-.form-control:focus::placeholder {
+#searchInput:focus::placeholder {
   opacity: 0;
+}
+
+#apiInput {
+  border-radius: 32px;
+  padding-left: 16px;
+}
+
+#apiInput::placeholder {
+  color: var(--gray-600);
+  font-weight: light;
+}
+
+#apiInput:focus {
+  color: var(--gray-600);
+  background-color: var(--background-color);
+  border-color: var(--border-color);
+  outline: none;
+  box-shadow: none;
+}
+
+#apiInput:focus::placeholder {
+  opacity: 0;
+}
+
+.btn-setAPI {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--google-purple);
+  color: white;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.btn-setAPI i {
+  font-size: 16px;
+  padding-top: 1px;
+}
+
+.modal-footer p a {
+  color: var(--google-purple);
+  font-weight: bold;
+  text-decoration: none;
 }
 
 .input-group-text.brand img {
@@ -95,9 +147,23 @@ body {
   border: 1px solid var(--danger-color) !important;
 }
 
+.summary-list:hover {
+  color: var(--google-purple);
+  background-color: var(--google-purple-bg);
+  border: 1px solid var(--google-purple) !important;
+}
+
 #searchHistoryList,
-#favoriteList {
+#favoriteList,
+#summaryList {
   max-height: 280px;
+}
+
+#searchHistoryList ul,
+#favoriteList ul,
+#summaryList ul {
+  min-height: 104px;
+  justify-content: flex-end;
 }
 
 /* list icon */
@@ -147,6 +213,11 @@ li:hover .form-check-input {
 }
 
 /* buttons */
+.btn-light {
+  background-color: var(--gray-300);
+  border: 1px solid var(--gray-300);
+}
+
 .btn-maps {
   background-color: var(--primary-color);
   border: 1px solid var(--primary-color);
@@ -181,9 +252,54 @@ li:hover .form-check-input {
   color: var(--background-color);
 }
 
+.btn-send {
+  background-color: var(--google-purple);
+  border: 1px solid var(--google-purple);
+  color: var(--background-color);
+}
+
+#sendButton:hover {
+  background-color: var(--google-purple-hover);
+  border: 1px solid var(--google-purple-hover);
+  color: var(--background-color);
+}
+
+#sendButton:focus-visible {
+  background-color: var(--google-purple);
+  box-shadow: 0 0 0 4px var(--google-purple-500);
+  color: var(--background-color);
+}
+
+#sendButton:disabled {
+  background-color: var(--google-purple);
+  border: 1px solid var(--google-purple);
+  color: var(--background-color);
+  opacity: 0.65;
+}
+
+.shineText {
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  0% {
+      opacity: 1;
+  }
+  25% {
+      opacity: 1;
+  }
+  50% {
+      opacity: 0.5;
+  }
+  100% {
+      opacity: 1;
+  }
+}
+
 #searchHistoryButton,
 #favoriteListButton,
-#deleteListButton {
+#deleteListButton,
+#geminiSummaryButton {
   border: none;
   color: var(--gray-600);
   position: relative;
@@ -249,9 +365,26 @@ li:hover .form-check-input {
   box-shadow: 0 0 0 4px var(--danger-color-500);
 }
 
+#geminiSummaryButton:hover,
+#geminiSummaryButton.active-button {
+  background-color: transparent;
+  color: var(--google-purple);
+}
+
+#geminiSummaryButton:hover::after,
+#geminiSummaryButton.active-button::after {
+  background-color: var(--google-purple);
+}
+
+#geminiSummaryButton.active-button:focus-visible {
+  background-color: transparent;
+  box-shadow: 0 0 0 4px var(--google-purple-500);
+}
+
 #searchHistoryButton:focus,
 #favoriteListButton:focus,
-#deleteListButton:focus {
+#deleteListButton:focus,
+#geminiSummaryButton:focus {
   background-color: transparent;
 }
 
@@ -292,23 +425,18 @@ li:hover .form-check-input {
   0% {
     transform: scale(1);
   }
-
   20% {
     transform: scale(1.1);
   }
-
   40% {
     transform: scale(0.9);
   }
-
   60% {
     transform: scale(1.05);
   }
-
   80% {
     transform: scale(0.95);
   }
-
   100% {
     transform: scale(1);
   }

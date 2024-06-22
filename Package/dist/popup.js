@@ -1,20 +1,35 @@
+// Page
+const pageSearch = document.getElementsByClassName("page-S");
+const pageFavorite = document.getElementsByClassName("page-F");
+const pageDelete = document.getElementsByClassName("page-D");
+const pageGemini = document.getElementsByClassName("page-G");
+
 // Context
+const searchInput = document.getElementById("searchInput");
+const apiInput = document.getElementById("apiInput");
+const subtitleElement = document.getElementById("subtitle");
 const emptyMessage = document.getElementById("emptyMessage");
 const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
-const searchInput = document.getElementById("searchInput");
-const subtitleElement = document.getElementById("subtitle");
+const geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
 
 // Lists
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
 const favoriteListContainer = document.getElementById("favoriteList");
+const summaryListContainer = document.getElementById("summaryList");
+const searchHistoryUl = searchHistoryListContainer.getElementsByTagName("ul");
+const favoriteUl = favoriteListContainer.getElementsByTagName("ul");
+
+// Page Buttons
 const searchHistoryButton = document.getElementById("searchHistoryButton");
 const favoriteListButton = document.getElementById("favoriteListButton");
 const deleteListButton = document.getElementById("deleteListButton");
+const geminiSummaryButton = document.getElementById("geminiSummaryButton");
 
 // Buttons
 const searchButtonGroup = document.getElementById("searchButtonGroup");
 const deleteButtonGroup = document.getElementById("deleteButtonGroup");
 const exportButtonGroup = document.getElementById("exportButtonGroup");
+const geminiButtonGroup = document.getElementById("geminiButtonGroup");
 const clearButton = document.getElementById("clearButton");
 const cancelButton = document.getElementById("cancelButton");
 const deleteButton = document.getElementById("deleteButton");
@@ -22,8 +37,10 @@ const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
 const exportButton = document.getElementById("exportButton");
 const importButton = document.getElementById("importButton");
 const fileInput = document.getElementById("fileInput");
+const apiButton = document.getElementById("apiButton");
+const sendButton = document.getElementById("sendButton");
 
-let [hasHistory, hasFavorite] = [false, false];
+let [hasHistory, hasFavorite, hasSummary] = [false, false, false];
 
 // Track keypress events on the search bar
 if (searchInput) {
@@ -44,6 +61,11 @@ if (searchInput) {
 
 // Executed after the document has finished loading
 document.addEventListener("DOMContentLoaded", function () {
+  for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.remove("d-none");
+  for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.add("d-none");
+  for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
+  for (let i = 0; i < pageGemini.length; i++) pageGemini[i].classList.add("d-none");
+
   if (!hasHistory) {
     emptyMessage.style.display = "block";
   }
@@ -51,6 +73,22 @@ document.addEventListener("DOMContentLoaded", function () {
   // Add event listeners to the checkboxes
   attachEventListeners(searchHistoryListContainer);
   attachEventListeners(favoriteListContainer);
+
+  // Check if the API key is saved and valid
+  chrome.storage.local.get("geminiApiKey", function(data) {
+    const apiKey = data.geminiApiKey;
+    if (apiKey) {
+      verifyApiKey(apiKey).then(isValid => {
+        if (isValid) {
+          chrome.storage.local.set({ geminiApiKey: apiKey }, function() {
+            sendButton.disabled = false;
+          });
+        } else {
+          sendButton.disabled = true;
+        }
+      });
+    }
+  });
 });
 
 function attachEventListeners(container) {
@@ -73,41 +111,40 @@ function attachEventListeners(container) {
 }
 
 searchHistoryButton.addEventListener("click", function () {
-  searchButtonGroup.classList.remove("d-none");
-  exportButtonGroup.classList.add("d-none");
-
-  searchHistoryListContainer.style.display = "block";
-  favoriteListContainer.style.display = "none";
+  for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.remove("d-none");
+  for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.add("d-none");
+  for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
+  for (let i = 0; i < pageGemini.length; i++) pageGemini[i].classList.add("d-none");
 
   searchHistoryButton.classList.add("active-button");
   favoriteListButton.classList.remove("active-button");
   deleteListButton.classList.remove("active-button");
+  geminiSummaryButton.classList.remove("active-button");
 
   subtitleElement.textContent = chrome.i18n.getMessage("searchHistorySubtitle");
   if (!hasHistory) {
     emptyMessage.style.display = "block";
     clearButton.disabled = true;
-    clearButton.setAttribute("aria-disabled", "true");
   } else {
     emptyMessage.style.display = "none";
     clearButton.disabled = false;
-    clearButton.setAttribute("aria-disabled", "false");
   }
-  favoriteEmptyMessage.style.display = "none";
+
+  deleteListButton.disabled = false;
 
   updateInput();
 });
 
 favoriteListButton.addEventListener("click", function () {
-  searchButtonGroup.classList.add("d-none");
-  exportButtonGroup.classList.remove("d-none");
-
-  favoriteListContainer.style.display = "block";
-  searchHistoryListContainer.style.display = "none";
+  for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.add("d-none");
+  for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.remove("d-none");
+  for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
+  for (let i = 0; i < pageGemini.length; i++) pageGemini[i].classList.add("d-none");
 
   favoriteListButton.classList.add("active-button");
   searchHistoryButton.classList.remove("active-button");
   deleteListButton.classList.remove("active-button");
+  geminiSummaryButton.classList.remove("active-button");
 
   subtitleElement.textContent = chrome.i18n.getMessage("favoriteListSubtitle");
   if (!hasFavorite) {
@@ -115,9 +152,8 @@ favoriteListButton.addEventListener("click", function () {
   } else {
     favoriteEmptyMessage.style.display = "none";
   }
-  emptyMessage.style.display = "none";
-  clearButton.disabled = true;
-  clearButton.setAttribute("aria-disabled", "true");
+
+  deleteListButton.disabled = false;
 
   updateInput();
 });
@@ -131,6 +167,7 @@ deleteListButton.addEventListener("click", function () {
   } else {
     deleteListButton.classList.add("active-button");
     deleteListButton.style.pointerEvents = "auto";
+
     searchButtonGroup.classList.add("d-none");
     exportButtonGroup.classList.add("d-none");
     deleteButtonGroup.classList.remove("d-none");
@@ -158,11 +195,33 @@ deleteListButton.addEventListener("click", function () {
 
     if (searchHistoryButton.classList.contains("active-button")) {
       favoriteListButton.disabled = true;
+      geminiSummaryButton.disabled = true;
       updateDeleteCount();
     } else {
       searchHistoryButton.disabled = true;
+      geminiSummaryButton.disabled = true;
       updateDeleteCount();
     }
+  }
+});
+
+geminiSummaryButton.addEventListener("click", function () {
+  for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.add("d-none");
+  for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.add("d-none");
+  for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
+  for (let i = 0; i < pageGemini.length; i++) pageGemini[i].classList.remove("d-none");
+
+  searchHistoryButton.classList.remove("active-button");
+  favoriteListButton.classList.remove("active-button");
+  geminiSummaryButton.classList.add("active-button");
+  deleteListButton.disabled = true;
+
+  subtitleElement.textContent = chrome.i18n.getMessage("geminiSummarySubtitle");
+
+  if (!hasSummary) {
+    geminiEmptyMessage.classList.remove("d-none");
+  } else {
+    geminiEmptyMessage.classList.add("d-none");
   }
 });
 
@@ -196,8 +255,10 @@ fileInput.addEventListener("change", function (event) {
     try {
       const importedData = JSON.parse(event.target.result);
       chrome.storage.local.set({ favoriteList: importedData });
+      favoriteEmptyMessage.style.display = "none";
     } catch (error) {
-      alert("Please retry or report the issue: ", error);
+      favoriteEmptyMessage.style.display = "block";
+      favoriteEmptyMessage.innerText = chrome.i18n.getMessage("importErrorMsg");
     }
   };
 
@@ -225,7 +286,6 @@ chrome.storage.local.get(
   ({ searchHistoryList, favoriteList }) => {
     if (searchHistoryList && searchHistoryList.length > 0) {
       emptyMessage.style.display = "none";
-      favoriteEmptyMessage.style.display = "none";
       hasHistory = true;
 
       const ul = document.createElement("ul");
@@ -259,15 +319,12 @@ chrome.storage.local.get(
       searchHistoryListContainer.appendChild(ul);
     } else {
       emptyMessage.style.display = "block";
-      favoriteEmptyMessage.style.display = "none";
       hasHistory = false;
       clearButton.disabled = true;
-      clearButton.setAttribute("aria-disabled", "true");
     }
 
     if (favoriteList && favoriteList.length > 0) {
       favoriteEmptyMessage.style.display = "none";
-      emptyMessage.style.display = "none";
       hasFavorite = true;
 
       const ul = document.createElement("ul");
@@ -297,6 +354,7 @@ chrome.storage.local.get(
       });
       favoriteListContainer.appendChild(ul);
     } else {
+      favoriteEmptyMessage.style.display = "block";
       hasFavorite = false;
       exportButton.disabled = true;
     }
@@ -386,6 +444,24 @@ favoriteListContainer.addEventListener("click", function (event) {
   }
 });
 
+summaryListContainer.addEventListener("click", function (event) {
+  let liElement;
+  if (event.target.tagName === "LI") {
+    liElement = event.target;
+  } else if (event.target.parentElement.tagName === "LI") {
+    liElement = event.target.parentElement;
+  } else {
+    return;
+  }
+
+  const selectedText = liElement.textContent;
+  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
+    selectedText
+  )}`;
+
+  window.open(searchUrl, "_blank", "popup");
+});
+
 // Track the click event on clear button
 clearButton.addEventListener("click", () => {
   searchHistoryListContainer.innerHTML = "";
@@ -396,9 +472,8 @@ clearButton.addEventListener("click", () => {
   // Clear all searchHistoryList data
   chrome.storage.local.set({ searchHistoryList: [] }, () => {
     clearButton.disabled = true;
-    clearButton.setAttribute("aria-disabled", "true");
     emptyMessage.style.display = "block";
-    emptyMessage.innerHTML = chrome.i18n.getMessage('clearedUpMsg');
+    emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg");
   });
 });
 
@@ -422,7 +497,6 @@ function updateFavoriteListContainer(favoriteList) {
 
   if (favoriteList && favoriteList.length > 0) {
     favoriteEmptyMessage.style.display = "none";
-    emptyMessage.style.display = "none";
     hasFavorite = true;
 
     const ul = document.createElement("ul");
@@ -457,6 +531,7 @@ function updateFavoriteListContainer(favoriteList) {
 
     attachEventListeners(favoriteListContainer);
   } else {
+    favoriteEmptyMessage.style.display = "block";
     hasFavorite = false;
     exportButton.disabled = true;
   }
@@ -510,11 +585,11 @@ function deleteFromHistoryList() {
     chrome.storage.local.set({ searchHistoryList: updatedList });
 
     if (updatedList.length === 0) {
-      emptyMessage.innerHTML = chrome.i18n.getMessage('clearedUpMsg');
-      emptyMessage.style.display = "block";
       hasHistory = false;
       clearButton.disabled = true;
-      clearButton.setAttribute("aria-disabled", "true");
+      searchHistoryUl[0].classList.add("d-none");
+      emptyMessage.classList.remove("d-none");
+      emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg");
     }
   });
 }
@@ -546,10 +621,11 @@ function deleteFromFavoriteList() {
     chrome.storage.local.set({ favoriteList: updatedList });
 
     if (updatedList.length === 0) {
-      favoriteEmptyMessage.innerHTML = chrome.i18n.getMessage('clearedUpMsg');
-      favoriteEmptyMessage.style.display = "block";
       hasFavorite = false;
       exportButton.disabled = true;
+      favoriteUl[0].classList.add("d-none");
+      favoriteEmptyMessage.classList.remove("d-none");
+      favoriteEmptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg");
     }
   });
 }
@@ -567,13 +643,11 @@ function updateDeleteCount() {
 
   if (checkedCount > 0) {
     // turn const to string
-    deleteButtonSpan.textContent = chrome.i18n.getMessage('deleteBtnText', checkedCount + '');
+    deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnText", checkedCount + "");
     deleteButton.classList.remove("disabled");
-    deleteButton.setAttribute("aria-disabled", "false");
   } else {
-    deleteButtonSpan.textContent = chrome.i18n.getMessage('deleteBtnTextEmpty');
+    deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnTextEmpty");
     deleteButton.classList.add("disabled");
-    deleteButton.setAttribute("aria-disabled", "true");
   }
 }
 
@@ -584,11 +658,11 @@ function backToNormal() {
   if (searchHistoryButton.classList.contains("active-button")) {
     searchButtonGroup.classList.remove("d-none");
     favoriteListButton.disabled = false;
-    favoriteListButton.setAttribute("aria-disabled", "false");
+    geminiSummaryButton.disabled = false;
   } else {
     exportButtonGroup.classList.remove("d-none");
     searchHistoryButton.disabled = false;
-    searchHistoryButton.setAttribute("aria-disabled", "false");
+    geminiSummaryButton.disabled = false;
   }
 
   updateInput();
@@ -621,14 +695,127 @@ searchInput.placeholder = chrome.i18n.getMessage("searchInputPlaceholder");
 
 // Ignore pressing the Enter key which means confirmation
 let isComposing = false;
-document.getElementById('searchInput').addEventListener('compositionstart', () => {
+document.getElementById("searchInput").addEventListener("compositionstart", () => {
     isComposing = true;
 });
-document.getElementById('searchInput').addEventListener('compositionend', () => {
+document.getElementById("searchInput").addEventListener("compositionend", () => {
     isComposing = false;
 });
 document.addEventListener("keydown", (e) => {
-  if(e.key === 'Enter' && isComposing) {
+  if(e.key === "Enter" && isComposing) {
     e.stopPropagation();
   }
 }, true)
+
+// Get Gemini response
+const responseField = document.getElementById("response");
+
+sendButton.addEventListener("click", () => {
+  sendButton.disabled = true;
+
+  summaryListContainer.innerHTML = "";
+
+  chrome.storage.local.get("geminiApiKey", function(data) {
+    const apiKey = data.geminiApiKey;
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "getContent" }, (response) => {
+        if (response && response.content) {
+          summarizeContent(response.content, apiKey);
+        }
+
+        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiLoadMsg");
+        geminiEmptyMessage.classList.remove("d-none");
+        geminiEmptyMessage.classList.add("shineText");
+
+        const originalText = geminiEmptyMessage.innerHTML;
+        const newText = originalText.replace("NaN", Math.ceil(response.length / 500));
+        geminiEmptyMessage.innerHTML = newText;
+      });
+    });
+  });
+});
+
+function summarizeContent(content, apiKey) {
+  responseField.value = "";
+
+  chrome.runtime.sendMessage({ action: "callApi", text: content , apiKey: apiKey}, (response) => {
+    if (response.error) {
+      responseField.value = `API Error: ${response.error}`;
+      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
+    } else {
+      responseField.value = response;
+      try {
+        summaryListContainer.innerHTML = response;
+        hasSummary = true;
+        geminiEmptyMessage.classList.remove("shineText");
+        geminiEmptyMessage.classList.add("d-none");
+      } catch (error) {
+        responseField.value = `HTML Error: ${error}`;
+        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
+      }
+    }
+    sendButton.disabled = false;
+  });
+}
+
+// Google AI Studio link
+const pElement = document.querySelector('p[data-locale="apiNote"]');
+
+const originalText = pElement.innerHTML;
+const newText = originalText.replace("Google AI Studio",
+  '<a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>');
+pElement.innerHTML = newText;
+
+// Save the API key
+document.getElementById("apiForm").addEventListener("submit", function(event) {
+  event.preventDefault();
+  const apiKey = document.getElementById("apiInput").value;
+
+  // Verify the API key before saving
+  verifyApiKey(apiKey).then(isValid => {
+    if (isValid) {
+      chrome.storage.local.set({ geminiApiKey: apiKey }, function() {
+        sendButton.disabled = false;
+      });
+    } else {
+      geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
+      sendButton.disabled = true;
+    }
+  });
+});
+
+// Function to verify the API key
+async function verifyApiKey(apiKey) {
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+  const data = {
+    contents: [{
+      parts: [{
+        text: "test"
+      }]
+    }]
+  };
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
+    const data_1 = await response.json();
+    if (data_1.error) {
+      throw new Error(data_1.error.message);
+    }
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Clear the API key
+const apiModal = document.getElementById("apiModal");
+apiModal.addEventListener("hidden.bs.modal", function () {
+  document.getElementById("apiInput").value = "";
+});

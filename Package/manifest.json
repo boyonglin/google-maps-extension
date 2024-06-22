@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Google Maps (fast)",
-  "version": "1.4.8",
+  "version": "1.5.1",
   "description": "Speed up your search flow on Google Maps!",
   "icons": {
     "16": "images/icon-16.png",
@@ -22,7 +22,8 @@
     "activeTab",
     "contextMenus",
     "storage",
-    "offscreen"
+    "offscreen",
+    "scripting"
   ],
   "background": {
     "service_worker": "dist/background.js"
@@ -54,5 +55,8 @@
       "run_at": "document_end"
     }
   ],
-  "default_locale": "en"
+  "default_locale": "en",
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*"
+  ]
 }

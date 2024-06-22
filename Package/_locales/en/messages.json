@@ -15,13 +15,41 @@
     "message": "Favorite List",
     "description": "popup favorite list subtitle"
   },
+  "geminiSummarySubtitle": {
+    "message": "Gemini Summary",
+    "description": "popup gemini summary subtitle"
+  },
   "historyEmptyMsg": {
-    "message": "Highlight TEXT and search!\n Your history will be kept here. \uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Highlight TEXT and search!\nYour search history will be kept here.\uD83D\uDC4C\uD83C\uDFFD",
     "description": "popup no search history message"
   },
   "favoriteEmptyMsg": {
-    "message": "Click right PATCH to save!\n Your favorite spots will be kept here. \uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Click right PATCH to save!\nYour favorite spots can be saved without limits.\uD83D\uDC4C\uD83C\uDFFD",
     "description": "popup no favorite list message"
+  },
+  "importErrorMsg": {
+    "message": "Something went wrong!\nPlease verify the .json file and try again.\ud83d\udea7",
+    "description": "popup import error message"
+  },
+  "clearedUpMsg": {
+    "message": "\nCleared up! \uD83D\uDC4D\uD83C\uDFFD",
+    "description": "popup cleared up message"
+  },
+  "geminiEmptyMsg": {
+    "message": "Try Summary the page by AI!\nYou can regenerate if results are unexpected.\uD83D\uDC4C\uD83C\uDFFD",
+    "description": "popup no gemini summary message"
+  },
+  "geminiLoadMsg": {
+    "message": "Treating the sea as a snack\nmakes waiting romantic... (Est. NaNs)",
+    "description": "popup gemini model loading message"
+  },
+  "geminiErrorMsg": {
+    "message": "Something went wrong!\nPlease reload the page and try again.\ud83d\udea7",
+    "description": "popup gemini summary error message"
+  },
+  "apiInvalidMsg": {
+    "message": "The API key is invalid!\nPlease check and try again.\ud83d\udea7",
+    "description": "popup api invalid key message"
   },
   "clearBtnText": {
     "message": "Clear",
@@ -57,6 +85,14 @@
     "message": "Import",
     "description": "popup import button text"
   },
+  "apiBtnText": {
+    "message": "API",
+    "description": "popup api button text"
+  },
+  "sendBtnText": {
+    "message": "Summary",
+    "description": "popup send button text"
+  },
   "shortcutsTitle": {
     "message": "Shortcuts",
     "description": "popup tips shortcuts title"
@@ -85,8 +121,12 @@
     "message": "Tip",
     "description": "popup tip button text"
   },
-  "clearedUpMsg": {
-    "message": "Cleared up! \uD83D\uDC4D\uD83C\uDFFD",
-    "description": "popup cleared up message"
+  "apiTitle": {
+    "message": "Set up your API keys",
+    "description": "popup api title"
+  },
+  "apiNote": {
+    "message": "You can obtain a free API key from Google AI Studio, with a limit of 15 requests/minute and 1,500 requests/day.",
+    "description": "popup api key input note"
   }
 }

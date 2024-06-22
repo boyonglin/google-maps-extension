@@ -128,3 +128,60 @@ const preloadHTML = async () => {
     });
   }
 };
+
+// Gemini API
+chrome.action.onClicked.addListener((tab) => {
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    files: ['dist/contentScript.js']
+  });
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'callApi' && request.text) {
+      callApi(request.text, request.apiKey, sendResponse);
+      return true; // Will respond asynchronously
+  }
+});
+
+function callApi(text, apiKey, sendResponse) {
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+
+  const customPrompt = `You are now a searcher for a specific location or landmark. Please list the sub-landmarks most relevant to the title (possibly <h1>) in the text below. Format the output as an unordered list (<ul>) with each sub-landmark as a list item (<li>), and retain the original language of the content. Format like the example below (do not include the example or other tags like <h1>):
+
+  <ul class="list-group d-flex">
+    <li class="list-group-item border rounded mb-3 px-3 summary-list d-flex justify-content-between">
+      <span>Sub-landmark 1</span>
+    </li>
+    <li class="list-group-item border rounded mb-3 px-3 summary-list d-flex justify-content-between">
+      <span>Sub-landmark 2</span>
+    </li>
+    ...
+  </ul>`;
+
+  const data = {
+      contents: [{
+          parts: [{
+              text: customPrompt + text
+          }]
+      }]
+  };
+
+  fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(data => {
+      const generatedText = data.candidates[0].content.parts[0].text;
+      sendResponse(generatedText);
+  })
+  .catch((error) => {
+      console.error('Error:', error);
+      sendResponse({ error: error.toString() });
+  });
+}
+
