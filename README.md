@@ -26,7 +26,7 @@
 - [x] Delete mode
 - [x] Export the favorite list
 - [x] Chinese language
-- [ ] AI summarized locations
+- [x] AI summarized locations
 
 ---
 
