@@ -74,8 +74,16 @@ document.addEventListener("DOMContentLoaded", function () {
   attachEventListeners(searchHistoryListContainer);
   attachEventListeners(favoriteListContainer);
 
-  // Check if the API key is saved and valid
+
+  // Check if the API key is defined and valid
   chrome.storage.local.get("geminiApiKey", function(data) {
+
+    if (!data || !data.geminiApiKey) {
+      sendButton.disabled = true;
+      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+      return;
+    }
+
     const apiKey = data.geminiApiKey;
     if (apiKey) {
       verifyApiKey(apiKey).then(isValid => {
@@ -85,6 +93,7 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         } else {
           sendButton.disabled = true;
+          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
         }
       });
     }
@@ -459,7 +468,8 @@ summaryListContainer.addEventListener("click", function (event) {
     selectedText
   )}`;
 
-  window.open(searchUrl, "_blank", "popup");
+  // window.open(searchUrl, "_blank", "popup");
+  chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
 });
 
 // Track the click event on clear button
@@ -722,15 +732,15 @@ sendButton.addEventListener("click", () => {
       chrome.tabs.sendMessage(tabs[0].id, { action: "getContent" }, (response) => {
         if (response && response.content) {
           summarizeContent(response.content, apiKey);
+
+          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiLoadMsg");
+          geminiEmptyMessage.classList.remove("d-none");
+          geminiEmptyMessage.classList.add("shineText");
+
+          const originalText = geminiEmptyMessage.innerHTML;
+          const newText = originalText.replace("NaN", Math.ceil(response.length / 500));
+          geminiEmptyMessage.innerHTML = newText;
         }
-
-        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiLoadMsg");
-        geminiEmptyMessage.classList.remove("d-none");
-        geminiEmptyMessage.classList.add("shineText");
-
-        const originalText = geminiEmptyMessage.innerHTML;
-        const newText = originalText.replace("NaN", Math.ceil(response.length / 500));
-        geminiEmptyMessage.innerHTML = newText;
       });
     });
   });
@@ -772,12 +782,12 @@ document.getElementById("apiForm").addEventListener("submit", function(event) {
   event.preventDefault();
   const apiKey = document.getElementById("apiInput").value;
 
-  // Verify the API key before saving
+  chrome.storage.local.set({ geminiApiKey: apiKey });
+
   verifyApiKey(apiKey).then(isValid => {
     if (isValid) {
-      chrome.storage.local.set({ geminiApiKey: apiKey }, function() {
-        sendButton.disabled = false;
-      });
+      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+      sendButton.disabled = false;
     } else {
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
       sendButton.disabled = true;

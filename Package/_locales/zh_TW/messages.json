@@ -26,6 +26,9 @@
   "clearedUpMsg": {
     "message": "清除完畢！\uD83D\uDC4D\uD83C\uDFFD"
   },
+  "geminiFirstMsg": {
+    "message": "試試用 AI 來摘要地點！\n你可以從下方設定你的 API 金鑰開始"
+  },
   "geminiEmptyMsg": {
     "message": "試試用 AI 來摘要地點！\n如果結果不符合預期你可以重新生成\uD83D\uDC4C\uD83C\uDFFD"
   },

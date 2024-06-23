@@ -74,6 +74,14 @@ chrome.runtime.onMessage.addListener((request) => {
     const selectedText = request.selectedText;
     addToFavoriteList(selectedText);
   }
+
+  // Opens the tab without focusing on it
+  if (request.action === 'openTab') {
+    chrome.tabs.create({
+      url: request.url,
+      active: false
+    });
+  }
 });
 
 // Add the selected text to history list

@@ -35,6 +35,10 @@
     "message": "\nCleared up! \uD83D\uDC4D\uD83C\uDFFD",
     "description": "popup cleared up message"
   },
+  "geminiFirstMsg": {
+    "message": "Try Summary the page by AI!\nYou can start by setting up your API key below.",
+    "description": "popup first gemini summary message"
+  },
   "geminiEmptyMsg": {
     "message": "Try Summary the page by AI!\nYou can regenerate if results are unexpected.\uD83D\uDC4C\uD83C\uDFFD",
     "description": "popup no gemini summary message"
@@ -122,7 +126,7 @@
     "description": "popup tip button text"
   },
   "apiTitle": {
-    "message": "Set up your API keys",
+    "message": "Set up your API key",
     "description": "popup api title"
   },
   "apiNote": {
