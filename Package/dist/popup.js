@@ -73,31 +73,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Add event listeners to the checkboxes
   attachEventListeners(searchHistoryListContainer);
   attachEventListeners(favoriteListContainer);
-
-
-  // Check if the API key is defined and valid
-  chrome.storage.local.get("geminiApiKey", function(data) {
-
-    if (!data || !data.geminiApiKey) {
-      sendButton.disabled = true;
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-      return;
-    }
-
-    const apiKey = data.geminiApiKey;
-    if (apiKey) {
-      verifyApiKey(apiKey).then(isValid => {
-        if (isValid) {
-          chrome.storage.local.set({ geminiApiKey: apiKey }, function() {
-            sendButton.disabled = false;
-          });
-        } else {
-          sendButton.disabled = true;
-          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-        }
-      });
-    }
-  });
 });
 
 function attachEventListeners(container) {
@@ -142,6 +117,8 @@ searchHistoryButton.addEventListener("click", function () {
   deleteListButton.disabled = false;
 
   updateInput();
+
+  updateFavoriteIcons()
 });
 
 favoriteListButton.addEventListener("click", function () {
@@ -232,6 +209,30 @@ geminiSummaryButton.addEventListener("click", function () {
   } else {
     geminiEmptyMessage.classList.add("d-none");
   }
+
+  // Check if the API key is defined and valid
+  chrome.storage.local.get("geminiApiKey", function(data) {
+
+    if (!data || !data.geminiApiKey) {
+      sendButton.disabled = true;
+      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+      return;
+    }
+
+    const apiKey = data.geminiApiKey;
+    if (apiKey) {
+      verifyApiKey(apiKey).then(isValid => {
+        if (isValid) {
+          chrome.storage.local.set({ geminiApiKey: apiKey }, function() {
+            sendButton.disabled = false;
+          });
+        } else {
+          sendButton.disabled = true;
+          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+        }
+      });
+    }
+  });
 });
 
 exportButton.addEventListener("click", function () {
@@ -262,9 +263,18 @@ fileInput.addEventListener("change", function (event) {
   const reader = new FileReader();
   reader.onload = function (event) {
     try {
-      const importedData = JSON.parse(event.target.result);
+      let importedData = [];
+      const fileContent = event.target.result;
+
+      if (fileContent) {
+        importedData = JSON.parse(fileContent);
+        favoriteEmptyMessage.style.display = "none";
+      } else {
+        favoriteEmptyMessage.style.display = "block";
+      }
+
       chrome.storage.local.set({ favoriteList: importedData });
-      favoriteEmptyMessage.style.display = "none";
+
     } catch (error) {
       favoriteEmptyMessage.style.display = "block";
       favoriteEmptyMessage.innerText = chrome.i18n.getMessage("importErrorMsg");
@@ -474,17 +484,19 @@ summaryListContainer.addEventListener("click", function (event) {
 
 // Track the click event on clear button
 clearButton.addEventListener("click", () => {
+  // Clear all searchHistoryList data
+  chrome.storage.local.set({ searchHistoryList: [] });
+
+  clearButton.disabled = true;
   searchHistoryListContainer.innerHTML = "";
+
+  emptyMessage.style.display = "block";
+  emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg").replace(/\n/g, "<br>");
+
   hasHistory = false;
+
   // Send a message to background.js to request clearing of selected text list data
   chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
-
-  // Clear all searchHistoryList data
-  chrome.storage.local.set({ searchHistoryList: [] }, () => {
-    clearButton.disabled = true;
-    emptyMessage.style.display = "block";
-    emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg");
-  });
 });
 
 // Track the storage change event
@@ -547,6 +559,20 @@ function updateFavoriteListContainer(favoriteList) {
   }
 }
 
+// Update the favorite icons in the search history list
+function updateFavoriteIcons() {
+  chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
+    const historyItems = document.querySelectorAll(".history-list");
+    historyItems.forEach(item => {
+      const text = item.querySelector("span").textContent;
+      const favoriteIcon = item.querySelector("i");
+      if (favoriteList && !favoriteList.includes(text)) {
+        favoriteIcon.className = "bi bi-patch-plus-fill";
+      }
+    });
+  });
+}
+
 // Toggle checkbox display
 function updateInput() {
   const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
@@ -598,8 +624,8 @@ function deleteFromHistoryList() {
       hasHistory = false;
       clearButton.disabled = true;
       searchHistoryUl[0].classList.add("d-none");
-      emptyMessage.classList.remove("d-none");
-      emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg");
+      emptyMessage.style.display = "block";
+      emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg").replace(/\n/g, "<br>");
     }
   });
 }
@@ -634,8 +660,8 @@ function deleteFromFavoriteList() {
       hasFavorite = false;
       exportButton.disabled = true;
       favoriteUl[0].classList.add("d-none");
-      favoriteEmptyMessage.classList.remove("d-none");
-      favoriteEmptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg");
+      favoriteEmptyMessage.style.display = "block";
+      favoriteEmptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg").replace(/\n/g, "<br>");
     }
   });
 }
@@ -738,13 +764,24 @@ sendButton.addEventListener("click", () => {
           geminiEmptyMessage.classList.add("shineText");
 
           const originalText = geminiEmptyMessage.innerHTML;
-          const newText = originalText.replace("NaN", Math.ceil(response.length / 500));
+          const divisor = isPredominantlyLatinChars(response.content) ? 1500 : 750;
+
+          const newText = originalText.replace("NaN", Math.ceil(response.length / divisor));
           geminiEmptyMessage.innerHTML = newText;
         }
       });
     });
   });
 });
+
+// Check if the content is predominantly Latin characters
+function isPredominantlyLatinChars(text) {
+  const totalChars = text.length;
+  const latinChars = text.match(/[a-zA-Z\u00C0-\u00FF]/g)?.length || 0;
+  const squareChars =  text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g)?.length || 0;
+
+  return latinChars > squareChars;
+}
 
 function summarizeContent(content, apiKey) {
   responseField.value = "";

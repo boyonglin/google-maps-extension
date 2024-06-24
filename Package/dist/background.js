@@ -155,7 +155,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 function callApi(text, apiKey, sendResponse) {
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
-  const customPrompt = `You are now a searcher for a specific location or landmark. Please list the sub-landmarks most relevant to the title (possibly <h1>) in the text below. Format the output as an unordered list (<ul>) with each sub-landmark as a list item (<li>), and retain the original language of the content. Format like the example below (do not include the example or other tags like <h1>):
+  const customPrompt = `You are now a searcher for a specific location or landmark. Please list the sub-landmarks most relevant to the title (possibly <title> or <h1>) in the text below. Please Format the output as an unordered list (<ul>) with each sub-landmark as a list item (<li>), and retain the original language of the content. Format like the example below (do not include the example or other tags like <h1>):
 
   <ul class="list-group d-flex">
     <li class="list-group-item border rounded mb-3 px-3 summary-list d-flex justify-content-between">

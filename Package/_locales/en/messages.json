@@ -16,7 +16,7 @@
     "description": "popup favorite list subtitle"
   },
   "geminiSummarySubtitle": {
-    "message": "Gemini Summary",
+    "message": "Page Summary",
     "description": "popup gemini summary subtitle"
   },
   "historyEmptyMsg": {
@@ -94,7 +94,7 @@
     "description": "popup api button text"
   },
   "sendBtnText": {
-    "message": "Summary",
+    "message": "Gemini Summary",
     "description": "popup send button text"
   },
   "shortcutsTitle": {

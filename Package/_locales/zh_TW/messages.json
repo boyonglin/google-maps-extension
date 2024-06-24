@@ -12,7 +12,7 @@
     "message": "收藏清單"
   },
   "geminiSummarySubtitle": {
-    "message": "摘要頁面"
+    "message": "頁面摘要"
   },
   "historyEmptyMsg": {
     "message": "反白文字並快速搜尋！\n你的搜尋記錄會保存在這裡\uD83D\uDC4C\uD83C\uDFFD"
@@ -24,7 +24,7 @@
     "message": "出錯了！\n請確認 .json 文件是否正確後重試\ud83d\udea7"
   },
   "clearedUpMsg": {
-    "message": "清除完畢！\uD83D\uDC4D\uD83C\uDFFD"
+    "message": "\n清除完畢！\uD83D\uDC4D\uD83C\uDFFD"
   },
   "geminiFirstMsg": {
     "message": "試試用 AI 來摘要地點！\n你可以從下方設定你的 API 金鑰開始"
