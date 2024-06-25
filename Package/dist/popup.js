@@ -80,6 +80,30 @@ document.addEventListener("DOMContentLoaded", function () {
   attachEventListeners(favoriteListContainer);
 
   checkTextOverflow();
+
+  // Check if the API key is defined and valid
+  chrome.storage.local.get("geminiApiKey", function(data) {
+
+    if (!data || !data.geminiApiKey) {
+      sendButton.disabled = true;
+      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+      return;
+    }
+
+    const apiKey = data.geminiApiKey;
+    if (apiKey) {
+      verifyApiKey(apiKey).then(isValid => {
+        if (isValid) {
+          chrome.storage.local.set({ geminiApiKey: apiKey }, function() {
+            sendButton.disabled = false;
+          });
+        } else {
+          sendButton.disabled = true;
+          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+        }
+      });
+    }
+  });
 });
 
 // Check if the text overflows the button since locale
@@ -234,30 +258,6 @@ geminiSummaryButton.addEventListener("click", function () {
   } else {
     geminiEmptyMessage.classList.add("d-none");
   }
-
-  // Check if the API key is defined and valid
-  chrome.storage.local.get("geminiApiKey", function(data) {
-
-    if (!data || !data.geminiApiKey) {
-      sendButton.disabled = true;
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-      return;
-    }
-
-    const apiKey = data.geminiApiKey;
-    if (apiKey) {
-      verifyApiKey(apiKey).then(isValid => {
-        if (isValid) {
-          chrome.storage.local.set({ geminiApiKey: apiKey }, function() {
-            sendButton.disabled = false;
-          });
-        } else {
-          sendButton.disabled = true;
-          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-        }
-      });
-    }
-  });
 });
 
 exportButton.addEventListener("click", function () {
@@ -851,9 +851,13 @@ document.getElementById("apiForm").addEventListener("submit", function(event) {
 
   verifyApiKey(apiKey).then(isValid => {
     if (isValid) {
+      if (hasSummary) {
+        geminiEmptyMessage.classList.add("d-none");
+      }
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
       sendButton.disabled = false;
     } else {
+      geminiEmptyMessage.classList.remove("d-none");
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
       sendButton.disabled = true;
     }
