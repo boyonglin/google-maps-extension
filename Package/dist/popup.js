@@ -83,21 +83,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Check if the API key is defined and valid
   chrome.storage.local.get("geminiApiKey", function(data) {
+    const apiKey = data.geminiApiKey;
 
-    if (!data || !data.geminiApiKey) {
+    if (!data || !apiKey) {
       sendButton.disabled = true;
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
       return;
     }
 
-    const apiKey = data.geminiApiKey;
     if (apiKey) {
       verifyApiKey(apiKey).then(isValid => {
-        if (isValid) {
-          chrome.storage.local.set({ geminiApiKey: apiKey }, function() {
-            sendButton.disabled = false;
-          });
-        } else {
+        if (!isValid) {
           sendButton.disabled = true;
           geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
         }
@@ -114,12 +110,12 @@ function checkTextOverflow() {
   const cancelButtonHeight = cancelButtonSpan.offsetHeight;
 
   if (clearButtonHeight > mapsButtonHeight) {
-      clearButton.classList.remove('w-25');
-      clearButton.classList.add('w-auto');
+      clearButton.classList.remove("w-25");
+      clearButton.classList.add("w-auto");
   }
   if (cancelButtonHeight > deleteButtonHeight) {
-      cancelButton.classList.remove('w-25');
-      cancelButton.classList.add('w-auto');
+      cancelButton.classList.remove("w-25");
+      cancelButton.classList.add("w-auto");
   }
 }
 
