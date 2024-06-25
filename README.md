@@ -27,6 +27,7 @@
 - [x] Export the favorite list
 - [x] Chinese language
 - [x] AI summarized locations
+- [ ] Settings: windows open, fast summary
 
 ---
 
@@ -68,6 +69,7 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
 - `_locales/`: Message localized for current locale
     - `en/`: English (default)
     - `zh_TW/`: Chinese (Taiwan)
+    - `ja/`: Japanese
 - `dist/`: JavaScript & CSS resources
     - `popup.js`: JS for the popup window
     - `popup.css`: CSS for the popup window
