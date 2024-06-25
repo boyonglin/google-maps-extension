@@ -83,19 +83,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Check if the API key is defined and valid
   chrome.storage.local.get("geminiApiKey", function(data) {
+    const apiKey = data.geminiApiKey;
 
-    if (!data || !data.geminiApiKey) {
+    if (!data || !apiKey) {
       sendButton.disabled = true;
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
       return;
     }
 
-    const apiKey = data.geminiApiKey;
     if (apiKey) {
       verifyApiKey(apiKey).then(isValid => {
-        if (isValid) {
-          chrome.storage.local.set({ geminiApiKey: apiKey });
-        } else {
+        if (!isValid) {
           sendButton.disabled = true;
           geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
         }
