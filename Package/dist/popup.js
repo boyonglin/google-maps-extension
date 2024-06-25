@@ -94,9 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (apiKey) {
       verifyApiKey(apiKey).then(isValid => {
         if (isValid) {
-          chrome.storage.local.set({ geminiApiKey: apiKey }, function() {
-            sendButton.disabled = false;
-          });
+          chrome.storage.local.set({ geminiApiKey: apiKey });
         } else {
           sendButton.disabled = true;
           geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
