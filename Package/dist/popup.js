@@ -33,12 +33,17 @@ const geminiButtonGroup = document.getElementById("geminiButtonGroup");
 const clearButton = document.getElementById("clearButton");
 const cancelButton = document.getElementById("cancelButton");
 const deleteButton = document.getElementById("deleteButton");
-const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
 const exportButton = document.getElementById("exportButton");
 const importButton = document.getElementById("importButton");
 const fileInput = document.getElementById("fileInput");
 const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
+
+// Spans
+const clearButtonSpan = document.querySelector("#clearButton > i + span");
+const cancelButtonSpan = document.querySelector("#cancelButton > span");
+const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
+const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 
 let [hasHistory, hasFavorite, hasSummary] = [false, false, false];
 
@@ -73,7 +78,26 @@ document.addEventListener("DOMContentLoaded", function () {
   // Add event listeners to the checkboxes
   attachEventListeners(searchHistoryListContainer);
   attachEventListeners(favoriteListContainer);
+
+  checkTextOverflow();
 });
+
+// Check if the text overflows the button since locale
+function checkTextOverflow() {
+  const mapsButtonHeight = mapsButtonSpan.offsetHeight;
+  const clearButtonHeight = clearButtonSpan.offsetHeight;
+  const deleteButtonHeight = deleteButtonSpan.offsetHeight;
+  const cancelButtonHeight = cancelButtonSpan.offsetHeight;
+
+  if (clearButtonHeight > mapsButtonHeight) {
+      clearButton.classList.remove('w-25');
+      clearButton.classList.add('w-auto');
+  }
+  if (cancelButtonHeight > deleteButtonHeight) {
+      cancelButton.classList.remove('w-25');
+      cancelButton.classList.add('w-auto');
+  }
+}
 
 function attachEventListeners(container) {
   const checkboxes = container.querySelectorAll("input");
@@ -117,8 +141,6 @@ searchHistoryButton.addEventListener("click", function () {
   deleteListButton.disabled = false;
 
   updateInput();
-
-  updateFavoriteIcons()
 });
 
 favoriteListButton.addEventListener("click", function () {
@@ -145,6 +167,7 @@ favoriteListButton.addEventListener("click", function () {
 });
 
 deleteListButton.addEventListener("click", function () {
+
   const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
   const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
 
@@ -157,6 +180,8 @@ deleteListButton.addEventListener("click", function () {
     searchButtonGroup.classList.add("d-none");
     exportButtonGroup.classList.add("d-none");
     deleteButtonGroup.classList.remove("d-none");
+
+    checkTextOverflow();
 
     historyLiElements.forEach((li) => {
       const checkbox = li.querySelector("input");
@@ -266,14 +291,19 @@ fileInput.addEventListener("change", function (event) {
       let importedData = [];
       const fileContent = event.target.result;
 
-      if (fileContent) {
+      if (fileContent && fileContent.length > 0) {
         importedData = JSON.parse(fileContent);
         favoriteEmptyMessage.style.display = "none";
       } else {
         favoriteEmptyMessage.style.display = "block";
       }
 
-      chrome.storage.local.set({ favoriteList: importedData });
+      chrome.storage.local.set({ favoriteList: importedData }, function() {
+        chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
+          updateFavoriteListContainer(favoriteList);
+        });
+        updateHistoryFavoriteIcons();
+      });
 
     } catch (error) {
       favoriteEmptyMessage.style.display = "block";
@@ -282,11 +312,23 @@ fileInput.addEventListener("change", function (event) {
   };
 
   reader.readAsText(file);
-
-  chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-    updateFavoriteListContainer(favoriteList);
-  });
 });
+
+// Update the favorite icons in the search history list
+function updateHistoryFavoriteIcons() {
+  chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
+    const historyItems = document.querySelectorAll(".history-list");
+    historyItems.forEach(item => {
+      const text = item.querySelector("span").textContent;
+      const favoriteIcon = item.querySelector("i");
+      if (favoriteList && !favoriteList.includes(text)) {
+        favoriteIcon.className = "bi bi-patch-plus-fill";
+      } else {
+        favoriteIcon.className = "bi bi-patch-check-fill matched";
+      }
+    });
+  });
+}
 
 cancelButton.addEventListener("click", backToNormal);
 
@@ -557,20 +599,6 @@ function updateFavoriteListContainer(favoriteList) {
     hasFavorite = false;
     exportButton.disabled = true;
   }
-}
-
-// Update the favorite icons in the search history list
-function updateFavoriteIcons() {
-  chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-    const historyItems = document.querySelectorAll(".history-list");
-    historyItems.forEach(item => {
-      const text = item.querySelector("span").textContent;
-      const favoriteIcon = item.querySelector("i");
-      if (favoriteList && !favoriteList.includes(text)) {
-        favoriteIcon.className = "bi bi-patch-plus-fill";
-      }
-    });
-  });
 }
 
 // Toggle checkbox display

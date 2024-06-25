@@ -1,0 +1,103 @@
+{
+  "contextMenus": {
+    "message": "Google Maps (fast) で検索"
+  },
+  "searchInputPlaceholder": {
+    "message": "Google マップを検索"
+  },
+  "searchHistorySubtitle": {
+    "message": "検索履歴"
+  },
+  "favoriteListSubtitle": {
+    "message": "お気に入りリスト"
+  },
+  "geminiSummarySubtitle": {
+    "message": "ページ概要"
+  },
+  "historyEmptyMsg": {
+    "message": "テキストをハイライトしてクイック検索！\n検索履歴はここに保存されます\uD83D\uDC4C\uD83C\uDFFD"
+  },
+  "favoriteEmptyMsg": {
+    "message": "検索履歴のプラスアイコンをクリック！\n場所を無制限にお気に入りに追加できます\uD83D\uDC4C\uD83C\uDFFD"
+  },
+  "importErrorMsg": {
+    "message": "エラーが発生しました！\n.json ファイルを確認して再試行してください\ud83d\udea7"
+  },
+  "clearedUpMsg": {
+    "message": "\nクリア完了！\uD83D\uDC4D\uD83C\uDFFD"
+  },
+  "geminiFirstMsg": {
+    "message": "AI で場所の概要を試してみてください！\n下の設定から API キーを設定して始めます"
+  },
+  "geminiEmptyMsg": {
+    "message": "AI で場所の概要を試してみてください！\n結果が期待に合わない場合は再生成できます\uD83D\uDC4C\uD83C\uDFFD"
+  },
+  "geminiLoadMsg": {
+    "message": "\n海をおやつとして提供、\n待つことがロマンチックになる...（約 NaN 秒）"
+  },
+  "geminiErrorMsg": {
+    "message": "エラーが発生しました！\nページをリロードして再試行してください\ud83d\udea7"
+  },
+  "apiInvalidMsg": {
+    "message": "API キーが使用できません！\n確認して再試行してください\ud83d\udea7"
+  },
+  "clearBtnText": {
+    "message": "クリア"
+  },
+  "mapsBtnText": {
+    "message": "Google マップ"
+  },
+  "cancelBtnText": {
+    "message": "キャンセル"
+  },
+  "deleteBtnTextEmpty": {
+    "message": "場所を削除"
+  },
+  "deleteBtnText": {
+    "message": "$checkedCount$ 件の場所を削除",
+    "placeholders": {
+      "checkedCount": {
+        "content": "$1"
+      }
+    }
+  },
+  "exportBtnText": {
+    "message": "エクスポート"
+  },
+  "importBtnText": {
+    "message": "インポート"
+  },
+  "apiBtnText": {
+    "message": "API"
+  },
+  "sendBtnText": {
+    "message": "Gemini 概要"
+  },
+  "shortcutsTitle": {
+    "message": "キーボードショートカット"
+  },
+  "quickSearchKeyLabel": {
+    "message": "クイック検索"
+  },
+  "searchBarKeyLabel": {
+    "message": "検索バー"
+  },
+  "shortcutsNote": {
+    "message": "上のショートカットをクリックして、拡張機能のショートカットキーを設定できます"
+  },
+  "authorBtnText": {
+    "message": "作者"
+  },
+  "githubBtnText": {
+    "message": "オープンソース"
+  },
+  "tipBtnText": {
+    "message": "ヒント"
+  },
+  "apiTitle": {
+    "message": "API キーの設定"
+  },
+  "apiNote": {
+    "message": "Google AI Studio から無料の API キーを取得できます。リクエスト数の制限は 15 回/分、1,500 回/日です"
+  }
+}
