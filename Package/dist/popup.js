@@ -894,3 +894,7 @@ const apiModal = document.getElementById("apiModal");
 apiModal.addEventListener("hidden.bs.modal", function () {
   document.getElementById("apiInput").value = "";
 });
+
+apiModal.addEventListener("shown.bs.modal", function () {
+  document.getElementById("apiInput").focus();
+});
