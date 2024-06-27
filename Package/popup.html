@@ -37,8 +37,8 @@
                                 </button>
                             </div>
                             <div class="col">
-                                <button type="button" id="searchHistoryButton" class="btn btn-outline-secondary active-button"
-                                    aria-label="Search History">
+                                <button type="button" id="searchHistoryButton"
+                                    class="btn btn-outline-secondary active-button" aria-label="Search History">
                                     <i class="bi bi-clock-fill"></i>
                                 </button>
                             </div>
@@ -59,7 +59,8 @@
                 </div>
             </div>
             <p id="emptyMessage" class="text-muted text-center pt-3 pb-4 page-S" data-locale="historyEmptyMsg"></p>
-            <p id="favoriteEmptyMessage" class="text-muted text-center pt-3 pb-4 page-F" data-locale="favoriteEmptyMsg"></p>
+            <p id="favoriteEmptyMessage" class="text-muted text-center pt-3 pb-4 page-F" data-locale="favoriteEmptyMsg">
+            </p>
             <p id="geminiEmptyMessage" class="text-muted text-center pt-3 pb-4 page-G" data-locale="geminiEmptyMsg"></p>
             <div id="searchHistoryList" class="overflow-auto mb-4 page-S"></div>
             <div id="favoriteList" class="overflow-auto mb-4 page-F d-none"></div>
@@ -72,7 +73,8 @@
                     <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span>
                 </button>
                 <a href="https://www.google.com/maps/" target="_blank" class="btn btn-primary btn-maps flex-fill">
-                    <i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText">Google Maps</span></a>
+                    <i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText">Google
+                        Maps</span></a>
             </div>
             <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-D">
                 <button id="cancelButton" class="btn me-3 btn-secondary w-25">
@@ -91,7 +93,8 @@
                 <input type="file" id="fileInput" style="display: none" accept=".json" />
             </div>
             <div id="geminiButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-G">
-                <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal" data-bs-target="#apiModal">
+                <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal"
+                    data-bs-target="#apiModal">
                     <i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText">API</span>
                 </button>
                 <button id="sendButton" class="btn btn-send flex-fill">
@@ -102,7 +105,8 @@
         <footer>
             <ul class="nav justify-content-center border-top">
                 <li type="button" class="nav-item">
-                    <a href="https://bento.me/clancylin" target="_blank" class="nav-link px-2 text-muted" data-locale="authorBtnText">Author</a>
+                    <a href="https://bento.me/clancylin" target="_blank" class="nav-link px-2 text-muted"
+                        data-locale="authorBtnText">Author</a>
                 </li>
                 <li type="button" class="nav-item">
                     <a href="https://github.com/boyonglin/google-maps-extension" target="_blank"
@@ -135,7 +139,8 @@
                         </div>
                     </div>
                     <div class="modal-footer d-flex justify-content-start">
-                        <p class="text-muted" style="font-style: italic;" data-locale="shortcutsNote">You can click key combinations above to set extensions shortcuts</p>
+                        <p class="text-muted" style="font-style: italic;" data-locale="shortcutsNote">You can click key
+                            combinations above to set extensions shortcuts.</p>
                     </div>
                 </div>
             </div>
@@ -144,19 +149,23 @@
             <div class="modal-dialog modal-dialog-centered modal-xs">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-6" id="apiModalLabel" data-locale="apiTitle">Setting up your API key</h1>
+                        <h1 class="modal-title fs-6" id="apiModalLabel" data-locale="apiTitle">Setting up your API key
+                        </h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form id="apiForm" class="d-flex my-3">
-                            <input type="text" class="form-control py-2 pe-5" autocomplete="off" placeholder="Gemini API key" autofocus id="apiInput" />
-                            <button type="submit" data-bs-dismiss="modal" class="btn btn-setAPI d-flex align-items-center justify-content-center rounded-circle border-0">
+                            <input type="text" class="form-control py-2 pe-5" autocomplete="off"
+                                placeholder="Gemini API key" autofocus id="apiInput" />
+                            <button type="submit" data-bs-dismiss="modal"
+                                class="btn btn-setAPI d-flex align-items-center justify-content-center rounded-circle border-0">
                                 <i class="bi bi-arrow-right"></i>
                             </button>
                         </form>
                     </div>
                     <div class="modal-footer d-flex justify-content-start">
-                        <p class="text-muted" style="font-style: italic;" data-locale="apiNote">You can get your API key from the Google AI Studio. (Free of charge)</p>
+                        <p class="text-muted" style="font-style: italic;" data-locale="apiNote">You can get your API key
+                            from the Google AI Studio. (Free of charge)</p>
                     </div>
                 </div>
             </div>

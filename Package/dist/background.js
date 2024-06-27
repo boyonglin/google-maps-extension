@@ -147,8 +147,8 @@ chrome.action.onClicked.addListener((tab) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'callApi' && request.text) {
-      callApi(request.text, request.apiKey, sendResponse);
-      return true; // Will respond asynchronously
+    callApi(request.text, request.apiKey, sendResponse);
+    return true; // Will respond asynchronously
   }
 });
 
@@ -168,28 +168,28 @@ function callApi(text, apiKey, sendResponse) {
   </ul>`;
 
   const data = {
-      contents: [{
-          parts: [{
-              text: customPrompt + text
-          }]
+    contents: [{
+      parts: [{
+        text: customPrompt + text
       }]
+    }]
   };
 
   fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
   })
-  .then(response => response.json())
-  .then(data => {
+    .then(response => response.json())
+    .then(data => {
       const generatedText = data.candidates[0].content.parts[0].text;
       sendResponse(generatedText);
-  })
-  .catch((error) => {
+    })
+    .catch((error) => {
       console.error('Error:', error);
       sendResponse({ error: error.toString() });
-  });
+    });
 }
 

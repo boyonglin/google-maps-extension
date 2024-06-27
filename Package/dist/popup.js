@@ -45,7 +45,12 @@ const cancelButtonSpan = document.querySelector("#cancelButton > span");
 const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
 const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 
-let [hasHistory, hasFavorite, hasSummary] = [false, false, false];
+let [hasHistory, hasFavorite, hasSummary, initFavorite] = [false, false, false, false];
+
+// Initialize the popup
+initSearchHistory();
+checkTextOverflow();
+checkAPIKey();
 
 // Track keypress events on the search bar
 if (searchInput) {
@@ -74,15 +79,11 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!hasHistory) {
     emptyMessage.style.display = "block";
   }
+});
 
-  // Add event listeners to the checkboxes
-  attachEventListeners(searchHistoryListContainer);
-  attachEventListeners(favoriteListContainer);
-
-  checkTextOverflow();
-
-  // Check if the API key is defined and valid
-  chrome.storage.local.get("geminiApiKey", function(data) {
+// Check if the API key is defined and valid
+function checkAPIKey() {
+  chrome.storage.local.get("geminiApiKey", function (data) {
     const apiKey = data.geminiApiKey;
 
     if (!data || !apiKey) {
@@ -100,7 +101,58 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
   });
-});
+}
+
+// Retrieve searchHistoryList and favoriteList from Chrome storage
+function initSearchHistory() {
+  chrome.storage.local.get(
+    ["searchHistoryList", "favoriteList"],
+    ({ searchHistoryList, favoriteList }) => {
+      if (searchHistoryList && searchHistoryList.length > 0) {
+        emptyMessage.style.display = "none";
+        hasHistory = true;
+
+        const ul = document.createElement("ul");
+        ul.className = "list-group d-flex flex-column-reverse";
+
+        // Create list item from new selectedText
+        const fragment = document.createDocumentFragment();
+        searchHistoryList.forEach((selectedText) => {
+          const li = document.createElement("li");
+          li.className =
+            "list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between";
+
+          const span = document.createElement("span");
+          span.textContent = selectedText;
+          li.appendChild(span);
+
+          const favoriteIcon = document.createElement("i");
+          favoriteIcon.className =
+            favoriteList && favoriteList.includes(selectedText)
+              ? "bi bi-patch-check-fill matched"
+              : "bi bi-patch-plus-fill";
+          li.appendChild(favoriteIcon);
+
+          const checkbox = document.createElement("input");
+          checkbox.className = "form-check-input d-none";
+          checkbox.type = "checkbox";
+          checkbox.value = "delete";
+          checkbox.id = "checkDelete";
+          li.appendChild(checkbox);
+          fragment.appendChild(li);
+        });
+        ul.appendChild(fragment);
+        searchHistoryListContainer.appendChild(ul);
+      } else {
+        emptyMessage.style.display = "block";
+        hasHistory = false;
+        clearButton.disabled = true;
+      }
+
+      attachCheckboxEventListener(searchHistoryListContainer);
+    }
+  );
+}
 
 // Check if the text overflows the button since locale
 function checkTextOverflow() {
@@ -110,16 +162,17 @@ function checkTextOverflow() {
   const cancelButtonHeight = cancelButtonSpan.offsetHeight;
 
   if (clearButtonHeight > mapsButtonHeight) {
-      clearButton.classList.remove("w-25");
-      clearButton.classList.add("w-auto");
+    clearButton.classList.remove("w-25");
+    clearButton.classList.add("w-auto");
   }
   if (cancelButtonHeight > deleteButtonHeight) {
-      cancelButton.classList.remove("w-25");
-      cancelButton.classList.add("w-auto");
+    cancelButton.classList.remove("w-25");
+    cancelButton.classList.add("w-auto");
   }
 }
 
-function attachEventListeners(container) {
+// Add event listeners to the checkboxes
+function attachCheckboxEventListener(container) {
   const checkboxes = container.querySelectorAll("input");
   const liElements = container.querySelectorAll("li");
 
@@ -164,6 +217,10 @@ searchHistoryButton.addEventListener("click", function () {
 });
 
 favoriteListButton.addEventListener("click", function () {
+  chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+    updateFavoriteListContainer(favoriteList);
+  });
+
   for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.add("d-none");
   for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.remove("d-none");
   for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
@@ -294,10 +351,8 @@ fileInput.addEventListener("change", function (event) {
         favoriteEmptyMessage.style.display = "block";
       }
 
-      chrome.storage.local.set({ favoriteList: importedData }, function() {
-        chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-          updateFavoriteListContainer(favoriteList);
-        });
+      chrome.storage.local.set({ favoriteList: importedData }, function () {
+        updateFavoriteListContainer(importedData);
         updateHistoryFavoriteIcons();
       });
 
@@ -336,87 +391,6 @@ deleteButton.addEventListener("click", function () {
   }
   backToNormal();
 });
-
-// Retrieve searchHistoryList and favoriteList from Chrome storage
-chrome.storage.local.get(
-  ["searchHistoryList", "favoriteList"],
-  ({ searchHistoryList, favoriteList }) => {
-    if (searchHistoryList && searchHistoryList.length > 0) {
-      emptyMessage.style.display = "none";
-      hasHistory = true;
-
-      const ul = document.createElement("ul");
-      ul.className = "list-group d-flex flex-column-reverse";
-
-      // Create list item from new selectedText
-      searchHistoryList.forEach((selectedText) => {
-        const li = document.createElement("li");
-        li.className =
-          "list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between";
-
-        const span = document.createElement("span");
-        span.textContent = selectedText;
-        li.appendChild(span);
-
-        const favoriteIcon = document.createElement("i");
-        favoriteIcon.className =
-          favoriteList && favoriteList.includes(selectedText)
-            ? "bi bi-patch-check-fill matched"
-            : "bi bi-patch-plus-fill";
-        li.appendChild(favoriteIcon);
-
-        const checkbox = document.createElement("input");
-        checkbox.className = "form-check-input d-none";
-        checkbox.type = "checkbox";
-        checkbox.value = "delete";
-        checkbox.id = "checkDelete";
-        li.appendChild(checkbox);
-        ul.appendChild(li);
-      });
-      searchHistoryListContainer.appendChild(ul);
-    } else {
-      emptyMessage.style.display = "block";
-      hasHistory = false;
-      clearButton.disabled = true;
-    }
-
-    if (favoriteList && favoriteList.length > 0) {
-      favoriteEmptyMessage.style.display = "none";
-      hasFavorite = true;
-
-      const ul = document.createElement("ul");
-      ul.className = "list-group d-flex flex-column-reverse";
-
-      // Create list item from new selectedText
-      favoriteList.forEach((selectedText) => {
-        const li = document.createElement("li");
-        li.className =
-          "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between";
-
-        const span = document.createElement("span");
-        span.textContent = selectedText;
-        li.appendChild(span);
-
-        const favoriteIcon = document.createElement("i");
-        favoriteIcon.className = "bi bi-patch-check-fill matched";
-        li.appendChild(favoriteIcon);
-
-        const checkbox = document.createElement("input");
-        checkbox.className = "form-check-input d-none";
-        checkbox.type = "checkbox";
-        checkbox.value = "delete";
-        checkbox.id = "checkDelete";
-        li.appendChild(checkbox);
-        ul.appendChild(li);
-      });
-      favoriteListContainer.appendChild(ul);
-    } else {
-      favoriteEmptyMessage.style.display = "block";
-      hasFavorite = false;
-      exportButton.disabled = true;
-    }
-  }
-);
 
 // Track the click event on li elements
 searchHistoryListContainer.addEventListener("click", function (event) {
@@ -563,6 +537,7 @@ function updateFavoriteListContainer(favoriteList) {
     ul.className = "list-group d-flex flex-column-reverse";
 
     // Create list item from new selectedText
+    const fragment = document.createDocumentFragment();
     favoriteList.forEach((selectedText) => {
       const li = document.createElement("li");
       li.className =
@@ -582,14 +557,14 @@ function updateFavoriteListContainer(favoriteList) {
       checkbox.value = "delete";
       checkbox.id = "checkDelete";
       li.appendChild(checkbox);
-      ul.appendChild(li);
+      fragment.appendChild(li);
 
       exportButton.disabled = false;
     });
-
+    ul.appendChild(fragment);
     favoriteListContainer.appendChild(ul);
 
-    attachEventListeners(favoriteListContainer);
+    attachCheckboxEventListener(favoriteListContainer);
   } else {
     favoriteEmptyMessage.style.display = "block";
     hasFavorite = false;
@@ -755,14 +730,14 @@ searchInput.placeholder = chrome.i18n.getMessage("searchInputPlaceholder");
 
 // Ignore pressing the Enter key which means confirmation
 let isComposing = false;
-document.getElementById("searchInput").addEventListener("compositionstart", () => {
-    isComposing = true;
+searchInput.addEventListener("compositionstart", () => {
+  isComposing = true;
 });
-document.getElementById("searchInput").addEventListener("compositionend", () => {
-    isComposing = false;
+searchInput.addEventListener("compositionend", () => {
+  isComposing = false;
 });
 document.addEventListener("keydown", (e) => {
-  if(e.key === "Enter" && isComposing) {
+  if (e.key === "Enter" && isComposing) {
     e.stopPropagation();
   }
 }, true)
@@ -775,7 +750,7 @@ sendButton.addEventListener("click", () => {
 
   summaryListContainer.innerHTML = "";
 
-  chrome.storage.local.get("geminiApiKey", function(data) {
+  chrome.storage.local.get("geminiApiKey", function (data) {
     const apiKey = data.geminiApiKey;
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -802,7 +777,7 @@ sendButton.addEventListener("click", () => {
 function isPredominantlyLatinChars(text) {
   const totalChars = text.length;
   const latinChars = text.match(/[a-zA-Z\u00C0-\u00FF]/g)?.length || 0;
-  const squareChars =  text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g)?.length || 0;
+  const squareChars = text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g)?.length || 0;
 
   return latinChars > squareChars;
 }
@@ -810,7 +785,7 @@ function isPredominantlyLatinChars(text) {
 function summarizeContent(content, apiKey) {
   responseField.value = "";
 
-  chrome.runtime.sendMessage({ action: "callApi", text: content , apiKey: apiKey}, (response) => {
+  chrome.runtime.sendMessage({ action: "callApi", text: content, apiKey: apiKey }, (response) => {
     if (response.error) {
       responseField.value = `API Error: ${response.error}`;
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
@@ -839,9 +814,9 @@ const newText = originalText.replace("Google AI Studio",
 pElement.innerHTML = newText;
 
 // Save the API key
-document.getElementById("apiForm").addEventListener("submit", function(event) {
+document.getElementById("apiForm").addEventListener("submit", function (event) {
   event.preventDefault();
-  const apiKey = document.getElementById("apiInput").value;
+  const apiKey = apiInput.value;
 
   chrome.storage.local.set({ geminiApiKey: apiKey });
 
@@ -879,9 +854,9 @@ async function verifyApiKey(apiKey) {
       },
       body: JSON.stringify(data)
     });
-    const data_1 = await response.json();
-    if (data_1.error) {
-      throw new Error(data_1.error.message);
+    const candidates = await response.json();
+    if (candidates.error) {
+      throw new Error(candidates.error.message);
     }
     return true;
   } catch (error) {
@@ -892,9 +867,9 @@ async function verifyApiKey(apiKey) {
 // Clear the API key
 const apiModal = document.getElementById("apiModal");
 apiModal.addEventListener("hidden.bs.modal", function () {
-  document.getElementById("apiInput").value = "";
+  apiInput.value = "";
 });
 
 apiModal.addEventListener("shown.bs.modal", function () {
-  document.getElementById("apiInput").focus();
+  apiInput.focus();
 });

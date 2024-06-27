@@ -18,13 +18,14 @@
   --google-yellow: #f4b400;
   --google-yellow-500: #f9d980;
   --google-yellow-bg: #fffdf7;
-  --google-purple-hover: #6C61A4;
-  --google-purple: #8779CD;
-  --google-purple-500: #C3BCE6;
-  --google-purple-bg: #FAFAFD;
+  --google-purple-hover: #6c61a4;
+  --google-purple: #8779cd;
+  --google-purple-500: #c3bce6;
+  --google-purple-bg: #fafafd;
 }
 
-html, body {
+html,
+body {
   width: 400px;
   box-sizing: border-box;
   overflow: auto;
@@ -283,16 +284,19 @@ li:hover .form-check-input {
 
 @keyframes shine {
   0% {
-      opacity: 1;
+    opacity: 1;
   }
+
   25% {
-      opacity: 1;
+    opacity: 1;
   }
+
   50% {
-      opacity: 0.5;
+    opacity: 0.5;
   }
+
   100% {
-      opacity: 1;
+    opacity: 1;
   }
 }
 
@@ -425,18 +429,23 @@ li:hover .form-check-input {
   0% {
     transform: scale(1);
   }
+
   20% {
     transform: scale(1.1);
   }
+
   40% {
     transform: scale(0.9);
   }
+
   60% {
     transform: scale(1.05);
   }
+
   80% {
     transform: scale(0.95);
   }
+
   100% {
     transform: scale(1);
   }
