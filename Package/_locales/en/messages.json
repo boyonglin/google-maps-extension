@@ -44,7 +44,7 @@
     "description": "popup no gemini summary message"
   },
   "geminiLoadMsg": {
-    "message": "Treating the sea as a snack\nmakes waiting romantic... (Est. NaNs)",
+    "message": "Treating the sea as a snack\nmakes waiting romantic... (Est. NaN s)",
     "description": "popup gemini model loading message"
   },
   "geminiErrorMsg": {

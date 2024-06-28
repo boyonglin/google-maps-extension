@@ -33,7 +33,7 @@
     "message": "試試用 AI 來摘要地點！\n如果結果不符合預期你可以重新生成\uD83D\uDC4C\uD83C\uDFFD"
   },
   "geminiLoadMsg": {
-    "message": "\n把海當作零食配著，等待就變浪漫了...（約 NaN 秒）"
+    "message": "把海當作零食配著，等待就變浪漫了...\n（約 NaN 秒）"
   },
   "geminiErrorMsg": {
     "message": "出錯了！\n請重新加載頁面並再試一次\ud83d\udea7"
