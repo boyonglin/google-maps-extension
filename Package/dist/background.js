@@ -126,17 +126,6 @@ function addToFavoriteList(selectedText) {
   });
 }
 
-// Prevent delay when opening popup
-const preloadHTML = async () => {
-  if (!(await chrome.offscreen.hasDocument())) {
-    await chrome.offscreen.createDocument({
-      url: "../popup.html",
-      reasons: [chrome.offscreen.Reason.DISPLAY_MEDIA],
-      justification: "Helps with faster load times of popup",
-    });
-  }
-};
-
 // Gemini API
 chrome.action.onClicked.addListener((tab) => {
   chrome.scripting.executeScript({

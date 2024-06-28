@@ -27,7 +27,7 @@
 - [x] Export the favorite list
 - [x] Chinese language
 - [x] AI summarized locations
-- [ ] Settings: windows open, fast summary
+- [ ] Settings: windows open, fast summary, max history length
 
 ---
 
