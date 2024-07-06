@@ -72,10 +72,8 @@ if (searchInput) {
 
 // 在HTML中添加按鈕
 // 假設有一個ID為searchContainer的元素
+const enterButton = document.getElementById("enterButton");
 const searchContainer = document.getElementById("searchContainer");
-const enterButton = document.createElement("button");
-enterButton.textContent = "Enter";
-enterButton.id = "enterButton";
 searchContainer.appendChild(enterButton);
 
 // 添加按鈕點擊事件的處理函數

@@ -34,6 +34,16 @@ body {
 }
 
 /* search bar */
+.input-group {
+  display: flex; /* 將 .input-group 設定為 Flexbox 容器 */
+  align-items: center; /* 確保所有子元素垂直居中 */
+}
+
+.brand, .input-group-prepend, #searchInput {
+  /* 確保這些元素具有相同的高度設定，如果需要 */
+  height: 40px; /* 示例：設定一個固定高度 */
+}
+
 .brand {
   border-top-left-radius: 32px;
   border-bottom-left-radius: 32px;
@@ -44,10 +54,22 @@ body {
   margin-right: -2px;
 }
 
+#enterButton {
+  color: var(--gray-300) !important;
+  border-color: transparent; /* 將邊緣顏色設置為透明 */
+  background-color: var(--primary-color);
+  border-top-left-radius: 32px;
+  border-bottom-left-radius: 32px;
+  border-top-right-radius: 32px;
+  border-bottom-right-radius: 32px;
+  margin-left: 5px; /* 添加 20px 的左邊距 */
+}
+
 #searchInput {
   border-left: 0;
   border-top-right-radius: 32px;
   border-bottom-right-radius: 32px;
+  flex-grow: 1; /* 讓搜索輸入欄能夠填滿剩餘空間 */
 }
 
 #searchInput::placeholder {
