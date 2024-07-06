@@ -69,6 +69,30 @@ if (searchInput) {
   });
 }
 
+
+// 在HTML中添加按鈕
+// 假設有一個ID為searchContainer的元素
+const searchContainer = document.getElementById("searchContainer");
+const enterButton = document.createElement("button");
+enterButton.textContent = "Enter";
+enterButton.id = "enterButton";
+searchContainer.appendChild(enterButton);
+
+// 添加按鈕點擊事件的處理函數
+enterButton.addEventListener("click", function() {
+  if (searchInput.value.trim() === "") {
+    // 如果搜索框只包含空白，不執行任何操作
+    return;
+  } else {
+    // 模擬按下Enter鍵時的行為
+    chrome.runtime.sendMessage({
+      searchTerm: searchInput.value,
+      action: "searchInput",
+    });
+  }
+});
+
+
 // Executed after the document has finished loading
 document.addEventListener("DOMContentLoaded", function () {
   for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.remove("d-none");
