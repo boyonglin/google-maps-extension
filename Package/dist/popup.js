@@ -53,7 +53,7 @@ initSearchHistory();
 checkTextOverflow();
 checkAPIKey();
 
-// Track keypress events on the search bar
+// Track events on the search bar
 searchInput.addEventListener("keydown", function (event) {
   if (event.key === "Enter") {
     if (searchInput.value.trim() === "") {
