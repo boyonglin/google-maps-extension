@@ -1,5 +1,5 @@
 # google-maps-extension
-> Speed up your search flow to Google Maps!
+> Speed up your search flow to Google Maps!\
 > Navigate and save locations effortlessly with Google Maps (fast), experiencing rapid integration and minimal workflow disruption.
 
 ---
