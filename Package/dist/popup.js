@@ -38,6 +38,7 @@ const importButton = document.getElementById("importButton");
 const fileInput = document.getElementById("fileInput");
 const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
+const enterButton = document.getElementById("enterButton");
 
 // Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
@@ -53,21 +54,38 @@ checkTextOverflow();
 checkAPIKey();
 
 // Track keypress events on the search bar
-if (searchInput) {
-  searchInput.addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-      if (searchInput.value.trim() === "") {
-        // If it contains only blanks, prevent the default behavior of the event and do not allow submission
-        event.preventDefault();
-      } else {
-        chrome.runtime.sendMessage({
-          searchTerm: searchInput.value,
-          action: "searchInput",
-        });
-      }
+searchInput.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    if (searchInput.value.trim() === "") {
+      // If it contains only blanks, prevent the default behavior of the event and do not allow submission
+      event.preventDefault();
+    } else {
+      chrome.runtime.sendMessage({
+        searchTerm: searchInput.value,
+        action: "searchInput",
+      });
     }
-  });
-}
+  }
+});
+
+searchInput.addEventListener("input", function () {
+  if (searchInput.value.trim() === "") {
+    enterButton.classList.add("d-none");
+  } else {
+    enterButton.classList.remove("d-none");
+  }
+});
+
+enterButton.addEventListener("click", function() {
+  if (searchInput.value.trim() === "") {
+     return;
+  } else {
+     chrome.runtime.sendMessage({
+      searchTerm: searchInput.value,
+      action: "searchInput",
+    });
+  }
+});
 
 // Executed after the document has finished loading
 document.addEventListener("DOMContentLoaded", function () {

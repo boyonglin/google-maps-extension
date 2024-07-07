@@ -48,6 +48,7 @@ body {
   border-left: 0;
   border-top-right-radius: 32px;
   border-bottom-right-radius: 32px;
+  color: var(--gray-800);
 }
 
 #searchInput::placeholder {
@@ -67,6 +68,28 @@ body {
   opacity: 0;
 }
 
+.input-group-text.brand img {
+  transform: scale(0.65);
+}
+
+.btn-enter {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-800);
+  background-color: var(--background-color);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.btn-enter i {
+  padding-top: 1px;
+}
+
+/* api bar */
 #apiInput {
   border-radius: 32px;
   padding-left: 16px;
@@ -102,7 +125,6 @@ body {
 }
 
 .btn-setAPI i {
-  font-size: 16px;
   padding-top: 1px;
 }
 
@@ -110,10 +132,6 @@ body {
   color: var(--google-purple);
   font-weight: bold;
   text-decoration: none;
-}
-
-.input-group-text.brand img {
-  transform: scale(0.65);
 }
 
 /* list-group-item */
