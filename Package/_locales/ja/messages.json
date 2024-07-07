@@ -15,10 +15,10 @@
     "message": "ページ概要"
   },
   "historyEmptyMsg": {
-    "message": "歴史検索をハイライトしてクイック！\n検索記録はここに保存されます\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "文字をハイライトしてクイック検索！\n検索記録はここに保存されます\uD83D\uDC4C\uD83C\uDFFD"
   },
   "favoriteEmptyMsg": {
-    "message": "検索記録のプラスアイコンをクリック！\n場所を無制限にお気に入りに追加できます\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "検索履歴のプラスアイコンをクリック！\n場所を無制限にお気に入りに追加できます\uD83D\uDC4C\uD83C\uDFFD"
   },
   "importErrorMsg": {
     "message": "エラーが発生しました！\n.json ファイルを確認して再試行してください\ud83d\udea7"
@@ -33,7 +33,7 @@
     "message": "AI で場所の概要を試してみてください！\n結果が期待に合わない場合は再生成できます\uD83D\uDC4C\uD83C\uDFFD"
   },
   "geminiLoadMsg": {
-    "message": "\n海外をおやつとして提供、\n待つことがロマンチックになる...（約 NaN 秒）"
+    "message": "\n海をおやつのようにして、\n待つことがロマンチックになる...（約 NaN 秒）"
   },
   "geminiErrorMsg": {
     "message": "エラーが発生しました！\nページをリロードして再試行してください\ud83d\udea7"
@@ -89,7 +89,7 @@
     "message": "作者"
   },
   "githubBtnText": {
-    "message": "オープンソース"
+    "message": "GitHub"
   },
   "tipBtnText": {
     "message": "ヒント"
