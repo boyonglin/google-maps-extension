@@ -262,11 +262,11 @@ favoriteListButton.addEventListener("click", function () {
 });
 
 deleteListButton.addEventListener("click", function () {
-
   const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
   const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
 
   if (deleteListButton.classList.contains("active-button")) {
+    deleteListButton.style.pointerEvents = "";
     backToNormal();
   } else {
     deleteListButton.classList.add("active-button");
