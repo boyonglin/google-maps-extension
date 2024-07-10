@@ -158,6 +158,7 @@ function initSearchHistory() {
           checkbox.type = "checkbox";
           checkbox.value = "delete";
           checkbox.id = "checkDelete";
+          checkbox.ariaLabel = "delete";
           li.appendChild(checkbox);
           fragment.appendChild(li);
         });
@@ -268,7 +269,6 @@ deleteListButton.addEventListener("click", function () {
   const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
 
   if (deleteListButton.classList.contains("active-button")) {
-    deleteListButton.style.pointerEvents = "";
     backToNormal();
   } else {
     deleteListButton.classList.add("active-button");
@@ -576,6 +576,7 @@ function updateFavoriteListContainer(favoriteList) {
       checkbox.type = "checkbox";
       checkbox.value = "delete";
       checkbox.id = "checkDelete";
+      checkbox.ariaLabel = "delete";
       li.appendChild(checkbox);
       fragment.appendChild(li);
 
@@ -707,6 +708,7 @@ function updateDeleteCount() {
 }
 
 function backToNormal() {
+  deleteListButton.style.pointerEvents = "";
   deleteListButton.classList.remove("active-button");
   deleteButtonGroup.classList.add("d-none");
 

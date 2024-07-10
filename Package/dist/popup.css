@@ -186,13 +186,25 @@ body {
 }
 
 /* list icon */
+li {
+  position: relative;
+}
+
 li i {
   display: none;
-  opacity: 0.5;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+  align-items: center;
 }
 
 li:hover i {
-  display: inline;
+  display: flex;
+  opacity: 0.5;
 }
 
 li i:hover {
@@ -200,7 +212,7 @@ li i:hover {
 }
 
 li i.matched {
-  display: inline;
+  display: flex;
   opacity: 1;
   pointer-events: none;
 }
@@ -451,26 +463,26 @@ li:hover .form-check-input {
 
 @keyframes springAnimation {
   0% {
-    transform: scale(1);
+    transform: translate(0%, -50%) scale(1);
   }
 
   20% {
-    transform: scale(1.1);
+    transform: translate(0%, -50%) scale(1.1);
   }
 
   40% {
-    transform: scale(0.9);
+    transform: translate(0%, -50%) scale(0.9);
   }
 
   60% {
-    transform: scale(1.05);
+    transform: translate(0%, -50%) scale(1.05);
   }
 
   80% {
-    transform: scale(0.95);
+    transform: translate(0%, -50%) scale(0.95);
   }
 
   100% {
-    transform: scale(1);
+    transform: translate(0%, -50%) scale(1);
   }
 }
