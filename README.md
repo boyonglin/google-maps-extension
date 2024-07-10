@@ -14,22 +14,18 @@
 - Project
     - [Framework](#framework)
     - [Structure](#structure)
+    - [Roadmap](#roadmap)
 - [Reference](#reference)
 
 ---
 
-## Roadmap
-- [x] Quick search using shortcuts
-- [x] Search bar in the popup window
-- [x] Record search history
-- [x] Save the favorite spot
-- [x] Delete mode
-- [x] Export the favorite list
-- [x] Chinese language
-- [x] AI summarized locations
-- [ ] Settings: windows open, fast summary, max history length, dark mode?
-- [ ] a11y
-- [ ] video ai summary
+## Features
+1. Quick Search: Use shortcuts (Ctrl+Shift+S / ⌘+⇧+S) or right-click highlighted text for quick searches, ideal for reading web pages.
+2. Search Bar: Use shortcuts (Alt+Shift+S / ⌥+⇧+S) or click to open the extension, ideal for watching videos.
+3. Search History: Saves up to 10 locations for quick redirection to Google Maps.
+4. Favorite List: Click the PATCH PLUS icon on the right to save. Import or export favorites as needed.
+5. Delete Mode: Simply check and delete items.
+6. Page Summary: Set up the API key to summarize the locations on the current page.
 
 ---
 
@@ -79,6 +75,21 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
     - `contentScript.js`: Accessing webpage content
 - `popup.html`: HTML for the popup window
 - `manifest.json`: Configuration file for the extension
+
+---
+
+## Roadmap
+- [x] Quick search using shortcuts
+- [x] Search bar in the popup window
+- [x] Record search history
+- [x] Save the favorite spot
+- [x] Delete mode
+- [x] Export the favorite list
+- [x] Chinese language
+- [x] AI summarized locations
+- [ ] a11y: tooltips, ...
+- [ ] Settings: windows open, fast summary, max history length
+- [ ] video ai summary
 
 ---
 

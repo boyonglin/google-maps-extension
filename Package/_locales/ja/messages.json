@@ -89,7 +89,7 @@
     "message": "作者"
   },
   "githubBtnText": {
-    "message": "GitHub"
+    "message": "オープンソース"
   },
   "tipBtnText": {
     "message": "ヒント"
@@ -99,5 +99,29 @@
   },
   "apiNote": {
     "message": "Google AI Studio から無料の API キーを取得できます。リクエスト数の制限は 15 回/分、1,500 回/日です"
+  },
+  "geminiLabel": {
+    "message": "ページ概要"
+  },
+  "historyLabel": {
+    "message": "検索履歴"
+  },
+  "favoriteLabel": {
+    "message": "お気に入り"
+  },
+  "deleteLabel": {
+    "message": "削除モード"
+  },
+  "enterLabel": {
+    "message": "検索"
+  },
+  "shortcutsLabel": {
+    "message": "ショートカットのカスタマイズ"
+  },
+  "saveLabel": {
+    "message": "保存"
+  },
+  "plusLabel": {
+    "message": "お気に入りに追加"
   }
 }

@@ -39,6 +39,7 @@ const fileInput = document.getElementById("fileInput");
 const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
 const enterButton = document.getElementById("enterButton");
+const apiSaveButton = document.getElementsByClassName("btn-setAPI");
 
 // Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
@@ -50,7 +51,6 @@ let [hasHistory, hasFavorite, hasSummary, initFavorite] = [false, false, false, 
 
 // Initialize the popup
 initSearchHistory();
-checkTextOverflow();
 checkAPIKey();
 
 // Track events on the search bar
@@ -97,6 +97,8 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!hasHistory) {
     emptyMessage.style.display = "block";
   }
+
+  checkTextOverflow();
 });
 
 // Check if the API key is defined and valid
@@ -149,6 +151,7 @@ function initSearchHistory() {
             favoriteList && favoriteList.includes(selectedText)
               ? "bi bi-patch-check-fill matched"
               : "bi bi-patch-plus-fill";
+          favoriteIcon.title = chrome.i18n.getMessage("plusLabel");
           li.appendChild(favoriteIcon);
 
           const checkbox = document.createElement("input");
@@ -891,3 +894,13 @@ apiModal.addEventListener("hidden.bs.modal", function () {
 apiModal.addEventListener("shown.bs.modal", function () {
   apiInput.focus();
 });
+
+// tooltips
+geminiSummaryButton.title = chrome.i18n.getMessage("geminiLabel");
+searchHistoryButton.title = chrome.i18n.getMessage("historyLabel");
+favoriteListButton.title = chrome.i18n.getMessage("favoriteLabel");
+deleteListButton.title = chrome.i18n.getMessage("deleteLabel");
+enterButton.title = chrome.i18n.getMessage("enterLabel");
+configureElements[0].title = chrome.i18n.getMessage("shortcutsLabel");
+configureElements[1].title = chrome.i18n.getMessage("shortcutsLabel");
+apiSaveButton.title = chrome.i18n.getMessage("saveLabel");

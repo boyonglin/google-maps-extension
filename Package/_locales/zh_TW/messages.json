@@ -83,13 +83,13 @@
     "message": "搜尋方塊"
   },
   "shortcutsNote": {
-    "message": "你可以點擊上面的組合鍵來設定擴充功能的快捷鍵"
+    "message": "你可以點擊上方的組合鍵來設定功能快捷鍵"
   },
   "authorBtnText": {
     "message": "作者"
   },
   "githubBtnText": {
-    "message": "GitHub"
+    "message": "開源"
   },
   "tipBtnText": {
     "message": "提示"
@@ -99,5 +99,29 @@
   },
   "apiNote": {
     "message": "你可以從 Google AI Studio 取得免費 API 金鑰，請求數量限制為 15 次/分鐘、1,500 次/天"
+  },
+  "geminiLabel": {
+    "message": "頁面摘要"
+  },
+  "historyLabel": {
+    "message": "搜尋記錄"
+  },
+  "favoriteLabel": {
+    "message": "收藏清單"
+  },
+  "deleteLabel": {
+    "message": "刪除模式"
+  },
+  "enterLabel": {
+    "message": "搜尋"
+  },
+  "shortcutsLabel": {
+    "message": "自訂快速鍵"
+  },
+  "saveLabel": {
+    "message": "保存"
+  },
+  "plusLabel": {
+    "message": "加入收藏"
   }
 }

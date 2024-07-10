@@ -18,7 +18,8 @@
                 </div>
                 <input type="text" class="form-control ps-2 pe-5" autocomplete="off" placeholder="Search Google Maps" autofocus
                     id="searchInput" />
-                <button id="enterButton" class="input-group-text btn-enter justify-content-center rounded-circle border-0 d-none">
+                <button id="enterButton" class="input-group-text btn-enter justify-content-center rounded-circle border-0 d-none"
+                    title="Search">
                     <i class="bi bi-arrow-right"></i>
                 </button>
             </div>
@@ -35,25 +36,25 @@
                         <div class="row g-1">
                             <div class="col">
                                 <button type="button" id="geminiSummaryButton" class="btn btn-outline-secondary"
-                                    aria-label="Gemini Summary">
+                                    aria-label="Gemini Summary" title="Gemini Summary">
                                     <i class="bi bi-stars"></i>
                                 </button>
                             </div>
                             <div class="col">
-                                <button type="button" id="searchHistoryButton"
-                                    class="btn btn-outline-secondary active-button" aria-label="Search History">
+                                <button type="button" id="searchHistoryButton" class="btn btn-outline-secondary active-button"
+                                    aria-label="Search History" title="Search History">
                                     <i class="bi bi-clock-fill"></i>
                                 </button>
                             </div>
                             <div class="col">
                                 <button type="button" id="favoriteListButton" class="btn btn-outline-secondary"
-                                    aria-label="Favorite List">
+                                    aria-label="Favorite List" title="Favorite List">
                                     <i class="bi bi-patch-check-fill"></i>
                                 </button>
                             </div>
                             <div class="col">
                                 <button type="button" id="deleteListButton" class="btn btn-outline-secondary"
-                                    aria-label="Delete List">
+                                    aria-label="Delete List" title="Delete Mode">
                                     <i class="bi bi-trash-fill"></i>
                                 </button>
                             </div>
@@ -130,14 +131,14 @@
                     <div class="modal-body">
                         <div class="d-flex justify-content-between mt-3">
                             <h2 class="fs-6 fw-normal" data-locale="quickSearchKeyLabel">Quick Search</h2>
-                            <p type="button" class="text-muted">
-                                Ctrl+Shift+S / &#8984;+Shift+S
+                            <p type="button" class="text-muted browser" title="Keyboard shortcuts">
+                                Ctrl+Shift+S / &#8984;+&#8679;+S
                             </p>
                         </div>
                         <div class="d-flex justify-content-between">
                             <h2 class="fs-6 fw-normal" data-locale="searchBarKeyLabel">Search Bar</h2>
-                            <p type="button" class="text-muted">
-                                Alt+Shift+S / &#8997;+Shift+S
+                            <p type="button" class="text-muted" title="Keyboard shortcuts">
+                                Alt+Shift+S / &#8997;+&#8679;+S
                             </p>
                         </div>
                     </div>
@@ -161,14 +162,14 @@
                             <input type="text" class="form-control py-2 pe-5" autocomplete="off"
                                 placeholder="Gemini API key" autofocus id="apiInput" />
                             <button type="submit" data-bs-dismiss="modal"
-                                class="btn btn-setAPI d-flex align-items-center justify-content-center rounded-circle border-0">
+                                class="btn btn-setAPI d-flex align-items-center justify-content-center rounded-circle border-0"
+                                title="Save">
                                 <i class="bi bi-arrow-right"></i>
                             </button>
                         </form>
                     </div>
                     <div class="modal-footer d-flex justify-content-start">
-                        <p class="text-muted" style="font-style: italic;" data-locale="apiNote">You can get your API key
-                            from the Google AI Studio. (Free of charge)</p>
+                        <p class="text-muted" style="font-style: italic;" data-locale="apiNote">You can obtain a free API key from Google AI Studio, with a limit of 15 requests/minute and 1,500 requests/day.</p>
                     </div>
                 </div>
             </div>

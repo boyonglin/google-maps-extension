@@ -110,7 +110,7 @@
     "description": "popup tips search bar key label"
   },
   "shortcutsNote": {
-    "message": "You can click key combinations above to set extensions shortcuts.",
+    "message": "You can click key combinations above to set extension shortcuts.",
     "description": "popup tips shortcuts note"
   },
   "authorBtnText": {
@@ -132,5 +132,37 @@
   "apiNote": {
     "message": "You can obtain a free API key from Google AI Studio, with a limit of 15 requests/minute and 1,500 requests/day.",
     "description": "popup api key input note"
+  },
+  "geminiLabel": {
+    "message": "Page Summary",
+    "description": "tooltips page summary label"
+  },
+  "historyLabel": {
+    "message": "Search History",
+    "description": "tooltips search history label"
+  },
+  "favoriteLabel": {
+    "message": "Favorite List",
+    "description": "tooltips favorite list label"
+  },
+  "deleteLabel": {
+    "message": "Delete Mode",
+    "description": "tooltips delete label"
+  },
+  "enterLabel": {
+    "message": "Search",
+    "description": "tooltips search bar enter label"
+  },
+  "shortcutsLabel": {
+    "message": "Customize shortcuts",
+    "description": "tooltips shortcuts label"
+  },
+  "saveLabel": {
+    "message": "Save",
+    "description": "tooltips save API label"
+  },
+  "plusLabel": {
+    "message": "Add to Favorites",
+    "description": "tooltips add to favorites label"
   }
 }
