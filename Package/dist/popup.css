@@ -424,6 +424,12 @@ li:hover .form-check-input {
   text-decoration: var(--border-color) underline;
 }
 
+.btn-close {
+  font-size: 14px;
+  height: 16px;
+  width: 16px;
+}
+
 /* scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

@@ -39,7 +39,6 @@ const fileInput = document.getElementById("fileInput");
 const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
 const enterButton = document.getElementById("enterButton");
-const apiSaveButton = document.getElementsByClassName("btn-setAPI");
 
 // Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
@@ -76,11 +75,11 @@ searchInput.addEventListener("input", function () {
   }
 });
 
-enterButton.addEventListener("click", function() {
+enterButton.addEventListener("click", function () {
   if (searchInput.value.trim() === "") {
-     return;
+    return;
   } else {
-     chrome.runtime.sendMessage({
+    chrome.runtime.sendMessage({
       searchTerm: searchInput.value,
       action: "searchInput",
     });
@@ -903,4 +902,5 @@ deleteListButton.title = chrome.i18n.getMessage("deleteLabel");
 enterButton.title = chrome.i18n.getMessage("enterLabel");
 configureElements[0].title = chrome.i18n.getMessage("shortcutsLabel");
 configureElements[1].title = chrome.i18n.getMessage("shortcutsLabel");
-apiSaveButton.title = chrome.i18n.getMessage("saveLabel");
+const apiSaveButton = document.querySelectorAll(".modal-body #apiForm button");
+apiSaveButton[0].title = chrome.i18n.getMessage("saveLabel");
