@@ -27,7 +27,9 @@
 - [x] Export the favorite list
 - [x] Chinese language
 - [x] AI summarized locations
-- [ ] Settings: windows open, fast summary, max history length
+- [ ] Settings: windows open, fast summary, max history length, dark mode?
+- [ ] a11y
+- [ ] video ai summary
 
 ---
 
