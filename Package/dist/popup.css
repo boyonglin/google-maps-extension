@@ -26,7 +26,7 @@
 
 html,
 body {
-  width: 400px;
+  width: 25rem;
   box-sizing: border-box;
   overflow: auto;
   color: var(--gray-800);
@@ -35,19 +35,19 @@ body {
 
 /* search bar */
 .brand {
-  border-top-left-radius: 32px;
-  border-bottom-left-radius: 32px;
+  border-top-left-radius: 2rem;
+  border-bottom-left-radius: 2rem;
   background-color: var(--background-color);
 }
 
 .input-group-prepend {
-  margin-right: -2px;
+  margin-right: -.125rem;
 }
 
 #searchInput {
   border-left: 0;
-  border-top-right-radius: 32px;
-  border-bottom-right-radius: 32px;
+  border-top-right-radius: 2rem;
+  border-bottom-right-radius: 2rem;
   color: var(--gray-800);
 }
 
@@ -74,13 +74,13 @@ body {
 
 .btn-enter {
   position: absolute;
-  right: 12px;
+  right: .75rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--gray-800);
   background-color: var(--background-color);
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   cursor: pointer;
   z-index: 10;
 }
@@ -91,8 +91,8 @@ body {
 
 /* api bar */
 #apiInput {
-  border-radius: 32px;
-  padding-left: 16px;
+  border-radius: 2rem;
+  padding-left: 1rem;
 }
 
 #apiInput::placeholder {
@@ -114,13 +114,13 @@ body {
 
 .btn-setAPI {
   position: absolute;
-  right: 24px;
+  right: 1.5rem;
   top: 50%;
   transform: translateY(-50%);
   background-color: var(--google-purple);
   color: white;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   cursor: pointer;
 }
 
@@ -175,13 +175,13 @@ body {
 #searchHistoryList,
 #favoriteList,
 #summaryList {
-  max-height: 280px;
+  max-height: 17.5rem;
 }
 
 #searchHistoryList ul,
 #favoriteList ul,
 #summaryList ul {
-  min-height: 104px;
+  min-height: 6.5rem;
   justify-content: flex-end;
 }
 
@@ -193,11 +193,11 @@ li {
 li i {
   display: none;
   position: absolute;
-  right: 8px;
+  right: .5rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   justify-content: center;
   align-items: center;
 }
@@ -220,8 +220,8 @@ li i.matched {
 /* checkbox */
 .form-check-input {
   border-color: var(--border-color);
-  min-width: 16px;
-  min-height: 16px;
+  min-width: 1rem;
+  min-height: 1rem;
 }
 
 .form-check-input:focus-visible {
@@ -343,12 +343,12 @@ li:hover .form-check-input {
 .btn-outline-secondary.active-button::after {
   content: "";
   position: absolute;
-  bottom: 0px;
+  bottom: 0rem;
   left: 50%;
   transform: translateX(-50%);
-  width: 10px;
-  height: 2.5px;
-  border-radius: 2px;
+  width: .625rem;
+  height: .15rem;
+  border-radius: .15rem;
 }
 
 #searchHistoryButton:hover,
@@ -428,7 +428,7 @@ li:hover .form-check-input {
 
 /* Modal */
 .modal-xs {
-  max-width: 360px;
+  max-width: 22.5rem;
   margin: 0 auto;
 }
 
@@ -437,23 +437,23 @@ li:hover .form-check-input {
 }
 
 .btn-close {
-  font-size: 14px;
-  height: 16px;
-  width: 16px;
+  font-size: .875rem;
+  height: 1rem;
+  width: 1rem;
 }
 
 /* scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: .5rem;
 }
 
 ::-webkit-scrollbar-track {
-  border-radius: 4px;
+  border-radius: .25rem;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--gray-400);
-  border-radius: 10px;
+  border-radius: .5rem;
 }
 
 /* animation  */
