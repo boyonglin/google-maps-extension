@@ -158,7 +158,7 @@ function initSearchHistory() {
           checkbox.type = "checkbox";
           checkbox.value = "delete";
           checkbox.id = "checkDelete";
-          checkbox.ariaLabel = "delete";
+          checkbox.ariaLabel = "Delete";
           li.appendChild(checkbox);
           fragment.appendChild(li);
         });
@@ -576,7 +576,7 @@ function updateFavoriteListContainer(favoriteList) {
       checkbox.type = "checkbox";
       checkbox.value = "delete";
       checkbox.id = "checkDelete";
-      checkbox.ariaLabel = "delete";
+      checkbox.ariaLabel = "Delete";
       li.appendChild(checkbox);
       fragment.appendChild(li);
 
