@@ -164,6 +164,11 @@ function initSearchHistory() {
         });
         ul.appendChild(fragment);
         searchHistoryListContainer.appendChild(ul);
+
+        const lastListItem = searchHistoryListContainer.querySelector(".list-group .list-group-item:first-child");
+        if (lastListItem) {
+          lastListItem.classList.remove("mb-3");
+        }
       } else {
         emptyMessage.style.display = "block";
         hasHistory = false;
@@ -585,6 +590,11 @@ function updateFavoriteListContainer(favoriteList) {
     ul.appendChild(fragment);
     favoriteListContainer.appendChild(ul);
 
+    const lastListItem = favoriteListContainer.querySelector(".list-group .list-group-item:first-child");
+    if (lastListItem) {
+      lastListItem.classList.remove("mb-3");
+    }
+
     attachCheckboxEventListener(favoriteListContainer);
   } else {
     favoriteEmptyMessage.style.display = "block";
@@ -797,7 +807,6 @@ sendButton.addEventListener("click", () => {
 
 // Check if the content is predominantly Latin characters
 function isPredominantlyLatinChars(text) {
-  const totalChars = text.length;
   const latinChars = text.match(/[a-zA-Z\u00C0-\u00FF]/g)?.length || 0;
   const squareChars = text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g)?.length || 0;
 
@@ -815,6 +824,10 @@ function summarizeContent(content, apiKey) {
       responseField.value = response;
       try {
         summaryListContainer.innerHTML = response;
+        const lastListItem = summaryListContainer.querySelector(".list-group .list-group-item:last-child");
+        if (lastListItem) {
+          lastListItem.classList.remove("mb-3");
+        }
         hasSummary = true;
         geminiEmptyMessage.classList.remove("shineText");
         geminiEmptyMessage.classList.add("d-none");
