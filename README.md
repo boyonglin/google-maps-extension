@@ -87,9 +87,9 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
 - [x] Export the favorite list
 - [x] Chinese language
 - [x] AI summarized locations
-- [ ] a11y: tooltips, ...
+- [x] tooltips
+- [x] New intro. video
 - [ ] Settings: windows open, fast summary, max history length
-- [ ] video ai summary
 
 ---
 

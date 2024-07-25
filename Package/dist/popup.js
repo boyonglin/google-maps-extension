@@ -48,9 +48,7 @@ const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 
 let [hasHistory, hasFavorite, hasSummary, initFavorite] = [false, false, false, false];
 
-// Initialize the popup
-initSearchHistory();
-checkAPIKey();
+initPopup();
 
 // Track events on the search bar
 searchInput.addEventListener("keydown", function (event) {
@@ -100,33 +98,12 @@ document.addEventListener("DOMContentLoaded", function () {
   checkTextOverflow();
 });
 
-// Check if the API key is defined and valid
-function checkAPIKey() {
-  chrome.storage.local.get("geminiApiKey", function (data) {
-    const apiKey = data.geminiApiKey;
-
-    if (!data || !apiKey) {
-      sendButton.disabled = true;
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-      return;
-    }
-
-    if (apiKey) {
-      verifyApiKey(apiKey).then(isValid => {
-        if (!isValid) {
-          sendButton.disabled = true;
-          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-        }
-      });
-    }
-  });
-}
-
-// Retrieve searchHistoryList and favoriteList from Chrome storage
-function initSearchHistory() {
+function initPopup() {
   chrome.storage.local.get(
-    ["searchHistoryList", "favoriteList"],
-    ({ searchHistoryList, favoriteList }) => {
+    ["searchHistoryList", "favoriteList", "geminiApiKey"],
+    ({ searchHistoryList, favoriteList, geminiApiKey }) => {
+      
+      // Retrieve searchHistoryList and favoriteList from Chrome storage
       if (searchHistoryList && searchHistoryList.length > 0) {
         emptyMessage.style.display = "none";
         hasHistory = true;
@@ -176,6 +153,20 @@ function initSearchHistory() {
       }
 
       attachCheckboxEventListener(searchHistoryListContainer);
+
+      // Check if the API key is defined and valid
+      if (geminiApiKey) {
+        verifyApiKey(geminiApiKey).then(isValid => {
+          if (!isValid) {
+            sendButton.disabled = true;
+            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+          }
+        });
+      } else {
+        sendButton.disabled = true;
+        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+        return;
+      }
     }
   );
 }
