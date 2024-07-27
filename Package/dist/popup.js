@@ -102,7 +102,7 @@ function initPopup() {
   chrome.storage.local.get(
     ["searchHistoryList", "favoriteList", "geminiApiKey"],
     ({ searchHistoryList, favoriteList, geminiApiKey }) => {
-      
+
       // Retrieve searchHistoryList and favoriteList from Chrome storage
       if (searchHistoryList && searchHistoryList.length > 0) {
         emptyMessage.style.display = "none";
@@ -136,6 +136,7 @@ function initPopup() {
           checkbox.value = "delete";
           checkbox.id = "checkDelete";
           checkbox.ariaLabel = "Delete";
+          checkbox.style.cursor = "pointer";
           li.appendChild(checkbox);
           fragment.appendChild(li);
         });
@@ -573,6 +574,7 @@ function updateFavoriteListContainer(favoriteList) {
       checkbox.value = "delete";
       checkbox.id = "checkDelete";
       checkbox.ariaLabel = "Delete";
+      checkbox.style.cursor = "pointer";
       li.appendChild(checkbox);
       fragment.appendChild(li);
 
