@@ -121,9 +121,13 @@
     "message": "GitHub",
     "description": "popup github button text"
   },
-  "tipBtnText": {
+  "tipsBtnText": {
     "message": "Tip",
-    "description": "popup tip button text"
+    "description": "popup tips button text"
+  },
+  "kofiBtnText": {
+    "message": "Coffee",
+    "description": "popup kofi button text"
   },
   "apiTitle": {
     "message": "Set up your API key",

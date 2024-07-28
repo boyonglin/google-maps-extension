@@ -91,8 +91,11 @@
   "githubBtnText": {
     "message": "開源"
   },
-  "tipBtnText": {
+  "tipsBtnText": {
     "message": "提示"
+  },
+  "kofiBtnText": {
+    "message": "咖啡"
   },
   "apiTitle": {
     "message": "配置你的 API 金鑰"
