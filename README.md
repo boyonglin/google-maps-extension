@@ -25,7 +25,7 @@
 3. Search History: Saves up to 10 locations for quick redirection to Google Maps.
 4. Favorite List: Click the PATCH PLUS icon on the right to save. Import or export favorites as needed.
 5. Delete Mode: Simply check and delete items.
-6. Page Summary: Set up the API key to summarize the locations on the current page.
+6. Page Summary: Set up the API key to summarize the locations on the current page. Results will be preserved for 1 hour.
 
 ---
 
