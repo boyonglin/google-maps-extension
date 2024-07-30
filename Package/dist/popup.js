@@ -46,59 +46,25 @@ const cancelButtonSpan = document.querySelector("#cancelButton > span");
 const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
 const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 
-let [hasHistory, hasFavorite, hasSummary, initFavorite] = [false, false, false, false];
+let [hasHistory, hasFavorite, hasSummary] = [false, false, false];
 
-initPopup();
-
-// Track events on the search bar
-searchInput.addEventListener("keydown", function (event) {
-  if (event.key === "Enter") {
-    if (searchInput.value.trim() === "") {
-      // If it contains only blanks, prevent the default behavior of the event and do not allow submission
-      event.preventDefault();
-    } else {
-      chrome.runtime.sendMessage({
-        searchTerm: searchInput.value,
-        action: "searchInput",
-      });
-    }
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(popupLayout, 0);
+  setTimeout(fetchData, 0);
 });
 
-searchInput.addEventListener("input", function () {
-  if (searchInput.value.trim() === "") {
-    enterButton.classList.add("d-none");
-  } else {
-    enterButton.classList.remove("d-none");
-  }
-});
-
-enterButton.addEventListener("click", function () {
-  if (searchInput.value.trim() === "") {
-    return;
-  } else {
-    chrome.runtime.sendMessage({
-      searchTerm: searchInput.value,
-      action: "searchInput",
-    });
-  }
-});
-
-// Executed after the document has finished loading
-document.addEventListener("DOMContentLoaded", function () {
+// Update the popup layout
+function popupLayout() {
   for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.remove("d-none");
   for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.add("d-none");
   for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
   for (let i = 0; i < pageGemini.length; i++) pageGemini[i].classList.add("d-none");
 
-  if (!hasHistory) {
-    emptyMessage.style.display = "block";
-  }
-
   checkTextOverflow();
-});
+};
 
-function initPopup() {
+// Fetch the search history list
+function fetchData() {
   chrome.storage.local.get(
     ["searchHistoryList", "favoriteList", "geminiApiKey"],
     ({ searchHistoryList, favoriteList, geminiApiKey }) => {
@@ -116,7 +82,7 @@ function initPopup() {
         searchHistoryList.forEach((selectedText) => {
           const li = document.createElement("li");
           li.className =
-            "list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between";
+            "list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center";
 
           const span = document.createElement("span");
           span.textContent = selectedText;
@@ -208,6 +174,40 @@ function attachCheckboxEventListener(container) {
     });
   });
 }
+
+// Track events on the search bar
+searchInput.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    if (searchInput.value.trim() === "") {
+      // If it contains only blanks, prevent the default behavior of the event and do not allow submission
+      event.preventDefault();
+    } else {
+      chrome.runtime.sendMessage({
+        searchTerm: searchInput.value,
+        action: "searchInput",
+      });
+    }
+  }
+});
+
+searchInput.addEventListener("input", function () {
+  if (searchInput.value.trim() === "") {
+    enterButton.classList.add("d-none");
+  } else {
+    enterButton.classList.remove("d-none");
+  }
+});
+
+enterButton.addEventListener("click", function () {
+  if (searchInput.value.trim() === "") {
+    return;
+  } else {
+    chrome.runtime.sendMessage({
+      searchTerm: searchInput.value,
+      action: "searchInput",
+    });
+  }
+});
 
 searchHistoryButton.addEventListener("click", function () {
   for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.remove("d-none");
@@ -349,7 +349,7 @@ function constructSummaryHTML(summaryList) {
     const mbClass = isLastItem ? "" : "mb-3";
 
     html += `
-      <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between ${mbClass}">
+      <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center ${mbClass}">
         <span>${item.name}</span>
         <span class="d-none">${item.clue}</span>
       </li>
@@ -588,7 +588,7 @@ function updateFavoriteListContainer(favoriteList) {
     favoriteList.forEach((selectedText) => {
       const li = document.createElement("li");
       li.className =
-        "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between";
+        "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between align-items-center";
 
       const span = document.createElement("span");
       span.textContent = selectedText;
