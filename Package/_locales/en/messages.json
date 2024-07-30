@@ -20,11 +20,11 @@
     "description": "popup gemini summary subtitle"
   },
   "historyEmptyMsg": {
-    "message": "Highlight TEXT and search!\nYour search history will be kept here.\uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Highlight the text and search!\nYour search history will be kept here.\uD83D\uDC4C\uD83C\uDFFD",
     "description": "popup no search history message"
   },
   "favoriteEmptyMsg": {
-    "message": "Click right PATCH to save!\nYour favorite spots can be saved without limits.\uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Click plus icon in the history to save!\nYour favorite spots can be saved without limits.\uD83D\uDC4C\uD83C\uDFFD",
     "description": "popup no favorite list message"
   },
   "importErrorMsg": {
@@ -36,11 +36,11 @@
     "description": "popup cleared up message"
   },
   "geminiFirstMsg": {
-    "message": "Try Summary the page by AI!\nYou can start by setting up your API key below.",
+    "message": "Try summarizing the page with AI!\nYou can start by setting up your API key below.",
     "description": "popup first gemini summary message"
   },
   "geminiEmptyMsg": {
-    "message": "Try Summary the page by AI!\nYou can regenerate if results are unexpected.\uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Try summarizing the page with AI!\nYou can regenerate if results are unexpected.\uD83D\uDC4C\uD83C\uDFFD",
     "description": "popup no gemini summary message"
   },
   "geminiLoadMsg": {
