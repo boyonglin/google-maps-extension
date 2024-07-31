@@ -274,25 +274,12 @@ li:hover .form-check-input {
 
 #clearButton,
 #cancelButton {
-  background-color: var(--gray-400);
-  border: 1px solid var(--gray-400);
   color: var(--gray-600);
 }
 
 #clearButton:hover {
   background-color: var(--danger-color);
   border: 1px solid var(--danger-color);
-  color: var(--background-color);
-}
-
-#clearButton:focus-visible {
-  background-color: var(--gray-400);
-  box-shadow: 0 0 0 4px var(--gray-200);
-}
-
-#cancelButton:hover {
-  background-color: var(--gray-600);
-  border: 1px solid var(--gray-600);
   color: var(--background-color);
 }
 
@@ -321,28 +308,6 @@ li:hover .form-check-input {
   opacity: 0.65;
 }
 
-.shineText {
-  animation: shine 2s infinite;
-}
-
-@keyframes shine {
-  0% {
-    opacity: 1;
-  }
-
-  25% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
 #searchHistoryButton,
 #favoriteListButton,
 #deleteListButton,
@@ -350,6 +315,10 @@ li:hover .form-check-input {
   border: none;
   color: var(--gray-600);
   position: relative;
+}
+
+.active-button {
+  pointer-events: none;
 }
 
 .btn-outline-secondary:hover::after,
@@ -435,10 +404,6 @@ li:hover .form-check-input {
   background-color: transparent;
 }
 
-.active-button {
-  pointer-events: none;
-}
-
 /* Modal */
 .modal-xs {
   max-width: 22.5rem;
@@ -497,5 +462,27 @@ li:hover .form-check-input {
 
   100% {
     transform: translate(0%, -50%) scale(1);
+  }
+}
+
+.shineText {
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  0% {
+    opacity: 1;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
   }
 }
