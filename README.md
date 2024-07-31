@@ -14,8 +14,8 @@
 - Project
     - [Framework](#framework)
     - [Structure](#structure)
-    - [Roadmap](#roadmap)
 - [Reference](#reference)
+- [Contributor](#contributor)
 
 ---
 
@@ -75,21 +75,6 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
     - `contentScript.js`: Accessing webpage content
 - `popup.html`: HTML for the popup window
 - `manifest.json`: Configuration file for the extension
-
----
-
-## Roadmap
-- [x] Quick search using shortcuts
-- [x] Search bar in the popup window
-- [x] Record search history
-- [x] Save the favorite spot
-- [x] Delete mode
-- [x] Export the favorite list
-- [x] Chinese language
-- [x] AI summarized locations
-- [x] tooltips
-- [x] New intro. video
-- [ ] Settings: windows open, fast summary, max history length, summary preservation time
 
 ---
 
