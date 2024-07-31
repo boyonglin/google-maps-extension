@@ -1,6 +1,6 @@
 # google-maps-extension
 > Speed up your search flow to Google Maps!\
-> Navigate and save locations effortlessly with Google Maps (fast), experiencing rapid integration and minimal workflow disruption.
+> Navigate and save locations effortlessly with The Maps Express, experiencing rapid integration and minimal workflow disruption.
 
 ---
 
@@ -89,7 +89,7 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
 - [x] AI summarized locations
 - [x] tooltips
 - [x] New intro. video
-- [ ] Settings: windows open, fast summary, max history length
+- [ ] Settings: windows open, fast summary, max history length, summary preservation time
 
 ---
 
