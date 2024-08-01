@@ -48,10 +48,8 @@ const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 
 let [hasHistory, hasFavorite, hasSummary] = [false, false, false];
 
-document.addEventListener("DOMContentLoaded", () => {
-  setTimeout(popupLayout, 0);
-  setTimeout(fetchData, 0);
-});
+setTimeout(popupLayout, 0);
+setTimeout(fetchData, 0);
 
 // Update the popup layout
 function popupLayout() {
