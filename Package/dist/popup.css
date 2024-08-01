@@ -189,10 +189,14 @@ body {
 }
 
 #searchHistoryList ul,
-#favoriteList ul,
-#summaryList ul {
+#favoriteList ul {
   min-height: 6.5rem;
   justify-content: flex-end;
+}
+
+#summaryList ul {
+  min-height: 6.5rem;
+  justify-content: flex-start;
 }
 
 /* list icon */

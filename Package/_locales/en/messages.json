@@ -113,20 +113,16 @@
     "message": "You can click key combinations above to set extension shortcuts.",
     "description": "popup tips shortcuts note"
   },
-  "authorBtnText": {
-    "message": "Author",
-    "description": "popup author button text"
-  },
-  "githubBtnText": {
-    "message": "GitHub",
-    "description": "popup github button text"
-  },
   "tipsBtnText": {
     "message": "Tip",
     "description": "popup tips button text"
   },
+  "websiteBtnText": {
+    "message": "Website",
+    "description": "popup website button text"
+  },
   "kofiBtnText": {
-    "message": "Coffee",
+    "message": "Support",
     "description": "popup kofi button text"
   },
   "apiTitle": {

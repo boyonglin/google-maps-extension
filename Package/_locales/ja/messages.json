@@ -85,17 +85,14 @@
   "shortcutsNote": {
     "message": "上のショートカットをクリックして、拡張機能のショートカットキーを設定できます"
   },
-  "authorBtnText": {
-    "message": "作者"
-  },
-  "githubBtnText": {
-    "message": "オープンソース"
-  },
   "tipsBtnText": {
     "message": "ヒント"
   },
+  "websiteBtnText": {
+    "message": "サイト"
+  },
   "kofiBtnText": {
-    "message": "コーヒー"
+    "message": "支援"
   },
   "apiTitle": {
     "message": "API キーの設定"

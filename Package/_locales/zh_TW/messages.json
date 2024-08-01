@@ -85,17 +85,14 @@
   "shortcutsNote": {
     "message": "你可以點擊上方的組合鍵來設定功能快捷鍵"
   },
-  "authorBtnText": {
-    "message": "作者"
-  },
-  "githubBtnText": {
-    "message": "開源"
-  },
   "tipsBtnText": {
     "message": "提示"
   },
+  "websiteBtnText": {
+    "message": "網站"
+  },
   "kofiBtnText": {
-    "message": "咖啡"
+    "message": "支持"
   },
   "apiTitle": {
     "message": "配置你的 API 金鑰"
