@@ -325,7 +325,7 @@ geminiSummaryButton.addEventListener("click", function () {
 
   // Clear summary data if it's older than 1 hour
   chrome.storage.local.get(["summaryList", "timestamp"], function(result) {
-    if (result.timestamp) {
+    if (result.timestamp && result.summaryList.length > 0) {
       const currentTime = Date.now();
       const elapsedTime = (currentTime - result.timestamp) / 1000; // time in seconds
       if (elapsedTime > 3600) {
