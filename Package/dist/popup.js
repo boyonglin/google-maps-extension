@@ -49,18 +49,7 @@ const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
 
-let [hasHistory, hasFavorite, hasSummary, isConnect] = [false, false, false, false];
-
-// Check if the extension is connected to the current tab
-document.addEventListener('DOMContentLoaded', () => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
-      if (!chrome.runtime.lastError) {
-        isConnect = true;
-      }
-    });
-  });
-});
+let [hasHistory, hasFavorite, hasSummary] = [false, false, false];
 
 setTimeout(popupLayout, 0);
 setTimeout(fetchData, 0);
@@ -355,6 +344,7 @@ geminiSummaryButton.addEventListener("click", function () {
           summaryListContainer.innerHTML = constructSummaryHTML(result.summaryList);
           clearButtonSummary.classList.remove("d-none");
           apiButton.classList.add("d-none");
+          clearButtonSummary.disabled = false;
           checkTextOverflow();
         }
       }
@@ -581,10 +571,10 @@ clearButton.addEventListener("click", () => {
 clearButtonSummary.addEventListener("click", () => {
   chrome.storage.local.remove(["summaryList", "timestamp"]);
 
-  clearButtonSummary.classList.add("d-none");
-  summaryListContainer.innerHTML = "";
   hasSummary = false;
+  summaryListContainer.innerHTML = "";
   geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+  clearButtonSummary.classList.add("d-none");
   geminiEmptyMessage.classList.remove("d-none");
   apiButton.classList.remove("d-none");
 });
@@ -832,22 +822,24 @@ document.addEventListener("keydown", (e) => {
 const responseField = document.getElementById("response");
 
 sendButton.addEventListener("click", () => {
-  if (!isConnect) {
-    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminierrorMsg");
-    geminiEmptyMessage.classList.remove("d-none");
-  }
-
   sendButton.disabled = true;
-  summaryListContainer.innerHTML = "";
+  clearButtonSummary.disabled = true;
 
   chrome.storage.local.get("geminiApiKey", function (data) {
     const apiKey = data.geminiApiKey;
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
+        if (chrome.runtime.lastError) {
+          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminierrorMsg");
+          geminiEmptyMessage.classList.remove("d-none");
+          return;
+        }
+      });
+
       chrome.tabs.sendMessage(tabs[0].id, { action: "getContent" }, (response) => {
         if (response && response.content) {
-          summarizeContent(response.content, apiKey);
-
+          summaryListContainer.innerHTML = "";
           geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiLoadMsg");
           geminiEmptyMessage.classList.remove("d-none");
           geminiEmptyMessage.classList.add("shineText");
@@ -857,6 +849,8 @@ sendButton.addEventListener("click", () => {
 
           const newText = originalText.replace("NaN", Math.ceil(response.length / divisor));
           geminiEmptyMessage.innerHTML = newText;
+
+          summarizeContent(response.content, apiKey);
         }
       });
     });
@@ -891,6 +885,7 @@ function summarizeContent(content, apiKey) {
         geminiEmptyMessage.classList.add("d-none");
         clearButtonSummary.classList.remove("d-none");
         apiButton.classList.add("d-none");
+        clearButtonSummary.disabled = false;
         checkTextOverflow();
 
         // store the response and current time
