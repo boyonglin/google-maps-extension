@@ -55,6 +55,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// checking the connection between the background script and the content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === "ping") {
     sendResponse({ status: "connected" });

@@ -48,7 +48,7 @@
     "description": "popup gemini model loading message"
   },
   "geminiErrorMsg": {
-    "message": "Something went wrong!\nPlease reload the page and try again.\ud83d\udea7",
+    "message": "Something went wrong!\nPlease refresh the page and try again.\ud83d\udea7",
     "description": "popup gemini summary error message"
   },
   "apiInvalidMsg": {

@@ -831,6 +831,7 @@ sendButton.addEventListener("click", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
         if (chrome.runtime.lastError) {
+          summaryListContainer.innerHTML = "";
           geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminierrorMsg");
           geminiEmptyMessage.classList.remove("d-none");
           return;

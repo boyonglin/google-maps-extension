@@ -36,7 +36,7 @@
     "message": "把海當作零食配著，\n等待就變浪漫了...（約 NaN 秒）"
   },
   "geminiErrorMsg": {
-    "message": "出錯了！\n請重新加載頁面並再試一次\ud83d\udea7"
+    "message": "出錯了！\n請重新整理頁面並再試一次\ud83d\udea7"
   },
   "apiInvalidMsg": {
     "message": "API 金鑰無法使用！\n請確認並重新嘗試\ud83d\udea7"
