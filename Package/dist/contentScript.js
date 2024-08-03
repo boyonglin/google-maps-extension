@@ -54,3 +54,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ content: content, length: contentLength });
   }
 });
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === "ping") {
+    sendResponse({ status: "connected" });
+  }
+});

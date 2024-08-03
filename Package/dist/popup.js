@@ -39,14 +39,28 @@ const fileInput = document.getElementById("fileInput");
 const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
 const enterButton = document.getElementById("enterButton");
+const clearButtonSummary = document.getElementById("clearButtonSummary");
 
 // Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
 const cancelButtonSpan = document.querySelector("#cancelButton > span");
 const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
 const mapsButtonSpan = document.getElementById("mapsButtonSpan");
+const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+const sendButtonSpan = document.querySelector("#sendButton > i + span");
 
-let [hasHistory, hasFavorite, hasSummary] = [false, false, false];
+let [hasHistory, hasFavorite, hasSummary, isConnect] = [false, false, false, false];
+
+// Check if the extension is connected to the current tab
+document.addEventListener('DOMContentLoaded', () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
+      if (!chrome.runtime.lastError) {
+        isConnect = true;
+      }
+    });
+  });
+});
 
 setTimeout(popupLayout, 0);
 setTimeout(fetchData, 0);
@@ -142,6 +156,8 @@ function checkTextOverflow() {
   const clearButtonHeight = clearButtonSpan.offsetHeight;
   const deleteButtonHeight = deleteButtonSpan.offsetHeight;
   const cancelButtonHeight = cancelButtonSpan.offsetHeight;
+  const sendButtonHeight = sendButtonSpan.offsetHeight;
+  const clearButtonSummaryHeight = clearButtonSummarySpan.offsetHeight;
 
   if (clearButtonHeight > mapsButtonHeight) {
     clearButton.classList.remove("w-25");
@@ -150,6 +166,10 @@ function checkTextOverflow() {
   if (cancelButtonHeight > deleteButtonHeight) {
     cancelButton.classList.remove("w-25");
     cancelButton.classList.add("w-auto");
+  }
+  if (clearButtonSummaryHeight > sendButtonHeight) {
+    clearButtonSummary.classList.remove("w-25");
+    clearButtonSummary.classList.add("w-auto");
   }
 }
 
@@ -322,7 +342,7 @@ geminiSummaryButton.addEventListener("click", function () {
   subtitleElement.textContent = chrome.i18n.getMessage("geminiSummarySubtitle");
 
   // Clear summary data if it's older than 1 hour
-  chrome.storage.local.get(["summaryList", "timestamp"], function(result) {
+  chrome.storage.local.get(["summaryList", "timestamp"], function (result) {
     if (result.timestamp && result.summaryList.length > 0) {
       const currentTime = Date.now();
       const elapsedTime = (currentTime - result.timestamp) / 1000; // time in seconds
@@ -333,6 +353,9 @@ geminiSummaryButton.addEventListener("click", function () {
           hasSummary = true;
           geminiEmptyMessage.classList.add("d-none");
           summaryListContainer.innerHTML = constructSummaryHTML(result.summaryList);
+          clearButtonSummary.classList.remove("d-none");
+          apiButton.classList.add("d-none");
+          checkTextOverflow();
         }
       }
     }
@@ -541,7 +564,6 @@ summaryListContainer.addEventListener("click", function (event) {
 
 // Track the click event on clear button
 clearButton.addEventListener("click", () => {
-  // Clear all searchHistoryList data
   chrome.storage.local.set({ searchHistoryList: [] });
 
   clearButton.disabled = true;
@@ -554,6 +576,17 @@ clearButton.addEventListener("click", () => {
 
   // Send a message to background.js to request clearing of selected text list data
   chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
+});
+
+clearButtonSummary.addEventListener("click", () => {
+  chrome.storage.local.remove(["summaryList", "timestamp"]);
+
+  clearButtonSummary.classList.add("d-none");
+  summaryListContainer.innerHTML = "";
+  hasSummary = false;
+  geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+  geminiEmptyMessage.classList.remove("d-none");
+  apiButton.classList.remove("d-none");
 });
 
 // Track the storage change event
@@ -799,8 +832,12 @@ document.addEventListener("keydown", (e) => {
 const responseField = document.getElementById("response");
 
 sendButton.addEventListener("click", () => {
-  sendButton.disabled = true;
+  if (!isConnect) {
+    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminierrorMsg");
+    geminiEmptyMessage.classList.remove("d-none");
+  }
 
+  sendButton.disabled = true;
   summaryListContainer.innerHTML = "";
 
   chrome.storage.local.get("geminiApiKey", function (data) {
@@ -852,6 +889,9 @@ function summarizeContent(content, apiKey) {
         hasSummary = true;
         geminiEmptyMessage.classList.remove("shineText");
         geminiEmptyMessage.classList.add("d-none");
+        clearButtonSummary.classList.remove("d-none");
+        apiButton.classList.add("d-none");
+        checkTextOverflow();
 
         // store the response and current time
         const listItems = document.querySelectorAll(".summary-list");
@@ -892,18 +932,12 @@ document.getElementById("apiForm").addEventListener("submit", function (event) {
 
   verifyApiKey(apiKey).then(isValid => {
     if (isValid) {
-      if (hasSummary) {
-        geminiEmptyMessage.classList.add("d-none");
-      }
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
       sendButton.disabled = false;
     } else {
       geminiEmptyMessage.classList.remove("d-none");
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
       sendButton.disabled = true;
-      chrome.storage.local.remove(["summaryList", "timestamp"]);
-      summaryListContainer.innerHTML = "";
-      hasSummary = false;
     }
   });
 });
@@ -957,3 +991,4 @@ configureElements[0].title = chrome.i18n.getMessage("shortcutsLabel");
 configureElements[1].title = chrome.i18n.getMessage("shortcutsLabel");
 const apiSaveButton = document.querySelectorAll(".modal-body #apiForm button");
 apiSaveButton[0].title = chrome.i18n.getMessage("saveLabel");
+clearButtonSummary.title = chrome.i18n.getMessage("clearSummaryLabel");

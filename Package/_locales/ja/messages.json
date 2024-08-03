@@ -33,7 +33,7 @@
     "message": "AI で場所の概要を試してみてください！\n結果が期待に合わない場合は再生成できます\uD83D\uDC4C\uD83C\uDFFD"
   },
   "geminiLoadMsg": {
-    "message": "\n海をおやつのようにして、\n待つことがロマンチックになる...（約 NaN 秒）"
+    "message": "海をおやつのようにして、\n待つことがロマンチックになる...（約 NaN 秒）"
   },
   "geminiErrorMsg": {
     "message": "エラーが発生しました！\nページをリロードして再試行してください\ud83d\udea7"
@@ -123,5 +123,8 @@
   },
   "plusLabel": {
     "message": "お気に入りに追加"
+  },
+  "clearSummaryLabel": {
+    "message": "概要結果は 1 時間後に自動的に削除されます"
   }
 }

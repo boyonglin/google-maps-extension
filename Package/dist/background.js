@@ -183,4 +183,3 @@ function callApi(text, apiKey, sendResponse) {
       sendResponse({ error: error.toString() });
     });
 }
-

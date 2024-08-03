@@ -164,5 +164,9 @@
   "plusLabel": {
     "message": "Add to Favorites",
     "description": "tooltips add to favorites label"
+  },
+  "clearSummaryLabel": {
+    "message": "The results will be preserved and automatically cleared after 1 hour",
+    "description": "tooltips clear summary label"
   }
 }

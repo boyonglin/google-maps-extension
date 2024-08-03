@@ -275,11 +275,13 @@ li:hover .form-check-input {
 }
 
 #clearButton,
-#cancelButton {
+#cancelButton,
+#clearButtonSummary {
   color: var(--gray-600);
 }
 
-#clearButton:hover {
+#clearButton:hover,
+#clearButtonSummary:hover {
   background-color: var(--danger-color);
   border: 1px solid var(--danger-color);
   color: var(--background-color);
