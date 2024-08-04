@@ -183,3 +183,40 @@ function callApi(text, apiKey, sendResponse) {
       sendResponse({ error: error.toString() });
     });
 }
+
+// let popupWindowId = null;
+
+// chrome.action.onClicked.addListener(async () => {
+//   const result = await chrome.storage.local.get("coords");
+//   const coords = result.coords || { x: 1040, y: 120 };
+
+//   chrome.windows.create({
+//     url: "../popup.html",
+//     type: "popup",
+//     width: 400,
+//     height: 420,
+//     left: coords.x,
+//     top: coords.y
+//   }, (popupWindow) => {
+//     popupWindowId = popupWindow.id;
+
+//     // Update position when the window is moved
+//     chrome.windows.onBoundsChanged.addListener(async (window) => {
+//       if (window.id === popupWindowId) {
+//         const updatedWindow = await chrome.windows.get(popupWindowId);
+//         const { left, top } = updatedWindow;
+//         await chrome.storage.local.set({ coords: { x: left, y: top } });
+//       }
+//     });
+//   });
+// });
+
+// // Resize the window to fit the content
+// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+//   if (message.type === "content-size" && popupWindowId !== null) {
+//     chrome.windows.update(popupWindowId, {
+//       width: message.width + message.frameWidth,
+//       height: message.height + message.titleBarHeight
+//     });
+//   }
+// });

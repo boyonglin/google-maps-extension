@@ -1,14 +1,13 @@
-// Track messages from the background script
+// Track tab messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+  // Get the selected text from the webpage
   if (request && request.action === "getSelectedText") {
-    // Get the selected text from the webpage
     const selectedText = window.getSelection().toString();
     sendResponse({ selectedText });
   }
-});
 
-// Inject Active Tab Content
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Inject Active Tab Content
   if (request.action === "getContent") {
     function getContent() {
       const titleElement = document.querySelector("head > title");
@@ -53,10 +52,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const contentLength = content.length;
     sendResponse({ content: content, length: contentLength });
   }
-});
 
-// checking the connection between the background script and the content script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Check the connection between the background and the content
   if (request.message === "ping") {
     sendResponse({ status: "connected" });
   }
