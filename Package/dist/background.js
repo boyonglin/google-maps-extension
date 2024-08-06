@@ -44,7 +44,7 @@ chrome.commands.onCommand.addListener((command) => {
 function handleSelectedText(selectedText) {
   // Check that the selected text is not empty or null
   if (!selectedText || selectedText.trim() === "") {
-    console.log("No valid selected text.");
+    console.error("No valid selected text.");
     return;
   }
 
@@ -87,7 +87,6 @@ chrome.runtime.onMessage.addListener((request) => {
 // Add the selected text to history list
 function updateHistoryList(selectedText) {
   chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
-    // Initialize
     if (!searchHistoryList) {
       searchHistoryList = [];
     }
@@ -184,39 +183,22 @@ function callApi(text, apiKey, sendResponse) {
     });
 }
 
-// let popupWindowId = null;
+let iframeInjected = false;
 
-// chrome.action.onClicked.addListener(async () => {
-//   const result = await chrome.storage.local.get("coords");
-//   const coords = result.coords || { x: 1040, y: 120 };
+chrome.action.onClicked.addListener((tab) => {
+  if (!iframeInjected) {
+    chrome.tabs.sendMessage(tab.id, { action: "injectIframe" });
+    iframeInjected = true;
+  } else {
+    chrome.tabs.sendMessage(tab.id, { action: "removeIframe" });
+    iframeInjected = false;
+  }
+});
 
-//   chrome.windows.create({
-//     url: "../popup.html",
-//     type: "popup",
-//     width: 400,
-//     height: 420,
-//     left: coords.x,
-//     top: coords.y
-//   }, (popupWindow) => {
-//     popupWindowId = popupWindow.id;
-
-//     // Update position when the window is moved
-//     chrome.windows.onBoundsChanged.addListener(async (window) => {
-//       if (window.id === popupWindowId) {
-//         const updatedWindow = await chrome.windows.get(popupWindowId);
-//         const { left, top } = updatedWindow;
-//         await chrome.storage.local.set({ coords: { x: left, y: top } });
-//       }
-//     });
-//   });
-// });
-
-// // Resize the window to fit the content
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//   if (message.type === "content-size" && popupWindowId !== null) {
-//     chrome.windows.update(popupWindowId, {
-//       width: message.width + message.frameWidth,
-//       height: message.height + message.titleBarHeight
-//     });
-//   }
-// });
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "iframeLoaded") {
+    iframeInjected = true;
+  } else if (message.type === "iframeRemoved") {
+    iframeInjected = false;
+  }
+});
