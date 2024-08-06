@@ -44,7 +44,7 @@ chrome.commands.onCommand.addListener((command) => {
 function handleSelectedText(selectedText) {
   // Check that the selected text is not empty or null
   if (!selectedText || selectedText.trim() === "") {
-    console.log("No valid selected text.");
+    console.error("No valid selected text.");
     return;
   }
 
@@ -87,7 +87,6 @@ chrome.runtime.onMessage.addListener((request) => {
 // Add the selected text to history list
 function updateHistoryList(selectedText) {
   chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
-    // Initialize
     if (!searchHistoryList) {
       searchHistoryList = [];
     }
@@ -183,3 +182,23 @@ function callApi(text, apiKey, sendResponse) {
       sendResponse({ error: error.toString() });
     });
 }
+
+let iframeInjected = false;
+
+chrome.action.onClicked.addListener((tab) => {
+  if (!iframeInjected) {
+    chrome.tabs.sendMessage(tab.id, { action: "injectIframe" });
+    iframeInjected = true;
+  } else {
+    chrome.tabs.sendMessage(tab.id, { action: "removeIframe" });
+    iframeInjected = false;
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "iframeLoaded") {
+    iframeInjected = true;
+  } else if (message.type === "iframeRemoved") {
+    iframeInjected = false;
+  }
+});

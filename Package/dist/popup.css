@@ -26,7 +26,8 @@ html,
 body {
   width: 25rem;
   box-sizing: border-box;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   color: var(--gray-800);
   font-family: "Satoshi", sans-serif;
 }
