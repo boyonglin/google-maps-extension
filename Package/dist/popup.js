@@ -988,18 +988,3 @@ configureElements[1].title = chrome.i18n.getMessage("shortcutsLabel");
 const apiSaveButton = document.querySelectorAll(".modal-body #apiForm button");
 apiSaveButton[0].title = chrome.i18n.getMessage("saveLabel");
 clearButtonSummary.title = chrome.i18n.getMessage("clearSummaryLabel");
-
-// Measure the frame and title bar sizes from different OS
-// const body = document.body;
-// const frameWidth = window.outerWidth - window.innerWidth;
-// const titleBarHeight = window.outerHeight - window.innerHeight;
-
-// function measureContentSize() {
-//   chrome.runtime.sendMessage({
-//     type: "content-size",
-//     width: body.offsetWidth,
-//     height: body.offsetHeight,
-//     frameWidth: frameWidth,
-//     titleBarHeight: titleBarHeight
-//   });
-// }
