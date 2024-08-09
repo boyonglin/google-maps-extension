@@ -49,10 +49,18 @@ const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
 
-let [hasHistory, hasFavorite, hasSummary] = [false, false, false];
+let [hasHistory, hasFavorite, hasSummary, hasInit] = [false, false, false, false];
 
 setTimeout(popupLayout, 0);
 setTimeout(fetchData, 0);
+
+// Input caret
+document.addEventListener("DOMContentLoaded", function () {
+  const searchInput = document.getElementById("searchInput");
+  const apiInput = document.getElementById("apiInput");
+  searchInput.focus();
+  apiInput.focus();
+});
 
 // Update the popup layout
 function popupLayout() {
@@ -66,6 +74,8 @@ function popupLayout() {
 
 // Fetch the search history list
 function fetchData() {
+  searchHistoryListContainer.innerHTML = "";
+
   chrome.storage.local.get(
     ["searchHistoryList", "favoriteList", "geminiApiKey"],
     ({ searchHistoryList, favoriteList, geminiApiKey }) => {
@@ -121,6 +131,13 @@ function fetchData() {
       }
 
       attachCheckboxEventListener(searchHistoryListContainer);
+
+      if (hasInit) {
+        measureContentSizeLast();
+      } else {
+        measureContentSize();
+        hasInit = true;
+      }
 
       // Check if the API key is defined and valid
       if (geminiApiKey) {
@@ -238,12 +255,13 @@ searchHistoryButton.addEventListener("click", function () {
 
   deleteListButton.disabled = false;
 
+  measureContentSize();
   updateInput();
 });
 
 favoriteListButton.addEventListener("click", function () {
   chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-    updateFavoriteListContainer(favoriteList);
+    updateFavorite(favoriteList);
   });
 
   for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.add("d-none");
@@ -335,7 +353,9 @@ geminiSummaryButton.addEventListener("click", function () {
     if (result.timestamp && result.summaryList.length > 0) {
       const currentTime = Date.now();
       const elapsedTime = (currentTime - result.timestamp) / 1000; // time in seconds
-      if (elapsedTime > 3600) {
+      if (elapsedTime > 86400) {
+        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+        summaryListContainer.innerHTML = "";
         chrome.storage.local.remove(["summaryList", "timestamp"]);
       } else {
         if (result.summaryList) {
@@ -346,8 +366,12 @@ geminiSummaryButton.addEventListener("click", function () {
           apiButton.classList.add("d-none");
           clearButtonSummary.disabled = false;
           checkTextOverflow();
+          measureContentSize();
         }
       }
+    } else {
+      checkTextOverflow();
+      measureContentSize();
     }
   });
 });
@@ -373,16 +397,16 @@ function constructSummaryHTML(summaryList) {
 
 exportButton.addEventListener("click", function () {
   chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-    const json = JSON.stringify(favoriteList);
+    const csv = "name\n" + favoriteList.map(item => `${item},`).join("\n");;
 
-    const blob = new Blob([json], {
-      type: "application/json",
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8;",
     });
 
     // Create a temporary anchor element and trigger the download
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "TheMapsExpress_FavoriteList.json";
+    a.download = "TheMapsExpress_FavoriteList.csv";
     a.click();
   });
 });
@@ -403,14 +427,16 @@ fileInput.addEventListener("change", function (event) {
       const fileContent = event.target.result;
 
       if (fileContent && fileContent.length > 0) {
-        importedData = JSON.parse(fileContent);
+        // Parse CSV content
+        const rows = fileContent.split("\n").map(row => row.trim()).filter(row => row.length > 0);
+        importedData = rows.slice(1).map(row => row.replace(/,$/, ""));
         favoriteEmptyMessage.style.display = "none";
       } else {
         favoriteEmptyMessage.style.display = "block";
       }
 
       chrome.storage.local.set({ favoriteList: importedData }, function () {
-        updateFavoriteListContainer(importedData);
+        updateFavorite(importedData);
         updateHistoryFavoriteIcons();
       });
 
@@ -421,6 +447,9 @@ fileInput.addEventListener("change", function (event) {
   };
 
   reader.readAsText(file);
+
+  // Reset the file input value to allow re-selecting the same file
+  event.target.value = "";
 });
 
 // Update the favorite icons in the search history list
@@ -448,10 +477,11 @@ deleteButton.addEventListener("click", function () {
     deleteFromFavoriteList();
   }
   backToNormal();
+  measureContentSize();
 });
 
 // Track the click event on li elements
-searchHistoryListContainer.addEventListener("click", function (event) {
+searchHistoryListContainer.addEventListener("mousedown", function (event) {
   let liElement;
   if (event.target.tagName === "LI") {
     liElement = event.target;
@@ -487,18 +517,27 @@ searchHistoryListContainer.addEventListener("click", function (event) {
         event.target.classList.remove("spring-animation");
       }, 500);
       chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-        updateFavoriteListContainer(favoriteList);
+        updateFavorite(favoriteList);
       });
     } else if (event.target.classList.contains("form-check-input")) {
       return;
     } else {
-      // Open in a new window
-      window.open(searchUrl, "_blank");
+      if (event.button === 1) { // Middle click
+        event.preventDefault();
+        chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+      } else if (event.button === 0) { // Left click
+        window.open(searchUrl, "_blank");
+      }
     }
   }
 });
 
-favoriteListContainer.addEventListener("click", function (event) {
+function addToFavoriteList(selectedText) {
+  chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
+  exportButton.disabled = false;
+}
+
+favoriteListContainer.addEventListener("mousedown", function (event) {
   let liElement;
   if (event.target.tagName === "LI") {
     liElement = event.target;
@@ -528,7 +567,12 @@ favoriteListContainer.addEventListener("click", function (event) {
     } else if (event.target.classList.contains("form-check-input")) {
       return;
     } else {
-      window.open(searchUrl, "_blank");
+      if (event.button === 1) { // Middle click
+        event.preventDefault();
+        chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+      } else if (event.button === 0) { // Left click
+        window.open(searchUrl, "_blank");
+      }
     }
   }
 });
@@ -566,6 +610,8 @@ clearButton.addEventListener("click", () => {
 
   // Send a message to background.js to request clearing of selected text list data
   chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
+
+  measureContentSize();
 });
 
 clearButtonSummary.addEventListener("click", () => {
@@ -577,24 +623,65 @@ clearButtonSummary.addEventListener("click", () => {
   clearButtonSummary.classList.add("d-none");
   geminiEmptyMessage.classList.remove("d-none");
   apiButton.classList.remove("d-none");
+
+  measureContentSize();
 });
 
 // Track the storage change event
 chrome.storage.onChanged.addListener((changes) => {
+  const searchHistoryListChange = changes.searchHistoryList;
   const favoriteListChange = changes.favoriteList;
 
   if (favoriteListChange && favoriteListChange.newValue) {
-    updateFavoriteListContainer(favoriteListChange.newValue);
+    updateFavorite(favoriteListChange.newValue);
+  }
+
+  if (searchHistoryListChange && searchHistoryListChange.newValue) {
+    const newList = searchHistoryListChange.newValue;
+    const oldList = searchHistoryListChange.oldValue;
+
+    if (newList.length >= oldList.length) {
+      fetchData(hasInit);
+    }
   }
 });
 
-function addToFavoriteList(selectedText) {
-  chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
-  exportButton.disabled = false;
+function removeHistory(itemText) {
+  const ul = document.querySelector(".list-group.d-flex.flex-column-reverse");
+  const item = Array.from(ul.children).find(li => li.querySelector("span").textContent === itemText);
+  if (item) {
+    ul.removeChild(item);
+  }
+}
+
+function insertHistory(itemText) {
+  const ul = document.querySelector(".list-group.d-flex.flex-column-reverse");
+
+  const li = document.createElement("li");
+  li.className = "list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center";
+
+  const span = document.createElement("span");
+  span.textContent = itemText;
+  li.appendChild(span);
+
+  const favoriteIcon = document.createElement("i");
+  favoriteIcon.className = "bi bi-patch-plus-fill";
+  li.appendChild(favoriteIcon);
+
+  const checkbox = document.createElement("input");
+  checkbox.className = "form-check-input d-none";
+  checkbox.type = "checkbox";
+  checkbox.value = "delete";
+  checkbox.id = "checkDelete";
+  checkbox.ariaLabel = "Delete";
+  checkbox.style.cursor = "pointer";
+
+  li.appendChild(checkbox);
+  ul.appendChild(li, ul.firstChild);
 }
 
 // Update the favorite list container
-function updateFavoriteListContainer(favoriteList) {
+function updateFavorite(favoriteList) {
   favoriteListContainer.innerHTML = "";
 
   if (favoriteList && favoriteList.length > 0) {
@@ -640,10 +727,12 @@ function updateFavoriteListContainer(favoriteList) {
     }
 
     attachCheckboxEventListener(favoriteListContainer);
+    measureContentSize();
   } else {
     favoriteEmptyMessage.style.display = "block";
     hasFavorite = false;
     exportButton.disabled = true;
+    measureContentSize();
   }
 }
 
@@ -852,6 +941,7 @@ sendButton.addEventListener("click", () => {
           geminiEmptyMessage.innerHTML = newText;
 
           summarizeContent(response.content, apiKey);
+          measureContentSize();
         }
       });
     });
@@ -887,7 +977,9 @@ function summarizeContent(content, apiKey) {
         clearButtonSummary.classList.remove("d-none");
         apiButton.classList.add("d-none");
         clearButtonSummary.disabled = false;
+
         checkTextOverflow();
+        measureContentSize();
 
         // store the response and current time
         const listItems = document.querySelectorAll(".summary-list");
@@ -988,3 +1080,45 @@ configureElements[1].title = chrome.i18n.getMessage("shortcutsLabel");
 const apiSaveButton = document.querySelectorAll(".modal-body #apiForm button");
 apiSaveButton[0].title = chrome.i18n.getMessage("saveLabel");
 clearButtonSummary.title = chrome.i18n.getMessage("clearSummaryLabel");
+
+// Measure the frame and title bar sizes from different OS
+const body = document.body;
+const frameWidth = window.outerWidth - window.innerWidth;
+const titleBarHeight = window.outerHeight - window.innerHeight;
+
+function measureContentSize() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, {
+      action: "updateIframeSize",
+      width: body.offsetWidth,
+      height: body.offsetHeight,
+      frameWidth: frameWidth,
+      titleBarHeight: titleBarHeight
+    });
+  });
+}
+
+// If the focus tab is changed
+function measureContentSizeLast() {
+  chrome.tabs.query({ active: false, lastFocusedWindow: true }, (tabs) => {
+    let LastAccessedTab = tabs[0];
+
+    if (tabs.length === 0) {
+      return;
+    } else {
+      tabs.forEach((tab) => {
+        if (tab.lastAccessed > LastAccessedTab.lastAccessed) {
+          LastAccessedTab = tab;
+        }
+      });
+
+      chrome.tabs.sendMessage(LastAccessedTab.id, {
+        action: "updateIframeSize",
+        width: body.offsetWidth,
+        height: body.offsetHeight,
+        frameWidth: frameWidth,
+        titleBarHeight: titleBarHeight
+      });
+    }
+  });
+}

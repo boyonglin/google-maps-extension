@@ -26,7 +26,8 @@ html,
 body {
   width: 25rem;
   box-sizing: border-box;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   color: var(--gray-800);
   font-family: "Satoshi", sans-serif;
 }
@@ -227,8 +228,12 @@ li i:hover {
 
 li i.matched {
   display: flex;
-  opacity: 1;
+  opacity: 0.5;
   pointer-events: none;
+}
+
+li:hover i.matched {
+  opacity: 1;
 }
 
 /* checkbox */

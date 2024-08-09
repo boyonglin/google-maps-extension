@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "The Maps Express",
-  "version": "1.6.5",
+  "version": "1.7.0",
   "description": "Speed up your search flow to Google Maps!",
   "icons": {
     "16": "images/icon-16.png",
@@ -10,12 +10,12 @@
     "128": "images/icon-128.png"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_title": "Click to turn on/off",
     "default_icon": {
-      "16": "images/icon-16.png",
-      "32": "images/icon-32.png",
-      "48": "images/icon-48.png",
-      "128": "images/icon-128.png"
+      "16": "images/icon-opacity-16.png",
+      "32": "images/icon-opacity-32.png",
+      "48": "images/icon-opacity-48.png",
+      "128": "images/icon-opacity-128.png"
     }
   },
   "permissions": [
@@ -45,17 +45,19 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "dist/contentScript.js"
-      ],
-      "run_at": "document_end"
+      "matches": ["<all_urls>"],
+      "js": ["dist/contentScript.js"],
+      "css": ["dist/iframe.css"]
     }
   ],
   "default_locale": "en",
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": ["<all_urls>"],
+      "resources": ["popup.html", "dist/iframe.css"]
+    }
   ]
 }

@@ -125,6 +125,6 @@
     "message": "加入收藏"
   },
   "clearSummaryLabel": {
-    "message": "摘要結果將會保存 1 個小時後自動清除"
+    "message": "摘要結果將會保存 1 天後自動清除"
   }
 }
