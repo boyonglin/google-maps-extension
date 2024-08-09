@@ -59,7 +59,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   const defaultX = window.innerWidth - 500;
-  const defaultY = 60;
+  const defaultY = 40;
 
   if (request.action === "injectIframe") {
     let iframeContainer = document.getElementById("TMEiframe");

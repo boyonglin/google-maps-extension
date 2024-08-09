@@ -190,6 +190,11 @@ let activeTabId = null;
 
 // When the icon is clicked, inject or remove the iframe
 chrome.action.onClicked.addListener(async (tab) => {
+  // Skip unsupported tab URLs
+  if (!tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("edge://") || tab.url.startsWith("opera://")) {
+    return;
+  }
+
   const iframeStatus = await getIframeStatus(tab.id);
   if (iframeStatus?.injected) {
     chrome.tabs.sendMessage(tab.id, { action: "removeIframe" });
@@ -304,8 +309,17 @@ async function updateIcon(tabId) {
 
 chrome.windows.onBoundsChanged.addListener(async (window) => {
   const tabs = await chrome.tabs.query({ active: true, windowId: window.id });
+
   if (tabs.length > 0) {
-    activeTabId = tabs[0].id;
+    const activeTab = tabs[0];
+    const url = activeTab.url;
+
+    // Skip unsupported tab URLs
+    if (!url) {
+      return;
+    }
+
+    activeTabId = activeTab.id;
     chrome.tabs.sendMessage(activeTabId, { action: "adjustIframeX" });
   }
 });
