@@ -83,7 +83,7 @@
     "message": "検索バー"
   },
   "shortcutsNote": {
-    "message": "上のショートカットをクリックして、拡張機能のショートカットキーを設定できます"
+    "message": "上のショートカットをクリックして、拡張機能のショートカットキーを設定できます。\nブラウザによってはスコープをグローバルに変更する必要があります。"
   },
   "tipsBtnText": {
     "message": "ヒント"
@@ -98,7 +98,7 @@
     "message": "API キーの設定"
   },
   "apiNote": {
-    "message": "Google AI Studio から無料の API キーを取得できます。リクエスト数の制限は 15 回/分、1,500 回/日です"
+    "message": "Google AI Studio から無料の API キーを取得できます。リクエスト数の制限は 15 回/分、1,500 回/日です。"
   },
   "geminiLabel": {
     "message": "ページ概要"

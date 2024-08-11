@@ -190,16 +190,15 @@ let activeTabId = null;
 
 // When the icon is clicked, inject or remove the iframe
 chrome.action.onClicked.addListener(async (tab) => {
-  // Skip unsupported tab URLs
-  if (!tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("edge://") || tab.url.startsWith("opera://")) {
-    return;
-  }
-
-  const iframeStatus = await getIframeStatus(tab.id);
-  if (iframeStatus?.injected) {
-    chrome.tabs.sendMessage(tab.id, { action: "removeIframe" });
+  if (tab.url && tab.url.startsWith("http")) {
+    const iframeStatus = await getIframeStatus(tab.id);
+    if (iframeStatus?.injected) {
+      chrome.tabs.sendMessage(tab.id, { action: "removeIframe" });
+    } else {
+      tryInjectIframe(tab.id);
+    }
   } else {
-    tryInjectIframe(tab.id);
+    console.error("Cannot execute extension on non-HTTP URL.");
   }
 });
 
@@ -218,7 +217,6 @@ async function tryInjectIframe(tabId, retries = 10) {
       }
     }
   }
-  console.error(`Failed to inject iframe in tab ${tabId} after multiple attempts.`);
   chrome.runtime.pendingAction = { tabId: tabId };
 }
 
@@ -314,12 +312,11 @@ chrome.windows.onBoundsChanged.addListener(async (window) => {
     const activeTab = tabs[0];
     const url = activeTab.url;
 
-    // Skip unsupported tab URLs
-    if (!url) {
+    if (url && url.startsWith("http")) {
+      activeTabId = activeTab.id;
+      chrome.tabs.sendMessage(activeTabId, { action: "adjustIframeX" });
+    } else {
       return;
     }
-
-    activeTabId = activeTab.id;
-    chrome.tabs.sendMessage(activeTabId, { action: "adjustIframeX" });
   }
 });

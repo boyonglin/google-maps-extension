@@ -83,7 +83,7 @@
     "message": "搜尋方塊"
   },
   "shortcutsNote": {
-    "message": "你可以點擊上方的組合鍵來設定功能快捷鍵"
+    "message": "你可以點擊上方的組合鍵來設定功能快捷鍵，而某些瀏覽器需要將範圍更改為全域（通用）"
   },
   "tipsBtnText": {
     "message": "提示"

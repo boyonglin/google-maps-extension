@@ -110,7 +110,7 @@
     "description": "popup tips search bar key label"
   },
   "shortcutsNote": {
-    "message": "You can click key combinations above to set extension shortcuts.",
+    "message": "You can click the key combinations above to set extension shortcuts. For some browsers, you may need to change the scope to global.",
     "description": "popup tips shortcuts note"
   },
   "tipsBtnText": {
