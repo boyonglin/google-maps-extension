@@ -242,7 +242,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 
   // When the tab reloads, reset the iframe status
-  if (changeInfo.status === "loading" && tab.active) {
+  const iframeStatus = await getIframeStatus(tab.id);
+  if (changeInfo.status === "loading" && tab.active && iframeStatus?.injected) {
     await setIframeStatus(tabId, false);
     updateIcon(tabId);
   }
