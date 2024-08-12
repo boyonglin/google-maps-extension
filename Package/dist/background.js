@@ -200,13 +200,6 @@ function addToFavoriteList(selectedText) {
 }
 
 // Gemini API
-chrome.action.onClicked.addListener((tab) => {
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    files: ["dist/contentScript.js"]
-  });
-});
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "summarizeApi" && request.text) {
     callApi(summaryPrompt, request.text, request.apiKey, sendResponse);
