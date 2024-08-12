@@ -959,7 +959,7 @@ function isPredominantlyLatinChars(text) {
 function summarizeContent(content, apiKey) {
   responseField.value = "";
 
-  chrome.runtime.sendMessage({ action: "callApi", text: content, apiKey: apiKey }, (response) => {
+  chrome.runtime.sendMessage({ action: "summarizeApi", text: content, apiKey: apiKey }, (response) => {
     if (response.error) {
       responseField.value = `API Error: ${response.error}`;
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");

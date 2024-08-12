@@ -2,6 +2,32 @@ let searchHistoryList = [];
 let favoriteList = [];
 var maxListLength = 10;
 
+const summaryPrompt = `You are now a place seeker tasked with identifying specific places or landmarks that are important in the page content. Please list the most relevant sub-landmarks (these can be marked by <h2> or <strong>) associated with the content subject or topic (identified by the <title> or <h1>) from the provided page. Please format the results as an unordered list (<ul>), with each sub-landmark as a list item (<li>), and retain the original language of the content. Additionally, based on the sub-landmark, look for contextual clues around it, these can include cities or states or countries, then fill in <span> for the clue. It’s best to choose only one key clue. The final format should look like this example (do not include the example or other tags like <h1>):
+
+<ul class="list-group d-flex">
+  <li class="list-group-item border rounded mb-3 px-3 summary-list">
+    <span>Sub-landmark 1</span>
+    <span class="d-none">Clue 1</span>
+  </li>
+  <li class="list-group-item border rounded mb-3 px-3 summary-list">
+    <span>Sub-landmark 2</span>
+    <span class="d-none">Clue 2</span>
+  </li>
+  ...
+</ul>
+
+Here is the provided page content:
+`;
+
+const linkPrompt = `You are now a place seeker tasked with identifying specific places or landmarks that are important in the page content. Please list the most relevant sub-landmarks (these can be marked by <h2> or <strong>) associated with the content subject or topic (identified by the <title> or <h1>) from the provided page, and retain the original language of the content. Additionally, based on the sub-landmark, look for contextual clues around it, these can include cities or states or countries. Both the sub-landmark name and its corresponding clue must be provided as plain text, without any additional information or formatting, such as bullet points. Please format the results like this example:
+
+sub-landmark-1 clue-1
+sub-landmark-2 clue-2
+...
+
+Here is the provided page content:
+`;
+
 // Create the right-click context menu item
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -23,22 +49,71 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.commands.onCommand.addListener((command) => {
   if (command === "run-search") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      // Check that the tab array is not empty
       if (tabs && tabs.length > 0) {
-        chrome.tabs.sendMessage(
-          tabs[0].id,
-          { action: "getSelectedText" },
-          (response) => {
-            if (response && response.selectedText) {
-              const selectedText = response.selectedText;
-              handleSelectedText(selectedText);
-            }
+        chrome.tabs.sendMessage(tabs[0].id, { action: "getSelectedText" }, (response) => {
+          if (response && response.selectedText) {
+            const selectedText = response.selectedText;
+            handleSelectedText(selectedText);
           }
+        }
         );
+      }
+    });
+  } else if (command === "auto-suggest") {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs && tabs.length > 0) {
+        trySuggest(tabs[0].id);
       }
     });
   }
 });
+
+// Retry mechanism for trying to suggest places from the content
+async function trySuggest(tabId, retries = 10) {
+  while (retries > 0) {
+    try {
+      const apiKey = await getApiKey();
+      const response = await getContent(tabId, { action: "getContent" });
+
+      if (response && response.content) {
+        callApi(linkPrompt, response.content, apiKey, (apiResponse) => {
+          chrome.tabs.sendMessage(tabId, { action: "attachMapLink", content: apiResponse });
+        });
+
+        return true;
+      }
+    } catch (error) {
+      if (error.message.includes("Receiving end does not exist")) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+        retries--;
+      } else {
+        throw error;
+      }
+    }
+  }
+}
+
+function getApiKey() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get("geminiApiKey", function (data) {
+      if (chrome.runtime.lastError) {
+        return reject(chrome.runtime.lastError);
+      }
+      resolve(data.geminiApiKey);
+    });
+  });
+}
+
+function getContent(tabId, message) {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage(tabId, message, (response) => {
+      if (chrome.runtime.lastError) {
+        return reject(chrome.runtime.lastError);
+      }
+      resolve(response);
+    });
+  });
+}
 
 // Handle selected text and send messages to background.js
 function handleSelectedText(selectedText) {
@@ -57,7 +132,6 @@ function handleSelectedText(selectedText) {
   updateHistoryList(selectedText);
 }
 
-// Track the runtime.onMessage event
 chrome.runtime.onMessage.addListener((request) => {
   if (request.action === "clearSearchHistoryList") {
     chrome.storage.local.set({ searchHistoryList: [] });
@@ -134,36 +208,18 @@ chrome.action.onClicked.addListener((tab) => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "callApi" && request.text) {
-    callApi(request.text, request.apiKey, sendResponse);
+  if (request.action === "summarizeApi" && request.text) {
+    callApi(summaryPrompt, request.text, request.apiKey, sendResponse);
     return true; // Will respond asynchronously
   }
 });
 
-function callApi(content, apiKey, sendResponse) {
+function callApi(prompt, content, apiKey, sendResponse) {
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-
-  const customPrompt = `You are now a place seeker tasked with identifying specific places or landmarks that are important in the page content. Please list the most relevant sub-landmarks (these can be marked by <h2> or <strong>) associated with the content subject or topic (identified by the <title> or <h1>) from the provided page. Please format the results as an unordered list (<ul>), with each sub-landmark as a list item (<li>), and retain the original language of the content. Additionally, based on the sub-landmark, look for contextual clues around it, these can include cities or states or countries, then fill in <span> for the clue. It’s best to choose only one key clue. The final format should look like this example (do not include the example or other tags like <h1>):
-
-  <ul class="list-group d-flex">
-    <li class="list-group-item border rounded mb-3 px-3 summary-list">
-      <span>Sub-landmark 1</span>
-      <span class="d-none">Clue 1</span>
-    </li>
-    <li class="list-group-item border rounded mb-3 px-3 summary-list">
-      <span>Sub-landmark 2</span>
-      <span class="d-none">Clue 2</span>
-    </li>
-    ...
-  </ul>
-
-  Here is the provided page content:
-  `;
-
   const data = {
     contents: [{
       parts: [{
-        text: customPrompt + content
+        text: prompt + content
       }]
     }]
   };
@@ -186,6 +242,7 @@ function callApi(content, apiKey, sendResponse) {
     });
 }
 
+// iframe injection
 let activeTabId = null;
 
 // When the icon is clicked, inject or remove the iframe
