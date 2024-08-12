@@ -60,10 +60,46 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
 ---
 
 ## Gemini API
+To apply the API key for the page summary feature, you need to follow these steps:
+1. Sign in Google AI Studio\
+2. Consent to Legal Notice & Continue\
+<img src="https://github.com/user-attachments/assets/1d11ecdb-80eb-474b-a317-57e367640b15" width="500">
+
+3. Create API key\
+<img src="https://github.com/user-attachments/assets/c429aad2-6402-49a6-aa8d-7775ec24da69" width="500">
+
+4. Create API key in new project\
+<img src="https://github.com/user-attachments/assets/7041ef34-8968-40e8-9940-8b4ba87c0b00" width="500">
+
+5. Copy\
+<img src="https://github.com/user-attachments/assets/0d87e72b-5864-4076-b3a4-fea5e09c9dde" width="500">
+
+---
+
+## Google My Maps
+You can follow the steps below to use the exported CSV file to import places in Google My Maps:\
+1. Open My Maps in Google Maps\
+<img src="https://github.com/user-attachments/assets/4eeed4e8-a8b7-4ce7-a5ec-8439305168d0" width="500">
+
+2. Create a new map\
+<img src="https://github.com/user-attachments/assets/08be46cb-b370-4c6f-add7-33f334fbb40d" width="500">
+
+3. Click import button\
+<img src="https://github.com/user-attachments/assets/2b1b54c6-b5b2-4f73-bdc0-9750cdbe8a70" width="500">
+
+4. Choose exported CSV file to import\
+<img src="https://github.com/user-attachments/assets/c5f0f043-262f-4611-8b28-4a3247d202b3" width="500">
+
+5. Choose columns (default is "name")\
+<img src="https://github.com/user-attachments/assets/04450982-6066-4228-b6b4-f04dc1914ac9" width="500">
+
+6. Finish import\
+<img src="https://github.com/user-attachments/assets/d3d1f2fb-360e-4239-b8de-2ebec557ed16" width="500">
 
 ---
 
 ## Framework
+- Manifest V3
 - Bootstrap 5.3.0
 
 ---
