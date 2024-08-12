@@ -168,5 +168,9 @@
   "clearSummaryLabel": {
     "message": "The results will be preserved and automatically cleared after 1 day",
     "description": "tooltips clear summary label"
+  },
+  "closeLabel": {
+    "message": "Close (Esc)",
+    "description": "tooltips close label"
   }
 }

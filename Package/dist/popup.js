@@ -891,16 +891,17 @@ document.querySelectorAll("[data-locale]").forEach((elem) => {
   elem.innerText = chrome.i18n.getMessage(elem.dataset.locale);
 });
 
+// Ignore pressing the Enter key which means confirmation (macOS)
 searchInput.placeholder = chrome.i18n.getMessage("searchInputPlaceholder");
-
-// Ignore pressing the Enter key which means confirmation
 let isComposing = false;
+
 searchInput.addEventListener("compositionstart", () => {
   isComposing = true;
 });
 searchInput.addEventListener("compositionend", () => {
   isComposing = false;
 });
+
 document.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && isComposing) {
     e.stopPropagation();
@@ -1122,3 +1123,11 @@ function measureContentSizeLast() {
     }
   });
 }
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { action: "removeIframe" });
+  });
+  }
+});

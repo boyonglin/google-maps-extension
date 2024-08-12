@@ -126,5 +126,8 @@
   },
   "clearSummaryLabel": {
     "message": "概要結果は 1 日後に自動的に削除されます"
+  },
+  "closeLabel": {
+    "message": "閉じる（Esc）"
   }
 }

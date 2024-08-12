@@ -1,55 +1,3 @@
-function getContent() {
-  const titleElement = document.querySelector("head > title");
-  const titleText = titleElement ? titleElement.innerText : "";
-  const titleHtml = `<title>${titleText}</title>`;
-
-  const h1Elements = document.querySelectorAll("h1");
-  const h1Html = Array.from(h1Elements).map(h1 => `<h1>${h1.innerText}</h1>`).join("");
-
-  // Get the summary subject (title or h1)
-  const summarySubject = titleHtml + h1Html;
-
-  // Get the plain text of the body (visible text || including hidden text)
-  const bodyText = document.body.innerText || document.body.textContent;
-
-  const headerElement = document.querySelector("header");
-  const footerElement = document.querySelector("footer");
-  const headerText = headerElement ? headerElement.innerText : "";
-  const footerText = footerElement ? footerElement.innerText : "";
-
-  // Remove header and footer text from bodyText
-  function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  let bodyElement = bodyText;
-
-  if (headerText) {
-    const headerRegex = new RegExp(escapeRegExp(headerText), "g");
-    bodyElement = bodyElement.replace(headerRegex, "").trim();
-  }
-
-  if (footerText) {
-    const footerRegex = new RegExp(escapeRegExp(footerText), "g");
-    bodyElement = bodyElement.replace(footerRegex, "").trim();
-  }
-
-  // Preserved <h2> and <strong> tags
-  const h2Elements = document.querySelectorAll("h2");
-  h2Elements.forEach(h2 => {
-    const h2Text = `<h2>${h2.innerText}</h2>`;
-    bodyElement = bodyElement.replace(h2.innerText, h2Text);
-  });
-
-  const strongElements = document.querySelectorAll("strong");
-  strongElements.forEach(strong => {
-    const strongText = `<strong>${strong.innerText}</strong>`;
-    bodyElement = bodyElement.replace(strong.innerText, strongText);
-  });
-
-  return summarySubject + bodyElement;
-}
-
 // Track tab messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Get the selected text from the webpage
@@ -125,6 +73,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       const closeButton = document.createElement("button");
       closeButton.id = "TMEeject";
+      closeButton.title = chrome.i18n.getMessage("closeLabel");
 
       // x.svg from Bootstrap Icons
       closeButton.innerHTML = `
@@ -183,11 +132,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "removeIframe") {
-    let iframeContainer = document.getElementById("TMEiframe");
-    if (iframeContainer) {
-      iframeContainer.remove();
-      chrome.runtime.sendMessage({ type: "iframeRemoved" });
-    }
+    removeIframe();
   }
 
   if (request.action === "updateIframeSize") {
@@ -219,5 +164,71 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.storage.local.set({ iframeCoords: { x: adjustedX, y: coords.y } });
       });
     }
+  }
+});
+
+function getContent() {
+  const titleElement = document.querySelector("head > title");
+  const titleText = titleElement ? titleElement.innerText : "";
+  const titleHtml = `<title>${titleText}</title>`;
+
+  const h1Elements = document.querySelectorAll("h1");
+  const h1Html = Array.from(h1Elements).map(h1 => `<h1>${h1.innerText}</h1>`).join("");
+
+  // Get the summary subject (title or h1)
+  const summarySubject = titleHtml + h1Html;
+
+  // Get the plain text of the body (visible text || including hidden text)
+  const bodyText = document.body.innerText || document.body.textContent;
+
+  const headerElement = document.querySelector("header");
+  const footerElement = document.querySelector("footer");
+  const headerText = headerElement ? headerElement.innerText : "";
+  const footerText = footerElement ? footerElement.innerText : "";
+
+  // Remove header and footer text from bodyText
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  let bodyElement = bodyText;
+
+  if (headerText) {
+    const headerRegex = new RegExp(escapeRegExp(headerText), "g");
+    bodyElement = bodyElement.replace(headerRegex, "").trim();
+  }
+
+  if (footerText) {
+    const footerRegex = new RegExp(escapeRegExp(footerText), "g");
+    bodyElement = bodyElement.replace(footerRegex, "").trim();
+  }
+
+  // Preserved <h2> and <strong> tags
+  const h2Elements = document.querySelectorAll("h2");
+  h2Elements.forEach(h2 => {
+    const h2Text = `<h2>${h2.innerText}</h2>`;
+    bodyElement = bodyElement.replace(h2.innerText, h2Text);
+  });
+
+  const strongElements = document.querySelectorAll("strong");
+  strongElements.forEach(strong => {
+    const strongText = `<strong>${strong.innerText}</strong>`;
+    bodyElement = bodyElement.replace(strong.innerText, strongText);
+  });
+
+  return summarySubject + bodyElement;
+}
+
+function removeIframe() {
+  let iframeContainer = document.getElementById("TMEiframe");
+  if (iframeContainer) {
+    iframeContainer.remove();
+    chrome.runtime.sendMessage({ type: "iframeRemoved" });
+  }
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    removeIframe();
   }
 });
