@@ -50,17 +50,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ status: "connected" });
   }
 
-  const defaultX = window.innerWidth - 500;
-  const defaultY = 60;
-
   if (request.action === "injectIframe") {
     const iframe = injectIframe();
 
     iframe.onload = function () {
-      chrome.storage.local.set({ iframeCoords: { x: defaultX, y: defaultY } });
-
       let iframeContainer = document.getElementById("TMEiframe");
       const iframeWidth = iframeContainer.offsetWidth;
+
       if (iframeWidth < 398) {
         iframeContainer.remove();
         const newIframe = injectIframe();
@@ -161,6 +157,9 @@ function getContent() {
   return summarySubject + bodyElement;
 }
 
+const defaultX = window.innerWidth - 500;
+const defaultY = 60;
+
 function injectIframe() {
   // Remove any existing iframe with the same ID
   const existingIframe = document.getElementById("TMEiframe");
@@ -172,6 +171,9 @@ function injectIframe() {
   // Create and inject a new iframe
   let iframeContainer = document.createElement("div");
   iframeContainer.id = "TMEiframe";
+  iframeContainer.style.left = defaultX + "px";
+  iframeContainer.style.top = defaultY + "px";
+  chrome.storage.local.set({ iframeCoords: { x: defaultX, y: defaultY } });
 
   const draggableBar = document.createElement("div");
   draggableBar.id = "TMEdrag";

@@ -12,7 +12,7 @@
 #TMEiframe {
     position: fixed;
     width: 400px;
-    height: 600px;
+    height: 480px;
     border: 1px solid var(--border-color);
     z-index: 10000;
     box-shadow: 0 8px 24px rgba(112, 144, 176, 0.25);
