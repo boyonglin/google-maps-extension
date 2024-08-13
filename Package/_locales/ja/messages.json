@@ -94,6 +94,15 @@
   "kofiBtnText": {
     "message": "支援"
   },
+  "premiumBtnText": {
+    "message": "魔法"
+  },
+  "premiumTitle": {
+    "message": "会員限定魔法"
+  },
+  "premiumNote": {
+    "message": "ExtensionPay と PayPal を通じて支払い済み"
+  },
   "apiTitle": {
     "message": "API キーの設定"
   },

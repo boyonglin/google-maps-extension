@@ -298,19 +298,19 @@ li:hover .form-check-input {
   color: var(--background-color);
 }
 
-#sendButton:hover {
+.btn-send:hover {
   background-color: var(--google-purple-hover);
   border: 1px solid var(--google-purple-hover);
   color: var(--background-color);
 }
 
-#sendButton:focus-visible {
+.btn-send:focus-visible {
   background-color: var(--google-purple);
   box-shadow: 0 0 0 4px var(--google-purple-500);
   color: var(--background-color);
 }
 
-#sendButton:disabled {
+.btn-send:disabled {
   background-color: var(--google-purple);
   border: 1px solid var(--google-purple);
   color: var(--background-color);

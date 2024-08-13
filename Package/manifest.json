@@ -45,13 +45,14 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["dist/contentScript.js"],
+      "js": ["dist/contentScript.js", "dist/ExtPay.js"],
       "css": ["dist/iframe.css"]
     }
   ],
   "default_locale": "en",
   "host_permissions": [
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "https://extensionpay.com/*"
   ],
   "web_accessible_resources": [
     {

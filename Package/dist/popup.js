@@ -40,6 +40,7 @@ const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
 const enterButton = document.getElementById("enterButton");
 const clearButtonSummary = document.getElementById("clearButtonSummary");
+const premiumButton = document.getElementById("premiumButton");
 
 // Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
@@ -111,7 +112,7 @@ function fetchData() {
           checkbox.className = "form-check-input d-none";
           checkbox.type = "checkbox";
           checkbox.value = "delete";
-          checkbox.id = "checkDelete";
+          checkbox.name = "checkDelete";
           checkbox.ariaLabel = "Delete";
           checkbox.style.cursor = "pointer";
           li.appendChild(checkbox);
@@ -672,7 +673,7 @@ function insertHistory(itemText) {
   checkbox.className = "form-check-input d-none";
   checkbox.type = "checkbox";
   checkbox.value = "delete";
-  checkbox.id = "checkDelete";
+  checkbox.name = "checkDelete";
   checkbox.ariaLabel = "Delete";
   checkbox.style.cursor = "pointer";
 
@@ -710,7 +711,7 @@ function updateFavorite(favoriteList) {
       checkbox.className = "form-check-input d-none";
       checkbox.type = "checkbox";
       checkbox.value = "delete";
-      checkbox.id = "checkDelete";
+      checkbox.name = "checkDelete";
       checkbox.ariaLabel = "Delete";
       checkbox.style.cursor = "pointer";
       li.appendChild(checkbox);
@@ -1004,13 +1005,19 @@ function summarizeContent(content, apiKey) {
   });
 }
 
-// Google AI Studio link
-const pElement = document.querySelector('p[data-locale="apiNote"]');
+// Replace text from note with a link
+function text2Link(dataLocale, searchText, linkText, linkHref) {
+  const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
+  if (pElement) {
+    const originalText = pElement.innerHTML;
+    const newText = originalText.replace(searchText,
+      `<a href="${linkHref}" target="_blank">${linkText}</a>`);
+    pElement.innerHTML = newText;
+  }
+}
 
-const originalText = pElement.innerHTML;
-const newText = originalText.replace("Google AI Studio",
-  '<a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>');
-pElement.innerHTML = newText;
+text2Link("apiNote", "Google AI Studio", "Google AI Studio", "https://aistudio.google.com/app/apikey");
+text2Link("premiumNote", "ExtensionPay", "ExtensionPay", "https://extensionpay.com/");
 
 // Save the API key
 document.getElementById("apiForm").addEventListener("submit", function (event) {
@@ -1124,10 +1131,16 @@ function measureContentSizeLast() {
   });
 }
 
+// Close by esc key
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.tabs.sendMessage(tabs[0].id, { action: "removeIframe" });
   });
   }
+});
+
+// Premium tier control
+premiumButton.addEventListener("click", function () {
+  chrome.runtime.sendMessage({ action: "extPay" });
 });

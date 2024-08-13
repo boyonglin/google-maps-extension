@@ -20,7 +20,7 @@
                     <span class="input-group-text brand"><img src="images/icon-32.png" alt="badge" /></span>
                 </div>
                 <input type="text" class="form-control ps-2 pe-5" autocomplete="off" placeholder="Search Google Maps"
-                     id="searchInput" />
+                    id="searchInput" />
                 <button id="enterButton"
                     class="input-group-text btn-enter justify-content-center rounded-circle border-0 d-none"
                     title="Search">
@@ -124,6 +124,9 @@
                 <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#tipsModal">
                     <span class="nav-link px-2 text-muted" data-locale="tipsBtnText">Tip</span>
                 </li>
+                <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#premiumModal">
+                    <span class="nav-link px-2 text-muted" data-locale="premiumBtnText">Premium</span>
+                </li>
             </ul>
         </footer>
         <div class="modal fade" id="tipsModal" tabindex="-1" aria-label="Tips Modal">
@@ -154,6 +157,27 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="premiumModal" tabindex="-1" aria-label="Premium Modal">
+            <div class="modal-dialog modal-dialog-centered modal-xs">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-6" id="premiumModalLabel" data-locale="premiumTitle">Premium</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body d-flex flex-column">
+                        <button id="premiumButton" class="btn btn-send flex-fill my-3">
+                            <span>Life Time $1.00</span>
+                        </button>
+                        <button id="restoreButton" class="btn btn-light flex-fill mb-3">
+                            <span>Restore Purchase</span>
+                        </button>
+                    </div>
+                    <div class="modal-footer d-flex justify-content-start">
+                        <p class="text-muted" data-locale="premiumNote">Paid through ExtensionPay and PayPal.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="modal fade" id="apiModal" tabindex="-1" aria-label="API Modal">
             <div class="modal-dialog modal-dialog-centered modal-xs">
                 <div class="modal-content">
@@ -165,7 +189,7 @@
                     <div class="modal-body">
                         <form id="apiForm" class="d-flex my-3">
                             <input type="text" class="form-control py-2 pe-5" autocomplete="off"
-                                placeholder="Gemini API key"  id="apiInput" />
+                                placeholder="Gemini API key" id="apiInput" />
                             <button type="submit" data-bs-dismiss="modal" title="Save"
                                 class="btn btn-setAPI d-flex align-items-center justify-content-center rounded-circle border-0">
                                 <i class="bi bi-arrow-right"></i>

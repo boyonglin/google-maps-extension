@@ -125,6 +125,18 @@
     "message": "Support",
     "description": "popup kofi button text"
   },
+  "premiumBtnText": {
+    "message": "Premium",
+    "description": "popup premium button text"
+  },
+  "premiumTitle": {
+    "message": "Premium Member Exclusive",
+    "description": "popup premium title"
+  },
+  "premiumNote": {
+    "message": "Paid through ExtensionPay and PayPal.",
+    "description": "popup premium note"
+  },
   "apiTitle": {
     "message": "Set up your API key",
     "description": "popup api title"

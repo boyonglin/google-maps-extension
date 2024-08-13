@@ -60,9 +60,15 @@ chrome.commands.onCommand.addListener((command) => {
       }
     });
   } else if (command === "auto-suggest") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs && tabs.length > 0) {
-        trySuggest(tabs[0].id);
+    extpay.getUser().then(user => {
+      if (user.paid) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs && tabs.length > 0) {
+            trySuggest(tabs[0].id);
+          }
+        });
+      } else {
+        console.log('"Non-magic people (more commonly known as Muggles) were particularly afraid of magic in medieval times, but not very good at recognising it." — A History of Magic by Bathilda Bagshot');
       }
     });
   }
@@ -369,5 +375,17 @@ chrome.windows.onBoundsChanged.addListener(async (window) => {
     } else {
       return;
     }
+  }
+});
+
+// ExtensionPay
+importScripts("ExtPay.js")
+
+const extpay = ExtPay("the-maps-express")
+extpay.startBackground();
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "extPay") {
+    extpay.openPaymentPage()
   }
 });
