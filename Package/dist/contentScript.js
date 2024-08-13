@@ -248,6 +248,7 @@ function removeIframe() {
   }
 }
 
+// Close by esc key
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     removeIframe();

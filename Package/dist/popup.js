@@ -40,7 +40,10 @@ const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
 const enterButton = document.getElementById("enterButton");
 const clearButtonSummary = document.getElementById("clearButtonSummary");
+
+// ExtensionPay
 const premiumButton = document.getElementById("premiumButton");
+const restoreButton = document.getElementById("restoreButton");
 
 // Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
@@ -1140,7 +1143,11 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-// Premium tier control
+// Premium panel
 premiumButton.addEventListener("click", function () {
   chrome.runtime.sendMessage({ action: "extPay" });
+});
+
+restoreButton.addEventListener("click", function () {
+  chrome.runtime.sendMessage({ action: "restorePay" });
 });

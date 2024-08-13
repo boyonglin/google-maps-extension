@@ -386,6 +386,8 @@ extpay.startBackground();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "extPay") {
-    extpay.openPaymentPage()
+    extpay.openPaymentPage();
+  } else if (request.action === "restorePay") {
+    extpay.openLoginPage();
   }
 });
