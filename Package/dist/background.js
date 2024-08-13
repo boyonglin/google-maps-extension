@@ -242,7 +242,7 @@ let activeTabId = null;
 chrome.action.onClicked.addListener(async (tab) => {
   if (tab.url && tab.url.startsWith("http")) {
     const iframeStatus = await getIframeStatus(tab.id);
-    if (iframeStatus?.injected) {
+    if (iframeStatus?.injected || iframeStatus === undefined) {
       chrome.tabs.sendMessage(tab.id, { action: "removeIframe" });
     } else {
       tryInjectIframe(tab.id);
@@ -280,7 +280,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       await setIframeStatus(activeTabId, false);
     }
 
-    updateIcon(activeTabId);
+    // updateIcon(activeTabId);
   }
 });
 
@@ -295,14 +295,14 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const iframeStatus = await getIframeStatus(tab.id);
   if (changeInfo.status === "loading" && tab.active && iframeStatus?.injected) {
     await setIframeStatus(tabId, false);
-    updateIcon(tabId);
+    // updateIcon(tabId);
   }
 });
 
 // Handle active tab changes
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   activeTabId = activeInfo.tabId;
-  updateIcon(activeTabId);
+  // updateIcon(activeTabId);
 });
 
 // Handle active window changes
@@ -316,7 +316,7 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
   const tabs = await chrome.tabs.query({ active: true, windowId: windowId });
   if (tabs.length > 0) {
     activeTabId = tabs[0].id;
-    updateIcon(activeTabId);
+    // updateIcon(activeTabId);
   }
 });
 

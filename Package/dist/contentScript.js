@@ -54,81 +54,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const defaultY = 60;
 
   if (request.action === "injectIframe") {
-    let iframeContainer = document.getElementById("TMEiframe");
-    if (!iframeContainer) {
-      // Create the iframe elements
-      iframeContainer = document.createElement("div");
-      iframeContainer.id = "TMEiframe";
+    const iframe = injectIframe();
 
-      const draggableBar = document.createElement("div");
-      draggableBar.id = "TMEdrag";
+    iframe.onload = function () {
+      chrome.storage.local.set({ iframeCoords: { x: defaultX, y: defaultY } });
 
-      const linesContainer = document.createElement("div");
-      linesContainer.id = "TMElines";
-
-      for (let i = 0; i < 6; i++) {
-        const line = document.createElement("div");
-        linesContainer.appendChild(line);
-      }
-
-      const closeButton = document.createElement("button");
-      closeButton.id = "TMEeject";
-      closeButton.title = chrome.i18n.getMessage("closeLabel");
-
-      // x.svg from Bootstrap Icons
-      closeButton.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
-        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-      </svg>
-      `;
-
-      closeButton.addEventListener("click", () => {
+      let iframeContainer = document.getElementById("TMEiframe");
+      const iframeWidth = iframeContainer.offsetWidth;
+      if (iframeWidth < 320) {
         iframeContainer.remove();
-        chrome.runtime.sendMessage({ type: "iframeRemoved" });
-      });
-
-      draggableBar.appendChild(linesContainer);
-      draggableBar.appendChild(closeButton);
-
-      const iframe = document.createElement("iframe");
-      iframe.id = "TMEmain";
-      iframe.src = chrome.runtime.getURL("../popup.html");
-
-      // Append the iframe elements
-      iframeContainer.appendChild(draggableBar);
-      iframeContainer.appendChild(iframe);
-      document.body.appendChild(iframeContainer);
-
-      // Make the iframe draggable
-      draggableBar.onmousedown = function (event) {
-        event.preventDefault();
-        const shiftX = event.clientX - iframeContainer.getBoundingClientRect().left;
-        const shiftY = event.clientY - iframeContainer.getBoundingClientRect().top;
-
-        document.onmousemove = function (event) {
-          iframeContainer.style.left = event.clientX - shiftX + "px";
-          iframeContainer.style.top = event.clientY - shiftY + "px";
+        const newIframe = injectIframe();
+        newIframe.onload = function () {
+          chrome.runtime.sendMessage({ type: "iframeLoaded" });
         };
-
-        document.onmouseup = function () {
-          document.onmousemove = null;
-          document.onmouseup = null;
-
-          const newX = iframeContainer.getBoundingClientRect().left;
-          const newY = iframeContainer.getBoundingClientRect().top;
-          chrome.storage.local.set({ iframeCoords: { x: newX, y: newY } });
-        };
-      };
-
-      draggableBar.ondragstart = function () {
-        return false;
-      };
-
-      iframe.onload = function () {
-        chrome.storage.local.set({ iframeCoords: { x: defaultX, y: defaultY } });
+      } else {
         chrome.runtime.sendMessage({ type: "iframeLoaded" });
-      };
-    }
+      }
+    };
   }
 
   if (request.action === "removeIframe") {
@@ -217,6 +159,85 @@ function getContent() {
   });
 
   return summarySubject + bodyElement;
+}
+
+function injectIframe() {
+  // Remove any existing iframe with the same ID
+  const existingIframe = document.getElementById("TMEiframe");
+  if (existingIframe) {
+    existingIframe.remove();
+    chrome.runtime.sendMessage({ type: "iframeRemoved" });
+  }
+
+  // Create and inject a new iframe
+  let iframeContainer = document.createElement("div");
+  iframeContainer.id = "TMEiframe";
+
+  const draggableBar = document.createElement("div");
+  draggableBar.id = "TMEdrag";
+
+  const linesContainer = document.createElement("div");
+  linesContainer.id = "TMElines";
+
+  for (let i = 0; i < 6; i++) {
+    const line = document.createElement("div");
+    linesContainer.appendChild(line);
+  }
+
+  const closeButton = document.createElement("button");
+  closeButton.id = "TMEeject";
+  closeButton.title = chrome.i18n.getMessage("closeLabel");
+
+  // x.svg from Bootstrap Icons
+  closeButton.innerHTML = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
+    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+  </svg>
+  `;
+
+  closeButton.addEventListener("click", () => {
+    iframeContainer.remove();
+    chrome.runtime.sendMessage({ type: "iframeRemoved" });
+  });
+
+  draggableBar.appendChild(linesContainer);
+  draggableBar.appendChild(closeButton);
+
+  const iframe = document.createElement("iframe");
+  iframe.id = "TMEmain";
+  iframe.src = chrome.runtime.getURL("../popup.html");
+
+  // Append the iframe elements
+  iframeContainer.appendChild(draggableBar);
+  iframeContainer.appendChild(iframe);
+  document.body.appendChild(iframeContainer);
+
+  // Make the iframe draggable
+  draggableBar.onmousedown = function (event) {
+    event.preventDefault();
+    const shiftX = event.clientX - iframeContainer.getBoundingClientRect().left;
+    const shiftY = event.clientY - iframeContainer.getBoundingClientRect().top;
+
+    document.onmousemove = function (event) {
+      iframeContainer.style.left = event.clientX - shiftX + "px";
+      iframeContainer.style.top = event.clientY - shiftY + "px";
+    };
+
+    document.onmouseup = function () {
+      document.onmousemove = null;
+      document.onmouseup = null;
+
+      const newX = iframeContainer.getBoundingClientRect().left;
+      const newY = iframeContainer.getBoundingClientRect().top;
+      chrome.storage.local.set({ iframeCoords: { x: newX, y: newY } });
+    };
+  };
+
+  draggableBar.ondragstart = function () {
+    return false;
+  };
+
+  return iframe;
 }
 
 function removeIframe() {
