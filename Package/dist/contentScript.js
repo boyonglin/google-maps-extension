@@ -61,7 +61,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       let iframeContainer = document.getElementById("TMEiframe");
       const iframeWidth = iframeContainer.offsetWidth;
-      if (iframeWidth < 320) {
+      if (iframeWidth < 398) {
         iframeContainer.remove();
         const newIframe = injectIframe();
         newIframe.onload = function () {
