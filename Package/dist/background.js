@@ -61,14 +61,28 @@ chrome.commands.onCommand.addListener((command) => {
     });
   } else if (command === "auto-suggest") {
     extpay.getUser().then(user => {
-      if (user.paid) {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (tabs && tabs.length > 0) {
-            trySuggest(tabs[0].id);
-          }
-        });
+      const now = new Date();
+      const trialPeriod = 1000 * 60
+
+      // In trial period
+      if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
+        console.log('"Do enjoy yourself, won’t you? While you can." — Lucius Malfoy');
       } else {
-        console.log('"Non-magic people (more commonly known as Muggles) were particularly afraid of magic in medieval times, but not very good at recognising it." — A History of Magic by Bathilda Bagshot');
+
+        // Paid user
+        if (user.paid) {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs && tabs.length > 0) {
+              trySuggest(tabs[0].id);
+              console.log('"Where your treasure is, there will your heart be also." — upon the frozen, lichen-spotted granite');
+            }
+          });
+        }
+
+        // Free user
+        else {
+          console.log('"Well, their main job is to keep it from the Muggles that there’s still witches an’ wizards up an’ down the country." — Ministry of Magic');
+        }
       }
     });
   }
@@ -248,10 +262,13 @@ let activeTabId = null;
 chrome.action.onClicked.addListener(async (tab) => {
   if (tab.url && tab.url.startsWith("http")) {
     const iframeStatus = await getIframeStatus(tab.id);
+    console.log(iframeStatus);
     if (iframeStatus?.injected || iframeStatus === undefined) {
       chrome.tabs.sendMessage(tab.id, { action: "removeIframe" });
+      console.log("Removing iframe");
     } else {
       tryInjectIframe(tab.id);
+      console.log("Injecting iframe");
     }
   } else {
     console.error("Cannot execute extension on non-HTTP URL.");
@@ -278,6 +295,7 @@ async function tryInjectIframe(tabId, retries = 10) {
 
 // Update iframe status
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  console.log(sender.tab.id, activeTabId);
   if (sender.tab.id === activeTabId) {
     if (message.type === "iframeLoaded") {
       await setIframeStatus(activeTabId, true);
@@ -381,12 +399,31 @@ chrome.windows.onBoundsChanged.addListener(async (window) => {
 // ExtensionPay
 importScripts("ExtPay.js")
 
+const trialPeriod = 1000 * 60
 const extpay = ExtPay("the-maps-express")
 extpay.startBackground();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "extPay") {
-    extpay.openPaymentPage();
+    extpay.getUser().then(user => {
+
+      // First time user
+      if (!user.trialStartedAt) {
+        extpay.openTrialPage("7-day");
+        console.log('"Er — hello," — Harry Potter');
+      }
+
+      // Trial or Pay
+      else {
+        const now = new Date();
+        if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
+          extpay.openTrialPage();
+        } else {
+          extpay.openPaymentPage();
+          console.log('"Useful little treasure detectors," — Rubeus Hagrid');
+        }
+      }
+    });
   } else if (request.action === "restorePay") {
     extpay.openLoginPage();
   }

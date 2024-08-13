@@ -40,6 +40,13 @@
         "mac": "Alt+Shift+S"
       },
       "description": "Start the extension"
+    },
+    "auto-suggest": {
+      "suggested_key": {
+        "default": "Alt+S",
+        "mac": "Alt+S"
+      },
+      "description": "Auto-suggest links on page"
     }
   },
   "content_scripts": [

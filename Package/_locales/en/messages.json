@@ -134,7 +134,7 @@
     "description": "popup premium title"
   },
   "premiumNote": {
-    "message": "Paid through ExtensionPay and PayPal.",
+    "message": "Pay through ExtensionPay and PayPal.",
     "description": "popup premium note"
   },
   "apiTitle": {
