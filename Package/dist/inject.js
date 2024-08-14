@@ -8,8 +8,6 @@ window.TME = {
         iframeContainer.style.left = defaultX + "px";
         iframeContainer.style.top = defaultY + "px";
 
-        chrome.storage.local.set({ iframeCoords: { x: defaultX, y: defaultY } });
-
         const draggableBar = document.createElement("div");
         draggableBar.id = "TMEdrag";
 
@@ -70,16 +68,20 @@ window.TME = {
             document.onmouseup = function () {
                 document.onmousemove = null;
                 document.onmouseup = null;
-
-                const newX = iframeContainer.getBoundingClientRect().left;
-                const newY = iframeContainer.getBoundingClientRect().top;
-                chrome.storage.local.set({ iframeCoords: { x: newX, y: newY } });
             };
         };
 
         draggableBar.ondragstart = function () {
             return false;
         };
+
+        // Adjust iframe left position when the document width becomes smaller
+        window.addEventListener("resize", () => {
+            const coordsX = iframeContainer.getBoundingClientRect().left;
+            const adjustedX = Math.min(coordsX, window.innerWidth - iframeContainer.offsetWidth - 40);
+
+            iframeContainer.style.left = `${adjustedX}px`;
+        });
 
         return iframe;
     },

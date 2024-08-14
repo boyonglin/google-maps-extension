@@ -53,16 +53,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "updateIframeSize") {
     let iframeContainer = document.getElementById("TMEiframe");
 
-    chrome.storage.local.get("iframeCoords", (result) => {
-      let coords = result.iframeCoords;
-
-      if (iframeContainer) {
-        iframeContainer.style.left = coords.x + "px";
-        iframeContainer.style.top = coords.y + "px";
-        iframeContainer.style.width = (request.width + 2) + "px";
-        iframeContainer.style.height = (request.height + 32 + 3) + "px"; // 32px for the draggable bar, 3px for the border
-      }
-    });
+    if (iframeContainer) {
+      iframeContainer.style.width = (request.width + 2) + "px";
+      iframeContainer.style.height = (request.height + 32 + 3) + "px"; // 32px for the draggable bar, 3px for the border
+    }
   }
 
   if (request.action === "consoleQuote" && request.stage) {
@@ -133,38 +127,33 @@ function getContent() {
   return summarySubject + bodyElement;
 }
 
-// Adjust iframe left position when the document width becomes smaller
-window.addEventListener("resize", () => {
-  adjustIframeX();
-});
-
-function adjustIframeX() {
-  let iframeContainer = document.getElementById("TMEiframe");
-
-  if (iframeContainer) {
-    chrome.storage.local.get("iframeCoords", (result) => {
-      const coords = result.iframeCoords;
-      const adjustedX = Math.min(coords.x, window.innerWidth - iframeContainer.offsetWidth - 40);
-
-      iframeContainer.style.left = `${adjustedX}px`;
-      chrome.storage.local.set({ iframeCoords: { x: adjustedX, y: coords.y } });
-    });
-  }
-}
-
 /********** Deprecated code **********/
 
 // chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-// if (request.action === "injectIframe") {
-//   const iframe = injectIframe();
+//   if (request.action === "injectIframe") {
+//     const iframe = injectIframe();
 
-//   iframe.onload = function () {
-//     chrome.runtime.sendMessage({ type: "iframeLoaded" });
-//   };
-// }
+//     iframe.onload = function () {
+//       chrome.runtime.sendMessage({ type: "iframeLoaded" });
+//     };
+//   }
 
 //   if (request.action === "removeIframe") {
 //     removeIframe();
+//   }
+
+//   if (request.action === "adjustIframeX") {
+//     let iframeContainer = document.getElementById("TMEiframe");
+
+//     if (iframeContainer) {
+//       chrome.storage.local.get("iframeCoords", (result) => {
+//         const coords = result.iframeCoords;
+//         const adjustedX = Math.min(coords.x, window.innerWidth - iframeContainer.offsetWidth - 40);
+
+//         iframeContainer.style.left = `${adjustedX}px`;
+//         chrome.storage.local.set({ iframeCoords: { x: adjustedX, y: coords.y } });
+//       });
+//     }
 //   }
 // });
 
