@@ -1,4 +1,5 @@
 # The Maps Express
+> A Shortcut to Google Maps, but Rich and Beautiful.\
 > Speed up your search flow to Google Maps!\
 > Navigate and save locations effortlessly with The Maps Express, experiencing rapid integration and minimal workflow disruption.
 
@@ -114,6 +115,10 @@ You can follow the steps below to use the exported CSV file to import places in 
     - `popup.css`: CSS for the popup window
     - `background.js`: Event handling and browser interaction
     - `contentScript.js`: Accessing webpage content
+    - `iframe.css`: CSS for the iframe window
+    - `inject.js`: Injecting iframe into the webpage
+    - `ejectLite.js`: Ejecting iframe from the webpage
+    - `checkStatus.js`: Checking the status of the iframe
 - `popup.html`: HTML for the popup window
 - `manifest.json`: Configuration file for the extension
 
@@ -124,6 +129,7 @@ You can follow the steps below to use the exported CSV file to import places in 
 - [Chrome Extension 開發與實作 - 羅拉拉](https://ithelp.ithome.com.tw/articles/10186017)
 - [Localizing Your Chrome Extension - Shahed Nasser](https://levelup.gitconnected.com/localizing-your-chrome-extension-an-easy-tutorial-b0892e225576)
 - [簡單用 Chrome Extension 接 Gemini API - Wolke](https://wolkesau.medium.com/簡單用-chrome-extension-接-gemini-api-下-prompt-就能實作文章摘要工具參加-google-百萬美金挑戰賽-ac2adda60c6f)
+- [Prism - Redline Tool](https://chromewebstore.google.com/detail/prism-redline-tool/hkbhjllliedcceblibllaodamehmbfgm)
 
 ---
 
