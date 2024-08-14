@@ -65,22 +65,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
   }
 
-  if (request.action === "adjustIframeX") {
-    let iframeContainer = document.getElementById("TMEiframe");
-
-    if (iframeContainer) {
-      chrome.storage.local.get("iframeCoords", (result) => {
-        const coords = result.iframeCoords;
-
-        // Adjust left position if the window size becomes smaller than the iframe width
-        const adjustedX = Math.min(coords.x, window.innerWidth - iframeContainer.offsetWidth - 40);
-
-        iframeContainer.style.left = `${adjustedX}px`;
-        chrome.storage.local.set({ iframeCoords: { x: adjustedX, y: coords.y } });
-      });
-    }
-  }
-
   if (request.action === "consoleQuote" && request.stage) {
     const quotes = {
       first: '"Er — hello," — Harry Potter',
@@ -147,6 +131,25 @@ function getContent() {
   });
 
   return summarySubject + bodyElement;
+}
+
+// Adjust iframe left position when the document width becomes smaller
+window.addEventListener("resize", () => {
+  adjustIframeX();
+});
+
+function adjustIframeX() {
+  let iframeContainer = document.getElementById("TMEiframe");
+
+  if (iframeContainer) {
+    chrome.storage.local.get("iframeCoords", (result) => {
+      const coords = result.iframeCoords;
+      const adjustedX = Math.min(coords.x, window.innerWidth - iframeContainer.offsetWidth - 40);
+
+      iframeContainer.style.left = `${adjustedX}px`;
+      chrome.storage.local.set({ iframeCoords: { x: adjustedX, y: coords.y } });
+    });
+  }
 }
 
 /********** Deprecated code **********/

@@ -287,23 +287,6 @@ function meow() {
   });
 }
 
-// Update iframe X position when a window has been resized
-chrome.windows.onBoundsChanged.addListener(async (window) => {
-  const tabs = await chrome.tabs.query({ active: true, windowId: window.id });
-
-  if (tabs.length > 0) {
-    const activeTab = tabs[0];
-    const url = activeTab.url;
-
-    if (url && url.startsWith("http")) {
-      activeTabId = activeTab.id;
-      chrome.tabs.sendMessage(activeTabId, { action: "adjustIframeX" });
-    } else {
-      return;
-    }
-  }
-});
-
 // ExtensionPay
 importScripts("ExtPay.js")
 
@@ -456,3 +439,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 //   chrome.action.setIcon({ path });
 // }
+
+// // Update iframe X position when a window has been resized
+// chrome.windows.onBoundsChanged.addListener(async (window) => {
+//   const tabs = await chrome.tabs.query({ active: true, windowId: window.id });
+
+//   if (tabs.length > 0) {
+//     const activeTab = tabs[0];
+//     const url = activeTab.url;
+//     const tabId = activeTab.id;
+
+//     if (url && url.startsWith("http")) {
+//       chrome.tabs.sendMessage(tabId, { action: "adjustIframeX" });
+//     } else {
+//       return;
+//     }
+//   }
+// });

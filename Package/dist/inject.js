@@ -1,13 +1,13 @@
 window.TME = {
     setup: function () {
-        const defaultX = window.innerWidth - 500;
+        const defaultX = window.innerWidth - 480;
         const defaultY = 60;
 
-        // Create and inject a new iframe
         let iframeContainer = document.createElement("div");
         iframeContainer.id = "TMEiframe";
         iframeContainer.style.left = defaultX + "px";
         iframeContainer.style.top = defaultY + "px";
+
         chrome.storage.local.set({ iframeCoords: { x: defaultX, y: defaultY } });
 
         const draggableBar = document.createElement("div");
