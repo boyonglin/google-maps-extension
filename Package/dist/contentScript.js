@@ -45,39 +45,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
   }
 
-  // Check the connection between the background and the content
+  // Check the connection between the background and the content script
   if (request.message === "ping") {
     sendResponse({ status: "connected" });
-  }
-
-  if (request.action === "injectIframe") {
-    const iframe = injectIframe();
-
-    iframe.onload = function () {
-      let iframeContainer = document.getElementById("TMEiframe");
-      const iframeWidth = iframeContainer.offsetWidth;
-
-      if (iframeWidth < 398) {
-        iframeContainer.remove();
-        const newIframe = injectIframe();
-        newIframe.onload = function () {
-          chrome.runtime.sendMessage({ type: "iframeLoaded" });
-        };
-      } else {
-        chrome.runtime.sendMessage({ type: "iframeLoaded" });
-      }
-    };
-  }
-
-  if (request.action === "removeIframe") {
-    removeIframe();
   }
 
   if (request.action === "updateIframeSize") {
     let iframeContainer = document.getElementById("TMEiframe");
 
     chrome.storage.local.get("iframeCoords", (result) => {
-      let coords = result.iframeCoords || { x: defaultX, y: defaultY };
+      let coords = result.iframeCoords;
 
       if (iframeContainer) {
         iframeContainer.style.left = coords.x + "px";
@@ -93,7 +70,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (iframeContainer) {
       chrome.storage.local.get("iframeCoords", (result) => {
-        const coords = result.iframeCoords || { x: defaultX, y: defaultY };
+        const coords = result.iframeCoords;
 
         // Adjust left position if the window size becomes smaller than the iframe width
         const adjustedX = Math.min(coords.x, window.innerWidth - iframeContainer.offsetWidth - 40);
@@ -101,6 +78,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         iframeContainer.style.left = `${adjustedX}px`;
         chrome.storage.local.set({ iframeCoords: { x: adjustedX, y: coords.y } });
       });
+    }
+  }
+
+  if (request.action === "printQuote" && request.stage) {
+    const quotes = {
+      first: '"Er — hello," — Harry Potter',
+      trial: '"Do enjoy yourself, won’t you? While you can." — Lucius Malfoy',
+      payment: '"Useful little treasure detectors," — Rubeus Hagrid',
+      premium: '"Where your treasure is, there will your heart be also." — upon the frozen, lichen-spotted granite',
+      free: '"Well, their main job is to keep it from the Muggles that there’s still witches an’ wizards up an’ down the country." — Ministry of Magic'
+    };
+
+    const quote = quotes[request.stage];
+    if (quote) {
+      console.log(quote);
     }
   }
 });
@@ -157,102 +149,118 @@ function getContent() {
   return summarySubject + bodyElement;
 }
 
-const defaultX = window.innerWidth - 500;
-const defaultY = 60;
+/********** Deprecated code **********/
 
-function injectIframe() {
-  // Remove any existing iframe with the same ID
-  const existingIframe = document.getElementById("TMEiframe");
-  if (existingIframe) {
-    existingIframe.remove();
-    chrome.runtime.sendMessage({ type: "iframeRemoved" });
-  }
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+// if (request.action === "injectIframe") {
+//   const iframe = injectIframe();
 
-  // Create and inject a new iframe
-  let iframeContainer = document.createElement("div");
-  iframeContainer.id = "TMEiframe";
-  iframeContainer.style.left = defaultX + "px";
-  iframeContainer.style.top = defaultY + "px";
-  chrome.storage.local.set({ iframeCoords: { x: defaultX, y: defaultY } });
+//   iframe.onload = function () {
+//     chrome.runtime.sendMessage({ type: "iframeLoaded" });
+//   };
+// }
 
-  const draggableBar = document.createElement("div");
-  draggableBar.id = "TMEdrag";
+//   if (request.action === "removeIframe") {
+//     removeIframe();
+//   }
+// });
 
-  const linesContainer = document.createElement("div");
-  linesContainer.id = "TMElines";
+// const defaultX = window.innerWidth - 500;
+// const defaultY = 60;
 
-  for (let i = 0; i < 6; i++) {
-    const line = document.createElement("div");
-    linesContainer.appendChild(line);
-  }
+// function injectIframe() {
+//   // Remove any existing iframe with the same ID
+//   const existingIframe = document.getElementById("TMEiframe");
+//   if (existingIframe) {
+//     existingIframe.remove();
+//     chrome.runtime.sendMessage({ type: "iframeRemoved" });
+//   }
 
-  const closeButton = document.createElement("button");
-  closeButton.id = "TMEeject";
-  closeButton.title = chrome.i18n.getMessage("closeLabel");
+//   // Create and inject a new iframe
+//   let iframeContainer = document.createElement("div");
+//   iframeContainer.id = "TMEiframe";
+//   iframeContainer.style.left = defaultX + "px";
+//   iframeContainer.style.top = defaultY + "px";
+//   chrome.storage.local.set({ iframeCoords: { x: defaultX, y: defaultY } });
 
-  // x.svg from Bootstrap Icons
-  closeButton.innerHTML = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
-    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-  </svg>
-  `;
+//   const draggableBar = document.createElement("div");
+//   draggableBar.id = "TMEdrag";
 
-  closeButton.addEventListener("click", () => {
-    iframeContainer.remove();
-    chrome.runtime.sendMessage({ type: "iframeRemoved" });
-  });
+//   const linesContainer = document.createElement("div");
+//   linesContainer.id = "TMElines";
 
-  draggableBar.appendChild(linesContainer);
-  draggableBar.appendChild(closeButton);
+//   for (let i = 0; i < 6; i++) {
+//     const line = document.createElement("div");
+//     linesContainer.appendChild(line);
+//   }
 
-  const iframe = document.createElement("iframe");
-  iframe.id = "TMEmain";
-  iframe.src = chrome.runtime.getURL("../popup.html");
+//   const closeButton = document.createElement("button");
+//   closeButton.id = "TMEeject";
+//   closeButton.title = chrome.i18n.getMessage("closeLabel");
 
-  // Append the iframe elements
-  iframeContainer.appendChild(draggableBar);
-  iframeContainer.appendChild(iframe);
-  document.body.appendChild(iframeContainer);
+//   // x.svg from Bootstrap Icons
+//   closeButton.innerHTML = `
+//   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
+//     <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+//   </svg>
+//   `;
 
-  // Make the iframe draggable
-  draggableBar.onmousedown = function (event) {
-    event.preventDefault();
-    const shiftX = event.clientX - iframeContainer.getBoundingClientRect().left;
-    const shiftY = event.clientY - iframeContainer.getBoundingClientRect().top;
+//   closeButton.addEventListener("click", () => {
+//     iframeContainer.remove();
+//     chrome.runtime.sendMessage({ type: "iframeRemoved" });
+//   });
 
-    document.onmousemove = function (event) {
-      iframeContainer.style.left = event.clientX - shiftX + "px";
-      iframeContainer.style.top = event.clientY - shiftY + "px";
-    };
+//   draggableBar.appendChild(linesContainer);
+//   draggableBar.appendChild(closeButton);
 
-    document.onmouseup = function () {
-      document.onmousemove = null;
-      document.onmouseup = null;
+//   const iframe = document.createElement("iframe");
+//   iframe.id = "TMEmain";
+//   iframe.src = chrome.runtime.getURL("../popup.html");
 
-      const newX = iframeContainer.getBoundingClientRect().left;
-      const newY = iframeContainer.getBoundingClientRect().top;
-      chrome.storage.local.set({ iframeCoords: { x: newX, y: newY } });
-    };
-  };
+//   // Append the iframe elements
+//   iframeContainer.appendChild(draggableBar);
+//   iframeContainer.appendChild(iframe);
+//   document.body.appendChild(iframeContainer);
 
-  draggableBar.ondragstart = function () {
-    return false;
-  };
+//   // Make the iframe draggable
+//   draggableBar.onmousedown = function (event) {
+//     event.preventDefault();
+//     const shiftX = event.clientX - iframeContainer.getBoundingClientRect().left;
+//     const shiftY = event.clientY - iframeContainer.getBoundingClientRect().top;
 
-  return iframe;
-}
+//     document.onmousemove = function (event) {
+//       iframeContainer.style.left = event.clientX - shiftX + "px";
+//       iframeContainer.style.top = event.clientY - shiftY + "px";
+//     };
 
-function removeIframe() {
-  let iframeContainer = document.getElementById("TMEiframe");
-  if (iframeContainer) {
-    iframeContainer.remove();
-    chrome.runtime.sendMessage({ type: "iframeRemoved" });
-  }
-}
+//     document.onmouseup = function () {
+//       document.onmousemove = null;
+//       document.onmouseup = null;
 
-// Close by esc key
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    removeIframe();
-  }
-});
+//       const newX = iframeContainer.getBoundingClientRect().left;
+//       const newY = iframeContainer.getBoundingClientRect().top;
+//       chrome.storage.local.set({ iframeCoords: { x: newX, y: newY } });
+//     };
+//   };
+
+//   draggableBar.ondragstart = function () {
+//     return false;
+//   };
+
+//   return iframe;
+// }
+
+// function removeIframe() {
+//   let iframeContainer = document.getElementById("TMEiframe");
+//   if (iframeContainer) {
+//     iframeContainer.remove();
+//     chrome.runtime.sendMessage({ type: "iframeRemoved" });
+//   }
+// }
+
+// // Close by esc key
+// document.addEventListener("keydown", (event) => {
+//   if (event.key === "Escape") {
+//     removeIframe();
+//   }
+// });

@@ -139,8 +139,7 @@ function fetchData() {
       if (hasInit) {
         measureContentSizeLast();
       } else {
-        measureContentSize();
-        hasInit = true;
+        retryMeasureContentSize();
       }
 
       // Check if the API key is defined and valid
@@ -1109,6 +1108,15 @@ function measureContentSize() {
   });
 }
 
+function retryMeasureContentSize() {
+  if (document.body.offsetWidth === 0) {
+    setTimeout(retryMeasureContentSize, 100);
+  } else {
+    measureContentSize();
+    hasInit = true;
+  }
+}
+
 // If the focus tab is changed
 function measureContentSizeLast() {
   chrome.tabs.query({ active: false, lastFocusedWindow: true }, (tabs) => {
@@ -1134,12 +1142,15 @@ function measureContentSizeLast() {
   });
 }
 
-// Close by esc key
+// Close by Esc key
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: "removeIframe" });
-  });
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        files: ["dist/ejectLite.js"],
+      });
+    });
   }
 });
 

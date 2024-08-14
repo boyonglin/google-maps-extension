@@ -21,7 +21,8 @@
   "permissions": [
     "activeTab",
     "contextMenus",
-    "storage"
+    "storage",
+    "scripting"
   ],
   "background": {
     "service_worker": "dist/background.js"
@@ -41,12 +42,12 @@
       },
       "description": "Start the extension"
     },
-    "auto-suggest": {
+    "auto-attach": {
       "suggested_key": {
         "default": "Alt+S",
         "mac": "Alt+S"
       },
-      "description": "Auto-suggest links on page"
+      "description": "Auto-attach links on page"
     }
   },
   "content_scripts": [
@@ -64,7 +65,7 @@
   "web_accessible_resources": [
     {
       "matches": ["<all_urls>"],
-      "resources": ["popup.html", "dist/iframe.css"]
+      "resources": ["popup.html", "dist/iframe.css", "dist/inject.js", "dist/ejectLite.js", "dist/checkStatus.js"]
     }
   ]
 }
