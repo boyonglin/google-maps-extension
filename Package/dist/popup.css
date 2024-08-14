@@ -304,6 +304,12 @@ li:hover .form-check-input {
   color: var(--background-color);
 }
 
+.btn-send:active {
+  background-color: var(--google-purple-hover) !important;
+  border: 1px solid var(--google-purple-hover) !important;
+  color: var(--background-color) !important;
+}
+
 .btn-send:focus-visible {
   background-color: var(--google-purple);
   box-shadow: 0 0 0 4px var(--google-purple-500);

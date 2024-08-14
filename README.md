@@ -1,5 +1,4 @@
 # The Maps Express
-> A Shortcut to Google Maps, but Rich and Beautiful.\
 > Speed up your search flow to Google Maps!\
 > Navigate and save locations effortlessly with The Maps Express, experiencing rapid integration and minimal workflow disruption.
 

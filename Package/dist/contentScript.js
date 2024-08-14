@@ -81,7 +81,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   }
 
-  if (request.action === "printQuote" && request.stage) {
+  if (request.action === "consoleQuote" && request.stage) {
     const quotes = {
       first: '"Er — hello," — Harry Potter',
       trial: '"Do enjoy yourself, won’t you? While you can." — Lucius Malfoy',

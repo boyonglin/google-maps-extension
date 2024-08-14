@@ -65,7 +65,7 @@ chrome.commands.onCommand.addListener((command) => {
 
       // In trial period
       if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
-        chrome.tabs.sendMessage(sender.tab.id, { action: "printQuote", stage: "trial" });
+        chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "trial" });
       } else {
 
         // Paid user
@@ -73,14 +73,14 @@ chrome.commands.onCommand.addListener((command) => {
           chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
             if (tabs && tabs.length > 0) {
               await trySuggest(tabs[0].id);
-              chrome.tabs.sendMessage(sender.tab.id, { action: "printQuote", stage: "premium" });
+              chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "premium" });
             }
           });
         }
 
         // Free user
         else {
-          chrome.tabs.sendMessage(sender.tab.id, { action: "printQuote", stage: "free" });
+          chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "free" });
         }
       }
     });
@@ -106,7 +106,7 @@ async function trySuggest(tabId, retries = 10) {
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
         retries--;
       } else {
-        throw error;
+        throw new Error(`Something went wrong! Please report the issue to the developer: ${error.message}`);
       }
     }
   }
@@ -318,7 +318,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // First time user
       if (!user.trialStartedAt) {
         extpay.openTrialPage("7-day");
-        chrome.tabs.sendMessage(sender.tab.id, { action: "printQuote", stage: "first" });
+        chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "first" });
       }
 
       // Trial or Pay
@@ -328,7 +328,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           extpay.openTrialPage();
         } else {
           extpay.openPaymentPage();
-          chrome.tabs.sendMessage(sender.tab.id, { action: "printQuote", stage: "payment" });
+          chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "payment" });
         }
       }
     });

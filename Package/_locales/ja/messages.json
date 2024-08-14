@@ -100,6 +100,18 @@
   "premiumTitle": {
     "message": "会員限定魔法"
   },
+  "autoAttachLabel": {
+    "message": "\ud83d\udcccGoogle マップリンクを自動添付"
+  },
+  "moreLabel": {
+    "message": "\ud83d\udd25今後、さらに多くの上級魔法"
+  },
+  "paymentLabel": {
+    "message": "永久に使用する $$4.99"
+  },
+  "restoreLabel": {
+    "message": "購入を復元"
+  },
   "premiumNote": {
     "message": "ExtensionPay と PayPal を通じて支払い済み"
   },

@@ -42,7 +42,7 @@ const enterButton = document.getElementById("enterButton");
 const clearButtonSummary = document.getElementById("clearButtonSummary");
 
 // ExtensionPay
-const premiumButton = document.getElementById("premiumButton");
+const paymentButton = document.getElementById("paymentButton");
 const restoreButton = document.getElementById("restoreButton");
 
 // Spans
@@ -1155,7 +1155,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 // Premium panel
-premiumButton.addEventListener("click", function () {
+paymentButton.addEventListener("click", function () {
   chrome.runtime.sendMessage({ action: "extPay" });
 });
 
