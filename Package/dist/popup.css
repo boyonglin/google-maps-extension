@@ -186,7 +186,7 @@ body {
 #searchHistoryList,
 #favoriteList,
 #summaryList {
-  max-height: 14rem;
+  max-height: 214.4px; /* 14rem */
 }
 
 #searchHistoryList ul,
