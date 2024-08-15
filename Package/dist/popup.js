@@ -44,6 +44,7 @@ const clearButtonSummary = document.getElementById("clearButtonSummary");
 // ExtensionPay
 const paymentButton = document.getElementById("paymentButton");
 const restoreButton = document.getElementById("restoreButton");
+const shortcutTip = document.getElementsByClassName("premium-only");
 
 // Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
@@ -57,6 +58,7 @@ let [hasHistory, hasFavorite, hasSummary, hasInit] = [false, false, false, false
 
 setTimeout(popupLayout, 0);
 setTimeout(fetchData, 0);
+// setTimeout(checkPay, 0);
 
 // Input caret
 document.addEventListener("DOMContentLoaded", function () {
@@ -1087,6 +1089,7 @@ deleteListButton.title = chrome.i18n.getMessage("deleteLabel");
 enterButton.title = chrome.i18n.getMessage("enterLabel");
 configureElements[0].title = chrome.i18n.getMessage("shortcutsLabel");
 configureElements[1].title = chrome.i18n.getMessage("shortcutsLabel");
+// configureElements[2].title = chrome.i18n.getMessage("shortcutsLabel");
 const apiSaveButton = document.querySelectorAll(".modal-body #apiForm button");
 apiSaveButton[0].title = chrome.i18n.getMessage("saveLabel");
 clearButtonSummary.title = chrome.i18n.getMessage("clearSummaryLabel");
@@ -1162,3 +1165,13 @@ paymentButton.addEventListener("click", function () {
 restoreButton.addEventListener("click", function () {
   chrome.runtime.sendMessage({ action: "restorePay" });
 });
+
+function checkPay() {
+  chrome.runtime.sendMessage({ action: "checkPay" }, function (response) {
+    if (response.result && shortcutTip) {
+      Array.from(shortcutTip).forEach(element => {
+        element.classList.remove("premium-only");
+      });
+    }
+  });
+}

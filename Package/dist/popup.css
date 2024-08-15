@@ -435,6 +435,11 @@ li:hover .form-check-input {
   width: 1rem;
 }
 
+.premium-only {
+  color: var(--gray-400) !important;
+  pointer-events: none !important;
+}
+
 /* scrollbar */
 ::-webkit-scrollbar {
   width: .5rem;

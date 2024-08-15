@@ -82,6 +82,9 @@
   "searchBarKeyLabel": {
     "message": "検索バー"
   },
+  "autoAttachKeyLabel": {
+    "message": "リンク自動添付"
+  },
   "shortcutsNote": {
     "message": "上のショートカットをクリックして、拡張機能のショートカットキーを設定できます。\nブラウザによってはスコープをグローバルに変更する必要があります。"
   },

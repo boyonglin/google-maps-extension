@@ -47,44 +47,44 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // Track the shortcuts event
 chrome.commands.onCommand.addListener((command) => {
-  if (command === "run-search") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs && tabs.length > 0) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const url = tabs[0].url;
+    const tabId = tabs[0].id;
+    if (url && url.startsWith("http")) {
+      if (command === "run-search") {
         chrome.tabs.sendMessage(tabs[0].id, { action: "getSelectedText" }, (response) => {
           if (response && response.selectedText) {
             const selectedText = response.selectedText;
             handleSelectedText(selectedText);
           }
-        }
-        );
-      }
-    });
-  } else if (command === "auto-attach") {
-    extpay.getUser().then(user => {
-      const now = new Date();
+        });
+      } else if (command === "auto-attach") {
+        extpay.getUser().then(async user => {
+          const now = new Date();
 
-      // In trial period
-      if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
-        chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "trial" });
-      } else {
+          // In trial period
+          if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
+            await trySuggest(tabId);
+            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
+          } else {
 
-        // Paid user
-        if (user.paid) {
-          chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-            if (tabs && tabs.length > 0) {
-              await trySuggest(tabs[0].id);
-              chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "premium" });
+            // Paid user
+            if (user.paid) {
+              await trySuggest(tabId);
+              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
             }
-          });
-        }
 
-        // Free user
-        else {
-          chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "free" });
-        }
+            // Free user
+            else {
+              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "free" });
+            }
+          }
+        });
       }
-    });
-  }
+    } else {
+      console.error("Cannot execute extension on non-HTTP URL.");
+    }
+  });
 });
 
 // Retry mechanism for trying to suggest places from the content
@@ -295,9 +295,10 @@ const extpay = ExtPay("the-maps-express")
 extpay.startBackground();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const now = new Date();
+
   if (request.action === "extPay") {
     extpay.getUser().then(user => {
-
       // First time user
       if (!user.trialStartedAt) {
         extpay.openTrialPage("7-day");
@@ -306,7 +307,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       // Trial or Pay
       else {
-        const now = new Date();
         if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
           extpay.openTrialPage();
         } else {
@@ -317,6 +317,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
   } else if (request.action === "restorePay") {
     extpay.openLoginPage();
+  } else if (request.action === "checkPay") {
+    extpay.getUser().then(user => {
+      const isPremium = (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) || user.paid;
+      sendResponse({ result: isPremium });
+    });
+    return true;
   }
 });
 

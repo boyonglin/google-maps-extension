@@ -109,6 +109,10 @@
     "message": "Search Bar",
     "description": "modal tips search bar key label"
   },
+  "autoAttachKeyLabel": {
+    "message": "Auto-attach Link",
+    "description": "modal tips auto-attach key label"
+  },
   "shortcutsNote": {
     "message": "You can click the key combinations above to set extension shortcuts. For some browsers, you may need to change the scope to global.",
     "description": "modal tips shortcuts note"
