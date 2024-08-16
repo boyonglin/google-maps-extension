@@ -121,9 +121,9 @@
     "message": "Tip",
     "description": "popup tips button text"
   },
-  "websiteBtnText": {
-    "message": "Website",
-    "description": "popup website button text"
+  "aboutBtnText": {
+    "message": "About",
+    "description": "popup about button text"
   },
   "kofiBtnText": {
     "message": "Support",
