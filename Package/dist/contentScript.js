@@ -15,9 +15,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "attachMapLink" && request.content) {
     let candidates = request.content.split("\n").map(item => item.trim()).filter(item => item !== "");
-    const h1Elements = document.querySelectorAll("h1");
-    const h2Elements = document.querySelectorAll("h2");
-    const strongElements = document.querySelectorAll("strong");
 
     function attachMapLink(element) {
       candidates.forEach(candidate => {
@@ -32,16 +29,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     }
 
-    h1Elements.forEach(h1 => {
-      attachMapLink(h1);
-    });
-
-    h2Elements.forEach(h2 => {
-      attachMapLink(h2);
-    });
-
-    strongElements.forEach(strong => {
-      attachMapLink(strong);
+    ["h1", "h2", "h3", "strong"].forEach(tag => {
+      document.querySelectorAll(tag).forEach(element => {
+        attachMapLink(element);
+      });
     });
   }
 
@@ -76,15 +67,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function getContent() {
+  // Get the summary topic
   const titleElement = document.querySelector("head > title");
   const titleText = titleElement ? titleElement.innerText : "";
-  const titleHtml = `<title>${titleText}</title>`;
-
-  const h1Elements = document.querySelectorAll("h1");
-  const h1Html = Array.from(h1Elements).map(h1 => `<h1>${h1.innerText}</h1>`).join("");
-
-  // Get the summary subject (title or h1)
-  const summarySubject = titleHtml + h1Html;
+  const summaryTopic = `<title>${titleText}</title>`;
 
   // Get the plain text of the body (visible text || including hidden text)
   const bodyText = document.body.innerText || document.body.textContent;
@@ -111,20 +97,18 @@ function getContent() {
     bodyElement = bodyElement.replace(footerRegex, "").trim();
   }
 
-  // Preserved <h2> and <strong> tags
-  const h2Elements = document.querySelectorAll("h2");
-  h2Elements.forEach(h2 => {
-    const h2Text = `<h2>${h2.innerText}</h2>`;
-    bodyElement = bodyElement.replace(h2.innerText, h2Text);
-  });
+  // Preserved <h1>, <h2>, <h3>, and <strong> tags
+  function wrapTag(tag) {
+    const elements = document.querySelectorAll(tag);
+    elements.forEach(element => {
+      const text = `<${tag}>${element.innerText}</${tag}>`;
+      bodyElement = bodyElement.replace(element.innerText, text);
+    });
+  }
 
-  const strongElements = document.querySelectorAll("strong");
-  strongElements.forEach(strong => {
-    const strongText = `<strong>${strong.innerText}</strong>`;
-    bodyElement = bodyElement.replace(strong.innerText, strongText);
-  });
+  ["h1", "h2", "h3", "strong"].forEach(tag => wrapTag(tag));
 
-  return summarySubject + bodyElement;
+  return summaryTopic + bodyElement;
 }
 
 /********** Deprecated code **********/
