@@ -154,7 +154,7 @@
     "description": "modal restore purchase label"
   },
   "premiumNote": {
-    "message": "Pay through ExtensionPay and PayPal.",
+    "message": "Pay through ExtensionPay and Stripe. Currently offering a 7-day free trial!",
     "description": "modal premium note"
   },
   "apiTitle": {

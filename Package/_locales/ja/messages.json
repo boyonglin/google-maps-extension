@@ -116,7 +116,7 @@
     "message": "購入を復元"
   },
   "premiumNote": {
-    "message": "ExtensionPay と PayPal を通じて支払い済み"
+    "message": "ExtensionPay と Stripe を通じて支払い、7 日間の無料トライアルを提供しています！"
   },
   "apiTitle": {
     "message": "API キーの設定"

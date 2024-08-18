@@ -116,7 +116,7 @@
     "message": "恢復購買"
   },
   "premiumNote": {
-    "message": "通過 ExtensionPay 和 PayPal 付款"
+    "message": "通過 ExtensionPay 和 Stripe 付款，並提供 7 天免費試用！"
   },
   "apiTitle": {
     "message": "配置你的 API 金鑰"

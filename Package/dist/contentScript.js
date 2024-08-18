@@ -19,10 +19,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     function attachMapLink(element) {
       candidates.forEach(candidate => {
         const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(candidate)}`;
-        const linkHtml = `<a href="${searchUrl}" target="_blank" style="text-decoration: none;">📌</a>`;
+        const linkHtml = `<a href="${searchUrl}" target="_blank" style="text-decoration: none; border: 0px;">📌</a>`;
 
         // Replace the candidate text with itself followed by the link emoji
-        let nameHtml = candidate.split(" ")[0];
+        const parts = candidate.split(/\s{4,}/);
+        let nameHtml = parts[0];
+
         if (element.innerHTML.includes(nameHtml)) {
           element.innerHTML = element.innerHTML.replace(new RegExp(nameHtml, "g"), `${nameHtml}${linkHtml}`);
         }
@@ -70,7 +72,7 @@ function getContent() {
   // Get the summary topic
   const titleElement = document.querySelector("head > title");
   const titleText = titleElement ? titleElement.innerText : "";
-  const summaryTopic = `<title>${titleText}</title>`;
+  const summaryTopic = `Page's main topic: <title>${titleText}</title>`;
 
   // Get the plain text of the body (visible text || including hidden text)
   const bodyText = document.body.innerText || document.body.textContent;
@@ -108,7 +110,7 @@ function getContent() {
 
   ["h1", "h2", "h3", "strong"].forEach(tag => wrapTag(tag));
 
-  return summaryTopic + bodyElement;
+  return summaryTopic + `\n\nPage body content: ` + bodyElement;
 }
 
 /********** Deprecated code **********/
