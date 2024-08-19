@@ -115,8 +115,22 @@
   "restoreLabel": {
     "message": "恢復購買"
   },
+  "firstNote": {
+    "message": "試試快捷鍵 <strong>Alt+S / &#8997;+S</strong>，透過 7 天免費試用體驗我們如何串聯你的網頁與 Google 地圖"
+  },
+  "trialNote": {
+    "message": "你的試用將於 $date$ 結束",
+    "placeholders": {
+      "date": {
+        "content": "$1"
+      }
+    }
+  },
   "premiumNote": {
-    "message": "通過 ExtensionPay 和 Stripe 付款，並提供 7 天免費試用！"
+    "message": "你是個巫師，陌生人\ud83e\uddd9歡迎隨時分享你的回饋，幫助我們做得更好"
+  },
+  "freeNote": {
+    "message": "透過 ExtensionPay 和 Stripe 快速安全地付款，讓 The Maps Express 成為指引你的鑰匙"
   },
   "apiTitle": {
     "message": "配置你的 API 金鑰"

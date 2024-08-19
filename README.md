@@ -12,6 +12,7 @@
     - [Set Up](#set-up)
     - [Shortcut](#shortcut)
     - [Gemini API](#gemini-api)
+    - [Google My Maps](#google-my-maps)
 - Project
     - [Framework](#framework)
     - [Structure](#structure)
@@ -78,22 +79,22 @@ To apply the API key for the page summary feature, you need to follow these step
 
 ## Google My Maps
 You can follow the steps below to use the exported CSV file to import places in Google My Maps:\
-1. Open My Maps in Google Maps\
+1. Open My Maps in Google Maps
 <img src="https://github.com/user-attachments/assets/4eeed4e8-a8b7-4ce7-a5ec-8439305168d0" width="500">
 
-2. Create a new map\
+2. Create a new map
 <img src="https://github.com/user-attachments/assets/08be46cb-b370-4c6f-add7-33f334fbb40d" width="500">
 
-3. Click import button\
+3. Click import button
 <img src="https://github.com/user-attachments/assets/2b1b54c6-b5b2-4f73-bdc0-9750cdbe8a70" width="500">
 
-4. Choose exported CSV file to import\
+4. Choose exported CSV file to import
 <img src="https://github.com/user-attachments/assets/c5f0f043-262f-4611-8b28-4a3247d202b3" width="500">
 
-5. Choose columns (default is "name")\
+5. Choose columns (default is "name")
 <img src="https://github.com/user-attachments/assets/04450982-6066-4228-b6b4-f04dc1914ac9" width="500">
 
-6. Finish import\
+6. Finish import
 <img src="https://github.com/user-attachments/assets/d3d1f2fb-360e-4239-b8de-2ebec557ed16" width="500">
 
 ---

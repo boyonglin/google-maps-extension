@@ -98,7 +98,7 @@
     "message": "支援"
   },
   "premiumBtnText": {
-    "message": "魔法"
+    "message": "まほう"
   },
   "premiumTitle": {
     "message": "会員限定魔法"
@@ -115,8 +115,22 @@
   "restoreLabel": {
     "message": "購入を復元"
   },
+  "firstNote": {
+    "message": "ショートカット <strong>Alt+S / &#8997;+S</strong> を試して、Google マップとページを接続する方法を 7 日間の無料トライアルで体験してください。"
+  },
+  "trialNote": {
+    "message": "無料トライアルは $date$ に終了します。",
+    "placeholders": {
+      "date": {
+        "content": "$1"
+      }
+    }
+  },
   "premiumNote": {
-    "message": "ExtensionPay と Stripe を通じて支払い、7 日間の無料トライアルを提供しています！"
+    "message": "おまえは魔法使いだ、旅人さん\ud83e\uddd9さらに良くするために、ぜひフィードバックを気軽に共有してください。"
+  },
+  "freeNote": {
+    "message": "The Maps Express をあなたの導きの鍵にしましょう。ExtensionPay と Stripe で安全にお支払いください。"
   },
   "apiTitle": {
     "message": "API キーの設定"

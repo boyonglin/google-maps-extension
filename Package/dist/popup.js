@@ -1021,7 +1021,6 @@ function text2Link(dataLocale, searchText, linkText, linkHref) {
 }
 
 text2Link("apiNote", "Google AI Studio", "Google AI Studio", "https://aistudio.google.com/app/apikey");
-text2Link("premiumNote", "ExtensionPay", "ExtensionPay", "https://extensionpay.com/");
 
 // Save the API key
 document.getElementById("apiForm").addEventListener("submit", function (event) {
@@ -1166,12 +1165,33 @@ restoreButton.addEventListener("click", function () {
   chrome.runtime.sendMessage({ action: "restorePay" });
 });
 
+const pElement = document.querySelector(`p[data-locale="premiumNote"]`);
+
 function checkPay() {
   chrome.runtime.sendMessage({ action: "checkPay" }, function (response) {
-    if (response.result && shortcutTip) {
+    const stage = response.result;
+
+    // Shortcut display
+    if (stage.isTrial || stage.isPremium) {
       Array.from(shortcutTip).forEach(element => {
         element.classList.remove("premium-only");
       });
+    }
+
+    // Note display
+    if (stage.isFirst) {
+      pElement.innerHTML = chrome.i18n.getMessage("firstNote");
+    } else if (stage.isTrial) {
+      const trialEndOn = new Date(stage.trialEnd).toString();
+      pElement.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
+    } else if (stage.isPremium) {
+      pElement.innerHTML = chrome.i18n.getMessage("premiumNote");
+      text2Link("premiumNote", "回饋", "回饋", "https://forms.fillout.com/t/dFSEkAwKYKus");
+      text2Link("premiumNote", "feedback", "feedback", "https://forms.fillout.com/t/dFSEkAwKYKus");
+      text2Link("premiumNote", "フィードバック", "フィードバック", "https://forms.fillout.com/t/dFSEkAwKYKus");
+    } else if (stage.isFree) {
+      pElement.innerHTML = chrome.i18n.getMessage("freeNote");
+      text2Link("premiumNote", "ExtensionPay", "ExtensionPay", "https://extensionpay.com/");
     }
   });
 }
