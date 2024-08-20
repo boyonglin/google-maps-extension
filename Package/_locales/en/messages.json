@@ -168,7 +168,7 @@
     }
   },
   "remindNote": {
-    "message": "Use Gemini AI and Alt+S / &#8997;+S shortcut to enable the Auto-attach feature.",
+    "message": "Use Gemini AI and Alt+S / &#8997;+S shortcut to enable the auto-attach link feature.",
     "description": "modal remind note"
   },
   "premiumNote": {
