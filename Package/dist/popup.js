@@ -11,6 +11,7 @@ const subtitleElement = document.getElementById("subtitle");
 const emptyMessage = document.getElementById("emptyMessage");
 const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
 const geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
+const apiModalLabel = document.getElementById("apiModalLabel");
 
 // Lists
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
@@ -40,6 +41,8 @@ const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
 const enterButton = document.getElementById("enterButton");
 const clearButtonSummary = document.getElementById("clearButtonSummary");
+const premiumModal = document.getElementById("premiumModalLabel");
+const closeButton = premiumModal.parentElement.querySelector(".btn-close");
 
 // ExtensionPay
 const paymentButton = document.getElementById("paymentButton");
@@ -53,6 +56,7 @@ const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
 const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
+const paymentSpan = document.querySelector("#paymentButton > span");
 
 let [hasHistory, hasFavorite, hasSummary, hasInit] = [false, false, false, false];
 
@@ -144,21 +148,28 @@ function fetchData() {
         retryMeasureContentSize();
       }
 
-      // Check if the API key is defined and valid
-      if (geminiApiKey) {
-        verifyApiKey(geminiApiKey).then(isValid => {
-          if (!isValid) {
-            sendButton.disabled = true;
-            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-          }
-        });
-      } else {
-        sendButton.disabled = true;
-        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-        return;
-      }
+      fetchAPIKey(geminiApiKey);
     }
   );
+}
+
+// Check if the API key is defined and valid
+function fetchAPIKey(apiKey) {
+  apiModalLabel.innerHTML = chrome.i18n.getMessage("apiTitleFalse");
+  if (apiKey) {
+    verifyApiKey(apiKey).then(isValid => {
+      if (!isValid) {
+        sendButton.disabled = true;
+        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+      } else {
+        apiModalLabel.innerHTML = chrome.i18n.getMessage("apiTitleTrue");
+      }
+    });
+  } else {
+    sendButton.disabled = true;
+    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+    return;
+  }
 }
 
 // Check if the text overflows the button since locale
@@ -643,7 +654,7 @@ chrome.storage.onChanged.addListener((changes) => {
 
   if (searchHistoryListChange && searchHistoryListChange.newValue) {
     const newList = searchHistoryListChange.newValue;
-    const oldList = searchHistoryListChange.oldValue;
+    const oldList = searchHistoryListChange.oldValue || [];
 
     if (newList.length >= oldList.length) {
       fetchData(hasInit);
@@ -1010,17 +1021,26 @@ function summarizeContent(content, apiKey) {
 }
 
 // Replace text from note with a link
-function text2Link(dataLocale, searchText, linkText, linkHref) {
+function text2Link(dataLocale, linkText, linkHref) {
   const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
   if (pElement) {
     const originalText = pElement.innerHTML;
-    const newText = originalText.replace(searchText,
+    const newText = originalText.replace(linkText,
       `<a href="${linkHref}" target="_blank">${linkText}</a>`);
     pElement.innerHTML = newText;
   }
 }
 
-text2Link("apiNote", "Google AI Studio", "Google AI Studio", "https://aistudio.google.com/app/apikey");
+function text2Modal(dataLocale, linkText, modalId) {
+  const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
+  if (pElement) {
+    const originalText = pElement.innerHTML;
+    const newText = originalText.replace(linkText, `<a href="#" data-bs-toggle="modal" data-bs-target="#${modalId}">${linkText}</a>`);
+    pElement.innerHTML = newText;
+  }
+}
+
+text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
 
 // Save the API key
 document.getElementById("apiForm").addEventListener("submit", function (event) {
@@ -1031,9 +1051,11 @@ document.getElementById("apiForm").addEventListener("submit", function (event) {
 
   verifyApiKey(apiKey).then(isValid => {
     if (isValid) {
+      apiModalLabel.innerHTML = chrome.i18n.getMessage("apiTitleTrue");
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
       sendButton.disabled = false;
     } else {
+      apiModalLabel.innerHTML = chrome.i18n.getMessage("apiTitleFalse");
       geminiEmptyMessage.classList.remove("d-none");
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
       sendButton.disabled = true;
@@ -1182,16 +1204,27 @@ function checkPay() {
     if (stage.isFirst) {
       pElement.innerHTML = chrome.i18n.getMessage("firstNote");
     } else if (stage.isTrial) {
-      const trialEndOn = new Date(stage.trialEnd).toString();
-      pElement.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
+      const date = new Date(stage.trialEnd);
+      const month = date.toLocaleString('en-US', { month: 'short' });
+      const day = date.getDate();
+      const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const trialEndOn = `${month} ${day}, ${time}`;
+      paymentSpan.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
+      pElement.innerHTML = chrome.i18n.getMessage("remindNote");
+      text2Modal("premiumNote", "Gemini AI", "apiModal");
+      text2Modal("premiumNote", "Alt+S / ⌥+S", "tipsModal");
     } else if (stage.isPremium) {
       pElement.innerHTML = chrome.i18n.getMessage("premiumNote");
-      text2Link("premiumNote", "回饋", "回饋", "https://forms.fillout.com/t/dFSEkAwKYKus");
-      text2Link("premiumNote", "feedback", "feedback", "https://forms.fillout.com/t/dFSEkAwKYKus");
-      text2Link("premiumNote", "フィードバック", "フィードバック", "https://forms.fillout.com/t/dFSEkAwKYKus");
+      text2Link("premiumNote", "回饋", "https://forms.fillout.com/t/dFSEkAwKYKus");
+      text2Link("premiumNote", "feedback", "https://forms.fillout.com/t/dFSEkAwKYKus");
+      text2Link("premiumNote", "フィードバック", "https://forms.fillout.com/t/dFSEkAwKYKus");
     } else if (stage.isFree) {
       pElement.innerHTML = chrome.i18n.getMessage("freeNote");
-      text2Link("premiumNote", "ExtensionPay", "ExtensionPay", "https://extensionpay.com/");
+      text2Link("premiumNote", "ExtensionPay", "https://extensionpay.com/");
     }
   });
 }
+
+closeButton.addEventListener("click", function () {
+  checkPay();
+});

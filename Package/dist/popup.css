@@ -191,12 +191,12 @@ body {
 
 #searchHistoryList ul,
 #favoriteList ul {
-  min-height: 6.5rem;
+  min-height: 7rem;
   justify-content: flex-end;
 }
 
 #summaryList ul {
-  min-height: 6.5rem;
+  min-height: 7rem;
   justify-content: flex-start;
 }
 

@@ -154,11 +154,11 @@
     "description": "modal restore purchase label"
   },
   "firstNote": {
-    "message": "Test out the shortcut <strong>Alt+S / &#8997;+S</strong> to see how we keep your pages connected to Google Maps with our 7-day free trial.",
+    "message": "Test out our 7-day free trial to see how we keep your pages connected to Google Maps.",
     "description": "modal first note"
   },
   "trialNote": {
-    "message": "Your trial will end on $date$.",
+    "message": "Trial ends on $date$",
     "description": "modal trial note",
     "placeholders": {
       "date": {
@@ -167,16 +167,24 @@
       }
     }
   },
+  "remindNote": {
+    "message": "Use Gemini AI and Alt+S / &#8997;+S shortcut to enable the Auto-attach feature.",
+    "description": "modal remind note"
+  },
   "premiumNote": {
-    "message": "Yer a wizard, stranger\ud83e\uddd9Feel free to share your feedback to help us make things even better.",
+    "message": "Yer a wizard, stranger\ud83e\uddd9Feel free to share your feedback to help us make things better.",
     "description": "modal premium note"
   },
   "freeNote": {
-    "message": "Let The Maps Express be your guiding key. Pay securely with ExtensionPay and Stripe.",
+    "message": "Pay securely with ExtensionPay, and let The Maps Express be your guiding key.",
     "description": "modal free note"
   },
-  "apiTitle": {
+  "apiTitleFalse": {
     "message": "Set up your API key",
+    "description": "modal api title"
+  },
+  "apiTitleTrue": {
+    "message": "Set up your API key (enabled)",
     "description": "modal api title"
   },
   "apiNote": {

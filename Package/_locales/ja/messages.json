@@ -116,24 +116,30 @@
     "message": "購入を復元"
   },
   "firstNote": {
-    "message": "ショートカット <strong>Alt+S / &#8997;+S</strong> を試して、Google マップとページを接続する方法を 7 日間の無料トライアルで体験してください。"
+    "message": "7 日間の無料体験で、Google マップとページの接続方法をご確認ください。"
   },
   "trialNote": {
-    "message": "無料トライアルは $date$ に終了します。",
+    "message": "体験は $date$ に終了",
     "placeholders": {
       "date": {
         "content": "$1"
       }
     }
   },
+  "remindNote": {
+    "message": "Gemini AI と Alt+S / &#8997;+S のショートカットキーで、リンク自動添付機能を利用する。"
+  },
   "premiumNote": {
-    "message": "おまえは魔法使いだ、旅人さん\ud83e\uddd9さらに良くするために、ぜひフィードバックを気軽に共有してください。"
+    "message": "おまえは魔法使いだ\ud83e\uddd9ぜひフィードバックを気軽に共有して、さらに良くしていこう。"
   },
   "freeNote": {
-    "message": "The Maps Express をあなたの導きの鍵にしましょう。ExtensionPay と Stripe で安全にお支払いください。"
+    "message": "ExtensionPay で安全に支払い、The Maps Express をあなたの導きの鍵にしましょう。"
   },
-  "apiTitle": {
+  "apiTitleFalse": {
     "message": "API キーの設定"
+  },
+  "apiTitleTrue": {
+    "message": "API キーの設定（有効化済み）"
   },
   "apiNote": {
     "message": "Google AI Studio から無料の API キーを取得できます。リクエスト数の制限は 15 回/分、1,500 回/日です。"

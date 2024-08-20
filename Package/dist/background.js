@@ -319,9 +319,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     extpay.openLoginPage();
   } else if (request.action === "checkPay") {
     extpay.getUser().then(user => {
-      const isFirst = !user.trialStartedAt;
-      const isTrial = user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod;
       const isPremium = user.paid;
+      const isFirst = !user.trialStartedAt && !isPremium;
+      const isTrial = user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod && !isPremium;
       const isFree = !isFirst && !isTrial && !isPremium;
       const trialEnd = new Date(user.trialStartedAt).getTime() + trialPeriod;
       sendResponse({ result: { isFirst, isTrial, isPremium, isFree, trialEnd } });
