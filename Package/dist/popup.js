@@ -1205,9 +1205,9 @@ function checkPay() {
       pElement.innerHTML = chrome.i18n.getMessage("firstNote");
     } else if (stage.isTrial) {
       const date = new Date(stage.trialEnd);
-      const month = date.toLocaleString('en-US', { month: 'short' });
+      const month = date.toLocaleString("en-US", { month: "short" });
       const day = date.getDate();
-      const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const time = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
       const trialEndOn = `${month} ${day}, ${time}`;
       paymentSpan.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
       pElement.innerHTML = chrome.i18n.getMessage("remindNote");
