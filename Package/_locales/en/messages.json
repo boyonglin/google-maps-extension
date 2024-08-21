@@ -110,7 +110,7 @@
     "description": "modal tips search bar key label"
   },
   "autoAttachKeyLabel": {
-    "message": "Auto-attach Link",
+    "message": "Auto-attach Links",
     "description": "modal tips auto-attach key label"
   },
   "shortcutsNote": {
@@ -168,7 +168,7 @@
     }
   },
   "remindNote": {
-    "message": "Use Gemini AI and Alt+S / &#8997;+S shortcut to enable the auto-attach link feature.",
+    "message": "Use Gemini AI and Alt+S / &#8997;+S shortcut to enable the auto-attach links feature.",
     "description": "modal remind note"
   },
   "premiumNote": {
