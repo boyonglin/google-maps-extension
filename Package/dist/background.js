@@ -64,13 +64,13 @@ chrome.commands.onCommand.addListener((command) => {
 
           // In trial period
           if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
-            await trySuggest(tabId);
+            await trySuggest(tabId, url);
             chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
           } else {
 
             // Paid user
             if (user.paid) {
-              await trySuggest(tabId);
+              await trySuggest(tabId, url);
               chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
             }
 
@@ -88,16 +88,24 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 // Retry mechanism for trying to suggest places from the content
-async function trySuggest(tabId, retries = 10) {
+async function trySuggest(tabId, url, retries = 10) {
   while (retries > 0) {
     try {
       const apiKey = await getApiKey();
       const response = await getContent(tabId, { action: "getContent" });
 
       if (response && response.content) {
-        callApi(linkPrompt, response.content, apiKey, (apiResponse) => {
-          chrome.tabs.sendMessage(tabId, { action: "attachMapLink", content: apiResponse });
-        });
+        // Special case for YouTube video descriptions
+        if (url.startsWith("https://www.youtube")) {
+          const ytLinkPrompt = linkPrompt.replace("(marked by <h1>, <h2>, <h3>, or <strong>) ", "");
+          callApi(ytLinkPrompt, response.content, apiKey, (apiResponse) => {
+            chrome.tabs.sendMessage(tabId, { action: "attachMapLink", content: apiResponse });
+          });
+        } else {
+          callApi(linkPrompt, response.content, apiKey, (apiResponse) => {
+            chrome.tabs.sendMessage(tabId, { action: "attachMapLink", content: apiResponse });
+          });
+        }
 
         return true;
       }
@@ -221,7 +229,14 @@ function addToFavoriteList(selectedText) {
 // Gemini API
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "summarizeApi" && request.text) {
-    callApi(summaryPrompt, request.text, request.apiKey, sendResponse);
+
+    // Special case for YouTube video descriptions
+    if (request.url.startsWith("https://www.youtube")) {
+      const ytSummaryPrompt = summaryPrompt.replace("(marked by <h1>, <h2>, <h3>, or <strong>) ", "");
+      callApi(ytSummaryPrompt, request.text, request.apiKey, sendResponse);
+    } else {
+      callApi(summaryPrompt, request.text, request.apiKey, sendResponse);
+    }
     return true; // Will respond asynchronously
   }
 });

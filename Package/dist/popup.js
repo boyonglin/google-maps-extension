@@ -957,7 +957,7 @@ sendButton.addEventListener("click", () => {
           const newText = originalText.replace("NaN", Math.ceil(response.length / divisor));
           geminiEmptyMessage.innerHTML = newText;
 
-          summarizeContent(response.content, apiKey);
+          summarizeContent(response.content, apiKey, tabs[0].url);
           measureContentSize();
         }
       });
@@ -973,10 +973,10 @@ function isPredominantlyLatinChars(text) {
   return latinChars > squareChars;
 }
 
-function summarizeContent(content, apiKey) {
+function summarizeContent(content, apiKey, url) {
   responseField.value = "";
 
-  chrome.runtime.sendMessage({ action: "summarizeApi", text: content, apiKey: apiKey }, (response) => {
+  chrome.runtime.sendMessage({ action: "summarizeApi", text: content, apiKey: apiKey , url: url}, (response) => {
     if (response.error) {
       responseField.value = `API Error: ${response.error}`;
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
