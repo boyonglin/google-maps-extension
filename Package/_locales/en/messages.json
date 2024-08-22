@@ -172,7 +172,7 @@
     "description": "modal remind note"
   },
   "premiumNote": {
-    "message": "Yer a wizard, stranger\ud83e\uddd9Feel free to share your feedback to help us make things better.",
+    "message": "Hello there, wizard friend\ud83e\uddd9Feel free to share your feedback to help us make things better.",
     "description": "modal premium note"
   },
   "freeNote": {
