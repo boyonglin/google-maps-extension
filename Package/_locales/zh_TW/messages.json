@@ -12,7 +12,7 @@
     "message": "收藏清單"
   },
   "geminiSummarySubtitle": {
-    "message": "頁面摘要"
+    "message": "地點摘要"
   },
   "historyEmptyMsg": {
     "message": "反白文字並快速搜尋！\n你的搜尋記錄會保存在這裡\uD83D\uDC4C\uD83C\uDFFD"
@@ -145,7 +145,7 @@
     "message": "你可以從 Google AI Studio 取得免費 API 金鑰，請求數量限制為 15 次/分鐘、1,500 次/天"
   },
   "geminiLabel": {
-    "message": "頁面摘要"
+    "message": "地點摘要"
   },
   "historyLabel": {
     "message": "搜尋記錄"

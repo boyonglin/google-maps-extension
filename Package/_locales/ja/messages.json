@@ -12,7 +12,7 @@
     "message": "お気に入り"
   },
   "geminiSummarySubtitle": {
-    "message": "ページ概要"
+    "message": "場所概要"
   },
   "historyEmptyMsg": {
     "message": "文字をハイライトしてクイック検索！\n検索記録はここに保存されます\uD83D\uDC4C\uD83C\uDFFD"
@@ -145,7 +145,7 @@
     "message": "Google AI Studio から無料の API キーを取得できます。リクエスト数の制限は 15 回/分、1,500 回/日です。"
   },
   "geminiLabel": {
-    "message": "ページ概要"
+    "message": "場所概要"
   },
   "historyLabel": {
     "message": "検索履歴"

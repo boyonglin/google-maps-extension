@@ -27,7 +27,7 @@
 3. Search History: Saves up to 10 locations for quick redirection to Google Maps.
 4. Favorite List: Click the PATCH PLUS icon on the right to save. Import or export favorites as needed.
 5. Delete Mode: Simply check and delete items.
-6. Page Summary: Set up the API key to summarize the locations on the current page. Results will be preserved for 1 day.
+6. Place Summary: Set up the API key to summarize the locations on the current page. Results will be preserved for 1 day.
 
 ---
 
@@ -61,18 +61,18 @@ If the shortcut doesn't work or you want to change it, follow these steps to adj
 ---
 
 ## Gemini API
-To apply the API key for the page summary feature, you need to follow these steps:
+To apply the API key for the place summary and auto-attach links feature, you need to follow these steps:
 1. Sign in Google AI Studio\
-2. Consent to Legal Notice & Continue\
+2. Consent to Legal Notice & Continue
 <img src="https://github.com/user-attachments/assets/1d11ecdb-80eb-474b-a317-57e367640b15" width="500">
 
-3. Create API key\
+3. Create API key
 <img src="https://github.com/user-attachments/assets/c429aad2-6402-49a6-aa8d-7775ec24da69" width="500">
 
-4. Create API key in new project\
+4. Create API key in new project
 <img src="https://github.com/user-attachments/assets/7041ef34-8968-40e8-9940-8b4ba87c0b00" width="500">
 
-5. Copy\
+5. Copy
 <img src="https://github.com/user-attachments/assets/0d87e72b-5864-4076-b3a4-fea5e09c9dde" width="500">
 
 ---

@@ -74,7 +74,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       trial: '"Do enjoy yourself, won’t you? While you can." — Lucius Malfoy',
       payment: '"Useful little treasure detectors," — Rubeus Hagrid',
       premium: '"Where your treasure is, there will your heart be also." — upon the frozen, lichen-spotted granite',
-      free: '"Well, their main job is to keep it from the Muggles that there’s still witches an’ wizards up an’ down the country." — Ministry of Magic'
+      free: '"Well, their main job is to keep it from the Muggles that there’s still witches an’ wizards up an’ down the country." — Ministry of Magic',
+      missing: '"Is there anything missing?" “Riddle’s API’s gone,” — Harry Potter'
     };
 
     const quote = quotes[request.stage];

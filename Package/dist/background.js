@@ -1,5 +1,5 @@
-let searchHistoryList = [];
-let favoriteList = [];
+var searchHistoryList = [];
+var favoriteList = [];
 var maxListLength = 10;
 
 const summaryPrompt = `You are now a place seeker tasked with identifying specific places or landmarks that are important in the page content. Please identify and list the sub-landmarks (prioritizing <h1>, <h2>, <h3>, or <strong>) that are most relevant to the main topic of the page content (marked by the <title>) from the provided page, and do not list irrelevant results. For example, if the main topic suggests a specific number of sub-landmarks, ensure that the identified results align with that expectation. If <h1>, <h2>, <h3>, or <strong> contain no important sub-landmarks, please disregard them. Avoid listing complete sentences from the original content as sub-landmarks. Next, you should format the results as an unordered list (<ul>), with each sub-landmark as a list item (<li>), and retain the original language of the content. Additionally, based on the sub-landmark, look for contextual clues around it, these can include cities or states or countries, then fill in <span> for the clue. It's better to select only one key clue for each sub-landmark. If different sub-landmarks share the same name, you may add a clue in parentheses after the sub-landmark to provide identifiable differences. The final format should look like this example (do not include the example or other tags like <h1>):
@@ -59,26 +59,35 @@ chrome.commands.onCommand.addListener((command) => {
           }
         });
       } else if (command === "auto-attach") {
-        extpay.getUser().then(async user => {
-          const now = new Date();
+        getApiKey().then(async () => {
+          extpay.getUser().then(async user => {
+            const now = new Date();
 
-          // In trial period
-          if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
-            await trySuggest(tabId, url);
-            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
-          } else {
-
-            // Paid user
-            if (user.paid) {
+            // In trial period
+            if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
               await trySuggest(tabId, url);
-              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
-            }
+              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
+            } else {
 
-            // Free user
-            else {
-              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "free" });
+              // Paid user
+              if (user.paid) {
+                await trySuggest(tabId, url);
+                chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
+              }
+
+              // Free user
+              else {
+                chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "free" });
+              }
             }
-          }
+          });
+
+        // eject to notify user if API key is null
+        }).catch(async () => {
+          chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "missing" });
+          meow();
+          await tryAPINotify();
+          return;
         });
       }
     } else {
@@ -120,11 +129,35 @@ async function trySuggest(tabId, url, retries = 10) {
   }
 }
 
+async function tryAPINotify(retries = 10) {
+  while (retries > 0) {
+    const response = await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "apiNotify" }, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve(chrome.runtime.lastError.message);
+        } else {
+          resolve(null); // No error, message sent
+        }
+      });
+    });
+
+    if (response && response.includes("Receiving end does not exist")) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      retries--;
+    } else {
+      break; // No error, loop stop
+    }
+  }
+}
+
 function getApiKey() {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get("geminiApiKey", function (data) {
       if (chrome.runtime.lastError) {
         return reject(chrome.runtime.lastError);
+      }
+      if (!data.geminiApiKey) {
+        return reject(new Error("No API key found. Please provide one."));
       }
       resolve(data.geminiApiKey);
     });
@@ -163,7 +196,7 @@ chrome.runtime.onMessage.addListener((request) => {
   if (request.action === "clearSearchHistoryList") {
     chrome.storage.local.set({ searchHistoryList: [] });
   } else if (request.action === "searchInput") {
-    var searchTerm = request.searchTerm;
+    let searchTerm = request.searchTerm;
     if (searchTerm) {
       const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
         searchTerm
@@ -283,7 +316,7 @@ function meow() {
         if (chrome.runtime.lastError || !results || !results.length) {
           return; // Permission error, tab closed, etc.
         }
-        var result = results[0].result;
+        let result = results[0].result;
         if (result !== true) {
           // chrome.action.setIcon({ path: "iconON.png", tabId: tabs[0].id });
 

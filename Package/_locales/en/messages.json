@@ -16,7 +16,7 @@
     "description": "popup favorite list subtitle"
   },
   "geminiSummarySubtitle": {
-    "message": "Page Summary",
+    "message": "Place Summary",
     "description": "popup gemini summary subtitle"
   },
   "historyEmptyMsg": {
@@ -192,8 +192,8 @@
     "description": "modal api key input note"
   },
   "geminiLabel": {
-    "message": "Page Summary",
-    "description": "tooltips page summary label"
+    "message": "Place Summary",
+    "description": "tooltips place summary label"
   },
   "historyLabel": {
     "message": "Search History",

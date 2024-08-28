@@ -66,8 +66,6 @@ setTimeout(checkPay, 0);
 
 // Input caret
 document.addEventListener("DOMContentLoaded", function () {
-  const searchInput = document.getElementById("searchInput");
-  const apiInput = document.getElementById("apiInput");
   searchInput.focus();
   apiInput.focus();
 });
@@ -662,6 +660,13 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "apiNotify") {
+    geminiSummaryButton.click();
+    apiButton.click();
+  }
+});
+
 function removeHistory(itemText) {
   const ul = document.querySelector(".list-group.d-flex.flex-column-reverse");
   const item = Array.from(ul.children).find(li => li.querySelector("span").textContent === itemText);
@@ -887,7 +892,7 @@ function backToNormal() {
 // Shortcuts configuration link
 const configureElements = document.querySelectorAll(".modal-body p");
 
-for (var i = 0; i < configureElements.length; i++) {
+for (let i = 0; i < configureElements.length; i++) {
   configureElements[i].onclick = function (event) {
     // Detect user browser
     let userAgent = navigator.userAgent;
