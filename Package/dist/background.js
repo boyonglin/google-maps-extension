@@ -59,35 +59,24 @@ chrome.commands.onCommand.addListener((command) => {
           }
         });
       } else if (command === "auto-attach") {
-        getApiKey().then(async () => {
-          extpay.getUser().then(async user => {
-            const now = new Date();
+        extpay.getUser().then(async (user) => {
+          const now = new Date();
 
-            // In trial period
-            if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
-              await trySuggest(tabId, url);
-              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
-            } else {
-
-              // Paid user
-              if (user.paid) {
-                await trySuggest(tabId, url);
-                chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
-              }
-
-              // Free user
-              else {
-                chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "free" });
-              }
+          // In trial period
+          if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
+            await tryAndCheckApi(tabId, url);
+            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
+          } else {
+            // Paid user
+            if (user.paid) {
+              await tryAndCheckApi(tabId, url);
+              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
             }
-          });
-
-        // eject to notify user if API key is null
-        }).catch(async () => {
-          chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "missing" });
-          meow();
-          await tryAPINotify();
-          return;
+            // Free user
+            else {
+              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "free" });
+            }
+          }
         });
       }
     } else {
@@ -127,6 +116,18 @@ async function trySuggest(tabId, url, retries = 10) {
       }
     }
   }
+}
+
+async function tryAndCheckApi(tabId, url) {
+  try {
+    await getApiKey();
+  } catch (error) {
+    chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "missing" });
+    meow();
+    await tryAPINotify();
+    return;
+  }
+  await trySuggest(tabId, url);
 }
 
 async function tryAPINotify(retries = 10) {
