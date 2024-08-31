@@ -96,24 +96,19 @@ function fetchData() {
         const ul = document.createElement("ul");
         ul.className = "list-group d-flex flex-column-reverse";
 
-        // Create list item from new selectedText
+        // Create list item
         const fragment = document.createDocumentFragment();
-        searchHistoryList.forEach((selectedText) => {
+        searchHistoryList.forEach((itemName) => {
           const li = document.createElement("li");
           li.className =
             "list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center";
 
           const span = document.createElement("span");
-          span.textContent = selectedText;
+          span.textContent = itemName;
           li.appendChild(span);
 
-          const favoriteIcon = document.createElement("i");
-          favoriteIcon.className =
-            favoriteList && favoriteList.includes(selectedText)
-              ? "bi bi-patch-check-fill matched"
-              : "bi bi-patch-plus-fill";
-          favoriteIcon.title = chrome.i18n.getMessage("plusLabel");
-          li.appendChild(favoriteIcon);
+          const icon = createFavoriteIcon(itemName, favoriteList);
+          li.appendChild(icon);
 
           const checkbox = document.createElement("input");
           checkbox.className = "form-check-input d-none";
@@ -149,6 +144,17 @@ function fetchData() {
       fetchAPIKey(geminiApiKey);
     }
   );
+}
+
+// Create favorite action icon
+function createFavoriteIcon(itemName, favoriteList) {
+  const favoriteIcon = document.createElement("i");
+  favoriteIcon.className =
+    favoriteList && favoriteList.includes(itemName)
+      ? "bi bi-patch-check-fill matched"
+      : "bi bi-patch-plus-fill";
+  favoriteIcon.title = chrome.i18n.getMessage("plusLabel");
+  return favoriteIcon;
 }
 
 // Check if the API key is defined and valid
@@ -326,6 +332,7 @@ deleteListButton.addEventListener("click", function () {
       li.classList.add("delete-list");
       li.classList.remove("history-list");
     });
+
     favoriteLiElements.forEach((li) => {
       const checkbox = li.querySelector("input");
       const favoriteIcon = li.querySelector("i");
@@ -363,7 +370,7 @@ geminiSummaryButton.addEventListener("click", function () {
   subtitleElement.textContent = chrome.i18n.getMessage("geminiSummarySubtitle");
 
   // Clear summary data if it's older than 1 hour
-  chrome.storage.local.get(["summaryList", "timestamp"], function (result) {
+  chrome.storage.local.get(["summaryList", "timestamp", "favoriteList"], function (result) {
     if (result.timestamp && result.summaryList.length > 0) {
       const currentTime = Date.now();
       const elapsedTime = (currentTime - result.timestamp) / 1000; // time in seconds
@@ -375,7 +382,7 @@ geminiSummaryButton.addEventListener("click", function () {
         if (result.summaryList) {
           hasSummary = true;
           geminiEmptyMessage.classList.add("d-none");
-          summaryListContainer.innerHTML = constructSummaryHTML(result.summaryList);
+          summaryListContainer.innerHTML = constructSummaryHTML(result.summaryList, result.favoriteList);
           clearButtonSummary.classList.remove("d-none");
           apiButton.classList.add("d-none");
           clearButtonSummary.disabled = false;
@@ -390,17 +397,22 @@ geminiSummaryButton.addEventListener("click", function () {
   });
 });
 
-function constructSummaryHTML(summaryList) {
+function constructSummaryHTML(summaryList, favoriteList) {
   let html = '<ul class="list-group d-flex">';
 
   summaryList.forEach((item, index) => {
     const isLastItem = index === summaryList.length - 1;
     const mbClass = isLastItem ? "" : "mb-3";
 
+    const trimmedFavorite = favoriteList.map(item => item.split(" ")[0]);
+    const icon = createFavoriteIcon(item.name, trimmedFavorite);
+    const iconHTML = icon.outerHTML;
+
     html += `
       <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center ${mbClass}">
         <span>${item.name}</span>
         <span class="d-none">${item.clue}</span>
+        ${iconHTML}
       </li>
     `;
   });
@@ -411,10 +423,11 @@ function constructSummaryHTML(summaryList) {
 
 exportButton.addEventListener("click", function () {
   chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-    const csv = "name\n" + favoriteList.map(item => `${item},`).join("\n");;
+    const trimmedFavorite = favoriteList.map(item => item.split(" ")[0]);
+    const csv = "name\n" + trimmedFavorite.map(item => `${item},`).join("\n");;
 
     const blob = new Blob([csv], {
-      type: "text/csv;charset=utf-8;",
+      type: "text/csv; charset=utf-8;",
     });
 
     // Create a temporary anchor element and trigger the download
@@ -520,16 +533,16 @@ searchHistoryListContainer.addEventListener("mousedown", function (event) {
       selectedText
     )}`;
 
-    // Check if the clicked element has the "bi" class (indicating it is the icon)
+    // Check if the clicked element has the "bi" class (favorite icon)
     if (event.target.classList.contains("bi")) {
       // Add the selected text to the favorite list
       addToFavoriteList(selectedText);
       event.target.className =
         "bi bi-patch-check-fill matched spring-animation";
-
       setTimeout(function () {
         event.target.classList.remove("spring-animation");
       }, 500);
+
       chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
         updateFavorite(favoriteList);
       });
@@ -606,8 +619,23 @@ summaryListContainer.addEventListener("click", function (event) {
     selectedText
   )}`;
 
-  // window.open(searchUrl, "_blank", "popup");
-  chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+  if (event.target.classList.contains("bi")) {
+    const nameSpan = liElement.querySelector("span:first-child").textContent;
+    const clueSpan = liElement.querySelector("span.d-none").textContent;
+    addToFavoriteList(nameSpan + " @" + clueSpan);
+    event.target.className =
+      "bi bi-patch-check-fill matched spring-animation";
+    setTimeout(function () {
+      event.target.classList.remove("spring-animation");
+    }, 500);
+
+    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+      updateFavorite(favoriteList);
+    });
+  } else {
+    // window.open(searchUrl, "_blank", "popup");
+    chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+  }
 });
 
 // Track the click event on clear button
@@ -660,47 +688,6 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "apiNotify") {
-    geminiSummaryButton.click();
-    apiButton.click();
-  }
-});
-
-function removeHistory(itemText) {
-  const ul = document.querySelector(".list-group.d-flex.flex-column-reverse");
-  const item = Array.from(ul.children).find(li => li.querySelector("span").textContent === itemText);
-  if (item) {
-    ul.removeChild(item);
-  }
-}
-
-function insertHistory(itemText) {
-  const ul = document.querySelector(".list-group.d-flex.flex-column-reverse");
-
-  const li = document.createElement("li");
-  li.className = "list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center";
-
-  const span = document.createElement("span");
-  span.textContent = itemText;
-  li.appendChild(span);
-
-  const favoriteIcon = document.createElement("i");
-  favoriteIcon.className = "bi bi-patch-plus-fill";
-  li.appendChild(favoriteIcon);
-
-  const checkbox = document.createElement("input");
-  checkbox.className = "form-check-input d-none";
-  checkbox.type = "checkbox";
-  checkbox.value = "delete";
-  checkbox.name = "checkDelete";
-  checkbox.ariaLabel = "Delete";
-  checkbox.style.cursor = "pointer";
-
-  li.appendChild(checkbox);
-  ul.appendChild(li, ul.firstChild);
-}
-
 // Update the favorite list container
 function updateFavorite(favoriteList) {
   favoriteListContainer.innerHTML = "";
@@ -720,8 +707,20 @@ function updateFavorite(favoriteList) {
         "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between align-items-center";
 
       const span = document.createElement("span");
-      span.textContent = selectedText;
-      li.appendChild(span);
+      if (selectedText.includes(" @")) {
+        const name = selectedText.split(" @")[0];
+        const clue = selectedText.split(" @")[1];
+        span.textContent = name;
+        li.appendChild(span);
+
+        const clueSpan = document.createElement("span");
+        clueSpan.className = "d-none";
+        clueSpan.textContent = clue;
+        li.appendChild(clueSpan);
+      } else {
+        span.textContent = selectedText;
+        li.appendChild(span);
+      }
 
       const favoriteIcon = document.createElement("i");
       favoriteIcon.className = "bi bi-patch-check-fill matched";
@@ -820,8 +819,15 @@ function deleteFromFavoriteList() {
 
   checkedBoxes.forEach((checkbox) => {
     const listItem = checkbox.closest("li");
-    const selectedText = listItem.querySelector("span").textContent;
-    selectedTexts.push(selectedText);
+    const spanItem = listItem.querySelectorAll("span");
+    const selectedText = spanItem[0].textContent;
+    if (spanItem.length > 1) {
+      const clueText = spanItem[1].textContent;
+      selectedTexts.push(selectedText + " @" + clueText);
+    } else {
+      selectedTexts.push(selectedText);
+    }
+
     listItem.remove();
 
     const historyIElements = searchHistoryListContainer.querySelectorAll("i");
@@ -981,7 +987,7 @@ function isPredominantlyLatinChars(text) {
 function summarizeContent(content, apiKey, url) {
   responseField.value = "";
 
-  chrome.runtime.sendMessage({ action: "summarizeApi", text: content, apiKey: apiKey , url: url}, (response) => {
+  chrome.runtime.sendMessage({ action: "summarizeApi", text: content, apiKey: apiKey, url: url }, (response) => {
     if (response.error) {
       responseField.value = `API Error: ${response.error}`;
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
@@ -1011,6 +1017,14 @@ function summarizeContent(content, apiKey, url) {
           const nameSpan = item.querySelector("span:first-child").textContent;
           const clueSpan = item.querySelector("span.d-none").textContent;
           data.push({ name: nameSpan, clue: clueSpan });
+        });
+
+        chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+          listItems.forEach(item => {
+            const itemName = item.querySelector("span:first-child").textContent;
+            const icon = createFavoriteIcon(itemName, favoriteList);
+            item.appendChild(icon);
+          });
         });
 
         const currentTime = Date.now();
@@ -1231,4 +1245,11 @@ function checkPay() {
 
 closeButton.addEventListener("click", function () {
   checkPay();
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "apiNotify") {
+    geminiSummaryButton.click();
+    apiButton.click();
+  }
 });
