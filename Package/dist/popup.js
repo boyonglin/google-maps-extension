@@ -584,7 +584,13 @@ favoriteListContainer.addEventListener("mousedown", function (event) {
       updateDeleteCount();
     }
   } else {
-    const selectedText = liElement.textContent;
+    const spanItem = liElement.querySelectorAll("span");
+    let selectedText = "";
+    if (spanItem.length > 1) {
+      selectedText = spanItem[0].textContent + " " + spanItem[1].textContent;
+    } else {
+      selectedText = spanItem[0].textContent;
+    }
     const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
       selectedText
     )}`;
