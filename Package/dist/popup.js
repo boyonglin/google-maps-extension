@@ -1022,7 +1022,8 @@ function summarizeContent(content, apiKey, url) {
         chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
           listItems.forEach(item => {
             const itemName = item.querySelector("span:first-child").textContent;
-            const icon = createFavoriteIcon(itemName, favoriteList);
+            const trimmedFavorite = favoriteList.map(item => item.split(" ")[0]);
+            const icon = createFavoriteIcon(itemName, trimmedFavorite);
             item.appendChild(icon);
           });
         });
