@@ -29,12 +29,16 @@ Here is the provided page content:
 `;
 
 // Create the right-click context menu item
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.contextMenus.create({
     id: "myContextMenuId",
     title: chrome.i18n.getMessage("contextMenus"),
     contexts: ["selection"],
   });
+
+  if (details.reason === "install" || details.reason === "update") {
+    chrome.tabs.create({ url: "https://the-maps-express.notion.site/What-s-New-384675c4183b4799852e5b298f999645" });
+  }
 });
 
 // Track the right-click event
