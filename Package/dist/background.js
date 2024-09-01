@@ -28,18 +28,24 @@ sub-landmark-2    clue-2
 Here is the provided page content:
 `;
 
-// Create the right-click context menu item
 chrome.runtime.onInstalled.addListener((details) => {
+  // Create the right-click context menu item
   chrome.contextMenus.create({
     id: "myContextMenuId",
     title: chrome.i18n.getMessage("contextMenus"),
     contexts: ["selection"],
   });
 
+  const userLocale = chrome.i18n.getUILanguage();
   if (details.reason === "install" || details.reason === "update") {
-    chrome.tabs.create({ url: "https://the-maps-express.notion.site/What-s-New-384675c4183b4799852e5b298f999645" });
+    if (userLocale.startsWith("zh")) {
+      chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
+    } else {
+      chrome.tabs.create({ url: "https://the-maps-express.notion.site/384675c4183b4799852e5b298f999645" });
+    }
   }
 });
+
 
 // Track the right-click event
 chrome.contextMenus.onClicked.addListener((info, tab) => {
