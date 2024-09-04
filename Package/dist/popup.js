@@ -403,10 +403,13 @@ function constructSummaryHTML(summaryList, favoriteList) {
   summaryList.forEach((item, index) => {
     const isLastItem = index === summaryList.length - 1;
     const mbClass = isLastItem ? "" : "mb-3";
+    const iconHTML = "";
 
-    const trimmedFavorite = favoriteList.map(item => item.split(" ")[0]);
-    const icon = createFavoriteIcon(item.name, trimmedFavorite);
-    const iconHTML = icon.outerHTML;
+    if (favoriteList) {
+      const trimmedFavorite = favoriteList.map(item => item.split(" ")[0]);
+      const icon = createFavoriteIcon(item.name, trimmedFavorite);
+      iconHTML = icon.outerHTML;
+    }
 
     html += `
       <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center ${mbClass}">
@@ -1028,6 +1031,9 @@ function summarizeContent(content, apiKey, url) {
         chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
           listItems.forEach(item => {
             const itemName = item.querySelector("span:first-child").textContent;
+            if (!favoriteList) {
+              return;
+            }
             const trimmedFavorite = favoriteList.map(item => item.split(" ")[0]);
             const icon = createFavoriteIcon(itemName, trimmedFavorite);
             item.appendChild(icon);

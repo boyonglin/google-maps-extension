@@ -36,14 +36,15 @@ chrome.runtime.onInstalled.addListener((details) => {
     contexts: ["selection"],
   });
 
-  const userLocale = chrome.i18n.getUILanguage();
-  if (details.reason === "install" || details.reason === "update") {
-    if (userLocale.startsWith("zh")) {
-      chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
-    } else {
-      chrome.tabs.create({ url: "https://the-maps-express.notion.site/384675c4183b4799852e5b298f999645" });
-    }
-  }
+  // What's new page
+  // const userLocale = chrome.i18n.getUILanguage();
+  // if (details.reason === "install" || details.reason === "update") {
+  //   if (userLocale.startsWith("zh")) {
+  //     chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
+  //   } else {
+  //     chrome.tabs.create({ url: "https://the-maps-express.notion.site/384675c4183b4799852e5b298f999645" });
+  //   }
+  // }
 });
 
 
