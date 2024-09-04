@@ -399,17 +399,15 @@ geminiSummaryButton.addEventListener("click", function () {
 
 function constructSummaryHTML(summaryList, favoriteList) {
   let html = '<ul class="list-group d-flex">';
+  favoriteList = favoriteList || [];
+  const trimmedFavorite = favoriteList.map(item => item.split(" @")[0]);
 
   summaryList.forEach((item, index) => {
     const isLastItem = index === summaryList.length - 1;
     const mbClass = isLastItem ? "" : "mb-3";
-    const iconHTML = "";
 
-    if (favoriteList) {
-      const trimmedFavorite = favoriteList.map(item => item.split(" ")[0]);
-      const icon = createFavoriteIcon(item.name, trimmedFavorite);
-      iconHTML = icon.outerHTML;
-    }
+    const icon = createFavoriteIcon(item.name, trimmedFavorite);
+    iconHTML = icon.outerHTML;
 
     html += `
       <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center ${mbClass}">
@@ -426,7 +424,7 @@ function constructSummaryHTML(summaryList, favoriteList) {
 
 exportButton.addEventListener("click", function () {
   chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-    const trimmedFavorite = favoriteList.map(item => item.split(" ")[0]);
+    const trimmedFavorite = favoriteList.map(item => item.split(" @")[0]);
     const csv = "name\n" + trimmedFavorite.map(item => `${item},`).join("\n");;
 
     const blob = new Blob([csv], {
@@ -1029,12 +1027,13 @@ function summarizeContent(content, apiKey, url) {
         });
 
         chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+          if (!favoriteList) {
+            return;
+          }
+
+          const trimmedFavorite = favoriteList.map(item => item.split(" @")[0]);
           listItems.forEach(item => {
             const itemName = item.querySelector("span:first-child").textContent;
-            if (!favoriteList) {
-              return;
-            }
-            const trimmedFavorite = favoriteList.map(item => item.split(" ")[0]);
             const icon = createFavoriteIcon(itemName, trimmedFavorite);
             item.appendChild(icon);
           });
