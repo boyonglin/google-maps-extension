@@ -397,9 +397,8 @@ geminiSummaryButton.addEventListener("click", function () {
   });
 });
 
-function constructSummaryHTML(summaryList, favoriteList) {
+function constructSummaryHTML(summaryList, favoriteList = []) {
   let html = '<ul class="list-group d-flex">';
-  favoriteList = favoriteList || [];
   const trimmedFavorite = favoriteList.map(item => item.split(" @")[0]);
 
   summaryList.forEach((item, index) => {
