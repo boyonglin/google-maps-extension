@@ -264,6 +264,15 @@ li:hover .form-check-input {
 }
 
 /* buttons */
+.nav-link {
+  padding-right: .75rem;
+  padding-left: .75rem;
+}
+
+.nav-link:hover {
+  color: var(--gray-800) !important;
+}
+
 .btn-light {
   background-color: var(--gray-300);
   border: 1px solid var(--gray-300);
