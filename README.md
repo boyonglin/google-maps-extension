@@ -14,7 +14,7 @@
     - [Gemini API](#gemini-api)
     - [Google My Maps](#google-my-maps)
 - Project
-    - [Framework](#framework)
+    - [Techstack](#techstack)
     - [Structure](#structure)
 - [Reference](#reference)
 - [Contributor](#contributor)
@@ -99,9 +99,14 @@ You can follow the steps below to use the exported CSV file to import places in 
 
 ---
 
-## Framework
+## Techstack
 - Manifest V3
 - Bootstrap 5.3.0
+- Gemini 1.5 Flash
+- LocalStorage
+- Html iframe
+- i18n localization
+- ExtPay payment gateway
 
 ---
 
