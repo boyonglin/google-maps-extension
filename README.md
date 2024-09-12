@@ -1,6 +1,16 @@
-# The Maps Express
-> Speed up your search flow to Google Maps!\
-> Navigate and save locations effortlessly with The Maps Express, experiencing rapid integration and minimal workflow disruption.
+<p align="center">
+  <img src="Package/images/icon-48.png" alt="The Maps Express Logo" width="48" />
+</p>
+
+<h1 align="center">The Maps Express</h1>
+
+<p align="center">
+  Speed up your search flow to Google Maps!
+</p>
+
+<p align="center">
+  <em>Navigate places effortlessly with The Maps Express, experiencing rapid AI-integrated summaries or a single search keystroke for minimal workflow disruption.</em>
+</p>
 
 ---
 
@@ -38,25 +48,30 @@ Youtube URL: https://youtu.be/xv0tVQAi3qo
 
 ## Set Up
 If you want to develop and test your own version locally, you can follow these steps to install it in your browser for testing:
-1. Open the browser extensions page and click "Manage extensions"\
-![manage_extensions](https://github.com/boyonglin/google-maps-extension/assets/56038738/117902e8-d4ac-4208-9f81-37f35489954f)
-2. Open "Developer mode"\
-![developer_mode](https://github.com/boyonglin/google-maps-extension/assets/56038738/56922b20-cae3-48c1-bb3e-810cf09e9df9)
-3. Click "Load unpacked" to open the folder you cloned to complete the installation\
-![load_unpacked](https://github.com/boyonglin/google-maps-extension/assets/56038738/358c9c2c-4698-402d-a141-451fabcc3913)
+1. Open the browser extensions page and click "Manage extensions"
+<img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/117902e8-d4ac-4208-9f81-37f35489954f" width="320" alt="Manage extensions">
+
+2. Open "Developer mode"
+<img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/56922b20-cae3-48c1-bb3e-810cf09e9df9" width="320" alt="Developer mode">
+
+3. Click "Load unpacked" to open the folder you cloned to complete the installation
+<img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/358c9c2c-4698-402d-a141-451fabcc3913" width="800" alt="Load unpacked">
 
 ---
 
 ## Shortcut
 If the shortcut doesn't work or you want to change it, follow these steps to adjust your browser:
-1. Open the browser extensions page and click "Manage extensions"\
-![manage_extensions](https://github.com/boyonglin/google-maps-extension/assets/56038738/117902e8-d4ac-4208-9f81-37f35489954f)
-2. Select "Keyboard shortcuts"\
-![keyboard_shortcuts](https://github.com/boyonglin/google-maps-extension/assets/56038738/783c9cbc-4e9f-4818-b075-e0da69efacf0)
-3. Click the input field and type the shortcut\
-![type_the_shortcut](https://github.com/boyonglin/google-maps-extension/assets/56038738/248921af-ee7e-42af-ab2b-080bf03190b0)
-4. Change to "Global" level (if necessary)\
-![shortcut level](https://github.com/boyonglin/google-maps-extension/assets/56038738/295e0d03-7a85-4851-8037-1ac574f1b99d)
+1. Open the browser extensions page and click "Manage extensions"
+<img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/117902e8-d4ac-4208-9f81-37f35489954f" width="320" alt="Manage extensions">
+
+2. Select "Keyboard shortcuts"
+<img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/783c9cbc-4e9f-4818-b075-e0da69efacf0" width="320" alt="Keyboard shortcuts">
+
+3. Click the input field and type the shortcut
+<img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/248921af-ee7e-42af-ab2b-080bf03190b0" width="800" alt="Type the shortcut">
+
+4. Change to "Global" level (if necessary)
+<img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/295e0d03-7a85-4851-8037-1ac574f1b99d" width="800" alt="Shortcut level">
 
 ---
 
