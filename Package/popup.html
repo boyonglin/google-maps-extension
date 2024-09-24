@@ -71,12 +71,12 @@
             <p id="favoriteEmptyMessage" class="text-muted text-center py-4 page-F" data-locale="favoriteEmptyMsg">
             </p>
             <p id="geminiEmptyMessage" class="text-muted text-center py-4 page-G" data-locale="geminiEmptyMsg"></p>
-            <div id="searchHistoryList" class="overflow-auto mb-3 page-S"></div>
-            <div id="favoriteList" class="overflow-auto mb-3 page-F d-none"></div>
+            <div id="searchHistoryList" class="overflow-auto mb-4 page-S"></div>
+            <div id="favoriteList" class="overflow-auto mb-4 page-F d-none"></div>
             <div id="geminiResponse" class="d-none page-G">
                 <textarea class="w-100 d-none" id="response" style="height: 200px"
                     aria-label="Testing Purpose"></textarea>
-                <div id="summaryList" class="overflow-auto mb-3"></div>
+                <div id="summaryList" class="overflow-auto mb-4"></div>
             </div>
             <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3 page-S">
                 <button id="clearButton" class="btn btn-light me-3 w-25">
@@ -171,8 +171,11 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body d-flex flex-column">
-                        <h2 class="fs-6 fw-normal text-center my-3" data-locale="autoAttachLabel">📌Auto-attach Google
+                        <h2 id="preview-h2" class="fs-6 fw-normal text-center my-3" data-locale="autoAttachLabel">📌Auto-attach Google
                             Maps link</h2>
+                        <div id="preview-video">
+                            <video class="rounded-3" src="images/auto-attach.mp4" type="video/mp4" autoplay muted loop></video>
+                        </div>
                         <h2 class="fs-6 fw-normal text-center mb-3" data-locale="moreLabel">👀More coming up</h2>
                         <button id="paymentButton" class="btn btn-send flex-fill my-3">
                             <span data-locale="paymentLabel">Life Time $5.00</span>

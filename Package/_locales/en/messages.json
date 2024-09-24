@@ -146,7 +146,7 @@
     "description": "modal more feature label"
   },
   "paymentLabel": {
-    "message": "Life Time $$3.00",
+    "message": "Life Time $$2.00",
     "description": "modal pricing label"
   },
   "restoreLabel": {

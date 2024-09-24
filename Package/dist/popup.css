@@ -449,6 +449,22 @@ li:hover .form-check-input {
   pointer-events: none !important;
 }
 
+#preview-video {
+  position: absolute;
+  display: none;
+  top: 4rem;
+}
+
+#preview-video video {
+  width: calc(100% - 16px);
+  border: 8px solid white;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, .1);
+}
+
+#preview-h2:hover + #preview-video {
+  display: flex;
+}
+
 /* scrollbar */
 ::-webkit-scrollbar {
   width: .5rem;

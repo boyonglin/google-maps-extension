@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <em>Navigate places effortlessly with The Maps Express, experiencing rapid AI-integrated summaries or a single search keystroke for minimal workflow disruption.</em>
+  <em>Navigate places effortlessly with The Maps Express, experiencing rapid AI-integrated summaries or a single search key combination for minimal workflow disruption.</em>
 </p>
 
 ---
