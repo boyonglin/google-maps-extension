@@ -118,10 +118,10 @@ You can follow the steps below to use the exported CSV file to import places in 
 - Manifest V3
 - Bootstrap 5.3.0
 - Gemini 1.5 Flash
-- LocalStorage
-- Html iframe
-- i18n localization
 - ExtPay payment gateway
+- localStorage
+- html iframe
+- i18n localization
 
 ---
 
