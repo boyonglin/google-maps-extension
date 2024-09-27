@@ -136,21 +136,16 @@ body {
 /* list-group-item */
 .list-group-item {
   color: var(--gray-600);
-  word-break: break-all;
   max-width: 100%;
   cursor: pointer;
 }
 
 .list-group-item span {
-  padding-right: 2rem;
+  padding-right: 1.5rem;
 }
 
 .list-group-item.delete-list span {
-  padding-right: 1rem;
-}
-
-.list-group-item.summary-list span {
-  padding-right: 0rem;
+  padding-right: 0.75rem;
 }
 
 .history-list:hover {
