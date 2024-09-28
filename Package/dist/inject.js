@@ -1,7 +1,7 @@
 window.TME = {
     setup: function () {
         const defaultX = window.innerWidth - 480;
-        const defaultY = 60;
+        const defaultY = 50;
 
         let iframeContainer = document.createElement("div");
         iframeContainer.id = "TMEiframe";
@@ -110,7 +110,7 @@ window.TME = {
                 let currentMouseY = event.clientY;
                 let newHeight = currentMouseY - iframeContainer.getBoundingClientRect().top;
                 const mouseDirection = currentMouseY <= initialMouseY ? 'up' : 'down';
-                const maxAllowedHeight = window.innerHeight - 120;
+                const maxAllowedHeight = window.innerHeight - 100;
                 const mouseUpEvent = new MouseEvent('mouseup');
 
                 // upper and lower height limits
