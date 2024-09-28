@@ -92,6 +92,7 @@ function fetchData() {
       if (searchHistoryList && searchHistoryList.length > 0) {
         emptyMessage.style.display = "none";
         hasHistory = true;
+        clearButton.disabled = false;
 
         const ul = document.createElement("ul");
         ul.className = "list-group d-flex flex-column-reverse";

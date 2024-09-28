@@ -93,7 +93,6 @@ window.TME = {
         resizer.style.bottom = "0";
         resizer.style.cursor = "ns-resize";
         resizer.style.border = "8px solid transparent";
-        resizer.style.marginBottom = "-8px";
         iframeContainer.appendChild(resizer);
 
         let isResizing = false;
