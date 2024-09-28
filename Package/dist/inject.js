@@ -7,6 +7,7 @@ window.TME = {
         iframeContainer.id = "TMEiframe";
         iframeContainer.style.left = defaultX + "px";
         iframeContainer.style.top = defaultY + "px";
+        // iframeContainer.style.resize = "vertical";
 
         const draggableBar = document.createElement("div");
         draggableBar.id = "TMEdrag";
@@ -81,6 +82,62 @@ window.TME = {
             const adjustedX = Math.min(coordsX, window.innerWidth - iframeContainer.offsetWidth - 40);
 
             iframeContainer.style.left = `${adjustedX}px`;
+        });
+
+        // Create a custom resizer
+        const resizer = document.createElement("div");
+        resizer.style.width = "100%";
+        resizer.style.height = "0";
+        resizer.style.position = "absolute";
+        resizer.style.right = "0";
+        resizer.style.bottom = "0";
+        resizer.style.cursor = "ns-resize";
+        resizer.style.border = "8px solid transparent";
+        resizer.style.marginBottom = "-8px";
+        iframeContainer.appendChild(resizer);
+
+        let isResizing = false;
+        let initialMouseY = 0;
+
+        resizer.addEventListener("mousedown", (event) => {
+            isResizing = true;
+            initialMouseY = event.clientY;
+            event.preventDefault();
+        });
+
+        document.addEventListener("mousemove", (event) => {
+            if (isResizing) {
+                let currentMouseY = event.clientY;
+                let newHeight = currentMouseY - iframeContainer.getBoundingClientRect().top;
+                const mouseDirection = currentMouseY <= initialMouseY ? 'up' : 'down';
+                const maxAllowedHeight = window.innerHeight - 120;
+                const mouseUpEvent = new MouseEvent('mouseup');
+
+                // upper and lower height limits
+                if (newHeight <= 452 && mouseDirection === 'up') {
+                    newHeight = 452;
+                    document.dispatchEvent(mouseUpEvent);
+                    isResizing = false;
+                } else if (newHeight >= maxAllowedHeight && mouseDirection === 'down') {
+                    newHeight = maxAllowedHeight;
+                    document.dispatchEvent(mouseUpEvent);
+                    isResizing = false;
+                }
+
+                iframeContainer.style.height = `${newHeight}px`;
+
+                // min iframe height 452 - min list container height 112 = other element height 340
+                const heightChange = newHeight - 340;
+
+                chrome.runtime.sendMessage({
+                    type: "resize",
+                    heightChange: heightChange
+                });
+            }
+        });
+
+        document.addEventListener("mouseup", () => {
+            isResizing = false;
         });
 
         return iframe;

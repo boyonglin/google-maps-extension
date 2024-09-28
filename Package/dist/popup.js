@@ -1263,4 +1263,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     geminiSummaryButton.click();
     apiButton.click();
   }
+
+  if (message.type === "resize") {
+    const heightChange = message.heightChange;
+
+    function updateHeight(element) {
+        const newMaxHeight = Math.max(heightChange, 112);
+        element.style.maxHeight = `${newMaxHeight}px`;
+    }
+
+    updateHeight(searchHistoryListContainer);
+    updateHeight(favoriteListContainer);
+    updateHeight(summaryListContainer);
+  }
 });
