@@ -12,6 +12,15 @@
   <em>Navigate places effortlessly with The Maps Express, experiencing rapid AI-integrated summaries or a single search key combination for minimal workflow disruption.</em>
 </p>
 
+<p align='center'>
+  <a href="https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic">
+    <img src="https://img.shields.io/badge/Google_chrome-4285F4?style=for-the-badge&logo=Google-chrome&logoColor=white" />        
+  </a>&nbsp;&nbsp;
+  <a href="https://clancylin.gumroad.com/l/place-summary">
+    <img src="https://img.shields.io/badge/GUMROAD-36a9ae?style=for-the-badge&logo=gumroad&logoColor=white" />
+  </a>
+</p>
+
 ---
 
 ## Contents
