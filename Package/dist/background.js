@@ -19,13 +19,28 @@ const summaryPrompt = `You are now a place seeker tasked with identifying specif
 Here is the provided page content:
 `;
 
-const linkPrompt = `You are now a place seeker tasked with identifying specific places or landmarks that are important in the page content. Please identify and list the sub-landmarks (prioritizing <h1>, <h2>, <h3>, or <strong>) that are most relevant to the main topic of the page content (marked by the <title>) from the provided page, and do not list irrelevant results. For example, if the main topic suggests a specific number of sub-landmarks, ensure that the identified results align with that expectation. If <h1>, <h2>, <h3>, or <strong> contain no important sub-landmarks, please disregard them. Sub-landmarks should avoid using complete sentences from the original content, dish names, or emojis. Retain the original language of the content. Additionally, based on the sub-landmark, look for one contextual clue around it if needed, it can include city or state or country. But if there is address information, please use the address as a clue. Both the sub-landmark name and its corresponding clue must be provided as plain text, with no additional information, emoji or formatting, such as bullet points. Please format the results like this example (the sub-landmark is followed by four spaces and a clue):
+const linkPrompt = `You are now a place seeker tasked with identifying specific places or landmarks that are important in the page content. Please identify and list the sub-landmarks that are most relevant to the main topic of the page content (marked by the <title>) from the provided page, and do not list irrelevant results. For example, if the main topic suggests a specific number of sub-landmarks, ensure that the identified results align with that expectation. If <h1>, <h2>, <h3>, or <strong> contain no important sub-landmarks, please disregard them. Sub-landmarks should avoid using complete sentence from the original content or description or dish names or containing emojis, please give a specific place name. Retain the original language of the content. Additionally, based on the sub-landmark, look for one contextual clue around it if needed, it can include city or state or country. But if there is address information, please use the address as a clue. Both the sub-landmark name and its corresponding clue must be provided as plain text, with no additional information, emoji or formatting, such as bullet points. Please format the results like this example (the sub-landmark is followed by four spaces and a clue):
 
 sub-landmark-1    clue-1
 sub-landmark-2    clue-2
 ...
 
 Here is the provided page content:
+`;
+
+const askAIPrompt = `Suggest {requestedDestination} travel sites or an itinerary, and use {userLocale} as the display language. Please give me the results in plain HTML only (for example, see the format I provided), and the clue could be country or city or address. The final format should look like this example (do not include the example or other tags like <h1>):
+
+<ul class="list-group d-flex">
+  <li class="list-group-item border rounded mb-3 px-3 summary-list">
+    <span>Sub-landmark 1</span>
+    <span class="d-none">Clue 1</span>
+  </li>
+  <li class="list-group-item border rounded mb-3 px-3 summary-list">
+    <span>Sub-landmark 2</span>
+    <span class="d-none">Clue 2</span>
+  </li>
+  ...
+</ul>
 `;
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -46,7 +61,6 @@ chrome.runtime.onInstalled.addListener((details) => {
     }
   }
 });
-
 
 // Track the right-click event
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -104,17 +118,9 @@ async function trySuggest(tabId, url, retries = 10) {
       const response = await getContent(tabId, { action: "getContent" });
 
       if (response && response.content) {
-        // Special case for YouTube video descriptions
-        if (url.startsWith("https://www.youtube")) {
-          const ytLinkPrompt = linkPrompt.replace("(marked by <h1>, <h2>, <h3>, or <strong>) ", "");
-          callApi(ytLinkPrompt, response.content, apiKey, (apiResponse) => {
-            chrome.tabs.sendMessage(tabId, { action: "attachMapLink", content: apiResponse });
-          });
-        } else {
-          callApi(linkPrompt, response.content, apiKey, (apiResponse) => {
-            chrome.tabs.sendMessage(tabId, { action: "attachMapLink", content: apiResponse });
-          });
-        }
+        callApi(linkPrompt, response.content, apiKey, (apiResponse) => {
+          chrome.tabs.sendMessage(tabId, { action: "attachMapLink", content: apiResponse });
+        });
 
         return true;
       }
