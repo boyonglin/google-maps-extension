@@ -179,12 +179,8 @@
     "message": "Pay securely with ExtensionPay, and let The Maps Express be your guiding key.",
     "description": "modal free note"
   },
-  "apiTitleFalse": {
+  "apiTitle": {
     "message": "Set up your API key",
-    "description": "modal api title"
-  },
-  "apiTitleTrue": {
-    "message": "Set up your API key (enabled)",
     "description": "modal api title"
   },
   "apiNote": {

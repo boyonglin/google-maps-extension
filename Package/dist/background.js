@@ -290,6 +290,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true; // Will respond asynchronously
   }
+
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.action === "verifyApiKey") {
+      callApi("", "test", request.apiKey, sendResponse);
+      return true;
+    }
+  });
 });
 
 function callApi(prompt, content, apiKey, sendResponse) {
@@ -315,7 +322,6 @@ function callApi(prompt, content, apiKey, sendResponse) {
       sendResponse(generatedText);
     })
     .catch((error) => {
-      console.error("Error:", error);
       sendResponse({ error: error.toString() });
     });
 }

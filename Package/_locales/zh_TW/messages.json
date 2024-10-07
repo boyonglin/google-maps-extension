@@ -135,11 +135,8 @@
   "freeNote": {
     "message": "透過 ExtensionPay 安全且快速地付款，讓 The Maps Express 成為指引你的鑰匙"
   },
-  "apiTitleFalse": {
+  "apiTitle": {
     "message": "配置你的 API 金鑰"
-  },
-  "apiTitleTrue": {
-    "message": "配置你的 API 金鑰（已啟用）"
   },
   "apiNote": {
     "message": "你可以從 Google AI Studio 取得免費 API 金鑰，請求數量限制為 15 次/分鐘、1,500 次/天"

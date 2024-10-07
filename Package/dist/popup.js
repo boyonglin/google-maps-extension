@@ -11,7 +11,6 @@ const subtitleElement = document.getElementById("subtitle");
 const emptyMessage = document.getElementById("emptyMessage");
 const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
 const geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
-const apiModalLabel = document.getElementById("apiModalLabel");
 
 // Lists
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
@@ -160,14 +159,13 @@ function createFavoriteIcon(itemName, favoriteList) {
 
 // Check if the API key is defined and valid
 function fetchAPIKey(apiKey) {
-  apiModalLabel.innerHTML = chrome.i18n.getMessage("apiTitleFalse");
   if (apiKey) {
-    verifyApiKey(apiKey).then(isValid => {
-      if (!isValid) {
+    chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, function (response) {
+      if (response.error) {
         sendButton.disabled = true;
         geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
       } else {
-        apiModalLabel.innerHTML = chrome.i18n.getMessage("apiTitleTrue");
+        apiInput.placeholder = "......" + apiKey.slice(-4);
       }
     });
   } else {
@@ -1080,48 +1078,19 @@ document.getElementById("apiForm").addEventListener("submit", function (event) {
 
   chrome.storage.local.set({ geminiApiKey: apiKey });
 
-  verifyApiKey(apiKey).then(isValid => {
-    if (isValid) {
-      apiModalLabel.innerHTML = chrome.i18n.getMessage("apiTitleTrue");
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-      sendButton.disabled = false;
-    } else {
-      apiModalLabel.innerHTML = chrome.i18n.getMessage("apiTitleFalse");
+  chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, function (response) {
+    if (response.error) {
       geminiEmptyMessage.classList.remove("d-none");
+      apiInput.placeholder = "Gemini API key";
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
       sendButton.disabled = true;
+    } else {
+      apiInput.placeholder = "......" + apiKey.slice(-4);
+      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+      sendButton.disabled = false;
     }
   });
 });
-
-// Function to verify the API key
-async function verifyApiKey(apiKey) {
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-  const data = {
-    contents: [{
-      parts: [{
-        text: "test"
-      }]
-    }]
-  };
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
-    });
-    const candidates = await response.json();
-    if (candidates.error) {
-      throw new Error(candidates.error.message);
-    }
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
 
 // Clear the API key
 const apiModal = document.getElementById("apiModal");
