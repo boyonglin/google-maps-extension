@@ -54,7 +54,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["dist/contentScript.js", "dist/ExtPay.js"],
-      "css": ["scss/iframe.css"]
+      "css": ["css/iframe.css"]
     }
   ],
   "default_locale": "en",
@@ -65,7 +65,7 @@
   "web_accessible_resources": [
     {
       "matches": ["<all_urls>"],
-      "resources": ["popup.html", "scss/iframe.css", "dist/inject.js", "dist/ejectLite.js", "dist/checkStatus.js"]
+      "resources": ["popup.html", "css/iframe.css", "dist/inject.js", "dist/ejectLite.js", "dist/checkStatus.js"]
     }
   ]
 }

@@ -129,7 +129,7 @@ You can follow the steps below to use the exported CSV file to import places in 
 - Gemini 1.5 Flash
 - ExtPay payment gateway
 - localStorage
-- HTML iframe
+- html iframe
 - i18n localization
 
 ---
@@ -146,9 +146,9 @@ You can follow the steps below to use the exported CSV file to import places in 
     - `inject.js`: Injecting iframe into the webpage
     - `ejectLite.js`: Ejecting iframe from the webpage
     - `checkStatus.js`: Checking the status of the iframe
-- `scss/`: SCSS resources
-    - `popup.scss`: SCSS for the popup window
-    - `iframe.scss`: SCSS for the iframe window
+- `css/`: CSS resources
+    - `popup.css`: CSS for the popup window
+    - `iframe.css`: CSS for the iframe window
 - `popup.html`: HTML for the popup window
 - `manifest.json`: Configuration file for the extension
 

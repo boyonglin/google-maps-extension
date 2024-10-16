@@ -1,0 +1,500 @@
+:root {
+  --primary-color: #4285f4;
+  --border-color: #dee2e6;
+  --danger-color: #db4437;
+  --danger-color-500: #eda19b;
+  --danger-color-bg: #fff8f7;
+  --background-color: #ffffff;
+  --gray-800: #202833;
+  --gray-600: #70757a;
+  --gray-400: #dadce0;
+  --gray-300: #eff1f3;
+  --gray-200: #f6fafe;
+  --google-green: #0f9d58;
+  --google-green-500: #87cdab;
+  --google-green-bg: #f7fffb;
+  --google-yellow: #f4b400;
+  --google-yellow-500: #f9d980;
+  --google-yellow-bg: #fffdf7;
+  --google-purple-hover: #6c61a4;
+  --google-purple: #8779cd;
+  --google-purple-500: #c3bce6;
+  --google-purple-bg: #fafafd;
+}
+
+html,
+body {
+  width: 25rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  color: var(--gray-800);
+  font-family: "Satoshi", sans-serif;
+}
+
+/* search bar */
+.brand {
+  border-top-left-radius: 2rem;
+  border-bottom-left-radius: 2rem;
+  background-color: var(--background-color);
+}
+
+.input-group-prepend {
+  margin-right: -0.125rem;
+}
+
+#searchInput {
+  border-left: 0rem;
+  border-top-right-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+  color: var(--gray-800);
+}
+#searchInput::-moz-placeholder {
+  color: var(--gray-600);
+  font-weight: light;
+}
+#searchInput::placeholder {
+  color: var(--gray-600);
+  font-weight: light;
+}
+#searchInput:focus {
+  color: var(--gray-600);
+  background-color: var(--background-color);
+  border-color: var(--border-color);
+  outline: none;
+  box-shadow: none;
+}
+#searchInput:focus::-moz-placeholder {
+  opacity: 0;
+}
+#searchInput:focus::placeholder {
+  opacity: 0;
+}
+
+.input-group-text.brand img {
+  transform: scale(0.65);
+}
+
+.btn-enter {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-800);
+  background-color: var(--background-color);
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  z-index: 10;
+}
+.btn-enter i {
+  padding-top: 1px;
+}
+
+/* api bar */
+#apiInput {
+  border-radius: 2rem;
+  padding-left: 1rem;
+}
+#apiInput::-moz-placeholder {
+  color: var(--gray-600);
+  font-weight: light;
+}
+#apiInput::placeholder {
+  color: var(--gray-600);
+  font-weight: light;
+}
+#apiInput:focus {
+  color: var(--gray-600);
+  background-color: var(--background-color);
+  border-color: var(--border-color);
+  outline: none;
+  box-shadow: none;
+}
+#apiInput:focus::-moz-placeholder {
+  opacity: 0;
+}
+#apiInput:focus::placeholder {
+  opacity: 0;
+}
+
+.btn-setAPI {
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--google-purple);
+  color: white;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+}
+.btn-setAPI i {
+  padding-top: 1px;
+}
+
+.modal-footer p a {
+  color: var(--google-purple);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* list-group-item */
+.list-group-item {
+  color: var(--gray-600);
+  max-width: 100%;
+  cursor: pointer;
+}
+.list-group-item span {
+  padding-right: 1.5rem;
+}
+.list-group-item.delete-list span {
+  padding-right: 0.75rem;
+}
+
+.history-list:hover {
+  color: var(--google-green);
+  background-color: var(--google-green-bg);
+  border: 1px solid var(--google-green) !important;
+}
+
+.favorite-list:hover {
+  color: var(--google-yellow);
+  background-color: var(--google-yellow-bg);
+  border: 1px solid var(--google-yellow) !important;
+}
+
+.delete-list:hover,
+.checked-list {
+  color: var(--danger-color);
+  background-color: var(--danger-color-bg);
+  border: 1px solid var(--danger-color) !important;
+}
+
+.summary-list:hover {
+  color: var(--google-purple);
+  background-color: var(--google-purple-bg);
+  border: 1px solid var(--google-purple) !important;
+}
+
+#searchHistoryList,
+#favoriteList,
+#summaryList {
+  max-height: 214.4px;
+}
+
+#searchHistoryList ul,
+#favoriteList ul {
+  min-height: 7rem;
+  justify-content: flex-end;
+}
+
+#summaryList ul {
+  min-height: 7rem;
+  justify-content: flex-start;
+}
+
+/* list icon */
+li {
+  position: relative;
+}
+li i {
+  display: none;
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  justify-content: center;
+  align-items: center;
+}
+li:hover i {
+  display: flex;
+  opacity: 0.5;
+}
+li i:hover {
+  opacity: 1;
+}
+li i.matched {
+  display: flex;
+  opacity: 0.5;
+  pointer-events: none;
+}
+li:hover i.matched {
+  opacity: 1;
+}
+
+/* checkbox */
+.form-check-input {
+  border-color: var(--border-color);
+  min-width: 1rem;
+  min-height: 1rem;
+  margin-top: 0rem;
+}
+.form-check-input:focus-visible {
+  box-shadow: 0 0 0 0px var(--danger-color-500);
+  border-color: var(--danger-color);
+}
+.form-check-input:focus {
+  box-shadow: 0 0 0 0px var(--danger-color-500);
+  border-color: var(--border-color);
+}
+.form-check-input:checked {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+li:hover .form-check-input {
+  border-color: var(--danger-color-500);
+}
+
+/* buttons */
+.nav-link {
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+}
+.nav-link:hover {
+  color: var(--gray-800) !important;
+}
+
+.btn-light {
+  background-color: var(--gray-300);
+  border: 1px solid var(--gray-300);
+}
+
+.btn-maps {
+  background-color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.btn-delete {
+  background-color: var(--danger-color);
+  border: 1px solid var(--danger-color);
+}
+
+#clearButton,
+#cancelButton,
+#clearButtonSummary {
+  color: var(--gray-600);
+}
+
+#clearButton:hover,
+#clearButtonSummary:hover {
+  background-color: var(--danger-color);
+  border: 1px solid var(--danger-color);
+  color: var(--background-color);
+}
+
+.btn-send {
+  background-color: var(--google-purple);
+  border: 1px solid var(--google-purple);
+  color: var(--background-color);
+}
+.btn-send:hover {
+  background-color: var(--google-purple-hover);
+  border: 1px solid var(--google-purple-hover);
+  color: var(--background-color);
+}
+.btn-send:active {
+  background-color: var(--google-purple-hover) !important;
+  border: 1px solid var(--google-purple-hover) !important;
+  color: var(--background-color) !important;
+}
+.btn-send:focus-visible {
+  background-color: var(--google-purple);
+  box-shadow: 0 0 0 4px var(--google-purple-500);
+  color: var(--background-color);
+}
+.btn-send:disabled {
+  background-color: var(--google-purple);
+  border: 1px solid var(--google-purple);
+  color: var(--background-color);
+  opacity: 0.65;
+}
+
+#searchHistoryButton,
+#favoriteListButton,
+#deleteListButton,
+#geminiSummaryButton {
+  border: none;
+  color: var(--gray-600);
+  position: relative;
+}
+
+.active-button {
+  pointer-events: none;
+}
+
+.btn-outline-secondary:hover::after, .btn-outline-secondary.active-button::after {
+  content: "";
+  position: absolute;
+  bottom: 0rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0.625rem;
+  height: 0.15rem;
+  border-radius: 0.15rem;
+}
+
+#searchHistoryButton:hover, #searchHistoryButton.active-button {
+  background-color: transparent;
+  color: var(--google-green);
+}
+#searchHistoryButton:hover::after {
+  background-color: var(--google-green);
+}
+#searchHistoryButton.active-button::after {
+  background-color: var(--google-green);
+}
+#searchHistoryButton.active-button:focus-visible {
+  background-color: transparent;
+  box-shadow: 0 0 0 4px var(--google-green-500);
+}
+
+#favoriteListButton:hover, #favoriteListButton.active-button {
+  background-color: transparent;
+  color: var(--google-yellow);
+}
+#favoriteListButton:hover::after {
+  background-color: var(--google-yellow);
+}
+#favoriteListButton.active-button::after {
+  background-color: var(--google-yellow);
+}
+#favoriteListButton.active-button:focus-visible {
+  background-color: transparent;
+  box-shadow: 0 0 0 4px var(--google-yellow-500);
+}
+
+#deleteListButton:hover, #deleteListButton.active-button {
+  background-color: transparent;
+  color: var(--danger-color);
+}
+#deleteListButton:hover::after {
+  background-color: var(--danger-color);
+}
+#deleteListButton.active-button::after {
+  background-color: var(--danger-color);
+}
+#deleteListButton.active-button:focus-visible {
+  background-color: transparent;
+  box-shadow: 0 0 0 4px var(--danger-color-500);
+}
+
+#geminiSummaryButton:hover, #geminiSummaryButton.active-button {
+  background-color: transparent;
+  color: var(--google-purple);
+}
+#geminiSummaryButton:hover::after {
+  background-color: var(--google-purple);
+}
+#geminiSummaryButton.active-button::after {
+  background-color: var(--google-purple);
+}
+#geminiSummaryButton.active-button:focus-visible {
+  background-color: transparent;
+  box-shadow: 0 0 0 4px var(--google-purple-500);
+}
+
+#searchHistoryButton:focus,
+#favoriteListButton:focus,
+#deleteListButton:focus,
+#geminiSummaryButton:focus {
+  background-color: transparent;
+}
+
+/* Modal */
+.modal-xs {
+  max-width: 22.5rem;
+  margin: 0 auto;
+}
+
+.modal-body p:hover {
+  -webkit-text-decoration: var(--border-color) underline;
+          text-decoration: var(--border-color) underline;
+}
+
+.btn-close {
+  font-size: 0.875rem;
+  height: 1rem;
+  width: 1rem;
+}
+
+.premium-only {
+  color: var(--gray-400) !important;
+  pointer-events: none !important;
+}
+
+#preview-video {
+  position: absolute;
+  display: none;
+  top: 4rem;
+}
+#preview-video video {
+  width: calc(100% - 16px);
+  border: 8px solid white;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+#preview-h2:hover + #preview-video {
+  display: flex;
+}
+
+/* scrollbar */
+::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 0.25rem;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 0.5rem;
+}
+
+/* animation  */
+.spring-animation {
+  animation: springAnimation 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes springAnimation {
+  0% {
+    transform: translate(0%, -50%) scale(1);
+  }
+  20% {
+    transform: translate(0%, -50%) scale(1.1);
+  }
+  40% {
+    transform: translate(0%, -50%) scale(0.9);
+  }
+  60% {
+    transform: translate(0%, -50%) scale(1.05);
+  }
+  80% {
+    transform: translate(0%, -50%) scale(0.95);
+  }
+  100% {
+    transform: translate(0%, -50%) scale(1);
+  }
+}
+.shineText {
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  0% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}/*# sourceMappingURL=popup.css.map */
