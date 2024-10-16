@@ -64,7 +64,7 @@ setTimeout(fetchData, 0);
 setTimeout(checkPay, 0);
 
 // Input caret
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
   apiInput.focus();
 });
@@ -160,7 +160,7 @@ function createFavoriteIcon(itemName, favoriteList) {
 // Check if the API key is defined and valid
 function fetchAPIKey(apiKey) {
   if (apiKey) {
-    chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, function (response) {
+    chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, (response) => {
       if (response.error) {
         sendButton.disabled = true;
         geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
@@ -204,7 +204,7 @@ function attachCheckboxEventListener(container) {
   const liElements = container.querySelectorAll("li");
 
   checkboxes.forEach((checkbox, index) => {
-    checkbox.addEventListener("click", function () {
+    checkbox.addEventListener("click", () => {
       const li = liElements[index];
 
       if (checkbox.checked) {
@@ -219,7 +219,7 @@ function attachCheckboxEventListener(container) {
 }
 
 // Track events on the search bar
-searchInput.addEventListener("keydown", function (event) {
+searchInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     if (searchInput.value.trim() === "") {
       // If it contains only blanks, prevent the default behavior of the event and do not allow submission
@@ -233,7 +233,7 @@ searchInput.addEventListener("keydown", function (event) {
   }
 });
 
-searchInput.addEventListener("input", function () {
+searchInput.addEventListener("input", () => {
   if (searchInput.value.trim() === "") {
     enterButton.classList.add("d-none");
   } else {
@@ -241,7 +241,7 @@ searchInput.addEventListener("input", function () {
   }
 });
 
-enterButton.addEventListener("click", function () {
+enterButton.addEventListener("click", () => {
   if (searchInput.value.trim() === "") {
     return;
   } else {
@@ -252,7 +252,7 @@ enterButton.addEventListener("click", function () {
   }
 });
 
-searchHistoryButton.addEventListener("click", function () {
+searchHistoryButton.addEventListener("click", () => {
   for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.remove("d-none");
   for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.add("d-none");
   for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
@@ -278,7 +278,7 @@ searchHistoryButton.addEventListener("click", function () {
   updateInput();
 });
 
-favoriteListButton.addEventListener("click", function () {
+favoriteListButton.addEventListener("click", () => {
   chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
     updateFavorite(favoriteList);
   });
@@ -305,7 +305,7 @@ favoriteListButton.addEventListener("click", function () {
   updateInput();
 });
 
-deleteListButton.addEventListener("click", function () {
+deleteListButton.addEventListener("click", () => {
   const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
   const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
 
@@ -355,7 +355,7 @@ deleteListButton.addEventListener("click", function () {
   }
 });
 
-geminiSummaryButton.addEventListener("click", function () {
+geminiSummaryButton.addEventListener("click", () => {
   for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.add("d-none");
   for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.add("d-none");
   for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
@@ -369,7 +369,7 @@ geminiSummaryButton.addEventListener("click", function () {
   subtitleElement.textContent = chrome.i18n.getMessage("geminiSummarySubtitle");
 
   // Clear summary data if it's older than 1 hour
-  chrome.storage.local.get(["summaryList", "timestamp", "favoriteList"], function (result) {
+  chrome.storage.local.get(["summaryList", "timestamp", "favoriteList"], (result) => {
     if (result.timestamp && result.summaryList.length > 0) {
       const currentTime = Date.now();
       const elapsedTime = (currentTime - result.timestamp) / 1000; // time in seconds
@@ -420,7 +420,7 @@ function constructSummaryHTML(summaryList, favoriteList = []) {
   return html;
 }
 
-exportButton.addEventListener("click", function () {
+exportButton.addEventListener("click", () => {
   chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
     const trimmedFavorite = favoriteList.map(item => item.split(" @")[0]);
     const csv = "name\n" + trimmedFavorite.map(item => `${item},`).join("\n");;
@@ -438,11 +438,11 @@ exportButton.addEventListener("click", function () {
 });
 
 // Allow the user to select a file from their device
-importButton.addEventListener("click", function () {
+importButton.addEventListener("click", () => {
   fileInput.click();
 });
 
-fileInput.addEventListener("change", function (event) {
+fileInput.addEventListener("change", (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
@@ -461,7 +461,7 @@ fileInput.addEventListener("change", function (event) {
         favoriteEmptyMessage.style.display = "block";
       }
 
-      chrome.storage.local.set({ favoriteList: importedData }, function () {
+      chrome.storage.local.set({ favoriteList: importedData }, () => {
         updateFavorite(importedData);
         updateHistoryFavoriteIcons();
       });
@@ -496,7 +496,7 @@ function updateHistoryFavoriteIcons() {
 
 cancelButton.addEventListener("click", backToNormal);
 
-deleteButton.addEventListener("click", function () {
+deleteButton.addEventListener("click", () => {
   if (searchHistoryButton.classList.contains("active-button")) {
     deleteFromHistoryList();
   } else {
@@ -507,7 +507,7 @@ deleteButton.addEventListener("click", function () {
 });
 
 // Track the click event on li elements
-searchHistoryListContainer.addEventListener("mousedown", function (event) {
+searchHistoryListContainer.addEventListener("mousedown", (event) => {
   let liElement;
   if (event.target.tagName === "LI") {
     liElement = event.target;
@@ -563,7 +563,7 @@ function addToFavoriteList(selectedText) {
   exportButton.disabled = false;
 }
 
-favoriteListContainer.addEventListener("mousedown", function (event) {
+favoriteListContainer.addEventListener("mousedown", (event) => {
   let liElement;
   if (event.target.tagName === "LI") {
     liElement = event.target;
@@ -609,7 +609,7 @@ favoriteListContainer.addEventListener("mousedown", function (event) {
   }
 });
 
-summaryListContainer.addEventListener("click", function (event) {
+summaryListContainer.addEventListener("click", (event) => {
   let liElement;
   if (event.target.tagName === "LI") {
     liElement = event.target;
@@ -947,7 +947,7 @@ sendButton.addEventListener("click", () => {
   sendButton.disabled = true;
   clearButtonSummary.disabled = true;
 
-  chrome.storage.local.get("geminiApiKey", function (data) {
+  chrome.storage.local.get("geminiApiKey", (data) => {
     const apiKey = data.geminiApiKey;
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -1072,13 +1072,13 @@ function text2Modal(dataLocale, linkText, modalId) {
 text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
 
 // Save the API key
-document.getElementById("apiForm").addEventListener("submit", function (event) {
+document.getElementById("apiForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const apiKey = apiInput.value;
 
   chrome.storage.local.set({ geminiApiKey: apiKey });
 
-  chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, function (response) {
+  chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, (response) => {
     if (response.error) {
       geminiEmptyMessage.classList.remove("d-none");
       apiInput.placeholder = "Gemini API key";
@@ -1094,11 +1094,11 @@ document.getElementById("apiForm").addEventListener("submit", function (event) {
 
 // Clear the API key
 const apiModal = document.getElementById("apiModal");
-apiModal.addEventListener("hidden.bs.modal", function () {
+apiModal.addEventListener("hidden.bs.modal", () => {
   apiInput.value = "";
 });
 
-apiModal.addEventListener("shown.bs.modal", function () {
+apiModal.addEventListener("shown.bs.modal", () => {
   apiInput.focus();
 });
 
@@ -1179,18 +1179,18 @@ document.addEventListener("keydown", (event) => {
 });
 
 // Premium panel
-paymentButton.addEventListener("click", function () {
+paymentButton.addEventListener("click", () => {
   chrome.runtime.sendMessage({ action: "extPay" });
 });
 
-restoreButton.addEventListener("click", function () {
+restoreButton.addEventListener("click", () => {
   chrome.runtime.sendMessage({ action: "restorePay" });
 });
 
 const pElement = document.querySelector(`p[data-locale="premiumNote"]`);
 
 function checkPay() {
-  chrome.runtime.sendMessage({ action: "checkPay" }, function (response) {
+  chrome.runtime.sendMessage({ action: "checkPay" }, (response) => {
     const stage = response.result;
 
     // Shortcut display
@@ -1224,7 +1224,7 @@ function checkPay() {
   });
 }
 
-closeButton.addEventListener("click", function () {
+closeButton.addEventListener("click", () => {
   checkPay();
 });
 

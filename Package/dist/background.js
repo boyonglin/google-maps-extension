@@ -28,7 +28,7 @@ sub-landmark-2    clue-2
 Here is the provided page content:
 `;
 
-const askAIPrompt = `Suggest or surprise (don't have to be cliché) a {requestedDestination} itinerary, and use {userLocale} as the display language. Please give me the results in plain HTML only (for example, see the format I provided). The clue could be country, city, or address. The time shows the estimated time and only the number and time unit information. The final format should look like this example (do not include the example or other tags like <h1>):
+const askAIPrompt = `Suggest or surprise (don't have to be cliché) a {requestedDestination} itinerary, and use {userLocale} as the display language. Please give me the results in plain HTML only (for example, see the format I provided). The clue could be country or city, but not address. The time shows the estimated time and only the number and time unit information. The final format should look like this example (do not include the example or other tags like <h1>):
 
 <ul class="list-group d-flex">
   <li class="list-group-item border rounded mb-3 px-3 summary-list">
@@ -170,7 +170,7 @@ async function tryAPINotify(retries = 10) {
 
 function getApiKey() {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.get("geminiApiKey", function (data) {
+    chrome.storage.local.get("geminiApiKey", (data) => {
       if (chrome.runtime.lastError) {
         return reject(chrome.runtime.lastError);
       }
