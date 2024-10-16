@@ -29,16 +29,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const linkHtml = `<a href="${searchUrl}" target="_blank" style="text-decoration: none; border: 0px;">📌</a>`;
 
         const parts = candidate.split(/\s{4,}/);
-        let nameHtml = parts[0];
+        let candidateName = parts[0];
+        let hasReplaced = false;
 
-        // Replace the candidate text with itself followed by the link emoji
-        if (element.innerHTML.includes(nameHtml)) {
-          element.innerHTML = element.innerHTML.replace(new RegExp(nameHtml, "g"), `${nameHtml}${linkHtml}`);
-        }
+        // Replace only the first instance of the candidate name with itself followed by the link emoji
+        element.innerHTML = element.innerHTML.replace(new RegExp(candidateName, "g"), (match) => {
+          if (!hasReplaced) {
+            hasReplaced = true;
+            return `${match}${linkHtml}`;
+          }
+          return match;
+        });
       });
     }
 
-    ["h1", "h2", "h3", "strong"].forEach(tag => {
+    ["h1", "h2", "h3", "strong", "p"].forEach(tag => {
       document.querySelectorAll(tag).forEach(element => {
         attachMapLink(element);
       });
