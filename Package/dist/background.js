@@ -291,7 +291,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Will respond asynchronously
   }
 
-  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === "verifyApiKey") {
       callApi("", "test", request.apiKey, sendResponse);
       return true;
@@ -399,13 +399,13 @@ function checkPaymentStatus(user) {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "extPay") {
-      extpay.getUser().then(user => handleExtensionPayment(user, sender));
+    extpay.getUser().then(user => handleExtensionPayment(user, sender));
   } else if (request.action === "restorePay") {
-      extpay.openLoginPage();
+    extpay.openLoginPage();
   } else if (request.action === "checkPay") {
-      extpay.getUser().then(user => {
-          sendResponse({ result: checkPaymentStatus(user) });
-      });
-      return true;
+    extpay.getUser().then(user => {
+      sendResponse({ result: checkPaymentStatus(user) });
+    });
+    return true;
   }
 });

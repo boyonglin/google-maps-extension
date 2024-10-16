@@ -14,7 +14,7 @@
 
 <p align='center'>
   <a href="https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic">
-    <img src="https://img.shields.io/badge/Google_chrome-4285F4?style=for-the-badge&logo=Google-chrome&logoColor=white" />        
+    <img src="https://img.shields.io/badge/Google_chrome-4285F4?style=for-the-badge&logo=Google-chrome&logoColor=white" />
   </a>&nbsp;&nbsp;
   <a href="https://clancylin.gumroad.com/l/place-summary">
     <img src="https://img.shields.io/badge/GUMROAD-36a9ae?style=for-the-badge&logo=gumroad&logoColor=white" />
@@ -129,7 +129,7 @@ You can follow the steps below to use the exported CSV file to import places in 
 - Gemini 1.5 Flash
 - ExtPay payment gateway
 - localStorage
-- html iframe
+- HTML iframe
 - i18n localization
 
 ---
@@ -139,15 +139,16 @@ You can follow the steps below to use the exported CSV file to import places in 
     - `en/`: English (default)
     - `zh_TW/`: Chinese (Taiwan)
     - `ja/`: Japanese
-- `dist/`: JavaScript & CSS resources
+- `dist/`: JavaScript resources
     - `popup.js`: JS for the popup window
-    - `popup.css`: CSS for the popup window
     - `background.js`: Event handling and browser interaction
     - `contentScript.js`: Accessing webpage content
-    - `iframe.css`: CSS for the iframe window
     - `inject.js`: Injecting iframe into the webpage
     - `ejectLite.js`: Ejecting iframe from the webpage
     - `checkStatus.js`: Checking the status of the iframe
+- `scss/`: SCSS resources
+    - `popup.scss`: SCSS for the popup window
+    - `iframe.scss`: SCSS for the iframe window
 - `popup.html`: HTML for the popup window
 - `manifest.json`: Configuration file for the extension
 
