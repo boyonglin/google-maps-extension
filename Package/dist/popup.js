@@ -59,14 +59,12 @@ const paymentSpan = document.querySelector("#paymentButton > span");
 
 let [hasHistory, hasFavorite, hasSummary, hasInit] = [false, false, false, false];
 
-setTimeout(popupLayout, 0);
-setTimeout(fetchData, 0);
-setTimeout(checkPay, 0);
-
 // Input caret
 document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
-  apiInput.focus();
+  popupLayout();
+  fetchData();
+  checkPay();
 });
 
 // Update the popup layout
@@ -171,7 +169,6 @@ function fetchAPIKey(apiKey) {
   } else {
     sendButton.disabled = true;
     geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-    return;
   }
 }
 
@@ -1099,7 +1096,9 @@ apiModal.addEventListener("hidden.bs.modal", () => {
 });
 
 apiModal.addEventListener("shown.bs.modal", () => {
-  apiInput.focus();
+  if (apiInput.placeholder === "Gemini API key") {
+    apiInput.focus();
+  }
 });
 
 // tooltips

@@ -129,7 +129,7 @@ You can follow the steps below to use the exported CSV file to import places in 
 - Gemini 1.5 Flash
 - ExtPay payment gateway
 - localStorage
-- html iframe
+- HTML iframe
 - i18n localization
 
 ---
