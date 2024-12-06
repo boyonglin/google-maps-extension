@@ -226,6 +226,8 @@ searchInput.addEventListener("keydown", (event) => {
         searchTerm: searchInput.value,
         action: "searchInput",
       });
+      searchInput.value = "";
+      searchInput.blur(); 
     }
   }
 });
@@ -246,6 +248,7 @@ enterButton.addEventListener("click", () => {
       searchTerm: searchInput.value,
       action: "searchInput",
     });
+    searchInput.value = "";
   }
 });
 
