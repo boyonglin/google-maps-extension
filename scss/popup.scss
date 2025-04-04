@@ -135,6 +135,46 @@ body {
   text-decoration: none;
 }
 
+/* dir bar */
+
+#dirInput {
+  border-radius: 2rem;
+  padding-left: 1rem;
+
+  &::placeholder {
+    color: var(--gray-600);
+    font-weight: light;
+  }
+
+  &:focus {
+    color: var(--gray-600);
+    background-color: var(--background-color);
+    border-color: var(--border-color);
+    outline: none;
+    box-shadow: none;
+
+    &::placeholder {
+      opacity: 0;
+    }
+  }
+}
+
+.btn-setDir {
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--primary-color);
+  color: white;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+
+  i {
+    padding-top: 1px;
+  }
+}
+
 /* list-group-item */
 
 .list-group-item {

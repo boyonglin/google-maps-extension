@@ -11,6 +11,7 @@ const subtitleElement = document.getElementById("subtitle");
 const emptyMessage = document.getElementById("emptyMessage");
 const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
 const geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
+const dirInput = document.getElementById("dirInput");
 
 // Lists
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
@@ -53,11 +54,18 @@ const clearButtonSpan = document.querySelector("#clearButton > i + span");
 const cancelButtonSpan = document.querySelector("#cancelButton > span");
 const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
 const mapsButtonSpan = document.getElementById("mapsButtonSpan");
-const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+const clearButtonSummarySpan = document.querySelector(
+  "#clearButtonSummary > i + span"
+);
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
 
-let [hasHistory, hasFavorite, hasSummary, hasInit] = [false, false, false, false];
+let [hasHistory, hasFavorite, hasSummary, hasInit] = [
+  false,
+  false,
+  false,
+  false,
+];
 
 // Input caret
 document.addEventListener("DOMContentLoaded", () => {
@@ -69,22 +77,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Update the popup layout
 function popupLayout() {
-  for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.remove("d-none");
-  for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.add("d-none");
-  for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
-  for (let i = 0; i < pageGemini.length; i++) pageGemini[i].classList.add("d-none");
+  for (let i = 0; i < pageSearch.length; i++)
+    pageSearch[i].classList.remove("d-none");
+  for (let i = 0; i < pageFavorite.length; i++)
+    pageFavorite[i].classList.add("d-none");
+  for (let i = 0; i < pageDelete.length; i++)
+    pageDelete[i].classList.add("d-none");
+  for (let i = 0; i < pageGemini.length; i++)
+    pageGemini[i].classList.add("d-none");
 
   checkTextOverflow();
-};
+}
 
 // Fetch the search history list
 function fetchData() {
   searchHistoryListContainer.innerHTML = "";
 
   chrome.storage.local.get(
-    ["searchHistoryList", "favoriteList", "geminiApiKey"],
-    ({ searchHistoryList, favoriteList, geminiApiKey }) => {
-
+    ["searchHistoryList", "favoriteList", "geminiApiKey", "startAddr"],
+    ({ searchHistoryList, favoriteList, geminiApiKey, startAddr }) => {
       // Retrieve searchHistoryList and favoriteList from Chrome storage
       if (searchHistoryList && searchHistoryList.length > 0) {
         emptyMessage.style.display = "none";
@@ -121,7 +132,9 @@ function fetchData() {
         ul.appendChild(fragment);
         searchHistoryListContainer.appendChild(ul);
 
-        const lastListItem = searchHistoryListContainer.querySelector(".list-group .list-group-item:first-child");
+        const lastListItem = searchHistoryListContainer.querySelector(
+          ".list-group .list-group-item:first-child"
+        );
         if (lastListItem) {
           lastListItem.classList.remove("mb-3");
         }
@@ -140,6 +153,7 @@ function fetchData() {
       }
 
       fetchAPIKey(geminiApiKey);
+      fetchStartAddr(startAddr);
     }
   );
 }
@@ -157,18 +171,32 @@ function createFavoriteIcon(itemName, favoriteList) {
 
 // Check if the API key is defined and valid
 function fetchAPIKey(apiKey) {
+  apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+
   if (apiKey) {
-    chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, (response) => {
-      if (response.error) {
-        sendButton.disabled = true;
-        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-      } else {
-        apiInput.placeholder = "......" + apiKey.slice(-4);
+    chrome.runtime.sendMessage(
+      { action: "verifyApiKey", apiKey: apiKey },
+      (response) => {
+        if (response.error) {
+          sendButton.disabled = true;
+          geminiEmptyMessage.innerText =
+            chrome.i18n.getMessage("geminiFirstMsg");
+        } else {
+          apiInput.placeholder = "............" + apiKey.slice(-4);
+        }
       }
-    });
+    );
   } else {
     sendButton.disabled = true;
     geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+  }
+}
+
+function fetchStartAddr(startAddr) {
+  dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
+
+  if (startAddr) {
+    dirInput.placeholder = startAddr;
   }
 }
 
@@ -227,7 +255,7 @@ searchInput.addEventListener("keydown", (event) => {
         action: "searchInput",
       });
       searchInput.value = "";
-      searchInput.blur(); 
+      searchInput.blur();
     }
   }
 });
@@ -253,10 +281,14 @@ enterButton.addEventListener("click", () => {
 });
 
 searchHistoryButton.addEventListener("click", () => {
-  for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.remove("d-none");
-  for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.add("d-none");
-  for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
-  for (let i = 0; i < pageGemini.length; i++) pageGemini[i].classList.add("d-none");
+  for (let i = 0; i < pageSearch.length; i++)
+    pageSearch[i].classList.remove("d-none");
+  for (let i = 0; i < pageFavorite.length; i++)
+    pageFavorite[i].classList.add("d-none");
+  for (let i = 0; i < pageDelete.length; i++)
+    pageDelete[i].classList.add("d-none");
+  for (let i = 0; i < pageGemini.length; i++)
+    pageGemini[i].classList.add("d-none");
 
   searchHistoryButton.classList.add("active-button");
   favoriteListButton.classList.remove("active-button");
@@ -283,10 +315,14 @@ favoriteListButton.addEventListener("click", () => {
     updateFavorite(favoriteList);
   });
 
-  for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.add("d-none");
-  for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.remove("d-none");
-  for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
-  for (let i = 0; i < pageGemini.length; i++) pageGemini[i].classList.add("d-none");
+  for (let i = 0; i < pageSearch.length; i++)
+    pageSearch[i].classList.add("d-none");
+  for (let i = 0; i < pageFavorite.length; i++)
+    pageFavorite[i].classList.remove("d-none");
+  for (let i = 0; i < pageDelete.length; i++)
+    pageDelete[i].classList.add("d-none");
+  for (let i = 0; i < pageGemini.length; i++)
+    pageGemini[i].classList.add("d-none");
 
   favoriteListButton.classList.add("active-button");
   searchHistoryButton.classList.remove("active-button");
@@ -356,10 +392,14 @@ deleteListButton.addEventListener("click", () => {
 });
 
 geminiSummaryButton.addEventListener("click", () => {
-  for (let i = 0; i < pageSearch.length; i++) pageSearch[i].classList.add("d-none");
-  for (let i = 0; i < pageFavorite.length; i++) pageFavorite[i].classList.add("d-none");
-  for (let i = 0; i < pageDelete.length; i++) pageDelete[i].classList.add("d-none");
-  for (let i = 0; i < pageGemini.length; i++) pageGemini[i].classList.remove("d-none");
+  for (let i = 0; i < pageSearch.length; i++)
+    pageSearch[i].classList.add("d-none");
+  for (let i = 0; i < pageFavorite.length; i++)
+    pageFavorite[i].classList.add("d-none");
+  for (let i = 0; i < pageDelete.length; i++)
+    pageDelete[i].classList.add("d-none");
+  for (let i = 0; i < pageGemini.length; i++)
+    pageGemini[i].classList.remove("d-none");
 
   searchHistoryButton.classList.remove("active-button");
   favoriteListButton.classList.remove("active-button");
@@ -369,36 +409,43 @@ geminiSummaryButton.addEventListener("click", () => {
   subtitleElement.textContent = chrome.i18n.getMessage("geminiSummarySubtitle");
 
   // Clear summary data if it's older than 1 hour
-  chrome.storage.local.get(["summaryList", "timestamp", "favoriteList"], (result) => {
-    if (result.timestamp && result.summaryList.length > 0) {
-      const currentTime = Date.now();
-      const elapsedTime = (currentTime - result.timestamp) / 1000; // time in seconds
-      if (elapsedTime > 86400) {
-        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-        summaryListContainer.innerHTML = "";
-        chrome.storage.local.remove(["summaryList", "timestamp"]);
-      } else {
-        if (result.summaryList) {
-          hasSummary = true;
-          geminiEmptyMessage.classList.add("d-none");
-          summaryListContainer.innerHTML = constructSummaryHTML(result.summaryList, result.favoriteList);
-          clearButtonSummary.classList.remove("d-none");
-          apiButton.classList.add("d-none");
-          clearButtonSummary.disabled = false;
-          checkTextOverflow();
-          measureContentSize();
+  chrome.storage.local.get(
+    ["summaryList", "timestamp", "favoriteList"],
+    (result) => {
+      if (result.timestamp && result.summaryList.length > 0) {
+        const currentTime = Date.now();
+        const elapsedTime = (currentTime - result.timestamp) / 1000; // time in seconds
+        if (elapsedTime > 86400) {
+          geminiEmptyMessage.innerText =
+            chrome.i18n.getMessage("geminiEmptyMsg");
+          summaryListContainer.innerHTML = "";
+          chrome.storage.local.remove(["summaryList", "timestamp"]);
+        } else {
+          if (result.summaryList) {
+            hasSummary = true;
+            geminiEmptyMessage.classList.add("d-none");
+            summaryListContainer.innerHTML = constructSummaryHTML(
+              result.summaryList,
+              result.favoriteList
+            );
+            clearButtonSummary.classList.remove("d-none");
+            apiButton.classList.add("d-none");
+            clearButtonSummary.disabled = false;
+            checkTextOverflow();
+            measureContentSize();
+          }
         }
+      } else {
+        checkTextOverflow();
+        measureContentSize();
       }
-    } else {
-      checkTextOverflow();
-      measureContentSize();
     }
-  });
+  );
 });
 
 function constructSummaryHTML(summaryList, favoriteList = []) {
   let html = '<ul class="list-group d-flex">';
-  const trimmedFavorite = favoriteList.map(item => item.split(" @")[0]);
+  const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
 
   summaryList.forEach((item, index) => {
     const isLastItem = index === summaryList.length - 1;
@@ -422,8 +469,8 @@ function constructSummaryHTML(summaryList, favoriteList = []) {
 
 exportButton.addEventListener("click", () => {
   chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-    const trimmedFavorite = favoriteList.map(item => item.split(" @")[0]);
-    const csv = "name\n" + trimmedFavorite.map(item => `${item},`).join("\n");;
+    const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
+    const csv = "name\n" + trimmedFavorite.map((item) => `${item},`).join("\n");
 
     const blob = new Blob([csv], {
       type: "text/csv; charset=utf-8;",
@@ -454,8 +501,11 @@ fileInput.addEventListener("change", (event) => {
 
       if (fileContent && fileContent.length > 0) {
         // Parse CSV content
-        const rows = fileContent.split("\n").map(row => row.trim()).filter(row => row.length > 0);
-        importedData = rows.slice(1).map(row => row.replace(/,$/, ""));
+        const rows = fileContent
+          .split("\n")
+          .map((row) => row.trim())
+          .filter((row) => row.length > 0);
+        importedData = rows.slice(1).map((row) => row.replace(/,$/, ""));
         favoriteEmptyMessage.style.display = "none";
       } else {
         favoriteEmptyMessage.style.display = "block";
@@ -465,7 +515,6 @@ fileInput.addEventListener("change", (event) => {
         updateFavorite(importedData);
         updateHistoryFavoriteIcons();
       });
-
     } catch (error) {
       favoriteEmptyMessage.style.display = "block";
       favoriteEmptyMessage.innerText = chrome.i18n.getMessage("importErrorMsg");
@@ -482,7 +531,7 @@ fileInput.addEventListener("change", (event) => {
 function updateHistoryFavoriteIcons() {
   chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
     const historyItems = document.querySelectorAll(".history-list");
-    historyItems.forEach(item => {
+    historyItems.forEach((item) => {
       const text = item.querySelector("span").textContent;
       const favoriteIcon = item.querySelector("i");
       if (favoriteList && !favoriteList.includes(text)) {
@@ -548,10 +597,12 @@ searchHistoryListContainer.addEventListener("mousedown", (event) => {
     } else if (event.target.classList.contains("form-check-input")) {
       return;
     } else {
-      if (event.button === 1) { // Middle click
+      if (event.button === 1) {
+        // Middle click
         event.preventDefault();
         chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
-      } else if (event.button === 0) { // Left click
+      } else if (event.button === 0) {
+        // Left click
         window.open(searchUrl, "_blank");
       }
     }
@@ -599,10 +650,12 @@ favoriteListContainer.addEventListener("mousedown", (event) => {
     } else if (event.target.classList.contains("form-check-input")) {
       return;
     } else {
-      if (event.button === 1) { // Middle click
+      if (event.button === 1) {
+        // Middle click
         event.preventDefault();
         chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
-      } else if (event.button === 0) { // Left click
+      } else if (event.button === 0) {
+        // Left click
         window.open(searchUrl, "_blank");
       }
     }
@@ -628,8 +681,7 @@ summaryListContainer.addEventListener("click", (event) => {
     const nameSpan = liElement.querySelector("span:first-child").textContent;
     const clueSpan = liElement.querySelector("span.d-none").textContent;
     addToFavoriteList(nameSpan + " @" + clueSpan);
-    event.target.className =
-      "bi bi-patch-check-fill matched spring-animation";
+    event.target.className = "bi bi-patch-check-fill matched spring-animation";
     setTimeout(function () {
       event.target.classList.remove("spring-animation");
     }, 500);
@@ -651,7 +703,9 @@ clearButton.addEventListener("click", () => {
   searchHistoryListContainer.innerHTML = "";
 
   emptyMessage.style.display = "block";
-  emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg").replace(/\n/g, "<br>");
+  emptyMessage.innerHTML = chrome.i18n
+    .getMessage("clearedUpMsg")
+    .replace(/\n/g, "<br>");
 
   hasHistory = false;
 
@@ -746,7 +800,9 @@ function updateFavorite(favoriteList) {
     ul.appendChild(fragment);
     favoriteListContainer.appendChild(ul);
 
-    const lastListItem = favoriteListContainer.querySelector(".list-group .list-group-item:first-child");
+    const lastListItem = favoriteListContainer.querySelector(
+      ".list-group .list-group-item:first-child"
+    );
     if (lastListItem) {
       lastListItem.classList.remove("mb-3");
     }
@@ -813,7 +869,9 @@ function deleteFromHistoryList() {
       clearButton.disabled = true;
       searchHistoryUl[0].classList.add("d-none");
       emptyMessage.style.display = "block";
-      emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg").replace(/\n/g, "<br>");
+      emptyMessage.innerHTML = chrome.i18n
+        .getMessage("clearedUpMsg")
+        .replace(/\n/g, "<br>");
     }
   });
 }
@@ -856,7 +914,9 @@ function deleteFromFavoriteList() {
       exportButton.disabled = true;
       favoriteUl[0].classList.add("d-none");
       favoriteEmptyMessage.style.display = "block";
-      favoriteEmptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg").replace(/\n/g, "<br>");
+      favoriteEmptyMessage.innerHTML = chrome.i18n
+        .getMessage("clearedUpMsg")
+        .replace(/\n/g, "<br>");
     }
   });
 }
@@ -874,7 +934,10 @@ function updateDeleteCount() {
 
   if (checkedCount > 0) {
     // turn const to string
-    deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnText", checkedCount + "");
+    deleteButtonSpan.textContent = chrome.i18n.getMessage(
+      "deleteBtnText",
+      checkedCount + ""
+    );
     deleteButton.classList.remove("disabled");
   } else {
     deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnTextEmpty");
@@ -934,11 +997,15 @@ searchInput.addEventListener("compositionend", () => {
   isComposing = false;
 });
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && isComposing) {
-    e.stopPropagation();
-  }
-}, true)
+document.addEventListener(
+  "keydown",
+  (e) => {
+    if (e.key === "Enter" && isComposing) {
+      e.stopPropagation();
+    }
+  },
+  true
+);
 
 // Get Gemini response
 const responseField = document.getElementById("response");
@@ -954,29 +1021,40 @@ sendButton.addEventListener("click", () => {
       chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
         if (chrome.runtime.lastError) {
           summaryListContainer.innerHTML = "";
-          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
+          geminiEmptyMessage.innerText =
+            chrome.i18n.getMessage("geminiErrorMsg");
           geminiEmptyMessage.classList.remove("d-none");
           return;
         }
       });
 
-      chrome.tabs.sendMessage(tabs[0].id, { action: "getContent" }, (response) => {
-        if (response && response.content) {
-          summaryListContainer.innerHTML = "";
-          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiLoadMsg");
-          geminiEmptyMessage.classList.remove("d-none");
-          geminiEmptyMessage.classList.add("shineText");
+      chrome.tabs.sendMessage(
+        tabs[0].id,
+        { action: "getContent" },
+        (response) => {
+          if (response && response.content) {
+            summaryListContainer.innerHTML = "";
+            geminiEmptyMessage.innerText =
+              chrome.i18n.getMessage("geminiLoadMsg");
+            geminiEmptyMessage.classList.remove("d-none");
+            geminiEmptyMessage.classList.add("shineText");
 
-          const originalText = geminiEmptyMessage.innerHTML;
-          const divisor = isPredominantlyLatinChars(response.content) ? 1500 : 750;
+            const originalText = geminiEmptyMessage.innerHTML;
+            const divisor = isPredominantlyLatinChars(response.content)
+              ? 1500
+              : 750;
 
-          const newText = originalText.replace("NaN", Math.ceil(response.length / divisor));
-          geminiEmptyMessage.innerHTML = newText;
+            const newText = originalText.replace(
+              "NaN",
+              Math.ceil(response.length / divisor)
+            );
+            geminiEmptyMessage.innerHTML = newText;
 
-          summarizeContent(response.content, apiKey, tabs[0].url);
-          measureContentSize();
+            summarizeContent(response.content, apiKey, tabs[0].url);
+            measureContentSize();
+          }
         }
-      });
+      );
     });
   });
 });
@@ -984,7 +1062,8 @@ sendButton.addEventListener("click", () => {
 // Check if the content is predominantly Latin characters
 function isPredominantlyLatinChars(text) {
   const latinChars = text.match(/[a-zA-Z\u00C0-\u00FF]/g)?.length || 0;
-  const squareChars = text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g)?.length || 0;
+  const squareChars =
+    text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g)?.length || 0;
 
   return latinChars > squareChars;
 }
@@ -992,61 +1071,72 @@ function isPredominantlyLatinChars(text) {
 function summarizeContent(content, apiKey, url) {
   responseField.value = "";
 
-  chrome.runtime.sendMessage({ action: "summarizeApi", text: content, apiKey: apiKey, url: url }, (response) => {
-    if (response.error) {
-      responseField.value = `API Error: ${response.error}`;
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
-    } else {
-      responseField.value = response;
-      try {
-        summaryListContainer.innerHTML = response;
-        const lastListItem = summaryListContainer.querySelector(".list-group .list-group-item:last-child");
-        if (lastListItem) {
-          lastListItem.classList.remove("mb-3");
-        }
-        hasSummary = true;
-        geminiEmptyMessage.classList.remove("shineText");
-        geminiEmptyMessage.classList.add("d-none");
-        clearButtonSummary.classList.remove("d-none");
-        apiButton.classList.add("d-none");
-        clearButtonSummary.disabled = false;
-
-        checkTextOverflow();
-        measureContentSize();
-
-        // store the response and current time
-        const listItems = document.querySelectorAll(".summary-list");
-        const data = [];
-
-        listItems.forEach(item => {
-          const nameSpan = item.querySelector("span:first-child").textContent;
-          const clueSpan = item.querySelector("span.d-none").textContent;
-          data.push({ name: nameSpan, clue: clueSpan });
-        });
-
-        chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-          if (!favoriteList) {
-            return;
-          }
-
-          const trimmedFavorite = favoriteList.map(item => item.split(" @")[0]);
-          listItems.forEach(item => {
-            const itemName = item.querySelector("span:first-child").textContent;
-            const icon = createFavoriteIcon(itemName, trimmedFavorite);
-            item.appendChild(icon);
-          });
-        });
-
-        const currentTime = Date.now();
-        chrome.storage.local.set({ summaryList: data, timestamp: currentTime });
-
-      } catch (error) {
-        responseField.value = `HTML Error: ${error}`;
+  chrome.runtime.sendMessage(
+    { action: "summarizeApi", text: content, apiKey: apiKey, url: url },
+    (response) => {
+      if (response.error) {
+        responseField.value = `API Error: ${response.error}`;
         geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
+      } else {
+        responseField.value = response;
+        try {
+          summaryListContainer.innerHTML = response;
+          const lastListItem = summaryListContainer.querySelector(
+            ".list-group .list-group-item:last-child"
+          );
+          if (lastListItem) {
+            lastListItem.classList.remove("mb-3");
+          }
+          hasSummary = true;
+          geminiEmptyMessage.classList.remove("shineText");
+          geminiEmptyMessage.classList.add("d-none");
+          clearButtonSummary.classList.remove("d-none");
+          apiButton.classList.add("d-none");
+          clearButtonSummary.disabled = false;
+
+          checkTextOverflow();
+          measureContentSize();
+
+          // store the response and current time
+          const listItems = document.querySelectorAll(".summary-list");
+          const data = [];
+
+          listItems.forEach((item) => {
+            const nameSpan = item.querySelector("span:first-child").textContent;
+            const clueSpan = item.querySelector("span.d-none").textContent;
+            data.push({ name: nameSpan, clue: clueSpan });
+          });
+
+          chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+            if (!favoriteList) {
+              return;
+            }
+
+            const trimmedFavorite = favoriteList.map(
+              (item) => item.split(" @")[0]
+            );
+            listItems.forEach((item) => {
+              const itemName =
+                item.querySelector("span:first-child").textContent;
+              const icon = createFavoriteIcon(itemName, trimmedFavorite);
+              item.appendChild(icon);
+            });
+          });
+
+          const currentTime = Date.now();
+          chrome.storage.local.set({
+            summaryList: data,
+            timestamp: currentTime,
+          });
+        } catch (error) {
+          responseField.value = `HTML Error: ${error}`;
+          geminiEmptyMessage.innerText =
+            chrome.i18n.getMessage("geminiErrorMsg");
+        }
       }
+      sendButton.disabled = false;
     }
-    sendButton.disabled = false;
-  });
+  );
 }
 
 // Replace text from note with a link
@@ -1054,8 +1144,10 @@ function text2Link(dataLocale, linkText, linkHref) {
   const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
   if (pElement) {
     const originalText = pElement.innerHTML;
-    const newText = originalText.replace(linkText,
-      `<a href="${linkHref}" target="_blank">${linkText}</a>`);
+    const newText = originalText.replace(
+      linkText,
+      `<a href="${linkHref}" target="_blank">${linkText}</a>`
+    );
     pElement.innerHTML = newText;
   }
 }
@@ -1064,12 +1156,19 @@ function text2Modal(dataLocale, linkText, modalId) {
   const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
   if (pElement) {
     const originalText = pElement.innerHTML;
-    const newText = originalText.replace(linkText, `<a href="#" data-bs-toggle="modal" data-bs-target="#${modalId}">${linkText}</a>`);
+    const newText = originalText.replace(
+      linkText,
+      `<a href="#" data-bs-toggle="modal" data-bs-target="#${modalId}">${linkText}</a>`
+    );
     pElement.innerHTML = newText;
   }
 }
 
-text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
+text2Link(
+  "apiNote",
+  "Google AI Studio",
+  "https://aistudio.google.com/app/apikey"
+);
 
 // Save the API key
 document.getElementById("apiForm").addEventListener("submit", (event) => {
@@ -1078,29 +1177,46 @@ document.getElementById("apiForm").addEventListener("submit", (event) => {
 
   chrome.storage.local.set({ geminiApiKey: apiKey });
 
-  chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, (response) => {
-    if (response.error) {
-      geminiEmptyMessage.classList.remove("d-none");
-      apiInput.placeholder = "Gemini API key";
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
-      sendButton.disabled = true;
-    } else {
-      apiInput.placeholder = "......" + apiKey.slice(-4);
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-      sendButton.disabled = false;
+  chrome.runtime.sendMessage(
+    { action: "verifyApiKey", apiKey: apiKey },
+    (response) => {
+      if (response.error) {
+        geminiEmptyMessage.classList.remove("d-none");
+        apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+        geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
+        sendButton.disabled = true;
+      } else {
+        apiInput.placeholder = "............" + apiKey.slice(-4);
+        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+        sendButton.disabled = false;
+      }
     }
-  });
+  );
 });
 
-// Clear the API key
+// Modal close event
 const apiModal = document.getElementById("apiModal");
 apiModal.addEventListener("hidden.bs.modal", () => {
   apiInput.value = "";
 });
 
-apiModal.addEventListener("shown.bs.modal", () => {
-  if (apiInput.placeholder === "Gemini API key") {
-    apiInput.focus();
+const optionalModal = document.getElementById("optionalModal");
+optionalModal.addEventListener("hidden.bs.modal", () => {
+  dirInput.value = "";
+});
+
+// Save the starting address
+document.getElementById("dirForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const startAddr = dirInput.value.trim();
+
+  if (startAddr === "") {
+    chrome.storage.local.remove("startAddr");
+    dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
+  } else {
+    chrome.storage.local.set({ startAddr: startAddr });
+    dirInput.placeholder = startAddr;
   }
 });
 
@@ -1129,7 +1245,7 @@ function measureContentSize() {
       width: body.offsetWidth,
       height: body.offsetHeight,
       frameWidth: frameWidth,
-      titleBarHeight: titleBarHeight
+      titleBarHeight: titleBarHeight,
     });
   });
 }
@@ -1162,7 +1278,7 @@ function measureContentSizeLast() {
         width: body.offsetWidth,
         height: body.offsetHeight,
         frameWidth: frameWidth,
-        titleBarHeight: titleBarHeight
+        titleBarHeight: titleBarHeight,
       });
     }
   });
@@ -1197,7 +1313,7 @@ function checkPay() {
 
     // Shortcut display
     if (stage.isTrial || stage.isPremium) {
-      Array.from(shortcutTip).forEach(element => {
+      Array.from(shortcutTip).forEach((element) => {
         element.classList.remove("premium-only");
       });
     }
@@ -1207,8 +1323,15 @@ function checkPay() {
       pElement.innerHTML = chrome.i18n.getMessage("firstNote");
     } else if (stage.isTrial) {
       const date = new Date(stage.trialEnd);
-      const shortDate = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      const time = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+      const shortDate = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+      const time = date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
       const trialEndOn = `${shortDate}, ${time}`;
       paymentSpan.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
       pElement.innerHTML = chrome.i18n.getMessage("remindNote");
@@ -1216,9 +1339,21 @@ function checkPay() {
       text2Modal("premiumNote", "Alt+S / ⌥+S", "tipsModal");
     } else if (stage.isPremium) {
       pElement.innerHTML = chrome.i18n.getMessage("premiumNote");
-      text2Link("premiumNote", "回饋", "https://forms.fillout.com/t/dFSEkAwKYKus");
-      text2Link("premiumNote", "feedback", "https://forms.fillout.com/t/dFSEkAwKYKus");
-      text2Link("premiumNote", "フィードバック", "https://forms.fillout.com/t/dFSEkAwKYKus");
+      text2Link(
+        "premiumNote",
+        "回饋",
+        "https://forms.fillout.com/t/dFSEkAwKYKus"
+      );
+      text2Link(
+        "premiumNote",
+        "feedback",
+        "https://forms.fillout.com/t/dFSEkAwKYKus"
+      );
+      text2Link(
+        "premiumNote",
+        "フィードバック",
+        "https://forms.fillout.com/t/dFSEkAwKYKus"
+      );
     } else if (stage.isFree) {
       pElement.innerHTML = chrome.i18n.getMessage("freeNote");
       text2Link("premiumNote", "ExtensionPay", "https://extensionpay.com/");

@@ -127,6 +127,9 @@
                 <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#premiumModal">
                     <span class="nav-link text-muted" data-locale="premiumBtnText">Premium</span>
                 </li>
+                <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#optionalModal">
+                    <span class="nav-link text-muted" data-locale="optionalBtnText">Optional</span>
+                </li>
             </ul>
         </footer>
         <div class="modal fade" id="tipsModal" tabindex="-1" aria-label="Tips Modal">
@@ -190,17 +193,38 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="optionalModal" tabindex="-1" aria-label="Optional Modal">
+            <div class="modal-dialog modal-dialog-centered modal-xs">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-6" id="optionalModalLabel" data-locale="optionalTitle">Optional</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="dirForm" class="d-flex my-3">
+                            <input type="text" class="form-control py-2 pe-5" autocomplete="off" id="dirInput" />
+                            <button type="submit" data-bs-dismiss="modal" title="Save"
+                                class="btn btn-setDir d-flex align-items-center justify-content-center rounded-circle border-0">
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="modal-footer d-flex justify-content-start">
+                        <p class="text-muted" data-locale="dirNote">Launch a map with directions from the starting address to the highlighted text in the context menu.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="modal fade" id="apiModal" tabindex="-1" aria-label="API Modal">
             <div class="modal-dialog modal-dialog-centered modal-xs">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-6" id="apiModalLabel">Set up your API key</h1>
+                        <h1 class="modal-title fs-6" id="apiModalLabel" data-locale="apiTitle">Set up your API key</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form id="apiForm" class="d-flex my-3">
-                            <input type="text" class="form-control py-2 pe-5" autocomplete="off"
-                                placeholder="Gemini API key" id="apiInput" />
+                            <input type="text" class="form-control py-2 pe-5" autocomplete="off" id="apiInput" />
                             <button type="submit" data-bs-dismiss="modal" title="Save"
                                 class="btn btn-setAPI d-flex align-items-center justify-content-center rounded-circle border-0">
                                 <i class="bi bi-arrow-right"></i>

@@ -44,11 +44,21 @@ const askAIPrompt = `Suggest or surprise (don't have to be cliché) a {requested
 `;
 
 chrome.runtime.onInstalled.addListener((details) => {
-  // Create the right-click context menu item
+  // Create the right-click context menu items
   chrome.contextMenus.create({
-    id: "myContextMenuId",
-    title: chrome.i18n.getMessage("contextMenus"),
+    id: "googleMapsSearch",
+    title: chrome.i18n.getMessage("searchContext"),
     contexts: ["selection"],
+  });
+
+  chrome.storage.local.get("startAddr", ({ startAddr }) => {
+    if (startAddr) {
+      chrome.contextMenus.create({
+        id: "googleMapsDirections",
+        title: chrome.i18n.getMessage("directionsContext"),
+        contexts: ["selection"],
+      });
+    }
   });
 
   // What's new page
@@ -62,11 +72,29 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 
+// Add event listener to monitor changes to "startAddr" in storage
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "local" && changes.startAddr) {
+    const newStartAddr = changes.startAddr.newValue;
+    if (newStartAddr) {
+      chrome.contextMenus.create({
+        id: "googleMapsDirections",
+        title: chrome.i18n.getMessage("directionsContext"),
+        contexts: ["selection"],
+      });
+    } else {
+      chrome.contextMenus.remove("googleMapsDirections");
+    }
+  }
+});
+
 // Track the right-click event
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "myContextMenuId") {
-    const selectedText = info.selectionText;
+chrome.contextMenus.onClicked.addListener((info) => {
+  const selectedText = info.selectionText;
+  if (info.menuItemId === "googleMapsSearch") {
     handleSelectedText(selectedText);
+  } else if (info.menuItemId === "googleMapsDirections") {
+    handleSelectedDir(selectedText);
   }
 });
 
@@ -208,6 +236,18 @@ function handleSelectedText(selectedText) {
   chrome.tabs.create({ url: searchUrl });
 
   updateHistoryList(selectedText);
+}
+
+function handleSelectedDir(selectedText) {
+  if (!selectedText || selectedText.trim() === "") {
+    console.error("No valid selected text.");
+    return;
+  }
+
+  chrome.storage.local.get("startAddr", ({ startAddr }) => {
+      const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
+      chrome.tabs.create({ url: directionsUrl });
+  });
 }
 
 chrome.runtime.onMessage.addListener((request) => {

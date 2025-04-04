@@ -1,6 +1,9 @@
 {
-  "contextMenus": {
+  "searchContext": {
     "message": "透過 The Maps Express 搜尋"
+  },
+  "directionsContext": {
+    "message": "取得 Google Maps 路線"
   },
   "searchInputPlaceholder": {
     "message": "搜尋 Google 地圖"
@@ -94,14 +97,23 @@
   "aboutBtnText": {
     "message": "關於"
   },
-  "kofiBtnText": {
-    "message": "支持"
-  },
   "premiumBtnText": {
     "message": "魔法"
   },
   "premiumTitle": {
     "message": "會員專屬魔法"
+  },
+  "optionalBtnText": {
+    "message": "設定"
+  },
+  "optionalTitle": {
+    "message": "個人設定"
+  },
+  "dirNote": {
+    "message": "從右鍵選單中，啟動起始地址與選取文字之間的地圖路線"
+  },
+  "dirPlaceholder": {
+    "message": "路線起始地址"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udccc自動附加 Google 地圖連結"
@@ -140,6 +152,9 @@
   },
   "apiNote": {
     "message": "你可以從 Google AI Studio 取得免費 API 金鑰，請求數量限制為 15 次/分鐘、1,500 次/天"
+  },
+  "apiPlaceholder": {
+    "message": "Gemini API 金鑰"
   },
   "geminiLabel": {
     "message": "地點摘要"

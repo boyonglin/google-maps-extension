@@ -1,6 +1,9 @@
 {
-  "contextMenus": {
+  "searchContext": {
     "message": "The Maps Express で検索"
+  },
+  "directionsContext": {
+    "message": "Google マップのルートを取得"
   },
   "searchInputPlaceholder": {
     "message": "Google マップを検索"
@@ -94,14 +97,23 @@
   "aboutBtnText": {
     "message": "について"
   },
-  "kofiBtnText": {
-    "message": "支援"
-  },
   "premiumBtnText": {
     "message": "まほう"
   },
   "premiumTitle": {
     "message": "会員限定魔法"
+  },
+  "optionalBtnText": {
+    "message": "設定"
+  },
+  "optionalTitle": {
+    "message": "個人設定"
+  },
+  "dirNote": {
+    "message": "右クリックメニューから、起始住所と選択テキスト間の地図ルートを起動します。"
+  },
+  "dirPlaceholder": {
+    "message": "ルート起始住所"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"
@@ -140,6 +152,9 @@
   },
   "apiNote": {
     "message": "Google AI Studio から無料の API キーを取得できます。リクエスト数の制限は 15 回/分、1,500 回/日です。"
+  },
+  "apiPlaceholder": {
+    "message": "Gemini API キー"
   },
   "geminiLabel": {
     "message": "場所概要"

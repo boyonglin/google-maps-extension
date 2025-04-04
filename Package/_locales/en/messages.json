@@ -1,7 +1,11 @@
 {
-  "contextMenus": {
+  "searchContext": {
     "message": "Search by The Maps Express",
-    "description": "right-click context menu msg"
+    "description": "right-click to search context menu"
+  },
+  "directionsContext": {
+    "message": "Get Google Maps Directions",
+    "description": "right-click to directions context menu"
   },
   "searchInputPlaceholder": {
     "message": "Search Google Maps",
@@ -125,10 +129,6 @@
     "message": "About",
     "description": "popup about button text"
   },
-  "kofiBtnText": {
-    "message": "Support",
-    "description": "popup kofi button text"
-  },
   "premiumBtnText": {
     "message": "Premium",
     "description": "popup premium button text"
@@ -136,6 +136,22 @@
   "premiumTitle": {
     "message": "Premium Member Exclusive",
     "description": "modal premium title"
+  },
+  "optionalBtnText": {
+    "message": "Settings",
+    "description": "popup optional button text"
+  },
+  "optionalTitle": {
+    "message": "Personal Settings",
+    "description": "modal optional title"
+  },
+  "dirPlaceholder": {
+    "message": "Route Starting Address",
+    "description": "modal starting address input placeholder"
+  },
+  "dirNote": {
+    "message": "Launch a map with directions from the starting address to the highlighted text in the context menu.",
+    "description": "modal direction note"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccAuto-attach Google Maps link",
@@ -186,6 +202,10 @@
   "apiNote": {
     "message": "You can obtain a free API key from Google AI Studio, with a limit of 15 requests/minute and 1,500 requests/day.",
     "description": "modal api key input note"
+  },
+  "apiPlaceholder": {
+    "message": "Gemini API Key",
+    "description": "modal api key input placeholder"
   },
   "geminiLabel": {
     "message": "Place Summary",
