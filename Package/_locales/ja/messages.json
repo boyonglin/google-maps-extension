@@ -88,6 +88,9 @@
   "autoAttachKeyLabel": {
     "message": "リンク自動添付"
   },
+  "directionsKeyLabel": {
+    "message": "クイックルート"
+  },
   "shortcutsNote": {
     "message": "上のショートカットをクリックして、拡張機能のショートカットキーを設定できます。\nブラウザによってはスコープをグローバルに変更する必要があります。"
   },
@@ -110,10 +113,10 @@
     "message": "個人設定"
   },
   "dirNote": {
-    "message": "右クリックメニューから、起始住所と選択テキスト間の地図ルートを起動します。"
+    "message": "選択テキストを右クリックすると、設定済みの出発地と目的地間ルートが表示されます。"
   },
   "dirPlaceholder": {
-    "message": "ルート起始住所"
+    "message": "ルート出発地（住所）"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"

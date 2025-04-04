@@ -88,6 +88,9 @@
   "autoAttachKeyLabel": {
     "message": "自動附加連結"
   },
+  "directionsKeyLabel": {
+    "message": "快速路線"
+  },
   "shortcutsNote": {
     "message": "你可以點擊上方的組合鍵來設定功能快捷鍵，而某些瀏覽器需要將範圍更改為全域（通用）"
   },
@@ -110,10 +113,10 @@
     "message": "個人設定"
   },
   "dirNote": {
-    "message": "從右鍵選單中，啟動起始地址與選取文字之間的地圖路線"
+    "message": "你可以對選取文字點擊滑鼠右鍵，顯示設定的起點與目的地之間的規劃路線"
   },
   "dirPlaceholder": {
-    "message": "路線起始地址"
+    "message": "路線起點（地址）"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udccc自動附加 Google 地圖連結"

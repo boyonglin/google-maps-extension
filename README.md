@@ -47,6 +47,7 @@
 4. Favorite List: Click the PATCH PLUS icon on the right to save. Import or export favorites as needed.
 5. Delete Mode: Simply check and delete items.
 6. Place Summary: Set up the API key to summarize the locations on the current page. Results will be preserved for 1 day.
+7. Quick Directions: Use the shortcut (Alt+R / ⌥+R) or right-click to get directions from the starting address to the highlighted text.
 
 ---
 

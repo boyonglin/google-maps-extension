@@ -48,6 +48,13 @@
         "mac": "Alt+S"
       },
       "description": "Auto-attach links on page"
+    },
+    "run-directions": {
+      "suggested_key": {
+        "default": "Alt+R",
+        "mac": "Alt+R"
+      },
+      "description": "Get Google Maps directions"
     }
   },
   "content_scripts": [

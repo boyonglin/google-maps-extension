@@ -43,6 +43,7 @@ const enterButton = document.getElementById("enterButton");
 const clearButtonSummary = document.getElementById("clearButtonSummary");
 const premiumModal = document.getElementById("premiumModalLabel");
 const closeButton = premiumModal.parentElement.querySelector(".btn-close");
+const optionalButton = document.getElementById("optionalButton");
 
 // ExtensionPay
 const paymentButton = document.getElementById("paymentButton");
@@ -1382,5 +1383,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     updateHeight(searchHistoryListContainer);
     updateHeight(favoriteListContainer);
     updateHeight(summaryListContainer);
+  }
+
+  if (message.action === "addrNotify") {
+    optionalButton.click();
   }
 });

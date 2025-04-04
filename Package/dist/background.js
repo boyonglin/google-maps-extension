@@ -131,12 +131,49 @@ chrome.commands.onCommand.addListener((command) => {
             }
           }
         });
+      } else if (command === "run-directions") {
+        chrome.storage.local.get("startAddr", async ({ startAddr }) => {
+          if (startAddr) {
+            chrome.tabs.sendMessage(tabId, { action: "getSelectedText" }, (response) => {
+              if (response && response.selectedText) {
+                const selectedText = response.selectedText;
+                handleSelectedDir(selectedText);
+              }
+            });
+          } else {
+            meow();
+            await tryAddrNotify();
+            return;
+          }
+        });
       }
     } else {
       console.error("Cannot execute extension on non-HTTP URL.");
     }
   });
 });
+
+
+async function tryAddrNotify(retries = 10) {
+  while (retries > 0) {
+    const response = await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: "addrNotify" }, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve(chrome.runtime.lastError.message);
+        } else {
+          resolve(null); // No error, message sent
+        }
+      });
+    });
+
+    if (response && response.includes("Receiving end does not exist")) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      retries--;
+    } else {
+      break; // No error, loop stop
+    }
+  }
+}
 
 // Retry mechanism for trying to suggest places from the content
 async function trySuggest(tabId, url, retries = 10) {
