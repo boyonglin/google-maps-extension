@@ -64,6 +64,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ status: "connected" });
   }
 
+  // Expand YouTube description if available
+  if (request.action === "expandYouTubeDescription") {
+    try {
+      // Look for the expand button with the specific selector
+      const expandButton = document.querySelector('tp-yt-paper-button#expand.button.style-scope.ytd-text-inline-expander');
+
+      if (expandButton && expandButton.getAttribute('aria-disabled') !== 'true') {
+        // Click the expand button
+        expandButton.click();
+        sendResponse({ expanded: true });
+      } else {
+        // Try alternative selectors for different YouTube layouts
+        const altExpandButton = document.querySelector('ytd-text-inline-expander tp-yt-paper-button[id="expand"]') ||
+                                document.querySelector('#expand.ytd-text-inline-expander') ||
+                                document.querySelector('button[aria-label*="more"]') ||
+                                document.querySelector('button[aria-label*="Show more"]');
+
+        if (altExpandButton) {
+          altExpandButton.click();
+          sendResponse({ expanded: true });
+        } else {
+          sendResponse({ expanded: false, message: "No expand button found" });
+        }
+      }
+    } catch (error) {
+      sendResponse({ expanded: false, error: error.message });
+    }
+    return true; // Keep message channel open for async response
+  }
+
   if (request.action === "updateIframeSize") {
     let iframeContainer = document.getElementById("TMEiframe");
 

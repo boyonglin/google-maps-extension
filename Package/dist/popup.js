@@ -25,6 +25,7 @@ const searchHistoryButton = document.getElementById("searchHistoryButton");
 const favoriteListButton = document.getElementById("favoriteListButton");
 const deleteListButton = document.getElementById("deleteListButton");
 const geminiSummaryButton = document.getElementById("geminiSummaryButton");
+const videoSummaryButton = document.getElementById("videoSummaryButton");
 
 // Buttons
 const searchButtonGroup = document.getElementById("searchButtonGroup");
@@ -74,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
   popupLayout();
   fetchData();
   checkPay();
+  checkCurrentTabForYoutube();
 });
 
 // Update the popup layout
@@ -253,12 +255,8 @@ async function scrapeLen(id) {
 }
 
 function summarizeFromGeminiVideoUnderstanding(videoUrl) {
-  searchInput.blur();
-
   // Clear any existing summary data first to prevent race condition
   chrome.storage.local.remove(["summaryList", "timestamp"]);
-
-  geminiSummaryButton.click();
 
   // begin UI update (same as sendButton click)
   sendButton.disabled = true;
@@ -325,6 +323,7 @@ function summarizeFromGeminiVideoUnderstanding(videoUrl) {
             : chrome.i18n.getMessage("geminiErrorMsg");
         geminiEmptyMessage.innerText = errMsg;
         geminiEmptyMessage.classList.remove("d-none");
+        clearButtonSummary.disabled = false;
       }
     }
   );
@@ -389,6 +388,7 @@ searchHistoryButton.addEventListener("click", () => {
   favoriteListButton.classList.remove("active-button");
   deleteListButton.classList.remove("active-button");
   geminiSummaryButton.classList.remove("active-button");
+  videoSummaryButton.classList.add("d-none");
 
   subtitleElement.textContent = chrome.i18n.getMessage("searchHistorySubtitle");
   if (!hasHistory) {
@@ -423,6 +423,7 @@ favoriteListButton.addEventListener("click", () => {
   searchHistoryButton.classList.remove("active-button");
   deleteListButton.classList.remove("active-button");
   geminiSummaryButton.classList.remove("active-button");
+  videoSummaryButton.classList.add("d-none");
 
   subtitleElement.textContent = chrome.i18n.getMessage("favoriteListSubtitle");
   if (!hasFavorite) {
@@ -502,6 +503,9 @@ geminiSummaryButton.addEventListener("click", () => {
   deleteListButton.disabled = true;
 
   subtitleElement.textContent = chrome.i18n.getMessage("geminiSummarySubtitle");
+
+  // Update video summary button visibility
+  checkCurrentTabForYoutube();
 
   // Clear summary data if it's older than 1 hour
   chrome.storage.local.get(
@@ -823,6 +827,49 @@ clearButtonSummary.addEventListener("click", () => {
   measureContentSize();
 });
 
+// Check if current tab URL contains "youtube" and show/hide videoSummaryButton
+async function checkCurrentTabForYoutube() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    // Show if geminiSummaryButton is active or if on YouTube
+    const isGeminiActive = geminiSummaryButton.classList.contains("active-button");
+    const isYouTube = tab && tab.url && tab.url.toLowerCase().includes("youtube");
+
+    if (isGeminiActive && isYouTube) {
+      videoSummaryButton.classList.remove("d-none");
+
+      // Load toggle state from localStorage and update button appearance
+      chrome.storage.local.get("videoSummaryToggle", ({ videoSummaryToggle }) => {
+        if (videoSummaryToggle) {
+          videoSummaryButton.classList.add("active-button");
+        } else {
+          videoSummaryButton.classList.remove("active-button");
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error checking current tab:", error);
+  }
+}
+
+// Video Summary Button toggle functionality
+videoSummaryButton.addEventListener("click", () => {
+  chrome.storage.local.get("videoSummaryToggle", ({ videoSummaryToggle }) => {
+    const newToggleState = !videoSummaryToggle;
+
+    // Save new state to localStorage
+    chrome.storage.local.set({ videoSummaryToggle: newToggleState });
+
+    // Update button appearance
+    if (newToggleState) {
+      videoSummaryButton.classList.add("active-button");
+    } else {
+      videoSummaryButton.classList.remove("active-button");
+    }
+  });
+});
+
 // Track the storage change event
 chrome.storage.onChanged.addListener((changes) => {
   const searchHistoryListChange = changes.searchHistoryList;
@@ -1109,6 +1156,21 @@ sendButton.addEventListener("click", () => {
   sendButton.disabled = true;
   clearButtonSummary.disabled = true;
 
+  // Check if video summary button is active
+  const isVideoSummaryActive = videoSummaryButton.classList.contains("active-button");
+
+  if (isVideoSummaryActive) {
+    // Use video summary functionality
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      summarizeFromGeminiVideoUnderstanding(tabs[0].url);
+    });
+  } else {
+    // Use normal content summarization
+    performNormalContentSummary();
+  }
+});
+
+function performNormalContentSummary() {
   chrome.storage.local.get("geminiApiKey", (data) => {
     const apiKey = data.geminiApiKey;
 
@@ -1119,40 +1181,64 @@ sendButton.addEventListener("click", () => {
           geminiEmptyMessage.innerText =
             chrome.i18n.getMessage("geminiErrorMsg");
           geminiEmptyMessage.classList.remove("d-none");
+          sendButton.disabled = false;
+          clearButtonSummary.disabled = false;
           return;
         }
       });
 
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        { action: "getContent" },
-        (response) => {
-          if (response && response.content) {
-            summaryListContainer.innerHTML = "";
-            geminiEmptyMessage.innerText =
-              chrome.i18n.getMessage("geminiLoadMsg");
-            geminiEmptyMessage.classList.remove("d-none");
-            geminiEmptyMessage.classList.add("shineText");
+      // Check if we're on YouTube and expand description first
+      const isYouTube = tabs[0].url && tabs[0].url.toLowerCase().includes("youtube");
 
-            const originalText = geminiEmptyMessage.innerHTML;
-            const divisor = isPredominantlyLatinChars(response.content)
-              ? 1500
-              : 750;
-
-            const newText = originalText.replace(
-              "NaN",
-              Math.ceil(response.length / divisor)
-            );
-            geminiEmptyMessage.innerHTML = newText;
-
-            summarizeContent(response.content, apiKey, tabs[0].url);
-            measureContentSize();
+      if (isYouTube) {
+        // First expand the YouTube description
+        chrome.tabs.sendMessage(
+          tabs[0].id,
+          { action: "expandYouTubeDescription" },
+          (expandResponse) => {
+            // Wait a moment for the expansion to complete, then get content
+            setTimeout(() => {
+              getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url);
+            }, 500);
           }
-        }
-      );
+        );
+      } else {
+        // For non-YouTube pages, get content directly
+        getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url);
+      }
     });
   });
-});
+}
+
+function getContentAndSummarize(tabId, apiKey, url) {
+  chrome.tabs.sendMessage(
+    tabId,
+    { action: "getContent" },
+    (response) => {
+      if (response && response.content) {
+        summaryListContainer.innerHTML = "";
+        geminiEmptyMessage.innerText =
+          chrome.i18n.getMessage("geminiLoadMsg");
+        geminiEmptyMessage.classList.remove("d-none");
+        geminiEmptyMessage.classList.add("shineText");
+
+        const originalText = geminiEmptyMessage.innerHTML;
+        const divisor = isPredominantlyLatinChars(response.content)
+          ? 1500
+          : 750;
+
+        const newText = originalText.replace(
+          "NaN",
+          Math.ceil(response.length / divisor)
+        );
+        geminiEmptyMessage.innerHTML = newText;
+
+        summarizeContent(response.content, apiKey, url);
+        measureContentSize();
+      }
+    }
+  );
+}
 
 // Check if the content is predominantly Latin characters
 function isPredominantlyLatinChars(text) {

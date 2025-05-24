@@ -358,13 +358,14 @@ li:hover .form-check-input {
 #searchHistoryButton,
 #favoriteListButton,
 #deleteListButton,
-#geminiSummaryButton {
+#geminiSummaryButton,
+#videoSummaryButton {
   border: none;
   color: var(--gray-600);
   position: relative;
 }
 
-.active-button {
+.active-button:not(#videoSummaryButton) {
   pointer-events: none;
 }
 
@@ -439,10 +440,26 @@ li:hover .form-check-input {
   box-shadow: 0 0 0 4px var(--google-purple-500);
 }
 
+#videoSummaryButton:hover, #videoSummaryButton.active-button {
+  background-color: transparent;
+  color: var(--danger-color);
+}
+#videoSummaryButton:hover::after {
+  background-color: var(--danger-color);
+}
+#videoSummaryButton.active-button::after {
+  background-color: var(--danger-color);
+}
+#videoSummaryButton.active-button:focus-visible {
+  background-color: transparent;
+  box-shadow: 0 0 0 4px var(--danger-color-500);
+}
+
 #searchHistoryButton:focus,
 #favoriteListButton:focus,
 #deleteListButton:focus,
-#geminiSummaryButton:focus {
+#geminiSummaryButton:focus,
+#videoSummaryButton:focus {
   background-color: transparent;
 }
 
