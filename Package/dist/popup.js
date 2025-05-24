@@ -246,98 +246,12 @@ function attachCheckboxEventListener(container) {
   });
 }
 
-async function scrapeLen(id) {
-  const html = await fetch(`https://www.youtube.com/watch?v=${id}`, {
-    credentials: "omit",
-  }).then((r) => r.text());
-  const m = html.match(/"lengthSeconds":"(\d+)"/);
-  return m ? Number(m[1]) : null;
-}
-
-function summarizeFromGeminiVideoUnderstanding(videoUrl) {
-  // Clear any existing summary data first to prevent race condition
-  chrome.storage.local.remove(["summaryList", "timestamp"]);
-
-  // begin UI update (same as sendButton click)
-  sendButton.disabled = true;
-  clearButtonSummary.disabled = true;
-  summaryListContainer.innerHTML = "";
-  geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiLoadMsg");
-  geminiEmptyMessage.classList.remove("d-none");
-  geminiEmptyMessage.classList.add("shineText");
-
-  // request background video length
-  const url = new URL(videoUrl);
-  const id = url.searchParams.get("v");
-  scrapeLen(id).then((secs) => {
-    if (secs !== null) {
-      const estTime = Math.ceil(secs / 10);
-      const originalText = geminiEmptyMessage.innerHTML;
-      const newText = originalText.replace("NaN", estTime);
-      geminiEmptyMessage.innerHTML = newText;
-    }
-  });
-
-  // request background summary
-  chrome.runtime.sendMessage(
-    { action: "summarizeVideo", text: videoUrl },
-    (response) => {
-      // restore send-button state
-      sendButton.disabled = false;
-      geminiEmptyMessage.classList.remove("shineText");
-
-      // success when we get a string fragment of <ul>...</ul>
-      if (typeof response === "string") {
-        summaryListContainer.innerHTML = response;
-        const lastItem = summaryListContainer.querySelector(
-          ".list-group .list-group-item:last-child"
-        );
-        if (lastItem) lastItem.classList.remove("mb-3");
-
-        hasSummary = true;
-        geminiEmptyMessage.classList.add("d-none");
-        clearButtonSummary.classList.remove("d-none");
-        apiButton.classList.add("d-none");
-        clearButtonSummary.disabled = false;
-
-        checkTextOverflow();
-        measureContentSize();
-
-        // persist summary
-        const data = Array.from(
-          summaryListContainer.querySelectorAll(".summary-list")
-        ).map((li) => ({
-          name: li.querySelector("span:first-child").textContent,
-          clue: li.querySelector("span.d-none").textContent,
-        }));
-        chrome.storage.local.set({
-          summaryList: data,
-          timestamp: Date.now(),
-        });
-      }
-      // any other response (null or error object) is treated as failure
-      else {
-        const errMsg =
-          response && response.error
-            ? response.error
-            : chrome.i18n.getMessage("geminiErrorMsg");
-        geminiEmptyMessage.innerText = errMsg;
-        geminiEmptyMessage.classList.remove("d-none");
-        clearButtonSummary.disabled = false;
-      }
-    }
-  );
-}
-
 // Track events on the search bar
 searchInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     if (searchInput.value.trim() === "") {
       // If it contains only blanks, prevent the default behavior of the event and do not allow submission
       event.preventDefault();
-    } else if (searchInput.value.toLowerCase().includes("youtube")) {
-      event.preventDefault();
-      summarizeFromGeminiVideoUnderstanding(searchInput.value);
     } else {
       chrome.runtime.sendMessage({
         searchTerm: searchInput.value,
@@ -360,10 +274,6 @@ searchInput.addEventListener("input", () => {
 enterButton.addEventListener("click", () => {
   if (searchInput.value.trim() === "") {
     return;
-  } else if (searchInput.value.toLowerCase().includes("youtube")) {
-    summarizeFromGeminiVideoUnderstanding(searchInput.value);
-    searchInput.value = "";
-    enterButton.classList.add("d-none");
   } else {
     chrome.runtime.sendMessage({
       searchTerm: searchInput.value,
@@ -1169,6 +1079,89 @@ sendButton.addEventListener("click", () => {
     performNormalContentSummary();
   }
 });
+
+async function scrapeLen(id) {
+  const html = await fetch(`https://www.youtube.com/watch?v=${id}`, {
+    credentials: "omit",
+  }).then((r) => r.text());
+  const m = html.match(/"lengthSeconds":"(\d+)"/);
+  return m ? Number(m[1]) : null;
+}
+
+function summarizeFromGeminiVideoUnderstanding(videoUrl) {
+  // Clear any existing summary data first to prevent race condition
+  chrome.storage.local.remove(["summaryList", "timestamp"]);
+
+  // begin UI update (same as sendButton click)
+  sendButton.disabled = true;
+  clearButtonSummary.disabled = true;
+  summaryListContainer.innerHTML = "";
+  geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiLoadMsg");
+  geminiEmptyMessage.classList.remove("d-none");
+  geminiEmptyMessage.classList.add("shineText");
+
+  // request background video length
+  const url = new URL(videoUrl);
+  const id = url.searchParams.get("v");
+  scrapeLen(id).then((secs) => {
+    if (secs !== null) {
+      const estTime = Math.ceil(secs / 10);
+      const originalText = geminiEmptyMessage.innerHTML;
+      const newText = originalText.replace("NaN", estTime);
+      geminiEmptyMessage.innerHTML = newText;
+    }
+  });
+
+  // request background summary
+  chrome.runtime.sendMessage(
+    { action: "summarizeVideo", text: videoUrl },
+    (response) => {
+      // restore send-button state
+      sendButton.disabled = false;
+      geminiEmptyMessage.classList.remove("shineText");
+
+      // success when we get a string fragment of <ul>...</ul>
+      if (typeof response === "string") {
+        summaryListContainer.innerHTML = response;
+        const lastItem = summaryListContainer.querySelector(
+          ".list-group .list-group-item:last-child"
+        );
+        if (lastItem) lastItem.classList.remove("mb-3");
+
+        hasSummary = true;
+        geminiEmptyMessage.classList.add("d-none");
+        clearButtonSummary.classList.remove("d-none");
+        apiButton.classList.add("d-none");
+        clearButtonSummary.disabled = false;
+
+        checkTextOverflow();
+        measureContentSize();
+
+        // persist summary
+        const data = Array.from(
+          summaryListContainer.querySelectorAll(".summary-list")
+        ).map((li) => ({
+          name: li.querySelector("span:first-child").textContent,
+          clue: li.querySelector("span.d-none").textContent,
+        }));
+        chrome.storage.local.set({
+          summaryList: data,
+          timestamp: Date.now(),
+        });
+      }
+      // any other response (null or error object) is treated as failure
+      else {
+        const errMsg =
+          response && response.error
+            ? response.error
+            : chrome.i18n.getMessage("geminiErrorMsg");
+        geminiEmptyMessage.innerText = errMsg;
+        geminiEmptyMessage.classList.remove("d-none");
+        clearButtonSummary.disabled = false;
+      }
+    }
+  );
+}
 
 function performNormalContentSummary() {
   chrome.storage.local.get("geminiApiKey", (data) => {

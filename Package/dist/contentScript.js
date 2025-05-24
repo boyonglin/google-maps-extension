@@ -77,9 +77,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       } else {
         // Try alternative selectors for different YouTube layouts
         const altExpandButton = document.querySelector('ytd-text-inline-expander tp-yt-paper-button[id="expand"]') ||
-                                document.querySelector('#expand.ytd-text-inline-expander') ||
-                                document.querySelector('button[aria-label*="more"]') ||
-                                document.querySelector('button[aria-label*="Show more"]');
+          document.querySelector('#expand.ytd-text-inline-expander') ||
+          document.querySelector('button[aria-label*="more"]') ||
+          document.querySelector('button[aria-label*="Show more"]');
 
         if (altExpandButton) {
           altExpandButton.click();
