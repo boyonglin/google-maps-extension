@@ -745,10 +745,9 @@ async function checkCurrentTabForYoutube() {
     // Show if geminiSummaryButton is active or if on YouTube
     const isGeminiActive = geminiSummaryButton.classList.contains("active-button");
     const isYouTube = tab && tab.url && tab.url.toLowerCase().includes("youtube");
+    const isVideo = new URL(tab.url).searchParams.get("v") !== null;
 
-    if (isGeminiActive && isYouTube) {
-      videoSummaryButton.classList.remove("d-none");
-
+    if (isYouTube && isVideo) {
       // Load toggle state from localStorage and update button appearance
       chrome.storage.local.get("videoSummaryToggle", ({ videoSummaryToggle }) => {
         if (videoSummaryToggle) {
@@ -757,6 +756,10 @@ async function checkCurrentTabForYoutube() {
           videoSummaryButton.classList.remove("active-button");
         }
       });
+
+      if (isGeminiActive) {
+        videoSummaryButton.classList.remove("d-none");
+      }
     }
   } catch (error) {
     console.error("Error checking current tab:", error);
@@ -1395,6 +1398,7 @@ document.getElementById("dirForm").addEventListener("submit", (event) => {
 });
 
 // tooltips
+videoSummaryButton.title = chrome.i18n.getMessage("videoLabel");
 geminiSummaryButton.title = chrome.i18n.getMessage("geminiLabel");
 searchHistoryButton.title = chrome.i18n.getMessage("historyLabel");
 favoriteListButton.title = chrome.i18n.getMessage("favoriteLabel");

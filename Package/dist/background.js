@@ -388,7 +388,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 function callApi(prompt, content, apiKey, sendResponse) {
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
-  var data;
+  let data;
   if (content.includes("youtube")) {
     data = {
       contents: [{
