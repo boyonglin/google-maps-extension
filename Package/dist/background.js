@@ -2,7 +2,7 @@ let searchHistoryList = [];
 let favoriteList = [];
 let maxListLength = 10;
 
-const summaryPrompt = `You are now a place seeker tasked with identifying specific places or landmarks that are important in the page content. Please identify and list the sub-landmarks (prioritizing <h1>, <h2>, <h3>, or <strong>) that are most relevant to the main topic of the page content (marked by the <title>) from the provided page, and do not list irrelevant results. For example, if the main topic suggests a specific number of sub-landmarks, ensure that the identified results align with that expectation. If <h1>, <h2>, <h3>, or <strong> contain no important sub-landmarks, please disregard them. Sub-landmarks should avoid using complete sentences from the original content, dish names, or emojis. Next, you should format the results as an unordered list (<ul>), with each sub-landmark as a list item (<li>), and retain the original language of the content. Additionally, based on the sub-landmark, look for one contextual clue around it if needed, it can include city or state or country, then fill in <span> for the clue. It's better to select only one key clue for each sub-landmark. But if there is address information, please use the address as a clue. If different sub-landmarks share the same name, you may add a clue in parentheses after the sub-landmark to provide identifiable differences. The final format should look like this example. Do not include the example itself or any additional tags (e.g., \`<h1>\`). Avoid wrapping the code in Markdown-style blocks like \`\`\`html ... \`\`\`.
+const summaryPrompt = `You are now a place seeker tasked with identifying specific places or landmarks that are important in the page content. Please identify and list the sub-landmarks (prioritizing <h1>, <h2>, <h3>, or <strong>) that are most relevant to the main topic of the page content (marked by the <title>) from the provided page, and do not list irrelevant results. For example, if the main topic suggests a specific number of sub-landmarks, ensure that the identified results align with that expectation. If <h1>, <h2>, <h3>, or <strong> contain no important sub-landmarks, please disregard them. Sub-landmarks should avoid using complete sentences from the original content, dish names, or emojis. Next, you should format the results as an unordered list (<ul>), with each sub-landmark as a list item (<li>), and retain the original language of the content. Additionally, based on the sub-landmark, look for one contextual clue around it if needed, it can include city or state or country, then fill in <span> for the clue. It's better to select only one key clue for each sub-landmark. But if there is address information, please use the address as a clue. If different sub-landmarks share the same name, you may add a clue in parentheses after the sub-landmark to provide identifiable differences. Only output the following exact structure, replacing the list items as needed:
 
 <ul class="list-group d-flex">
   <li class="list-group-item border rounded mb-3 px-3 summary-list">
@@ -282,8 +282,8 @@ function handleSelectedDir(selectedText) {
   }
 
   chrome.storage.local.get("startAddr", ({ startAddr }) => {
-      const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
-      chrome.tabs.create({ url: directionsUrl });
+    const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
+    chrome.tabs.create({ url: directionsUrl });
   });
 }
 
@@ -368,6 +368,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Will respond asynchronously
   }
 
+  if (request.action === "summarizeVideo" && request.text) {
+    console.log("summarize video: ", request.text);
+    chrome.storage.local.get("geminiApiKey", (data) => {
+      const apiKey = data.geminiApiKey;
+      callApi(summaryPrompt, request.text, apiKey, sendResponse);
+    });
+    return true; // Will respond asynchronously
+  }
+
   chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === "verifyApiKey") {
       callApi("", "test", request.apiKey, sendResponse);
@@ -377,14 +386,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function callApi(prompt, content, apiKey, sendResponse) {
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-  const data = {
-    contents: [{
-      parts: [{
-        text: prompt + content
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  var data;
+  if (content.includes("youtube")) {
+    data = {
+      contents: [{
+        parts: [
+          { text: prompt },
+          {
+            file_data: {
+              file_uri: content.trim(),
+            },
+          },
+        ],
+      },
+      ],
+    };
+  } else {
+    data = {
+      contents: [{
+        parts: [{
+          text: prompt + content
+        }]
       }]
-    }]
-  };
+    };
+  }
 
   fetch(apiUrl, {
     method: "POST",
@@ -397,7 +424,13 @@ function callApi(prompt, content, apiKey, sendResponse) {
     .then(data => {
       const generatedText = data.candidates[0].content.parts[0].text;
       console.log(generatedText);
-      sendResponse(generatedText);
+      if (generatedText.includes('<ul')) {
+        const regex = /<ul class="list-group d-flex">[\s\S]*?<\/ul>/;
+        const match = generatedText.match(regex);
+        sendResponse(match[0]);
+      } else {
+        sendResponse(generatedText);
+      }
     })
     .catch((error) => {
       sendResponse({ error: error.toString() });
