@@ -227,6 +227,10 @@
     "message": "Delete Mode",
     "description": "tooltips delete label"
   },
+  "videoLabel": {
+    "message": "Video Summary Mode",
+    "description": "tooltips video label"
+  },
   "enterLabel": {
     "message": "Search",
     "description": "tooltips search bar enter label"

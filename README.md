@@ -47,7 +47,8 @@
 4. Favorite List: Click the PATCH PLUS icon on the right to save. Import or export favorites as needed.
 5. Delete Mode: Simply check and delete items.
 6. Place Summary: Set up the API key to summarize the locations on the current page. Results will be preserved for 1 day.
-7. Quick Directions: Use the shortcut (Alt+R / ⌥+R) or right-click to get directions from the starting address to the highlighted text.
+7. Video Summary: Summarize the locations from the video's visuals and audio, sharing the same container as Place Summary.
+8. Quick Directions: Use the shortcut (Alt+R / ⌥+R) or right-click to get directions from the starting address to the highlighted text.
 
 ---
 
@@ -127,7 +128,7 @@ You can follow the steps below to use the exported CSV file to import places in 
 ## Techstack
 - Manifest V3
 - Bootstrap 5.3.0
-- Gemini 1.5 Flash
+- Gemini 2.0 Flash
 - ExtPay payment gateway
 - localStorage
 - HTML iframe
@@ -147,9 +148,13 @@ You can follow the steps below to use the exported CSV file to import places in 
     - `inject.js`: Injecting iframe into the webpage
     - `ejectLite.js`: Ejecting iframe from the webpage
     - `checkStatus.js`: Checking the status of the iframe
-- `css/`: CSS resources
-    - `popup.css`: CSS for the popup window
-    - `iframe.css`: CSS for the iframe window
+    - `ExtPay.js`: Payment gateway integration
+- `scss/`: CSS resources
+    - `popup.scss`: SCSS for the popup window
+    - `iframe.scss`: SCSS for the iframe window
+- `images/`: Image resources
+    - `icon-xx.png`: Extension icons
+    - `auto-attach.webm`: Demo video for auto-attach feature
 - `popup.html`: HTML for the popup window
 - `manifest.json`: Configuration file for the extension
 

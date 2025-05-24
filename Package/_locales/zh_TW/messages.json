@@ -171,6 +171,9 @@
   "deleteLabel": {
     "message": "刪除模式"
   },
+  "videoLabel": {
+    "message": "影片摘要模式"
+  },
   "enterLabel": {
     "message": "搜尋"
   },

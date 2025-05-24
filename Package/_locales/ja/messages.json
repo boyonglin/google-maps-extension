@@ -15,7 +15,7 @@
     "message": "お気に入り"
   },
   "geminiSummarySubtitle": {
-    "message": "場所概要"
+    "message": "場所要約"
   },
   "historyEmptyMsg": {
     "message": "文字をハイライトしてクイック検索！\n検索記録はここに保存されます\uD83D\uDC4C\uD83C\uDFFD"
@@ -30,10 +30,10 @@
     "message": "\nクリア完了！\uD83D\uDC4D\uD83C\uDFFD"
   },
   "geminiFirstMsg": {
-    "message": "AI で場所の概要を試してみてください！\n下の設定から API キーを設定して始めます"
+    "message": "AI で場所の要約を試してみてください！\n下の設定から API キーを設定して始めます"
   },
   "geminiEmptyMsg": {
-    "message": "AI で場所の概要を試してみてください！\n結果が期待に合わない場合は再生成できます\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "AI で場所の要約を試してみてください！\n結果が期待に合わない場合は再生成できます\uD83D\uDC4C\uD83C\uDFFD"
   },
   "geminiLoadMsg": {
     "message": "海をおやつのようにして、\n待つことがロマンチックになる...（約 NaN 秒）"
@@ -74,7 +74,7 @@
     "message": "API"
   },
   "sendBtnText": {
-    "message": "Gemini 概要"
+    "message": "Gemini 要約"
   },
   "shortcutsTitle": {
     "message": "キーボードショートカット"
@@ -160,7 +160,7 @@
     "message": "Gemini API キー"
   },
   "geminiLabel": {
-    "message": "場所概要"
+    "message": "場所要約"
   },
   "historyLabel": {
     "message": "検索履歴"
@@ -170,6 +170,9 @@
   },
   "deleteLabel": {
     "message": "削除モード"
+  },
+  "videoLabel": {
+    "message": "動画要約モード"
   },
   "enterLabel": {
     "message": "検索"
@@ -184,7 +187,7 @@
     "message": "お気に入りに追加"
   },
   "clearSummaryLabel": {
-    "message": "概要結果は 1 日後に自動的に削除されます"
+    "message": "要約結果は 1 日後に自動的に削除されます"
   },
   "closeLabel": {
     "message": "閉じる（Esc）"
