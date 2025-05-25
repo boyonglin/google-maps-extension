@@ -737,32 +737,36 @@ clearButtonSummary.addEventListener("click", () => {
   measureContentSize();
 });
 
+let videoSummaryModeChecked = false;
+let videoSummaryMode = false;
+
 // Check if current tab URL contains "youtube" and show/hide videoSummaryButton
 async function checkCurrentTabForYoutube() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const isGeminiActive = geminiSummaryButton.classList.contains("active-button");
 
-    // Show if geminiSummaryButton is active or if on YouTube
-    const isGeminiActive = geminiSummaryButton.classList.contains("active-button");
-    const isYouTube = tab && tab.url && tab.url.toLowerCase().includes("youtube");
-    const isVideo = new URL(tab.url).searchParams.get("v") !== null;
-
-    if (isYouTube && isVideo) {
-      // Load toggle state from localStorage and update button appearance
-      chrome.storage.local.get("videoSummaryToggle", ({ videoSummaryToggle }) => {
+  if (!videoSummaryModeChecked) {
+    chrome.storage.local.get(["currentVideoInfo", "videoSummaryToggle"], ({ currentVideoInfo, videoSummaryToggle }) => {
+      if (currentVideoInfo) {
         if (videoSummaryToggle) {
           videoSummaryButton.classList.add("active-button");
         } else {
           videoSummaryButton.classList.remove("active-button");
         }
-      });
-
-      if (isGeminiActive) {
-        videoSummaryButton.classList.remove("d-none");
+        videoSummaryMode = true;
+      } else {
+        // Hide video summary button if not on YouTube or no video info
+        videoSummaryButton.classList.add("d-none");
+        videoSummaryMode = false;
       }
-    }
-  } catch (error) {
-    console.error("Error checking current tab:", error);
+      videoSummaryModeChecked = true;
+    });
+  }
+
+  if (isGeminiActive) {
+    if (videoSummaryMode)
+      videoSummaryButton.classList.remove("d-none");
+    else
+      videoSummaryButton.classList.add("d-none");
   }
 }
 
@@ -1083,14 +1087,6 @@ sendButton.addEventListener("click", () => {
   }
 });
 
-async function scrapeLen(id) {
-  const html = await fetch(`https://www.youtube.com/watch?v=${id}`, {
-    credentials: "omit",
-  }).then((r) => r.text());
-  const m = html.match(/"lengthSeconds":"(\d+)"/);
-  return m ? Number(m[1]) : null;
-}
-
 function summarizeFromGeminiVideoUnderstanding(videoUrl) {
   // Clear any existing summary data first to prevent race condition
   chrome.storage.local.remove(["summaryList", "timestamp"]);
@@ -1104,16 +1100,16 @@ function summarizeFromGeminiVideoUnderstanding(videoUrl) {
   geminiEmptyMessage.classList.add("shineText");
 
   // request background video length
-  const url = new URL(videoUrl);
-  const id = url.searchParams.get("v");
-  scrapeLen(id).then((secs) => {
-    if (secs !== null) {
-      const estTime = Math.ceil(secs / 10);
+  chrome.storage.local.get("currentVideoInfo", ({ currentVideoInfo }) => {
+    if (currentVideoInfo && currentVideoInfo.length) {
+      const estTime = Math.ceil(currentVideoInfo.length / 10);
       const originalText = geminiEmptyMessage.innerHTML;
       const newText = originalText.replace("NaN", estTime);
       geminiEmptyMessage.innerHTML = newText;
     }
   });
+
+  measureContentSize();
 
   // request background summary
   chrome.runtime.sendMessage(
@@ -1121,46 +1117,13 @@ function summarizeFromGeminiVideoUnderstanding(videoUrl) {
     (response) => {
       // restore send-button state
       sendButton.disabled = false;
-      geminiEmptyMessage.classList.remove("shineText");
 
       // success when we get a string fragment of <ul>...</ul>
       if (typeof response === "string") {
-        summaryListContainer.innerHTML = response;
-        const lastItem = summaryListContainer.querySelector(
-          ".list-group .list-group-item:last-child"
-        );
-        if (lastItem) lastItem.classList.remove("mb-3");
-
-        hasSummary = true;
-        geminiEmptyMessage.classList.add("d-none");
-        clearButtonSummary.classList.remove("d-none");
-        apiButton.classList.add("d-none");
-        clearButtonSummary.disabled = false;
-
-        checkTextOverflow();
-        measureContentSize();
-
-        // persist summary
-        const data = Array.from(
-          summaryListContainer.querySelectorAll(".summary-list")
-        ).map((li) => ({
-          name: li.querySelector("span:first-child").textContent,
-          clue: li.querySelector("span.d-none").textContent,
-        }));
-        chrome.storage.local.set({
-          summaryList: data,
-          timestamp: Date.now(),
-        });
+        createSummaryList(response);
       }
-      // any other response (null or error object) is treated as failure
       else {
-        const errMsg =
-          response && response.error
-            ? response.error
-            : chrome.i18n.getMessage("geminiErrorMsg");
-        geminiEmptyMessage.innerText = errMsg;
-        geminiEmptyMessage.classList.remove("d-none");
-        clearButtonSummary.disabled = false;
+        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
       }
     }
   );
@@ -1257,54 +1220,7 @@ function summarizeContent(content, apiKey, url) {
       } else {
         responseField.value = response;
         try {
-          summaryListContainer.innerHTML = response;
-          const lastListItem = summaryListContainer.querySelector(
-            ".list-group .list-group-item:last-child"
-          );
-          if (lastListItem) {
-            lastListItem.classList.remove("mb-3");
-          }
-          hasSummary = true;
-          geminiEmptyMessage.classList.remove("shineText");
-          geminiEmptyMessage.classList.add("d-none");
-          clearButtonSummary.classList.remove("d-none");
-          apiButton.classList.add("d-none");
-          clearButtonSummary.disabled = false;
-
-          checkTextOverflow();
-          measureContentSize();
-
-          // store the response and current time
-          const listItems = document.querySelectorAll(".summary-list");
-          const data = [];
-
-          listItems.forEach((item) => {
-            const nameSpan = item.querySelector("span:first-child").textContent;
-            const clueSpan = item.querySelector("span.d-none").textContent;
-            data.push({ name: nameSpan, clue: clueSpan });
-          });
-
-          chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-            if (!favoriteList) {
-              return;
-            }
-
-            const trimmedFavorite = favoriteList.map(
-              (item) => item.split(" @")[0]
-            );
-            listItems.forEach((item) => {
-              const itemName =
-                item.querySelector("span:first-child").textContent;
-              const icon = createFavoriteIcon(itemName, trimmedFavorite);
-              item.appendChild(icon);
-            });
-          });
-
-          const currentTime = Date.now();
-          chrome.storage.local.set({
-            summaryList: data,
-            timestamp: currentTime,
-          });
+          createSummaryList(response);
         } catch (error) {
           responseField.value = `HTML Error: ${error}`;
           geminiEmptyMessage.innerText =
@@ -1314,6 +1230,57 @@ function summarizeContent(content, apiKey, url) {
       sendButton.disabled = false;
     }
   );
+}
+
+function createSummaryList(response) {
+  summaryListContainer.innerHTML = response;
+  const lastListItem = summaryListContainer.querySelector(
+    ".list-group .list-group-item:last-child"
+  );
+  if (lastListItem) {
+    lastListItem.classList.remove("mb-3");
+  }
+  hasSummary = true;
+  geminiEmptyMessage.classList.remove("shineText");
+  geminiEmptyMessage.classList.add("d-none");
+  clearButtonSummary.classList.remove("d-none");
+  apiButton.classList.add("d-none");
+  clearButtonSummary.disabled = false;
+
+  checkTextOverflow();
+  measureContentSize();
+
+  // store the response and current time
+  const listItems = document.querySelectorAll(".summary-list");
+  const data = [];
+
+  listItems.forEach((item) => {
+    const nameSpan = item.querySelector("span:first-child").textContent;
+    const clueSpan = item.querySelector("span.d-none").textContent;
+    data.push({ name: nameSpan, clue: clueSpan });
+  });
+
+  chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+    if (!favoriteList) {
+      return;
+    }
+
+    const trimmedFavorite = favoriteList.map(
+      (item) => item.split(" @")[0]
+    );
+    listItems.forEach((item) => {
+      const itemName =
+        item.querySelector("span:first-child").textContent;
+      const icon = createFavoriteIcon(itemName, trimmedFavorite);
+      item.appendChild(icon);
+    });
+  });
+
+  const currentTime = Date.now();
+  chrome.storage.local.set({
+    summaryList: data,
+    timestamp: currentTime,
+  });
 }
 
 // Replace text from note with a link
@@ -1564,5 +1531,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === "addrNotify") {
     optionalButton.click();
+  }
+  if (message.action === "checkYoutube") {
+    videoSummaryModeChecked = false;
+    checkCurrentTabForYoutube();
   }
 });

@@ -153,7 +153,6 @@ chrome.commands.onCommand.addListener((command) => {
   });
 });
 
-
 async function tryAddrNotify(retries = 10) {
   while (retries > 0) {
     const response = await new Promise((resolve) => {
@@ -173,6 +172,49 @@ async function tryAddrNotify(retries = 10) {
       break; // No error, loop stop
     }
   }
+}
+
+// Listen for tab updates to check YouTube status
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.active) {
+    // Only send message if the tab has a valid URL (http/https)
+    if (tab.url && /^https?:\/\//.test(tab.url)) {
+      // Check if it's a YouTube video URL
+      const youtubeMatch = tab.url.match(/youtube\.com\/(?:watch\?v=|shorts\/)(.{11})/);
+      if (youtubeMatch) {
+        const videoId = youtubeMatch[1];
+        try {
+          const videoLength = await scrapeLen(videoId);
+
+          // Store video info for later use in summarization
+          chrome.storage.local.set({
+            currentVideoInfo: {
+              videoId: videoId,
+              length: videoLength,
+              url: tab.url,
+              tabId: tabId
+            }
+          });
+        } catch (error) {
+          console.error("Error scraping video length:", error);
+        }
+      } else {
+        // Clear currentVideoInfo if not on YouTube
+        chrome.storage.local.remove('currentVideoInfo');
+      }
+
+      await chrome.runtime.sendMessage({ action: 'checkYoutube' })
+        .catch((err) => console.warn('No popup open:', err?.message));
+    }
+  }
+});
+
+async function scrapeLen(id) {
+  const html = await fetch(`https://www.youtube.com/watch?v=${id}`, {
+    credentials: "omit",
+  }).then((r) => r.text());
+  const m = html.match(/"lengthSeconds":"(\d+)"/);
+  return m ? Number(m[1]) : null;
 }
 
 // Retry mechanism for trying to suggest places from the content
