@@ -737,36 +737,21 @@ clearButtonSummary.addEventListener("click", () => {
   measureContentSize();
 });
 
-let videoSummaryModeChecked = false;
-let videoSummaryMode = false;
+let videoSummaryMode;
 
 // Check if current tab URL contains "youtube" and show/hide videoSummaryButton
 async function checkCurrentTabForYoutube() {
   const isGeminiActive = geminiSummaryButton.classList.contains("active-button");
+  if (videoSummaryMode === undefined) {
+    const { currentVideoInfo, videoSummaryToggle } =
+    await chrome.storage.local.get(["currentVideoInfo", "videoSummaryToggle"]);
 
-  if (!videoSummaryModeChecked) {
-    chrome.storage.local.get(["currentVideoInfo", "videoSummaryToggle"], ({ currentVideoInfo, videoSummaryToggle }) => {
-      if (currentVideoInfo) {
-        if (videoSummaryToggle) {
-          videoSummaryButton.classList.add("active-button");
-        } else {
-          videoSummaryButton.classList.remove("active-button");
-        }
-        videoSummaryMode = true;
-      } else {
-        // Hide video summary button if not on YouTube or no video info
-        videoSummaryButton.classList.add("d-none");
-        videoSummaryMode = false;
-      }
-      videoSummaryModeChecked = true;
-    });
+    videoSummaryMode = Boolean(currentVideoInfo?.videoId);
+    videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
   }
 
   if (isGeminiActive) {
-    if (videoSummaryMode)
-      videoSummaryButton.classList.remove("d-none");
-    else
-      videoSummaryButton.classList.add("d-none");
+    videoSummaryButton.classList.toggle("d-none", !videoSummaryMode);
   }
 }
 
@@ -1532,8 +1517,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "addrNotify") {
     optionalButton.click();
   }
+
   if (message.action === "checkYoutube") {
-    videoSummaryModeChecked = false;
+    videoSummaryMode = undefined;
     checkCurrentTabForYoutube();
   }
 });
