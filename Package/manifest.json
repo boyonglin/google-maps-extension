@@ -19,7 +19,6 @@
     }
   },  "permissions": [
     "activeTab",
-    "tabs",
     "contextMenus",
     "storage",
     "scripting"
