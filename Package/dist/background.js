@@ -176,11 +176,13 @@ async function tryAddrNotify(retries = 10) {
 
 // Listen for tab updates to check YouTube status
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.active) {
+  // Handle both complete page loads and URL changes (for SPAs)
+  if ((changeInfo.status === 'complete' || changeInfo.url) && tab.active) {
     // Only send message if the tab has a valid URL (http/https)
-    if (tab.url && /^https?:\/\//.test(tab.url)) {
+    const currentUrl = changeInfo.url || tab.url;
+    if (currentUrl && /^https?:\/\//.test(currentUrl)) {
       // Check if it's a YouTube video URL
-      const youtubeMatch = tab.url.match(/youtube\.com\/(?:watch\?v=|shorts\/)(.{11})/);
+      const youtubeMatch = currentUrl.match(/youtube\.com\/(?:watch\?v=|shorts\/)(.{11})/);
       if (youtubeMatch) {
         const videoId = youtubeMatch[1];
         try {
@@ -191,7 +193,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
             currentVideoInfo: {
               videoId: videoId,
               length: videoLength,
-              url: tab.url,
+              url: currentUrl,
               tabId: tabId
             }
           });
