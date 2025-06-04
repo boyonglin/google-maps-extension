@@ -421,12 +421,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Will respond asynchronously
   }
 
-  chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.action === "verifyApiKey") {
-      callApi("", "test", request.apiKey, sendResponse);
-      return true;
-    }
-  });
+  if (request.action === "verifyApiKey") {
+    callApi("", "test", request.apiKey, sendResponse);
+    return true;
+  }
 });
 
 function callApi(prompt, content, apiKey, sendResponse) {
