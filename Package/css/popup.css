@@ -454,6 +454,13 @@ li:hover .form-check-input {
   background-color: transparent;
   box-shadow: 0 0 0 4px var(--danger-color-500);
 }
+#videoSummaryButton.no-hover-temp:hover {
+  background-color: transparent;
+  color: var(--gray-600);
+}
+#videoSummaryButton.no-hover-temp:hover::after {
+  background-color: transparent;
+}
 
 #searchHistoryButton:focus,
 #favoriteListButton:focus,

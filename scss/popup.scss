@@ -511,6 +511,17 @@ li:hover .form-check-input {
       box-shadow: 0 0 0 4px var(--danger-color-500);
     }
   }
+
+  &.no-hover-temp {
+    &:hover {
+      background-color: transparent;
+      color: var(--gray-600);
+    }
+
+    &:hover::after {
+      background-color: transparent;
+    }
+  }
 }
 
 #searchHistoryButton:focus,

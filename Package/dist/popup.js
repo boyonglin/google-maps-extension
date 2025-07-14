@@ -766,10 +766,19 @@ videoSummaryButton.addEventListener("click", () => {
     // Update button appearance
     if (newToggleState) {
       videoSummaryButton.classList.add("active-button");
+      videoSummaryButton.classList.remove("no-hover-temp");
     } else {
       videoSummaryButton.classList.remove("active-button");
+      videoSummaryButton.classList.add("no-hover-temp");
     }
   });
+});
+
+// One time hover disable effect for videoSummaryButton
+videoSummaryButton.addEventListener("mouseleave", () => {
+  if (videoSummaryButton.classList.contains("no-hover-temp")) {
+    videoSummaryButton.classList.remove("no-hover-temp");
+  }
 });
 
 // Track the storage change event
