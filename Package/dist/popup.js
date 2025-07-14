@@ -69,13 +69,20 @@ let [hasHistory, hasFavorite, hasSummary, hasInit] = [
   false,
 ];
 
-// Input caret
 document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
   popupLayout();
-  fetchData();
-  checkPay();
-  checkCurrentTabForYoutube();
+
+  // Optimize by running heavy operations asynchronously
+  requestAnimationFrame(() => {
+    fetchData();
+    checkCurrentTabForYoutube();
+  });
+
+  // Run payment check in background to avoid blocking UI
+  setTimeout(() => {
+    checkPay();
+  }, 0);
 });
 
 // Update the popup layout
@@ -110,28 +117,12 @@ function fetchData() {
 
         // Create list item
         const fragment = document.createDocumentFragment();
+
         searchHistoryList.forEach((itemName) => {
-          const li = document.createElement("li");
-          li.className =
-            "list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center text-break";
-
-          const span = document.createElement("span");
-          span.textContent = itemName;
-          li.appendChild(span);
-
-          const icon = createFavoriteIcon(itemName, favoriteList);
-          li.appendChild(icon);
-
-          const checkbox = document.createElement("input");
-          checkbox.className = "form-check-input d-none";
-          checkbox.type = "checkbox";
-          checkbox.value = "delete";
-          checkbox.name = "checkDelete";
-          checkbox.ariaLabel = "Delete";
-          checkbox.style.cursor = "pointer";
-          li.appendChild(checkbox);
+          li = createListItem(itemName, favoriteList);
           fragment.appendChild(li);
         });
+
         ul.appendChild(fragment);
         searchHistoryListContainer.appendChild(ul);
 
@@ -159,6 +150,29 @@ function fetchData() {
       fetchStartAddr(startAddr);
     }
   );
+}
+
+function createListItem(itemName, favoriteList) {
+  const li = document.createElement("li");
+  li.className = "list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center text-break";
+
+  const span = document.createElement("span");
+  span.textContent = itemName;
+  li.appendChild(span);
+
+  const icon = createFavoriteIcon(itemName, favoriteList);
+  li.appendChild(icon);
+
+  const checkbox = document.createElement("input");
+  checkbox.className = "form-check-input d-none";
+  checkbox.type = "checkbox";
+  checkbox.value = "delete";
+  checkbox.name = "checkDelete";
+  checkbox.ariaLabel = "Delete";
+  checkbox.style.cursor = "pointer";
+  li.appendChild(checkbox);
+
+  return li;
 }
 
 // Create favorite action icon
