@@ -423,12 +423,19 @@ geminiSummaryButton.addEventListener("click", () => {
     (result) => {
       if (result.timestamp && result.summaryList.length > 0) {
         const currentTime = Date.now();
-        const elapsedTime = (currentTime - result.timestamp) / 1000; // time in seconds
+        const elapsedTime = (currentTime - result.timestamp) / 1000;
         if (elapsedTime > 86400) {
-          geminiEmptyMessage.innerText =
-            chrome.i18n.getMessage("geminiEmptyMsg");
+          // Data is expired, clear it and show empty state
+          hasSummary = false;
           summaryListContainer.innerHTML = "";
+          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+          clearButtonSummary.classList.add("d-none");
+          geminiEmptyMessage.classList.remove("d-none");
+          apiButton.classList.remove("d-none");
+          clearButtonSummary.disabled = true;
           chrome.storage.local.remove(["summaryList", "timestamp"]);
+          checkTextOverflow();
+          measureContentSize();
         } else {
           if (result.summaryList) {
             hasSummary = true;
