@@ -85,8 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 0);
 });
 
-document.addEventListener('readystatechange', () => {
-  if (document.readyState === 'complete') {
+document.addEventListener("readystatechange", () => {
+  if (document.readyState === "complete") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, {
         action: "finishIframe",

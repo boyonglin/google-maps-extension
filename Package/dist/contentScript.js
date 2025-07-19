@@ -70,7 +70,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Look for the expand button with the specific selector
       const expandButton = document.querySelector('tp-yt-paper-button#expand.button.style-scope.ytd-text-inline-expander');
 
-      if (expandButton && expandButton.getAttribute('aria-disabled') !== 'true') {
+      if (expandButton && expandButton.getAttribute("aria-disabled") !== "true") {
         // Click the expand button
         expandButton.click();
         sendResponse({ expanded: true });
@@ -106,7 +106,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "finishIframe") {
     let iframeContainer = document.getElementById("TMEiframe");
     iframeContainer.style.opacity = "1";
-    iframeContainer.style.transition = 'width 0.3s ease-in-out, height 0.3s ease-in-out';
+    iframeContainer.style.transition = "width 0.3s ease-in-out, height 0.3s ease-in-out";
   }
 
   if (request.action === "consoleQuote" && request.stage) {

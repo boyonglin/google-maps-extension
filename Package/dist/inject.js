@@ -101,7 +101,7 @@ window.TME = {
         resizer.addEventListener("mousedown", (event) => {
             isResizing = true;
             initialMouseY = event.clientY;
-            iframeContainer.style.transition = 'none';
+            iframeContainer.style.transition = "none";
             event.preventDefault();
         });
 
@@ -109,16 +109,16 @@ window.TME = {
             if (isResizing) {
                 let currentMouseY = event.clientY;
                 let newHeight = currentMouseY - iframeContainer.getBoundingClientRect().top;
-                const mouseDirection = currentMouseY <= initialMouseY ? 'up' : 'down';
+                const mouseDirection = currentMouseY <= initialMouseY ? "up" : "down";
                 const maxAllowedHeight = window.innerHeight - 100;
-                const mouseUpEvent = new MouseEvent('mouseup');
+                const mouseUpEvent = new MouseEvent("mouseup");
 
                 // upper and lower height limits
-                if (newHeight <= 452 && mouseDirection === 'up') {
+                if (newHeight <= 452 && mouseDirection === "up") {
                     newHeight = 452;
                     document.dispatchEvent(mouseUpEvent);
                     isResizing = false;
-                } else if (newHeight >= maxAllowedHeight && mouseDirection === 'down') {
+                } else if (newHeight >= maxAllowedHeight && mouseDirection === "down") {
                     newHeight = maxAllowedHeight;
                     document.dispatchEvent(mouseUpEvent);
                     isResizing = false;
@@ -138,7 +138,7 @@ window.TME = {
 
         document.addEventListener("mouseup", () => {
             if (isResizing) {
-                iframeContainer.style.transition = 'width 0.3s ease-in-out, height 0.3s ease-in-out';
+                iframeContainer.style.transition = "width 0.3s ease-in-out, height 0.3s ease-in-out";
             }
             isResizing = false;
         });

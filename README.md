@@ -12,7 +12,7 @@
   <em>Navigate places effortlessly with The Maps Express, experiencing rapid AI-integrated summaries or a single search key combination for minimal workflow disruption.</em>
 </p>
 
-<p align='center'>
+<p align="center">
   <a href="https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic">
     <img src="https://img.shields.io/badge/Google_chrome-4285F4?style=for-the-badge&logo=Google-chrome&logoColor=white" />
   </a>&nbsp;&nbsp;

@@ -177,7 +177,7 @@ async function tryAddrNotify(retries = 10) {
 // Listen for tab updates to check YouTube status
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   // Handle both complete page loads and URL changes (for SPAs)
-  if ((changeInfo.status === 'complete' || changeInfo.url) && tab.active) {
+  if ((changeInfo.status === "complete" || changeInfo.url) && tab.active) {
     // Only send message if the tab has a valid URL (http/https)
     const currentUrl = changeInfo.url || tab.url;
     if (currentUrl && /^https?:\/\//.test(currentUrl)) {
@@ -202,11 +202,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         }
       } else {
         // Clear currentVideoInfo if not on YouTube
-        chrome.storage.local.remove('currentVideoInfo');
+        chrome.storage.local.remove("currentVideoInfo");
       }
 
-      await chrome.runtime.sendMessage({ action: 'checkYoutube' })
-        .catch((err) => console.warn('No popup open:', err?.message));
+      await chrome.runtime.sendMessage({ action: "checkYoutube" })
+        .catch((err) => console.warn("No popup open:", err?.message));
     }
   }
 });
@@ -468,7 +468,7 @@ function callApi(prompt, content, apiKey, sendResponse) {
     .then(data => {
       const generatedText = data.candidates[0].content.parts[0].text;
       console.log(generatedText);
-      if (generatedText.includes('<ul')) {
+      if (generatedText.includes("<ul")) {
         const regex = /<ul class="list-group d-flex">[\s\S]*?<\/ul>/;
         const match = generatedText.match(regex);
         sendResponse(match[0]);
