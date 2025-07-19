@@ -103,6 +103,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   }
 
+  if (request.action === "finishIframe") {
+    let iframeContainer = document.getElementById("TMEiframe");
+    iframeContainer.style.opacity = "1";
+    iframeContainer.style.transition = 'width 0.3s ease-in-out, height 0.3s ease-in-out';
+  }
+
   if (request.action === "consoleQuote" && request.stage) {
     const quotes = {
       first: '"Er — hello," — Harry Potter',

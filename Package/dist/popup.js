@@ -85,6 +85,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 0);
 });
 
+document.addEventListener('readystatechange', () => {
+  if (document.readyState === 'complete') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {
+        action: "finishIframe",
+      });
+    });
+  }
+});
+
 // Update the popup layout
 function popupLayout() {
   for (let i = 0; i < pageSearch.length; i++)
@@ -765,7 +775,7 @@ async function checkCurrentTabForYoutube() {
   const isGeminiActive = geminiSummaryButton.classList.contains("active-button");
   if (videoSummaryMode === undefined) {
     const { currentVideoInfo, videoSummaryToggle } =
-    await chrome.storage.local.get(["currentVideoInfo", "videoSummaryToggle"]);
+      await chrome.storage.local.get(["currentVideoInfo", "videoSummaryToggle"]);
 
     videoSummaryMode = Boolean(currentVideoInfo?.videoId);
     videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
@@ -1398,16 +1408,29 @@ const body = document.body;
 const frameWidth = window.outerWidth - window.innerWidth;
 const titleBarHeight = window.outerHeight - window.innerHeight;
 
+// Cache previous dimensions to avoid unnecessary updates
+let previousWidth = 0;
+let previousHeight = 0;
+
 function measureContentSize() {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, {
-      action: "updateIframeSize",
-      width: body.offsetWidth,
-      height: body.offsetHeight,
-      frameWidth: frameWidth,
-      titleBarHeight: titleBarHeight,
+  const currentWidth = body.offsetWidth;
+  const currentHeight = body.offsetHeight;
+
+  // Only update if dimensions have changed
+  if (currentWidth !== previousWidth || currentHeight !== previousHeight) {
+    previousWidth = currentWidth;
+    previousHeight = currentHeight;
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {
+        action: "updateIframeSize",
+        width: currentWidth,
+        height: currentHeight,
+        frameWidth: frameWidth,
+        titleBarHeight: titleBarHeight,
+      });
     });
-  });
+  }
 }
 
 function retryMeasureContentSize() {
@@ -1421,27 +1444,35 @@ function retryMeasureContentSize() {
 
 // If the focus tab is changed
 function measureContentSizeLast() {
-  chrome.tabs.query({ active: false, lastFocusedWindow: true }, (tabs) => {
-    let LastAccessedTab = tabs[0];
+  const currentWidth = body.offsetWidth;
+  const currentHeight = body.offsetHeight;
 
-    if (tabs.length === 0) {
-      return;
-    } else {
-      tabs.forEach((tab) => {
-        if (tab.lastAccessed > LastAccessedTab.lastAccessed) {
-          LastAccessedTab = tab;
-        }
-      });
+  if (currentWidth !== previousWidth || currentHeight !== previousHeight) {
+    previousWidth = currentWidth;
+    previousHeight = currentHeight;
 
-      chrome.tabs.sendMessage(LastAccessedTab.id, {
-        action: "updateIframeSize",
-        width: body.offsetWidth,
-        height: body.offsetHeight,
-        frameWidth: frameWidth,
-        titleBarHeight: titleBarHeight,
-      });
-    }
-  });
+    chrome.tabs.query({ active: false, lastFocusedWindow: true }, (tabs) => {
+      let LastAccessedTab = tabs[0];
+
+      if (tabs.length === 0) {
+        return;
+      } else {
+        tabs.forEach((tab) => {
+          if (tab.lastAccessed > LastAccessedTab.lastAccessed) {
+            LastAccessedTab = tab;
+          }
+        });
+
+        chrome.tabs.sendMessage(LastAccessedTab.id, {
+          action: "updateIframeSize",
+          width: currentWidth,
+          height: currentHeight,
+          frameWidth: frameWidth,
+          titleBarHeight: titleBarHeight,
+        });
+      }
+    });
+  }
 }
 
 // Close by Esc key

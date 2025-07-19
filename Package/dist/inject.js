@@ -101,6 +101,7 @@ window.TME = {
         resizer.addEventListener("mousedown", (event) => {
             isResizing = true;
             initialMouseY = event.clientY;
+            iframeContainer.style.transition = 'none';
             event.preventDefault();
         });
 
@@ -136,6 +137,9 @@ window.TME = {
         });
 
         document.addEventListener("mouseup", () => {
+            if (isResizing) {
+                iframeContainer.style.transition = 'width 0.3s ease-in-out, height 0.3s ease-in-out';
+            }
             isResizing = false;
         });
 
