@@ -64,7 +64,7 @@ const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
 
 // Import Scripts
-const deleteM = new DeleteM();
+const delMode = new DelMode();
 const favorite = new Favorite();
 const history = new History();
 const gemini = new Gemini();
@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 0);
 
   // Add event listeners
-  deleteM.addDeleteModeListener();
+  delMode.addDelModeodeListener();
   favorite.addFavoritePageListener();
   history.addHistoryPageListener();
   gemini.addGeminiPageListener();
@@ -185,7 +185,7 @@ function fetchData() {
         clearButton.disabled = true;
       }
 
-      deleteM.attachCheckboxEventListener(searchHistoryListContainer);
+      delMode.attachCheckboxEventListener(searchHistoryListContainer);
 
       if (hasInit) {
         measureContentSizeLast();
@@ -298,7 +298,7 @@ searchHistoryButton.addEventListener("click", () => {
   deleteListButton.disabled = false;
 
   measureContentSize();
-  deleteM.updateInput();
+  delMode.updateInput();
 });
 
 favoriteListButton.addEventListener("click", () => {
@@ -316,7 +316,7 @@ favoriteListButton.addEventListener("click", () => {
 
   deleteListButton.disabled = false;
 
-  deleteM.updateInput();
+  delMode.updateInput();
 });
 
 geminiSummaryButton.addEventListener("click", () => {
