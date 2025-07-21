@@ -73,6 +73,7 @@ class Gemini {
         sendButton.addEventListener("click", () => {
             sendButton.disabled = true;
             clearButtonSummary.disabled = true;
+            this.RecordSummaryTab();
 
             // Check if video summary button is active
             const isVideoSummaryActive = videoSummaryButton.classList.contains("active-button")
@@ -387,7 +388,7 @@ class Gemini {
         clearButtonSummary.disabled = false;
 
         checkTextOverflow();
-        measureContentSize();
+        measureContentSize(true);
 
         // store the response and current time
         const listItems = document.querySelectorAll(".summary-list");
@@ -419,6 +420,13 @@ class Gemini {
         chrome.storage.local.set({
             summaryList: data,
             timestamp: currentTime,
+        });
+    }
+
+    RecordSummaryTab() {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const currentTab = tabs[0];
+            summarizedTabId = currentTab.id;
         });
     }
 }

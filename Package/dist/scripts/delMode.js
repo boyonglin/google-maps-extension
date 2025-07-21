@@ -1,5 +1,5 @@
 class DelMode {
-    addDelModeodeListener() {
+    addDelModeListener() {
         cancelButton.addEventListener("click", this.backToNormal);
 
         deleteButton.addEventListener("click", () => {

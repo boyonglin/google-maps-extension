@@ -76,6 +76,7 @@ let [hasHistory, hasFavorite, hasSummary, hasInit] = [
 
 let videoSummaryMode;
 let localVideoToggle;
+let summarizedTabId;
 
 document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
@@ -93,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 0);
 
   // Add event listeners
-  delMode.addDelModeodeListener();
+  delMode.addDelModeListener();
   favorite.addFavoritePageListener();
   history.addHistoryPageListener();
   gemini.addGeminiPageListener();
@@ -252,8 +253,8 @@ function showPage(tabName) {
   const tabMap = {
     history: pageHistory,
     favorite: pageFavorite,
-    delete: pageDelete,
     gemini: pageGemini,
+    delete: pageDelete,
   };
 
   Object.keys(tabMap).forEach((key) => {
@@ -264,8 +265,8 @@ function showPage(tabName) {
 
   searchHistoryButton.classList.toggle("active-button", tabName === "history");
   favoriteListButton.classList.toggle("active-button", tabName === "favorite");
-  deleteListButton.classList.toggle("active-button", tabName === "delete");
   geminiSummaryButton.classList.toggle("active-button", tabName === "gemini");
+  deleteListButton.classList.toggle("active-button", tabName === "delete");
 
   if (tabName === "history" || tabName === "favorite") {
     videoSummaryButton.classList.add("d-none");
@@ -405,7 +406,7 @@ function delayMeasurement() {
   }, 50);
 }
 
-function measureContentSize() {
+function measureContentSize(summary = false) {
   const currentWidth = body.offsetWidth;
   const currentHeight = body.offsetHeight;
 
@@ -415,13 +416,19 @@ function measureContentSize() {
     previousHeight = currentHeight;
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, {
+      contentTabId = summary ? summarizedTabId : tabs[0].id;
+
+      chrome.tabs.sendMessage(contentTabId, {
         action: "updateIframeSize",
         width: currentWidth,
         height: currentHeight,
         frameWidth: frameWidth,
         titleBarHeight: titleBarHeight,
       });
+
+      if (summary) {
+        summarizedTabId = undefined;
+      }
     });
   }
 }
