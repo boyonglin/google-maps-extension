@@ -27,7 +27,7 @@
 - Extension
     - [Features](#features)
     - [Usage Demo](#usage-demo)
-- Instrcution
+- Instruction
     - [Set Up](#set-up)
     - [Shortcut](#shortcut)
     - [Gemini API](#gemini-api)
