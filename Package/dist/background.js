@@ -376,16 +376,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Will respond asynchronously
   }
 
-  chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.action === "verifyApiKey") {
-      callApi("", "test", request.apiKey, sendResponse);
+      verifyApiKey(request.apiKey)
+        .then(sendResponse)
+        .catch(err => sendResponse({ error: err.message }));
       return true;
     }
   });
 });
 
+
+
+async function verifyApiKey(apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash?key=${apiKey}`;
+  const res = await fetch(url);
+  return ({ valid: res.ok });
+}
+
 function callApi(prompt, content, apiKey, sendResponse) {
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
   let data;
   if (content.includes("youtube")) {
@@ -412,7 +422,7 @@ function callApi(prompt, content, apiKey, sendResponse) {
     };
   }
 
-  fetch(apiUrl, {
+  fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"

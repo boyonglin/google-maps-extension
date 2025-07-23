@@ -32,8 +32,8 @@ class Modal {
 
             chrome.runtime.sendMessage(
                 { action: "verifyApiKey", apiKey: apiKey },
-                (response) => {
-                    if (response.error) {
+                ({ valid, error }) => {
+                    if (error || !valid) {
                         geminiEmptyMessage.classList.remove("d-none");
                         apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
                         geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
