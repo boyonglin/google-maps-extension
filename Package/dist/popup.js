@@ -84,14 +84,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // Optimize by running heavy operations asynchronously
   requestAnimationFrame(() => {
     popupLayout();
-    fetchData();
-    gemini.checkCurrentTabForYoutube();
+    Promise.all([fetchData(), gemini.checkCurrentTabForYoutube()]);
   });
 
   // Run payment check in background to avoid blocking UI
-  setTimeout(() => {
-    checkPay();
-  }, 0);
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      checkPay();
+    });
+  } else {
+    setTimeout(() => checkPay(), 0);
+  }
 
   // Add event listeners
   delMode.addDelModeListener();

@@ -98,7 +98,7 @@ class Gemini {
         if (apiKey) {
             chrome.runtime.sendMessage(
                 { action: "verifyApiKey", apiKey },
-                ({ valid, error }) => {
+                ({ valid, error } = {}) => {
                     if (error || !valid) {
                         sendButton.disabled = true;
                         geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");

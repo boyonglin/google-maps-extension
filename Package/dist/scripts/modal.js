@@ -32,7 +32,7 @@ class Modal {
 
             chrome.runtime.sendMessage(
                 { action: "verifyApiKey", apiKey: apiKey },
-                ({ valid, error }) => {
+                ({ valid, error } = {}) => {
                     if (error || !valid) {
                         geminiEmptyMessage.classList.remove("d-none");
                         apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
