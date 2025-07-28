@@ -556,7 +556,6 @@ chrome.tabs.onActivated.addListener(() => { ensureWarm(); });
 // 2. Keep cache fresh if some other part of the extension writes
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
-  const cache = getCache();
   if (!cache) return;
   for (const [k, { newValue }] of Object.entries(changes)) {
     cache[k] = newValue;
