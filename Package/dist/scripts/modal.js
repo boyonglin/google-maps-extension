@@ -17,11 +17,12 @@ class Modal {
         }
 
         // Save the API key
-        document.getElementById("apiForm").addEventListener("submit", (event) => {
+        document.getElementById("apiForm").addEventListener("submit", async (event) => {
             event.preventDefault();
             const apiKey = apiInput.value.trim();
 
-            chrome.storage.local.set({ geminiApiKey: apiKey });
+            const encrypted = apiKey ? await encryptApiKey(apiKey) : "";
+            chrome.storage.local.set({ geminiApiKey: encrypted });
 
             if (!apiKey) {
                 apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
@@ -117,4 +118,45 @@ class Modal {
             pElement.innerHTML = newText;
         }
     }
+}
+
+async function ensureAesKey() {
+    const { aesKey } = await chrome.storage.local.get("aesKey");
+    if (aesKey) {
+        return await crypto.subtle.importKey(
+            "jwk",
+            aesKey,
+            { name: "AES-GCM" },
+            true,
+            ["encrypt", "decrypt"]
+        );
+    }
+    const key = await crypto.subtle.generateKey(
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+    );
+    const jwk = await crypto.subtle.exportKey("jwk", key);
+    await chrome.storage.local.set({ aesKey: jwk });
+    return key;
+}
+
+// Encrypt functions
+function bufToB64(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+
+function b64ToBuf(b64) {
+    const bin = atob(b64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    return buf.buffer;
+}
+
+async function encryptApiKey(apiKey) {
+    const key = await ensureAesKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = new TextEncoder().encode(apiKey);
+    const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc);
+    return bufToB64(iv) + "." + bufToB64(cipher);
 }

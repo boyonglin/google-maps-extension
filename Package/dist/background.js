@@ -232,18 +232,12 @@ async function tryAPINotify(retries = 10) {
   }
 }
 
-function getApiKey() {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get("geminiApiKey", (data) => {
-      if (chrome.runtime.lastError) {
-        return reject(chrome.runtime.lastError);
-      }
-      if (!data.geminiApiKey) {
-        return reject(new Error("No API key found. Please provide one."));
-      }
-      resolve(data.geminiApiKey);
-    });
-  });
+async function getApiKey() {
+  await ensureWarm();
+  if (!cache.geminiApiKey) {
+    throw new Error("No API key found. Please provide one.");
+  }
+  return cache.geminiApiKey;
 }
 
 function getContent(tabId, message) {
@@ -354,7 +348,7 @@ function addToFavoriteList(selectedText) {
 }
 
 // Gemini API
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "summarizeApi" && request.text) {
 
     // Special case for YouTube video descriptions
@@ -369,8 +363,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "summarizeVideo" && request.text) {
     console.log("summarize video: ", request.text);
-    chrome.storage.local.get("geminiApiKey", (data) => {
-      const apiKey = data.geminiApiKey;
+    getApiKey().then(apiKey => {
       callApi(summaryPrompt, request.text, apiKey, sendResponse);
     });
     return true; // Will respond asynchronously
@@ -386,16 +379,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   });
 });
 
-
+const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash";
 
 async function verifyApiKey(apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash?key=${apiKey}`;
+  const url = `${endpoint}?key=${apiKey}`;
   const res = await fetch(url);
   return ({ valid: res.ok });
 }
 
 function callApi(prompt, content, apiKey, sendResponse) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const url = `${endpoint}:generateContent?key=${apiKey}`;
 
   let data;
   if (content.includes("youtube")) {
@@ -479,7 +472,7 @@ function meow() {
   });
 }
 
-// ExtensionPay
+// Payment handling
 importScripts("ExtPay.js")
 
 const trialPeriod = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -530,10 +523,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// Caching mechanism
 const DEFAULTS = {
   searchHistoryList: [],
   favoriteList: [],
   geminiApiKey: "",
+  aesKey: null,
   startAddr: "",
   videoSummaryToggle: false,
 };
@@ -545,27 +540,87 @@ async function ensureWarm() {
   if (cache) return cache;
   if (loading) return loading;
   loading = chrome.storage.local.get(DEFAULTS)
-    .then(v => (cache = v))
+    .then(async v => {
+      if (v.geminiApiKey) {
+        try {
+          v.geminiApiKey = await decryptApiKey(v.geminiApiKey);
+        } catch (_e) {
+          v.geminiApiKey = "";
+        }
+      }
+      cache = v;
+    })
     .finally(() => (loading = null));
   return loading;
 }
 
-// 1. Warm on first useful wake-ups
+// 1) Warm on first useful wake-ups
 chrome.tabs.onActivated.addListener(() => { ensureWarm(); });
 
-// 2. Keep cache fresh if some other part of the extension writes
+// 2) Keep cache fresh if some other part of the extension writes
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   if (!cache) return;
   for (const [k, { newValue }] of Object.entries(changes)) {
-    cache[k] = newValue;
+    if (k === 'geminiApiKey') {
+      decryptApiKey(newValue).then(v => { cache[k] = v; });
+    } else {
+      cache[k] = newValue;
+    }
   }
 });
 
-// 3. Fast message responder for popup
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg?.type === "GET_WARM_STATE") {
+// 3) Fast message responder for popup
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (request.action === "getWarmState") {
     ensureWarm().then(() => sendResponse(cache));
+    return true;
+  } else if (request.action === "getApiKey") {
+    getApiKey().then(apiKey => sendResponse({ apiKey }));
     return true;
   }
 });
+
+// Decryption functions
+function bufToB64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+
+function b64ToBuf(b64) {
+  const bin = atob(b64);
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return buf.buffer;
+}
+
+async function ensureAesKey() {
+  const { aesKey } = await chrome.storage.local.get("aesKey");
+  if (aesKey) {
+    return await crypto.subtle.importKey(
+      "jwk",
+      aesKey,
+      { name: "AES-GCM" },
+      true,
+      ["encrypt", "decrypt"]
+    );
+  }
+  const key = await crypto.subtle.generateKey(
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  const jwk = await crypto.subtle.exportKey("jwk", key);
+  await chrome.storage.local.set({ aesKey: jwk });
+  return key;
+}
+
+async function decryptApiKey(stored) {
+  if (!stored) return "";
+  const [ivB64, dataB64] = stored.split(".");
+  if (!ivB64 || !dataB64) return "";
+  const key = await ensureAesKey();
+  const iv = new Uint8Array(b64ToBuf(ivB64));
+  const data = b64ToBuf(dataB64);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+  return new TextDecoder().decode(plain);
+}

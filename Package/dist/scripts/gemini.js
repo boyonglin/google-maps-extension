@@ -269,8 +269,8 @@ class Gemini {
     }
 
     performNormalContentSummary() {
-        chrome.storage.local.get("geminiApiKey", (data) => {
-            const apiKey = data.geminiApiKey;
+        chrome.runtime.sendMessage({ action: "getApiKey" }, (res) => {
+            const apiKey = res ? res.apiKey : "";
 
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                 chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {

@@ -160,7 +160,7 @@ const KEYS = [
 
 async function getWarmState() {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: "GET_WARM_STATE" }, (state) => {
+    chrome.runtime.sendMessage({ action: "getWarmState" }, (state) => {
       if (chrome.runtime.lastError || !state) {
         // Service-worker was asleep → fall back to direct read (slow path)
         chrome.storage.local.get(KEYS, resolve);
