@@ -63,12 +63,21 @@ chrome.runtime.onInstalled.addListener((details) => {
 
   // What's new page
   const userLocale = chrome.i18n.getUILanguage();
-  if (details.reason === "install") { // details.reason === "update"
+  if (details.reason === "install") {
     if (userLocale.startsWith("zh")) {
       chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
     } else {
       chrome.tabs.create({ url: "https://the-maps-express.notion.site/384675c4183b4799852e5b298f999645" });
     }
+  }
+
+  if (details.reason === "update") {
+    chrome.storage.local.get("geminiApiKey", async ({ geminiApiKey }) => {
+      if (geminiApiKey && !geminiApiKey.includes(".")) {
+        const encrypted = await encryptApiKey(geminiApiKey);
+        chrome.storage.local.set({ geminiApiKey: encrypted });
+      }
+    });
   }
 });
 
@@ -425,7 +434,6 @@ function callApi(prompt, content, apiKey, sendResponse) {
     .then(response => response.json())
     .then(data => {
       const generatedText = data.candidates[0].content.parts[0].text;
-      console.log(generatedText);
       if (generatedText.includes("<ul")) {
         const regex = /<ul class="list-group d-flex">[\s\S]*?<\/ul>/;
         const match = generatedText.match(regex);
@@ -559,10 +567,10 @@ chrome.tabs.onActivated.addListener(() => { ensureWarm(); });
 
 // 2) Keep cache fresh if some other part of the extension writes
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local') return;
+  if (area !== "local") return;
   if (!cache) return;
   for (const [k, { newValue }] of Object.entries(changes)) {
-    if (k === 'geminiApiKey') {
+    if (k === "geminiApiKey") {
       decryptApiKey(newValue).then(v => { cache[k] = v; });
     } else {
       cache[k] = newValue;
@@ -623,4 +631,12 @@ async function decryptApiKey(stored) {
   const data = b64ToBuf(dataB64);
   const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
   return new TextDecoder().decode(plain);
+}
+
+async function encryptApiKey(apiKey) {
+  const key = await ensureAesKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder().encode(apiKey);
+  const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc);
+  return bufToB64(iv) + "." + bufToB64(cipher);
 }
