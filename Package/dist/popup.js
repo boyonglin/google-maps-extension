@@ -150,59 +150,72 @@ function checkTextOverflow() {
   }
 }
 
+const KEYS = [
+  "searchHistoryList",
+  "favoriteList",
+  "geminiApiKey",
+  "startAddr",
+  "videoSummaryToggle",
+];
+
+async function getWarmState() {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: "GET_WARM_STATE" }, (state) => {
+      if (chrome.runtime.lastError || !state) {
+        // Service-worker was asleep → fall back to direct read (slow path)
+        chrome.storage.local.get(KEYS, resolve);
+      } else {
+        resolve(state);
+      }
+    });
+  });
+}
+
 // Fetch lists from Chrome storage
-function fetchData() {
+async function fetchData() {
   searchHistoryListContainer.innerHTML = "";
 
-  chrome.storage.local.get(
-    ["searchHistoryList", "favoriteList", "geminiApiKey", "startAddr", "videoSummaryToggle"],
-    ({ searchHistoryList, favoriteList, geminiApiKey, startAddr, videoSummaryToggle }) => {
-      // Retrieve searchHistoryList and favoriteList from Chrome storage
-      if (searchHistoryList && searchHistoryList.length > 0) {
-        emptyMessage.style.display = "none";
-        hasHistory = true;
-        clearButton.disabled = false;
+  const {
+    searchHistoryList = [],
+    favoriteList = [],
+    geminiApiKey = "",
+    startAddr = "",
+    videoSummaryToggle = false,
+  } = await getWarmState();
 
-        const ul = document.createElement("ul");
-        ul.className = "list-group d-flex flex-column-reverse";
+  if (searchHistoryList.length) {
+    emptyMessage.style.display = "none";
+    hasHistory = true;
+    clearButton.disabled = false;
 
-        // Create list item
-        const fragment = document.createDocumentFragment();
+    const ul = document.createElement("ul");
+    ul.className = "list-group d-flex flex-column-reverse";
 
-        searchHistoryList.forEach((itemName) => {
-          li = history.createListItem(itemName, favoriteList);
-          fragment.appendChild(li);
-        });
+    const frag = document.createDocumentFragment();
+    searchHistoryList.forEach((item) =>
+      frag.appendChild(history.createListItem(item, favoriteList))
+    );
+    ul.appendChild(frag);
+    searchHistoryListContainer.appendChild(ul);
 
-        ul.appendChild(fragment);
-        searchHistoryListContainer.appendChild(ul);
+    const first = searchHistoryListContainer.querySelector(
+      ".list-group .list-group-item:first-child"
+    );
+    first?.classList.remove("mb-3");
+  } else {
+    emptyMessage.style.display = "block";
+    hasHistory = false;
+    clearButton.disabled = true;
+  }
 
-        const lastListItem = searchHistoryListContainer.querySelector(
-          ".list-group .list-group-item:first-child"
-        );
-        if (lastListItem) {
-          lastListItem.classList.remove("mb-3");
-        }
-      } else {
-        emptyMessage.style.display = "block";
-        hasHistory = false;
-        clearButton.disabled = true;
-      }
+  delMode.attachCheckboxEventListener(searchHistoryListContainer);
 
-      delMode.attachCheckboxEventListener(searchHistoryListContainer);
+  (hasInit ? measureContentSizeLast() : retryMeasureContentSize());
 
-      if (hasInit) {
-        measureContentSizeLast();
-      } else {
-        retryMeasureContentSize();
-      }
-
-      gemini.fetchAPIKey(geminiApiKey);
-      fetchStartAddr(startAddr);
-      localVideoToggle = videoSummaryToggle;
-      videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
-    }
-  );
+  gemini.fetchAPIKey(geminiApiKey);
+  fetchStartAddr(startAddr);
+  localVideoToggle = videoSummaryToggle;
+  videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
 }
 
 function fetchStartAddr(startAddr) {

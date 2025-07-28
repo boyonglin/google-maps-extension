@@ -529,3 +529,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 });
+
+const DEFAULTS = {
+  searchHistoryList: [],
+  favoriteList: [],
+  geminiApiKey: "",
+  startAddr: "",
+  videoSummaryToggle: false,
+};
+
+let cache = null;        // holds warmed state while the worker is alive
+let loading = null;      // in-flight promise to dedupe concurrent warms
+
+async function ensureWarm() {
+  if (cache) return cache;
+  if (loading) return loading;
+  loading = chrome.storage.local.get(DEFAULTS)
+    .then(v => (cache = v))
+    .finally(() => (loading = null));
+  return loading;
+}
+
+// 1. Warm on first useful wake-ups
+chrome.tabs.onActivated.addListener(() => { ensureWarm(); });
+
+// 2. Keep cache fresh if some other part of the extension writes
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  const cache = getCache();
+  if (!cache) return;
+  for (const [k, { newValue }] of Object.entries(changes)) {
+    cache[k] = newValue;
+  }
+});
+
+// 3. Fast message responder for popup
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type === "GET_WARM_STATE") {
+    ensureWarm().then(() => sendResponse(cache));
+    return true;
+  }
+});
