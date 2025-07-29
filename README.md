@@ -148,19 +148,18 @@ You can export your favorite places as a CSV file and import them into Google My
 .
 ├── _locales/               # Localization files (en, zh_TW, ja)
 ├── dist/
-│   ├── scripts/            # Module scripts for the extension
-│   ├── popup.js            # Main script for the popup
+│   ├── scripts/            # Functional scripts
+│   ├── modules/            # Modular scripts
+│   ├── popup.js            # Main script
 │   ├── background.js       # Event handling and browser interaction
 │   ├── contentScript.js    # Accessing webpage content
 │   ├── inject.js           # Injecting iframe into the webpage
 │   ├── ejectLite.js        # Ejecting iframe from the webpage
-│   ├── checkStatus.js      # Checking the status of the iframe
-│   └── ExtPay.js
-├── scss/                   # Style sources for the popup
-│   ├── popup.scss
-│   └── iframe.scss
+│   └── checkStatus.js      # Checking the status of the iframe
+├── scss/                   # Style sources
 ├── images/                 # Extension icons and demo assets
-├── popup.html              # HTML for the popup
+├── vendor/                 # 3rd-party libraries
+├── popup.html              # HTML for the popup interface
 └── manifest.json           # Configuration file for the extension
 ```
 
