@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "The Maps Express",
-  "version": "1.10.6",
+  "version": "1.10.7",
   "description": "A Shortcut to Google Maps, but Rich and Beautiful.",
   "icons": {
     "16": "images/icon-16.png",
@@ -17,14 +17,16 @@
       "48": "images/icon-48.png",
       "128": "images/icon-128.png"
     }
-  },  "permissions": [
+  },
+  "permissions": [
     "activeTab",
     "contextMenus",
     "storage",
     "scripting"
   ],
   "background": {
-    "service_worker": "dist/background.js"
+    "service_worker": "dist/background.js",
+    "type": "module"
   },
   "commands": {
     "run-search": {
@@ -59,7 +61,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["dist/contentScript.js", "dist/ExtPay.js"],
+      "js": ["dist/contentScript.js"],
       "css": ["css/iframe.css"]
     }
   ],
