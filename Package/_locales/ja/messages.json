@@ -41,6 +41,9 @@
   "geminiErrorMsg": {
     "message": "エラーが発生しました！\nページを再読み込みして再試行してください\ud83d\udea7"
   },
+    "geminiOverloadMsg": {
+    "message": "モデルが過負荷です！\n後でもう一度お試しください。\ud83d\udea7"
+  },
   "apiInvalidMsg": {
     "message": "API キーが使用できません！\n確認して再試行してください\ud83d\udea7"
   },

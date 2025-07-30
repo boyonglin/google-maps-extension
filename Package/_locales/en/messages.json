@@ -55,6 +55,10 @@
     "message": "Something went wrong!\nPlease refresh the page and try again.\ud83d\udea7",
     "description": "popup gemini summary error message"
   },
+  "geminiOverloadMsg": {
+    "message": "The model is overloaded!\nPlease try again later.\ud83d\udea7",
+    "description": "popup gemini overload error message"
+  },
   "apiInvalidMsg": {
     "message": "The API key is invalid!\nPlease check and try again.\ud83d\udea7",
     "description": "popup api invalid key message"

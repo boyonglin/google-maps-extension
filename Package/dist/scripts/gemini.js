@@ -262,7 +262,7 @@ class Gemini {
                     this.createSummaryList(response);
                 }
                 else {
-                    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
+                    this.ResponseErrorMsg(response);
                 }
             }
         );
@@ -276,8 +276,7 @@ class Gemini {
                 chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
                     if (chrome.runtime.lastError) {
                         summaryListContainer.innerHTML = "";
-                        geminiEmptyMessage.innerText =
-                            chrome.i18n.getMessage("geminiErrorMsg");
+                        this.ResponseErrorMsg(response);
                         geminiEmptyMessage.classList.remove("d-none");
                         sendButton.disabled = false;
                         clearButtonSummary.disabled = false;
@@ -355,15 +354,14 @@ class Gemini {
             (response) => {
                 if (response.error) {
                     responseField.value = `API Error: ${response.error}`;
-                    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
+                    this.ResponseErrorMsg(response);
                 } else {
                     responseField.value = response;
                     try {
                         this.createSummaryList(response);
                     } catch (error) {
                         responseField.value = `HTML Error: ${error}`;
-                        geminiEmptyMessage.innerText =
-                            chrome.i18n.getMessage("geminiErrorMsg");
+                        this.ResponseErrorMsg(response);
                     }
                 }
                 sendButton.disabled = false;
@@ -427,5 +425,18 @@ class Gemini {
             const currentTab = tabs[0];
             summarizedTabId = currentTab.id;
         });
+    }
+
+    ResponseErrorMsg(response) {
+        if (response.error.includes("overloaded")) {
+            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiOverloadMsg");
+        } else {
+            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
+        }
+
+        hasSummary = false;
+        geminiEmptyMessage.classList.remove("shineText");
+        clearButtonSummary.classList.add("d-none");
+        apiButton.classList.remove("d-none");
     }
 }

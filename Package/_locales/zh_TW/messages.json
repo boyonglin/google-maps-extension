@@ -41,6 +41,9 @@
   "geminiErrorMsg": {
     "message": "出錯了！\n請重新整理頁面並再試一次\ud83d\udea7"
   },
+  "geminiOverloadMsg": {
+    "message": "模型過載了！\n請稍後再試\ud83d\udea7"
+  },
   "apiInvalidMsg": {
     "message": "API 金鑰無法使用！\n請確認並重新嘗試\ud83d\udea7"
   },

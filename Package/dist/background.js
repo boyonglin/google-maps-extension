@@ -436,6 +436,10 @@ function callApi(prompt, content, apiKey, sendResponse) {
   })
     .then(response => response.json())
     .then(data => {
+      if (data.error) {
+        sendResponse({ error: data.error.message });
+        return;
+      }
       const generatedText = data.candidates[0].content.parts[0].text;
       if (generatedText.includes("<ul")) {
         const regex = /<ul class="list-group d-flex">[\s\S]*?<\/ul>/;
@@ -445,9 +449,6 @@ function callApi(prompt, content, apiKey, sendResponse) {
         sendResponse(generatedText);
       }
     })
-    .catch((error) => {
-      sendResponse({ error: error.toString() });
-    });
 }
 
 // iframe injection
