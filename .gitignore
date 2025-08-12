@@ -1,3 +1,4 @@
 /Assets
 Package.zip
 Package/dist/module/appSecret.js
+Package/dist/module/gcrypto.js
