@@ -1,5 +1,3 @@
-let searchHistoryList = [];
-let favoriteList = [];
 let maxListLength = 10;
 
 const summaryPrompt = `You are now a place seeker tasked with identifying specific places or landmarks that are important in the page content. Please identify and list the sub-landmarks (prioritizing <h1>, <h2>, <h3>, or <strong>) that are most relevant to the main topic of the page content (marked by the <title>) from the provided page, and do not list irrelevant results. For example, if the main topic suggests a specific number of sub-landmarks, ensure that the identified results align with that expectation. If <h1>, <h2>, <h3>, or <strong> contain no important sub-landmarks, please disregard them. Sub-landmarks should avoid using complete sentences from the original content, dish names, or emojis. Next, you should format the results as an unordered list (<ul>), with each sub-landmark as a list item (<li>), and retain the original language of the content. Additionally, based on the sub-landmark, look for one contextual clue around it if needed, it can include city or state or country, then fill in <span> for the clue. It's better to select only one key clue for each sub-landmark. But if there is address information, please use the address as a clue. If different sub-landmarks share the same name, you may add a clue in parentheses after the sub-landmark to provide identifiable differences. Only output the following exact structure, replacing the list items as needed:
@@ -394,43 +392,35 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash";
 
 async function verifyApiKey(apiKey) {
-  const url = `${endpoint}?key=${apiKey}`;
-  const res = await fetch(url);
-  return ({ valid: res.ok });
+  const res = await fetch(endpoint, {
+    headers: { "x-goog-api-key": apiKey }
+  });
+  return { valid: res.ok };
 }
 
 function callApi(prompt, content, apiKey, sendResponse) {
-  const url = `${endpoint}:generateContent?key=${apiKey}`;
+  const url = `${endpoint}:generateContent`;
 
-  let data;
-  if (content.includes("youtube")) {
-    data = {
-      contents: [{
-        parts: [
-          { text: prompt },
-          {
-            file_data: {
-              file_uri: content.trim(),
-            },
-          },
-        ],
-      },
-      ],
-    };
-  } else {
-    data = {
-      contents: [{
-        parts: [{
-          text: prompt + content
+  const data = content.includes("youtube")
+    ? {
+        contents: [{
+          parts: [
+            { text: prompt },
+            { file_data: { file_uri: content.trim() } }
+          ]
         }]
-      }]
-    };
-  }
+      }
+    : {
+        contents: [{
+          parts: [{ text: `${prompt}${content}` }]
+        }]
+      };
 
   fetch(url, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey
     },
     body: JSON.stringify(data)
   })
