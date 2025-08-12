@@ -18,7 +18,7 @@ class History {
                     liElement.classList.toggle("checked-list");
                     const checkbox = liElement.querySelector("input");
                     checkbox.checked = !checkbox.checked;
-                    delMode.updateDeleteCount();
+                    remove.updateDeleteCount();
                 }
             } else {
                 const selectedText = liElement.textContent;

@@ -76,7 +76,7 @@ class Favorite {
                     liElement.classList.toggle("checked-list");
                     const checkbox = liElement.querySelector("input");
                     checkbox.checked = !checkbox.checked;
-                    delMode.updateDeleteCount();
+                    remove.updateDeleteCount();
                 }
             } else {
                 const spanItem = liElement.querySelectorAll("span");
@@ -198,7 +198,7 @@ class Favorite {
                 lastListItem.classList.remove("mb-3");
             }
 
-            delMode.attachCheckboxEventListener(favoriteListContainer);
+            remove.attachCheckboxEventListener(favoriteListContainer);
             delayMeasurement();
         } else {
             favoriteEmptyMessage.style.display = "block";
