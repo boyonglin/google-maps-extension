@@ -20,6 +20,11 @@
   --google-purple: #8779cd;
   --google-purple-500: #c3bce6;
   --google-purple-bg: #fafafd;
+  /* TC + Emoji safe */
+  --ui-font: "Satoshi-Variable",
+    "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC",
+    system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
 }
 
 html,
@@ -29,7 +34,8 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   color: var(--gray-800);
-  font-family: "Satoshi", sans-serif;
+  font-family: var(--ui-font);
+  font-weight: 400;
 }
 
 /* search bar */
@@ -51,11 +57,11 @@ body {
 }
 #searchInput::-moz-placeholder {
   color: var(--gray-600);
-  font-weight: light;
+  font-weight: 300;
 }
 #searchInput::placeholder {
   color: var(--gray-600);
-  font-weight: light;
+  font-weight: 300;
 }
 #searchInput:focus {
   color: var(--gray-600);
@@ -98,11 +104,11 @@ body {
 }
 #apiInput::-moz-placeholder {
   color: var(--gray-600);
-  font-weight: light;
+  font-weight: 300;
 }
 #apiInput::placeholder {
   color: var(--gray-600);
-  font-weight: light;
+  font-weight: 300;
 }
 #apiInput:focus {
   color: var(--gray-600);
@@ -135,7 +141,7 @@ body {
 
 .modal-footer p a {
   color: var(--google-purple);
-  font-weight: bold;
+  font-weight: 700;
   text-decoration: none;
 }
 
@@ -146,11 +152,11 @@ body {
 }
 #dirInput::-moz-placeholder {
   color: var(--gray-600);
-  font-weight: light;
+  font-weight: 300;
 }
 #dirInput::placeholder {
   color: var(--gray-600);
-  font-weight: light;
+  font-weight: 300;
 }
 #dirInput:focus {
   color: var(--gray-600);

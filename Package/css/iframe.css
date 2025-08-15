@@ -70,4 +70,7 @@
 }
 #TMEeject:hover svg {
   fill: var(--background-color);
+}
+#TMEeject:active {
+  box-shadow: none !important;
 }/*# sourceMappingURL=iframe.css.map */

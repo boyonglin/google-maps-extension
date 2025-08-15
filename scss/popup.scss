@@ -20,6 +20,12 @@
   --google-purple: #8779cd;
   --google-purple-500: #c3bce6;
   --google-purple-bg: #fafafd;
+
+  /* TC + Emoji safe */
+  --ui-font: "Satoshi-Variable",
+    "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC",
+    system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
 }
 
 html,
@@ -29,7 +35,8 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   color: var(--gray-800);
-  font-family: "Satoshi", sans-serif;
+  font-family: var(--ui-font);
+  font-weight: 400;
 }
 
 /* search bar */
@@ -52,7 +59,7 @@ body {
 
   &::placeholder {
     color: var(--gray-600);
-    font-weight: light;
+    font-weight: 300;
   }
 
   &:focus {
@@ -97,7 +104,7 @@ body {
 
   &::placeholder {
     color: var(--gray-600);
-    font-weight: light;
+    font-weight: 300;
   }
 
   &:focus {
@@ -131,7 +138,7 @@ body {
 
 .modal-footer p a {
   color: var(--google-purple);
-  font-weight: bold;
+  font-weight: 700;
   text-decoration: none;
 }
 
@@ -143,7 +150,7 @@ body {
 
   &::placeholder {
     color: var(--gray-600);
-    font-weight: light;
+    font-weight: 300;
   }
 
   &:focus {
@@ -385,6 +392,7 @@ li:hover .form-check-input {
 }
 
 .btn-outline-secondary {
+
   &:hover::after,
   &.active-button::after {
     content: "";
@@ -399,6 +407,7 @@ li:hover .form-check-input {
 }
 
 #searchHistoryButton {
+
   &:hover,
   &.active-button {
     background-color: transparent;
@@ -422,6 +431,7 @@ li:hover .form-check-input {
 }
 
 #favoriteListButton {
+
   &:hover,
   &.active-button {
     background-color: transparent;
@@ -445,6 +455,7 @@ li:hover .form-check-input {
 }
 
 #deleteListButton {
+
   &:hover,
   &.active-button {
     background-color: transparent;
@@ -468,6 +479,7 @@ li:hover .form-check-input {
 }
 
 #geminiSummaryButton {
+
   &:hover,
   &.active-button {
     background-color: transparent;
@@ -491,6 +503,7 @@ li:hover .form-check-input {
 }
 
 #videoSummaryButton {
+
   &:hover,
   &.active-button {
     background-color: transparent;
