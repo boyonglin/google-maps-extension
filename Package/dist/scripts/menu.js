@@ -83,7 +83,8 @@ class ContextMenuUtil {
                     action: "openInGroup",
                     urls: urls,
                     groupTitle,
-                    groupColor
+                    groupColor,
+                    collapsed: listItems.length > 10 ? true : false
                 });
             } else {
                 urls.forEach(url => chrome.runtime.sendMessage({ action: "openTab", url }));

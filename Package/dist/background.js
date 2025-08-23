@@ -307,22 +307,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     addToFavoriteList(selectedText);
   }
 
-  // Opens the tab without focusing on it
-  if (request.action === "openTab") {
+  if (request.action === "openTab") {  // Opens the tab without focusing on it
     chrome.tabs.create({
       url: request.url,
       active: false
     });
-  }
-
-  // Checks if the user can group tabs
-  if (request.action === "canGroup") {
+  } else if (request.action === "canGroup") {  // Checks if the user can group tabs
     sendResponse({ canGroup });
     return;
-  }
-
-  if (request.action === "openInGroup") {
-    openUrlsInNewGroup(request.urls, request.groupTitle, request.groupColor);
+  } else if (request.action === "openInGroup") {  // Create a new tab group (if supported)
+    openUrlsInNewGroup(
+      request.urls, request.groupTitle, request.groupColor, request.collapsed);
   }
 });
 
@@ -331,21 +326,31 @@ const canGroup =
   typeof chrome.tabs.group === "function" &&
   typeof chrome.tabGroups.update === "function";
 
-function openUrlsInNewGroup(urls, title, color) {
+function openUrlsInNewGroup(urls, title, color, collapsed) {
   chrome.windows.getCurrent({ populate: false }, (win) => {
-    const tabIds = [];
-    const createNext = (i) => {
-      if (i >= urls.length) {
-        chrome.tabs.group({ tabIds, createProperties: { windowId: win.id } }, (groupId) => {
-          chrome.tabGroups.update(groupId, { title, color });
+    chrome.tabs.query({ active: true, windowId: win.id }, (activeTabs) => {
+      const originalActiveTabId = activeTabs.length > 0 ? activeTabs[0].id : null;
+
+      const tabIds = [];
+      const createNext = (i) => {
+        if (i >= urls.length) {
+          chrome.tabs.group({ tabIds, createProperties: { windowId: win.id } }, (groupId) => {
+            chrome.tabGroups.update(groupId, { title, color, collapsed: !!collapsed }, () => {
+              // re-focus original tab (some builds may briefly focus a new tab)
+              if (originalActiveTabId) {
+                chrome.tabs.update(originalActiveTabId, { active: true });
+              }
+            });
+          });
+          return;
+        }
+        chrome.tabs.create({ url: urls[i], active: false, windowId: win.id }, (tab) => {
+          tabIds.push(tab.id);
+          createNext(i + 1);
         });
-        return;
-      }
-      chrome.tabs.create({ url: urls[i], active: i === 0, windowId: win.id }, (tab) => {
-        tabIds.push(tab.id); createNext(i + 1);
-      });
-    };
-    createNext(0);
+      };
+      createNext(0);
+    });
   });
 }
 
@@ -437,18 +442,18 @@ function callApi(prompt, content, apiKey, sendResponse) {
 
   const data = content.includes("youtube")
     ? {
-        contents: [{
-          parts: [
-            { text: prompt },
-            { file_data: { file_uri: content.trim() } }
-          ]
-        }]
-      }
+      contents: [{
+        parts: [
+          { text: prompt },
+          { file_data: { file_uri: content.trim() } }
+        ]
+      }]
+    }
     : {
-        contents: [{
-          parts: [{ text: `${prompt}${content}` }]
-        }]
-      };
+      contents: [{
+        parts: [{ text: `${prompt}${content}` }]
+      }]
+    };
 
   fetch(url, {
     method: "POST",
