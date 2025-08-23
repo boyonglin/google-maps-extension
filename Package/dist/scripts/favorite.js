@@ -79,13 +79,8 @@ class Favorite {
                     remove.updateDeleteCount();
                 }
             } else {
-                const spanItem = liElement.querySelectorAll("span");
-                let selectedText = "";
-                if (spanItem.length > 1) {
-                    selectedText = spanItem[0].textContent + " " + spanItem[1].textContent;
-                } else {
-                    selectedText = spanItem[0].textContent;
-                }
+                const spans = liElement.querySelectorAll("span");
+                const selectedText = Array.from(spans).map(span => span.textContent).join(" ").trim();
                 const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
                     selectedText
                 )}`;

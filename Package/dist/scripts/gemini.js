@@ -10,14 +10,15 @@ class Gemini {
                 return;
             }
 
-            const selectedText = liElement.textContent;
+            const spans = liElement.querySelectorAll("span");
+            const selectedText = Array.from(spans).map(span => span.textContent).join(" ").trim();
             const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
                 selectedText
             )}`;
 
             if (event.target.classList.contains("bi")) {
-                const nameSpan = liElement.querySelector("span:first-child").textContent;
-                const clueSpan = liElement.querySelector("span.d-none").textContent;
+                const nameSpan = spanItems[0].textContent;
+                const clueSpan = spanItems[1].textContent;
                 favorite.addToFavoriteList(nameSpan + " @" + clueSpan);
                 event.target.className = "bi bi-patch-check-fill matched spring-animation";
                 setTimeout(function () {

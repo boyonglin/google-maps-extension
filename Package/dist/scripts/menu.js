@@ -54,24 +54,9 @@ class ContextMenuUtil {
         const urls = [];
         const { groupTitle, groupColor } = this.getGroupInfo(listItems[0]);
 
-        listItems.forEach((item) => {
-            let selectedText = "";
-
-            if (item.classList.contains("summary-list")) {
-                const nameSpan = item.querySelector("span:first-child");
-                if (nameSpan) selectedText = nameSpan.textContent;
-            } else if (item.classList.contains("history-list")) {
-                const span = item.querySelector("span");
-                if (span) selectedText = span.textContent;
-            } else if (item.classList.contains("favorite-list")) {
-                const spanItems = item.querySelectorAll("span");
-                if (spanItems.length > 1 && !spanItems[1].classList.contains("d-none")) {
-                    selectedText = `${spanItems[0].textContent} ${spanItems[1].textContent}`;
-                } else if (spanItems[0]) {
-                    selectedText = spanItems[0].textContent;
-                }
-            }
-
+        listItems.forEach(item => {
+            const spans = item.querySelectorAll("span");
+            const selectedText = Array.from(spans).map(span => span.textContent).join(" ").trim();
             if (selectedText) {
                 urls.push(`https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`);
             }
