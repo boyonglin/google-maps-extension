@@ -2,6 +2,12 @@ class ContextMenuUtil {
     static createContextMenu(event, listContainer) {
         event.preventDefault();
 
+        // Don't create context menu in delete mode
+        const deleteListButton = document.getElementById('deleteListButton');
+        if (deleteListButton && deleteListButton.classList.contains('active-button')) {
+            return;
+        }
+
         // Get all list items in the current container based on tab type
         const listItems = listContainer.querySelectorAll(".summary-list, .history-list, .favorite-list");
 
