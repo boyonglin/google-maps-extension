@@ -197,14 +197,5 @@
   },
   "openAll": {
     "message": "すべて開く"
-  },
-  "summaryGroupTitle": {
-    "message": "要約"
-  },
-  "historyGroupTitle": {
-    "message": "履歴"
-  },
-  "favoriteGroupTitle": {
-    "message": "お気に"
   }
 }

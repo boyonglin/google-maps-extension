@@ -97,13 +97,13 @@ class ContextMenuUtil {
         let groupColor = "";
 
         if (firstItem.classList.contains("summary-list")) {
-            groupTitle = chrome.i18n.getMessage("summaryGroupTitle");
+            groupTitle = "✨";
             groupColor = "purple";
         } else if (firstItem.classList.contains("history-list")) {
-            groupTitle = chrome.i18n.getMessage("historyGroupTitle");
+            groupTitle = "🕓";
             groupColor = "green";
         } else if (firstItem.classList.contains("favorite-list")) {
-            groupTitle = chrome.i18n.getMessage("favoriteGroupTitle");
+            groupTitle = "🏵️";
             groupColor = "yellow";
         }
 

@@ -197,14 +197,5 @@
   },
   "openAll": {
     "message": "全部開啟"
-  },
-  "summaryGroupTitle": {
-    "message": "摘要"
-  },
-  "historyGroupTitle": {
-    "message": "記錄"
-  },
-  "favoriteGroupTitle": {
-    "message": "收藏"
   }
 }
