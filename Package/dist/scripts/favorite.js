@@ -106,6 +106,11 @@ class Favorite {
                 }
             }
         });
+
+        // Add context menu listener for favorite items
+        favoriteListContainer.addEventListener("contextmenu", (event) => {
+            ContextMenuUtil.createContextMenu(event, favoriteListContainer);
+        });
     }
 
     createFavoriteIcon(itemName, favoriteList) {

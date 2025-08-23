@@ -22,7 +22,8 @@
     "activeTab",
     "contextMenus",
     "storage",
-    "scripting"
+    "scripting",
+    "tabGroups"
   ],
   "background": {
     "service_worker": "dist/background.js",

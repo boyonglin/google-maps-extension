@@ -54,6 +54,11 @@ class History {
             }
         });
 
+        // Add context menu listener for history items
+        searchHistoryListContainer.addEventListener("contextmenu", (event) => {
+            ContextMenuUtil.createContextMenu(event, searchHistoryListContainer);
+        });
+
         clearButton.addEventListener("click", () => {
             chrome.storage.local.set({ searchHistoryList: [] });
 

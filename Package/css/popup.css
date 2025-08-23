@@ -528,16 +528,16 @@ li:hover .form-check-input {
 }
 
 /* context menu */
-.gemini-context-menu {
+.context-menu {
   z-index: 1050;
   background-color: var(--background-color);
   box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
 }
 
-.gemini-context-item {
+.context-menu-item {
   padding: 8px 16px;
 }
-.gemini-context-item:hover {
+.context-menu-item:hover {
   color: var(--gray-600);
 }
 

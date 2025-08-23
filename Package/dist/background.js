@@ -290,7 +290,7 @@ function handleSelectedDir(selectedText) {
   });
 }
 
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "clearSearchHistoryList") {
     chrome.storage.local.set({ searchHistoryList: [] });
   } else if (request.action === "searchInput") {
@@ -314,7 +314,41 @@ chrome.runtime.onMessage.addListener((request) => {
       active: false
     });
   }
+
+  // Checks if the user can group tabs
+  if (request.action === "canGroup") {
+    sendResponse({ canGroup });
+    return;
+  }
+
+  if (request.action === "openInGroup") {
+    openUrlsInNewGroup(request.urls, request.groupTitle, request.groupColor);
+  }
 });
+
+const canGroup =
+  !!chrome.tabGroups &&
+  typeof chrome.tabs.group === "function" &&
+  typeof chrome.tabGroups.update === "function";
+
+function openUrlsInNewGroup(urls, title, color) {
+  chrome.windows.getCurrent({ populate: false }, (win) => {
+    const tabIds = [];
+    const createNext = (i) => {
+      if (i >= urls.length) {
+        chrome.tabs.group({ tabIds, createProperties: { windowId: win.id } }, (groupId) => {
+          chrome.tabGroups.update(groupId, { title, color });
+        });
+        return;
+      }
+      chrome.tabs.create({ url: urls[i], active: i === 0, windowId: win.id }, (tab) => {
+        tabIds.push(tab.id); createNext(i + 1);
+      });
+    };
+    createNext(0);
+  });
+}
+
 
 // Add the selected text to history list
 function updateHistoryList(selectedText) {
