@@ -3,8 +3,8 @@ class ContextMenuUtil {
         event.preventDefault();
 
         // Don't create context menu in delete mode
-        const deleteListButton = document.getElementById('deleteListButton');
-        if (deleteListButton && deleteListButton.classList.contains('active-button')) {
+        const deleteListButton = document.getElementById("deleteListButton");
+        if (deleteListButton && deleteListButton.classList.contains("active-button")) {
             return;
         }
 
