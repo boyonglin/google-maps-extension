@@ -319,8 +319,13 @@ li:hover .form-check-input {
 }
 
 .btn-light {
+  color: var(--gray-600);
   background-color: var(--gray-300);
   border: 1px solid var(--gray-300);
+
+  &:hover {
+    border: 1px solid var(--gray-300);
+  }
 }
 
 .btn-maps {
@@ -601,9 +606,10 @@ li:hover .form-check-input {
 /* context menu */
 
 .context-menu {
-  z-index: 1050;
   background-color: var(--background-color);
   box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+  padding: 4px;
 }
 
 .context-menu-item {

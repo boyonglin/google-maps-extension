@@ -25,7 +25,7 @@ class ContextMenuUtil {
 
         // Create "Open all URL" option
         const openAllItem = document.createElement("li");
-        openAllItem.className = "list-group-item list-group-item-action context-menu-item";
+        openAllItem.className = "list-group-item list-group-item-action border-0 rounded-2 context-menu-item";
         openAllItem.textContent = `${chrome.i18n.getMessage("openAll")} (${listItems.length})`;
 
         openAllItem.addEventListener("click", () => {
