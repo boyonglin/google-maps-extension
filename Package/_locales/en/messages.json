@@ -258,5 +258,9 @@
   "closeLabel": {
     "message": "Close (Esc)",
     "description": "tooltips close label"
+  },
+  "openAll": {
+    "message": "Open All",
+    "description": "gemini context menu open all links label"
   }
 }

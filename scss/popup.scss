@@ -575,7 +575,7 @@ li:hover .form-check-input {
   video {
     width: calc(100% - 16px);
     border: 8px solid white;
-    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -596,6 +596,22 @@ li:hover .form-check-input {
 ::-webkit-scrollbar-thumb {
   background: var(--gray-400);
   border-radius: 0.5rem;
+}
+
+/* context menu */
+
+.gemini-context-menu {
+  z-index: 1050;
+  background-color: var(--background-color);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+}
+
+.gemini-context-item {
+  padding: 8px 16px;
+
+  &:hover {
+    color: var(--gray-600);
+  }
 }
 
 /* animation  */

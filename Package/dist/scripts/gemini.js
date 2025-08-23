@@ -33,6 +33,58 @@ class Gemini {
             }
         });
 
+        summaryListContainer.addEventListener("contextmenu", (event) => {
+            event.preventDefault();
+
+            let liElement;
+            if (event.target.tagName === "LI") {
+                liElement = event.target;
+            } else if (event.target.parentElement.tagName === "LI") {
+                liElement = event.target.parentElement;
+            } else {
+                return;
+            }
+
+            // Get all summary list items
+            const listItems = summaryListContainer.querySelectorAll('.summary-list');
+
+            // Remove any existing context menu
+            const existingMenu = document.querySelector('.gemini-context-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+
+            // Create context menu
+            const contextMenu = document.createElement('ul');
+            contextMenu.className = 'list-group position-absolute rounded-3 gemini-context-menu';
+            contextMenu.style.left = event.pageX + 'px';
+            contextMenu.style.top = event.pageY + 'px';
+
+            // Create "Open all URL" option
+            const openAllItem = document.createElement('li');
+            openAllItem.className = 'list-group-item list-group-item-action gemini-context-item';
+            openAllItem.textContent = `${chrome.i18n.getMessage("openAll")} (${listItems.length})`;
+
+            openAllItem.addEventListener('click', () => {
+                this.openAllUrls(listItems);
+                contextMenu.remove();
+            });
+
+            contextMenu.appendChild(openAllItem);
+            document.body.appendChild(contextMenu);
+
+            // Close context menu when clicking elsewhere
+            const closeMenu = (e) => {
+                if (!contextMenu.contains(e.target)) {
+                    contextMenu.remove();
+                    document.removeEventListener('click', closeMenu);
+                }
+            };
+            setTimeout(() => {
+                document.addEventListener('click', closeMenu);
+            }, 0);
+        });
+
         clearButtonSummary.addEventListener("click", () => {
             chrome.storage.local.remove(["summaryList", "timestamp"]);
 
@@ -87,6 +139,17 @@ class Gemini {
             } else {
                 // Use normal content summarization
                 this.performNormalContentSummary();
+            }
+        });
+    }
+
+    openAllUrls(listItems) {
+        listItems.forEach((item) => {
+            const nameSpan = item.querySelector("span:first-child");
+            if (nameSpan) {
+                const selectedText = nameSpan.textContent;
+                const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`;
+                chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
             }
         });
     }

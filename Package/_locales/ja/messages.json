@@ -194,5 +194,8 @@
   },
   "closeLabel": {
     "message": "閉じる（Esc）"
+  },
+  "openAll": {
+    "message": "すべて開く"
   }
 }

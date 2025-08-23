@@ -194,5 +194,8 @@
   },
   "closeLabel": {
     "message": "關閉（Esc）"
+  },
+  "openAll": {
+    "message": "全部開啟"
   }
 }
