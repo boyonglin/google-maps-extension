@@ -1,3 +1,24 @@
+const THEME_KEY = 'theme';
+
+function applyTheme(theme) {
+  const iframeContainer = document.getElementById("TMEiframe");
+  if (iframeContainer) {
+    iframeContainer.setAttribute('data-theme', theme);
+  }
+}
+
+chrome.storage.sync.get(THEME_KEY, (data) => {
+  const stored = data[THEME_KEY];
+  const theme = stored ? stored : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(theme);
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes[THEME_KEY]) {
+    applyTheme(changes[THEME_KEY].newValue);
+  }
+});
+
 // Track tab messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Get the selected text from the webpage

@@ -7,6 +7,11 @@ window.TME = {
         iframeContainer.id = "TMEiframe";
         iframeContainer.style.left = defaultX + "px";
         iframeContainer.style.top = defaultY + "px";
+        chrome.storage.sync.get('theme', (data) => {
+            const stored = data['theme'];
+            const theme = stored ? stored : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            iframeContainer.setAttribute('data-theme', theme);
+        });
         // iframeContainer.style.resize = "vertical";
 
         const draggableBar = document.createElement("div");
