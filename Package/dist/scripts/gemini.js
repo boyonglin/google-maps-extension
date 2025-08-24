@@ -1,3 +1,37 @@
+// Basic HTML sanitization to prevent XSS while preserving safe HTML structure
+function sanitizeHtml(html) {
+    if (typeof html !== 'string') return '';
+    
+    // Remove script tags and their content
+    html = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    
+    // Remove event handlers - separate patterns for each quote type
+    html = html.replace(/\s+on\w+\s*=\s*"[^"]*"/gi, '');  // double quotes
+    html = html.replace(/\s+on\w+\s*=\s*'[^']*'/gi, '');  // single quotes
+    html = html.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, ''); // unquoted
+    
+    // Remove javascript: URLs
+    html = html.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, '');
+    html = html.replace(/src\s*=\s*["']javascript:[^"']*["']/gi, '');
+    
+    // Remove dangerous tags
+    html = html.replace(/<(iframe|object|embed|form|input|textarea|select|button)[^>]*>[\s\S]*?<\/\1>/gi, '');
+    html = html.replace(/<(iframe|object|embed|form|input|textarea|select|button)[^>]*\/?>/gi, '');
+    
+    return html;
+}
+
+// HTML escaping utility to prevent XSS attacks
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return unsafe;
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 class Gemini {
     addGeminiPageListener() {
         summaryListContainer.addEventListener("click", (event) => {
@@ -219,8 +253,8 @@ class Gemini {
 
             html += `
       <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center text-break ${mbClass}">
-        <span>${item.name}</span>
-        <span class="d-none">${item.clue}</span>
+        <span>${escapeHtml(item.name)}</span>
+        <span class="d-none">${escapeHtml(item.clue)}</span>
         ${iconHTML}
       </li>
     `;
@@ -375,7 +409,7 @@ class Gemini {
     }
 
     createSummaryList(response) {
-        summaryListContainer.innerHTML = response;
+        summaryListContainer.innerHTML = sanitizeHtml(response);
         const lastListItem = summaryListContainer.querySelector(
             ".list-group .list-group-item:last-child"
         );

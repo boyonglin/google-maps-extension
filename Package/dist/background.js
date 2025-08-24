@@ -430,6 +430,29 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
 const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash";
 
+// Basic HTML sanitization to prevent XSS attacks
+function sanitizeApiResponse(html) {
+  if (typeof html !== 'string') return html;
+  
+  // Remove script tags and their content
+  html = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  
+  // Remove event handlers - separate patterns for each quote type
+  html = html.replace(/\s+on\w+\s*=\s*"[^"]*"/gi, '');  // double quotes
+  html = html.replace(/\s+on\w+\s*=\s*'[^']*'/gi, '');  // single quotes
+  html = html.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, ''); // unquoted
+  
+  // Remove javascript: URLs
+  html = html.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, '');
+  html = html.replace(/src\s*=\s*["']javascript:[^"']*["']/gi, '');
+  
+  // Remove dangerous tags
+  html = html.replace(/<(iframe|object|embed|form|input|textarea|select|button)[^>]*>[\s\S]*?<\/\1>/gi, '');
+  html = html.replace(/<(iframe|object|embed|form|input|textarea|select|button)[^>]*\/?>/gi, '');
+  
+  return html;
+}
+
 async function verifyApiKey(apiKey) {
   const res = await fetch(endpoint, {
     headers: { "x-goog-api-key": apiKey }
@@ -473,9 +496,9 @@ function callApi(prompt, content, apiKey, sendResponse) {
       if (generatedText.includes("<ul")) {
         const regex = /<ul class="list-group d-flex">[\s\S]*?<\/ul>/;
         const match = generatedText.match(regex);
-        sendResponse(match[0]);
+        sendResponse(sanitizeApiResponse(match[0]));
       } else {
-        sendResponse(generatedText);
+        sendResponse(sanitizeApiResponse(generatedText));
       }
     })
 }
