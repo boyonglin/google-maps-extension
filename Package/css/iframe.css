@@ -37,6 +37,9 @@
   box-sizing: border-box;
   border-bottom: 1px solid var(--border-color);
 }
+#TMEdrag::after {
+  content: none !important;
+}
 
 #TMElines {
   display: flex;
