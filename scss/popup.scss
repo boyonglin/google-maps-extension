@@ -1,7 +1,27 @@
-@import 'theme';
-
-/* TC + Emoji safe */
 :root {
+  --primary-color: #4285f4;
+  --border-color: #dee2e6;
+  --danger-color: #db4437;
+  --danger-color-500: #eda19b;
+  --danger-color-bg: #fff8f7;
+  --background-color: #ffffff;
+  --gray-800: #202833;
+  --gray-600: #70757a;
+  --gray-400: #dadce0;
+  --gray-300: #eff1f3;
+  --gray-200: #f6fafe;
+  --google-green: #0f9d58;
+  --google-green-500: #87cdab;
+  --google-green-bg: #f7fffb;
+  --google-yellow: #f4b400;
+  --google-yellow-500: #f9d980;
+  --google-yellow-bg: #fffdf7;
+  --google-purple-hover: #6c61a4;
+  --google-purple: #8779cd;
+  --google-purple-500: #c3bce6;
+  --google-purple-bg: #fafafd;
+
+  /* TC + Emoji safe */
   --ui-font: "Satoshi-Variable",
     "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC",
     system-ui, sans-serif,
@@ -15,7 +35,6 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   color: var(--gray-800);
-  background-color: var(--background-color);
   font-family: var(--ui-font);
   font-weight: 400;
 }
