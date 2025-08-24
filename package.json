@@ -1,0 +1,9 @@
+{
+  "name": "google-maps-extension",
+  "version": "1.0.0",
+  "description": "Build tools for The Maps Express",
+  "type": "module",
+  "scripts": {
+    "contrast": "node tools/contrast-check.js"
+  }
+}

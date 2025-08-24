@@ -1,31 +1,3 @@
-:root {
-  --primary-color: #4285f4;
-  --border-color: #dee2e6;
-  --danger-color: #db4437;
-  --danger-color-500: #eda19b;
-  --danger-color-bg: #fff8f7;
-  --background-color: #ffffff;
-  --gray-800: #202833;
-  --gray-600: #70757a;
-  --gray-400: #dadce0;
-  --gray-300: #eff1f3;
-  --gray-200: #f6fafe;
-  --google-green: #0f9d58;
-  --google-green-500: #87cdab;
-  --google-green-bg: #f7fffb;
-  --google-yellow: #f4b400;
-  --google-yellow-500: #f9d980;
-  --google-yellow-bg: #fffdf7;
-  --google-purple-hover: #6c61a4;
-  --google-purple: #8779cd;
-  --google-purple-500: #c3bce6;
-  --google-purple-bg: #fafafd;
-  /* TC + Emoji safe */
-  --ui-font: "Satoshi-Variable",
-    "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC",
-    system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
-}
 
 html,
 body {
@@ -33,8 +5,9 @@ body {
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
-  color: var(--gray-800);
-  font-family: var(--ui-font);
+  background-color: var(--color-bg);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
   font-weight: 400;
 }
 
@@ -42,7 +15,7 @@ body {
 .brand {
   border-top-left-radius: 2rem;
   border-bottom-left-radius: 2rem;
-  background-color: var(--background-color);
+  background-color: var(--color-bg);
 }
 
 .input-group-prepend {
@@ -53,20 +26,20 @@ body {
   border-left: 0rem;
   border-top-right-radius: 2rem;
   border-bottom-right-radius: 2rem;
-  color: var(--gray-800);
+  color: var(--text-primary);
 }
 #searchInput::-moz-placeholder {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   font-weight: 300;
 }
 #searchInput::placeholder {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   font-weight: 300;
 }
 #searchInput:focus {
-  color: var(--gray-600);
-  background-color: var(--background-color);
-  border-color: var(--border-color);
+  color: var(--text-secondary);
+  background-color: var(--color-bg);
+  border-color: var(--border);
   outline: none;
   box-shadow: none;
 }
@@ -86,8 +59,8 @@ body {
   right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--gray-800);
-  background-color: var(--background-color);
+  color: var(--text-primary);
+  background-color: var(--color-bg);
   width: 2rem;
   height: 2rem;
   cursor: pointer;
@@ -103,17 +76,17 @@ body {
   padding-left: 1rem;
 }
 #apiInput::-moz-placeholder {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   font-weight: 300;
 }
 #apiInput::placeholder {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   font-weight: 300;
 }
 #apiInput:focus {
-  color: var(--gray-600);
-  background-color: var(--background-color);
-  border-color: var(--border-color);
+  color: var(--text-secondary);
+  background-color: var(--color-bg);
+  border-color: var(--border);
   outline: none;
   box-shadow: none;
 }
@@ -129,7 +102,7 @@ body {
   right: 1.5rem;
   top: 50%;
   transform: translateY(-50%);
-  background-color: var(--google-purple);
+  background-color: var(--purple);
   color: white;
   width: 2rem;
   height: 2rem;
@@ -140,7 +113,7 @@ body {
 }
 
 .modal-footer p a {
-  color: var(--google-purple);
+  color: var(--purple);
   font-weight: 700;
   text-decoration: none;
 }
@@ -151,17 +124,17 @@ body {
   padding-left: 1rem;
 }
 #dirInput::-moz-placeholder {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   font-weight: 300;
 }
 #dirInput::placeholder {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   font-weight: 300;
 }
 #dirInput:focus {
-  color: var(--gray-600);
-  background-color: var(--background-color);
-  border-color: var(--border-color);
+  color: var(--text-secondary);
+  background-color: var(--color-bg);
+  border-color: var(--border);
   outline: none;
   box-shadow: none;
 }
@@ -177,7 +150,7 @@ body {
   right: 1.5rem;
   top: 50%;
   transform: translateY(-50%);
-  background-color: var(--primary-color);
+  background-color: var(--accent);
   color: white;
   width: 2rem;
   height: 2rem;
@@ -189,7 +162,7 @@ body {
 
 /* list-group-item */
 .list-group-item {
-  color: var(--gray-600);
+  color: var(--text-secondary);
   max-width: 100%;
   cursor: pointer;
 }
@@ -201,28 +174,28 @@ body {
 }
 
 .history-list:hover {
-  color: var(--google-green);
-  background-color: var(--google-green-bg);
-  border: 1px solid var(--google-green) !important;
+  color: var(--success);
+  background-color: var(--success-bg);
+  border: 1px solid var(--success) !important;
 }
 
 .favorite-list:hover {
-  color: var(--google-yellow);
-  background-color: var(--google-yellow-bg);
-  border: 1px solid var(--google-yellow) !important;
+  color: var(--warning);
+  background-color: var(--warning-bg);
+  border: 1px solid var(--warning) !important;
 }
 
 .delete-list:hover,
 .checked-list {
-  color: var(--danger-color);
-  background-color: var(--danger-color-bg);
-  border: 1px solid var(--danger-color) !important;
+  color: var(--danger);
+  background-color: var(--danger-bg);
+  border: 1px solid var(--danger) !important;
 }
 
 .summary-list:hover {
-  color: var(--google-purple);
-  background-color: var(--google-purple-bg);
-  border: 1px solid var(--google-purple) !important;
+  color: var(--purple);
+  background-color: var(--purple-bg);
+  border: 1px solid var(--purple) !important;
 }
 
 #searchHistoryList,
@@ -275,26 +248,26 @@ li:hover i.matched {
 
 /* checkbox */
 .form-check-input {
-  border-color: var(--border-color);
+  border-color: var(--border);
   min-width: 1rem;
   min-height: 1rem;
   margin-top: 0rem;
 }
 .form-check-input:focus-visible {
-  box-shadow: 0 0 0 0px var(--danger-color-500);
-  border-color: var(--danger-color);
+  box-shadow: 0 0 0 0px var(--danger-500);
+  border-color: var(--danger);
 }
 .form-check-input:focus {
-  box-shadow: 0 0 0 0px var(--danger-color-500);
-  border-color: var(--border-color);
+  box-shadow: 0 0 0 0px var(--danger-500);
+  border-color: var(--border);
 }
 .form-check-input:checked {
-  background-color: var(--danger-color);
-  border-color: var(--danger-color);
+  background-color: var(--danger);
+  border-color: var(--danger);
 }
 
 li:hover .form-check-input {
-  border-color: var(--danger-color-500);
+  border-color: var(--danger-500);
 }
 
 /* buttons */
@@ -303,65 +276,65 @@ li:hover .form-check-input {
   padding-left: 0.75rem;
 }
 .nav-link:hover {
-  color: var(--gray-800) !important;
+  color: var(--text-primary) !important;
 }
 
 .btn-light {
-  color: var(--gray-600);
-  background-color: var(--gray-300);
-  border: 1px solid var(--gray-300);
+  color: var(--text-secondary);
+  background-color: var(--surface-2);
+  border: 1px solid var(--surface-2);
 }
 .btn-light:hover {
-  border: 1px solid var(--gray-300);
+  border: 1px solid var(--surface-2);
 }
 
 .btn-maps {
-  background-color: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  background-color: var(--accent);
+  border: 1px solid var(--accent);
 }
 
 .btn-delete {
-  background-color: var(--danger-color);
-  border: 1px solid var(--danger-color);
+  background-color: var(--danger);
+  border: 1px solid var(--danger);
 }
 
 #clearButton,
 #cancelButton,
 #clearButtonSummary {
-  color: var(--gray-600);
+  color: var(--text-secondary);
 }
 
 #clearButton:hover,
 #clearButtonSummary:hover {
-  background-color: var(--danger-color);
-  border: 1px solid var(--danger-color);
-  color: var(--background-color);
+  background-color: var(--danger);
+  border: 1px solid var(--danger);
+  color: var(--color-bg);
 }
 
 .btn-send {
-  background-color: var(--google-purple);
-  border: 1px solid var(--google-purple);
-  color: var(--background-color);
+  background-color: var(--purple);
+  border: 1px solid var(--purple);
+  color: var(--color-bg);
 }
 .btn-send:hover {
-  background-color: var(--google-purple-hover);
-  border: 1px solid var(--google-purple-hover);
-  color: var(--background-color);
+  background-color: var(--purple-hover);
+  border: 1px solid var(--purple-hover);
+  color: var(--color-bg);
 }
 .btn-send:active {
-  background-color: var(--google-purple-hover) !important;
-  border: 1px solid var(--google-purple-hover) !important;
-  color: var(--background-color) !important;
+  background-color: var(--purple-hover) !important;
+  border: 1px solid var(--purple-hover) !important;
+  color: var(--color-bg) !important;
 }
 .btn-send:focus-visible {
-  background-color: var(--google-purple);
-  box-shadow: 0 0 0 4px var(--google-purple-500);
-  color: var(--background-color);
+  background-color: var(--purple);
+  box-shadow: 0 0 0 4px var(--purple-500);
+  color: var(--color-bg);
 }
 .btn-send:disabled {
-  background-color: var(--google-purple);
-  border: 1px solid var(--google-purple);
-  color: var(--background-color);
+  background-color: var(--purple);
+  border: 1px solid var(--purple);
+  color: var(--color-bg);
   opacity: 0.65;
 }
 
@@ -371,7 +344,7 @@ li:hover .form-check-input {
 #geminiSummaryButton,
 #videoSummaryButton {
   border: none;
-  color: var(--gray-600);
+  color: var(--text-secondary);
   position: relative;
 }
 
@@ -392,81 +365,81 @@ li:hover .form-check-input {
 
 #searchHistoryButton:hover, #searchHistoryButton.active-button {
   background-color: transparent;
-  color: var(--google-green);
+  color: var(--success);
 }
 #searchHistoryButton:hover::after {
-  background-color: var(--google-green);
+  background-color: var(--success);
 }
 #searchHistoryButton.active-button::after {
-  background-color: var(--google-green);
+  background-color: var(--success);
 }
 #searchHistoryButton.active-button:focus-visible {
   background-color: transparent;
-  box-shadow: 0 0 0 4px var(--google-green-500);
+  box-shadow: 0 0 0 4px var(--success-500);
 }
 
 #favoriteListButton:hover, #favoriteListButton.active-button {
   background-color: transparent;
-  color: var(--google-yellow);
+  color: var(--warning);
 }
 #favoriteListButton:hover::after {
-  background-color: var(--google-yellow);
+  background-color: var(--warning);
 }
 #favoriteListButton.active-button::after {
-  background-color: var(--google-yellow);
+  background-color: var(--warning);
 }
 #favoriteListButton.active-button:focus-visible {
   background-color: transparent;
-  box-shadow: 0 0 0 4px var(--google-yellow-500);
+  box-shadow: 0 0 0 4px var(--warning-500);
 }
 
 #deleteListButton:hover, #deleteListButton.active-button {
   background-color: transparent;
-  color: var(--danger-color);
+  color: var(--danger);
 }
 #deleteListButton:hover::after {
-  background-color: var(--danger-color);
+  background-color: var(--danger);
 }
 #deleteListButton.active-button::after {
-  background-color: var(--danger-color);
+  background-color: var(--danger);
 }
 #deleteListButton.active-button:focus-visible {
   background-color: transparent;
-  box-shadow: 0 0 0 4px var(--danger-color-500);
+  box-shadow: 0 0 0 4px var(--danger-500);
 }
 
 #geminiSummaryButton:hover, #geminiSummaryButton.active-button {
   background-color: transparent;
-  color: var(--google-purple);
+  color: var(--purple);
 }
 #geminiSummaryButton:hover::after {
-  background-color: var(--google-purple);
+  background-color: var(--purple);
 }
 #geminiSummaryButton.active-button::after {
-  background-color: var(--google-purple);
+  background-color: var(--purple);
 }
 #geminiSummaryButton.active-button:focus-visible {
   background-color: transparent;
-  box-shadow: 0 0 0 4px var(--google-purple-500);
+  box-shadow: 0 0 0 4px var(--purple-500);
 }
 
 #videoSummaryButton:hover, #videoSummaryButton.active-button {
   background-color: transparent;
-  color: var(--danger-color);
+  color: var(--danger);
 }
 #videoSummaryButton:hover::after {
-  background-color: var(--danger-color);
+  background-color: var(--danger);
 }
 #videoSummaryButton.active-button::after {
-  background-color: var(--danger-color);
+  background-color: var(--danger);
 }
 #videoSummaryButton.active-button:focus-visible {
   background-color: transparent;
-  box-shadow: 0 0 0 4px var(--danger-color-500);
+  box-shadow: 0 0 0 4px var(--danger-500);
 }
 #videoSummaryButton.no-hover-temp:hover {
   background-color: transparent;
-  color: var(--gray-600);
+  color: var(--text-secondary);
 }
 #videoSummaryButton.no-hover-temp:hover::after {
   background-color: transparent;
@@ -487,8 +460,8 @@ li:hover .form-check-input {
 }
 
 .modal-body p:hover {
-  -webkit-text-decoration: var(--border-color) underline;
-          text-decoration: var(--border-color) underline;
+  -webkit-text-decoration: var(--border) underline;
+          text-decoration: var(--border) underline;
 }
 
 .btn-close {
@@ -498,7 +471,7 @@ li:hover .form-check-input {
 }
 
 .premium-only {
-  color: var(--gray-400) !important;
+  color: var(--border) !important;
   pointer-events: none !important;
 }
 
@@ -527,15 +500,15 @@ li:hover .form-check-input {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gray-400);
+  background: var(--border);
   border-radius: 0.5rem;
 }
 
 /* context menu */
 .context-menu {
-  background-color: var(--background-color);
+  background-color: var(--color-bg);
   box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   padding: 4px;
 }
 
@@ -543,7 +516,7 @@ li:hover .form-check-input {
   padding: 8px 16px;
 }
 .context-menu-item:hover {
-  color: var(--gray-600);
+  color: var(--text-secondary);
 }
 
 /* animation  */

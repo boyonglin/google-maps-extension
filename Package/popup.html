@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="vendor/bootstrap.min.css" />
     <link rel="stylesheet" href="vendor/bootstrap-icons.css" />
     <link rel="stylesheet" href="vendor/satoshi.css" />
+    <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/popup.css" />
 </head>
 
@@ -219,6 +220,10 @@
                                 <i class="bi bi-arrow-right"></i>
                             </button>
                         </form>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="themeToggle" />
+                            <label class="form-check-label" for="themeToggle" data-locale="darkModeLabel">Dark mode</label>
+                        </div>
                     </div>
                     <div class="modal-footer d-flex justify-content-start">
                         <p class="text-muted" data-locale="dirNote">Launch a map with directions from the starting address to the highlighted text in the context menu.</p>
@@ -251,6 +256,7 @@
             </div>
         </div>
     </div>
+    <script defer src="dist/scripts/theme.js"></script>
     <script defer src='dist/scripts/menu.js'></script>
     <script defer src='dist/scripts/remove.js'></script>
     <script defer src='dist/scripts/favorite.js'></script>

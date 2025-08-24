@@ -66,7 +66,7 @@
         "dist/module/appSecret.js",
         "dist/contentScript.js"
       ],
-      "css": ["css/iframe.css"]
+      "css": ["css/theme.css", "css/iframe.css"]
     }
   ],
   "default_locale": "en",
@@ -81,6 +81,7 @@
       "resources": [
         "vendor/fonts/*.woff2",
         "popup.html",
+        "css/theme.css",
         "css/iframe.css",
         "dist/inject.js",
         "dist/ejectLite.js",

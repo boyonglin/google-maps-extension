@@ -1,19 +1,9 @@
-:root {
-  --border-color: #dee2e6;
-  --danger-color: #db4437;
-  --background-color: #ffffff;
-  --gray-800: #202833;
-  --gray-600: #70757a;
-  --gray-400: #dadce0;
-  --gray-300: #eff1f3;
-  --gray-200: #f6fafe;
-}
 
 #TMEiframe {
   position: fixed;
   width: 400px;
   height: 480px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   z-index: 10000;
   box-shadow: 0 8px 24px rgba(112, 144, 176, 0.25);
   border-radius: 8px;
@@ -29,14 +19,14 @@
 
 #TMEdrag {
   height: 32px;
-  background-color: var(--gray-300);
+  background-color: var(--surface-2);
   cursor: move;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 0 0 1rem;
   box-sizing: border-box;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 
   &::after {
     content: none !important;
@@ -50,7 +40,7 @@
   div {
     width: 1px;
     height: 8px;
-    background-color: var(--gray-600);
+    background-color: var(--text-secondary);
   }
 }
 
@@ -69,14 +59,14 @@
   svg {
     width: 20px;
     height: 20px;
-    fill: var(--gray-600);
+    fill: var(--text-secondary);
   }
 
   &:hover {
-    background: var(--danger-color);
+    background: var(--danger);
 
     svg {
-      fill: var(--background-color);
+      fill: var(--color-bg);
     }
   }
 
