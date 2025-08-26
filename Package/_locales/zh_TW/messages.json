@@ -119,7 +119,10 @@
     "message": "你可以對選取文字點擊滑鼠右鍵，顯示設定的起點與目的地之間的規劃路線"
   },
   "dirPlaceholder": {
-    "message": "路線起點（地址）"
+    "message": "路線起點"
+  },
+  "authUserPlaceholder": {
+    "message": "Google 使用者（預設）= 0"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udccc自動附加 Google 地圖連結"

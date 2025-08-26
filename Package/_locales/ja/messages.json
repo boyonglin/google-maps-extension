@@ -119,7 +119,10 @@
     "message": "選択テキストを右クリックすると、設定済みの出発地と目的地間ルートが表示されます。"
   },
   "dirPlaceholder": {
-    "message": "ルート出発地（住所）"
+    "message": "ルート出発地"
+  },
+  "authUserPlaceholder": {
+    "message": "Google ユーザー（既定）= 0"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"

@@ -569,6 +569,7 @@ const DEFAULTS = {
   geminiApiKey: "",
   aesKey: null,
   startAddr: "",
+  authUser: "",
   videoSummaryToggle: false,
 };
 

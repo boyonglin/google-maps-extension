@@ -154,8 +154,12 @@
     "description": "modal optional title"
   },
   "dirPlaceholder": {
-    "message": "Route Starting Address",
+    "message": "Route Starting Point",
     "description": "modal starting address input placeholder"
+  },
+  "authUserPlaceholder": {
+    "message": "Google User (default) = 0",
+    "description": "modal auth user input placeholder"
   },
   "dirNote": {
     "message": "Launch a map with directions from the starting address to the highlighted text in the context menu.",
