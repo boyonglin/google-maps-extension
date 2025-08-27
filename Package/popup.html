@@ -212,16 +212,32 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="dirForm" class="d-flex my-3">
-                            <input type="text" class="form-control py-2 pe-5" autocomplete="off" id="dirInput" />
-                            <button type="submit" data-bs-dismiss="modal" title="Save"
-                                class="btn btn-setDir d-flex align-items-center justify-content-center rounded-circle border-0">
-                                <i class="bi bi-arrow-right"></i>
-                            </button>
+                        <!-- First form for directory input -->
+                        <form id="dirForm" class="my-3">
+                            <div class="d-flex mb-3 position-relative">
+                                <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off"
+                                    id="dirInput" />
+                                <button type="submit" data-bs-dismiss="modal" title="Save Directory"
+                                    class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
+                                    <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Second form for authUser input -->
+                        <form id="authUserForm" class="my-3">
+                            <div class="d-flex position-relative">
+                                <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off"
+                                    id="authUserInput" />
+                                <button type="submit" data-bs-dismiss="modal" title="Save Authuser"
+                                    class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
+                                    <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
                         </form>
                     </div>
                     <div class="modal-footer d-flex justify-content-start">
-                        <p class="text-muted" data-locale="dirNote">Launch a map with directions from the starting address to the highlighted text in the context menu.</p>
+                        <p class="text-muted" data-locale="optionalNote"></p>
                     </div>
                 </div>
             </div>

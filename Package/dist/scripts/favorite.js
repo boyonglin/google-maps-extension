@@ -81,9 +81,7 @@ class Favorite {
             } else {
                 const spans = liElement.querySelectorAll("span");
                 const selectedText = Array.from(spans).map(span => span.textContent).join(" ").trim();
-                const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
-                    selectedText
-                )}`;
+                const searchUrl = `${queryUrl}q=${encodeURIComponent(selectedText)}`;
 
                 if (event.target.classList.contains("bi")) {
                     return;

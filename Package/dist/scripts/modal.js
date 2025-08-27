@@ -64,6 +64,7 @@ class Modal {
         const optionalModal = document.getElementById("optionalModal");
         optionalModal.addEventListener("hidden.bs.modal", () => {
             dirInput.value = "";
+            authUserInput.value = "";
         });
 
         // Save the starting address
@@ -78,6 +79,23 @@ class Modal {
             } else {
                 chrome.storage.local.set({ startAddr: startAddr });
                 dirInput.placeholder = startAddr;
+            }
+        });
+
+        // Save the authentication user
+        document.getElementById("authUserForm").addEventListener("submit", (event) => {
+            event.preventDefault();
+
+            const authUser = parseInt(authUserInput.value.trim());
+
+            if (authUserInput.value.trim() === "" || authUser === 0 || isNaN(authUser)) {
+                chrome.storage.local.set({ authUser: 0 });
+                authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
+                UpdateUserUrls(0);
+            } else if (/^\d+$/.test(authUser) && authUser > 0) {
+                chrome.storage.local.set({ authUser: authUser });
+                authUserInput.placeholder = `authuser=${authUser}`;
+                UpdateUserUrls(authUser);
             }
         });
 
@@ -119,5 +137,17 @@ class Modal {
             pElement.innerHTML = newText;
         }
     }
+
+    updateOptionalModal(startAddr, authUser) {
+        dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
+        authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
+
+        if (startAddr) {
+            dirInput.placeholder = startAddr;
+        }
+
+        if (authUser) {
+            authUserInput.placeholder = `authuser=${authUser}`;
+        }
+    }
 }
-window.Modal = Modal;

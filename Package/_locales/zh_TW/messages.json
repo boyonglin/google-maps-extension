@@ -115,11 +115,14 @@
   "optionalTitle": {
     "message": "個人設定"
   },
-  "dirNote": {
-    "message": "你可以對選取文字點擊滑鼠右鍵，顯示設定的起點與目的地之間的規劃路線"
+  "optionalNote": {
+    "message": "I. 規劃從起點開始的路線（右鍵、快捷鍵）\nII. 切換 Google 使用者帳號（非負整數）"
   },
   "dirPlaceholder": {
-    "message": "路線起點（地址）"
+    "message": "路線起點"
+  },
+  "authUserPlaceholder": {
+    "message": "Google 使用者（預設）= 0"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udccc自動附加 Google 地圖連結"

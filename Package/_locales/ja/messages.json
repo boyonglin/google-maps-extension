@@ -115,11 +115,14 @@
   "optionalTitle": {
     "message": "個人設定"
   },
-  "dirNote": {
-    "message": "選択テキストを右クリックすると、設定済みの出発地と目的地間ルートが表示されます。"
+  "optionalNote": {
+    "message": "I. 起点からルートを作成（右クリック／ショートカット）\nII. Google アカウントを切り替える（非負整数）"
   },
   "dirPlaceholder": {
-    "message": "ルート出発地（住所）"
+    "message": "ルート出発地"
+  },
+  "authUserPlaceholder": {
+    "message": "Google ユーザー（既定）= 0"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"

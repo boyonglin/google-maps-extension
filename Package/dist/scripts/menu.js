@@ -58,7 +58,7 @@ class ContextMenuUtil {
             const spans = item.querySelectorAll("span");
             const selectedText = Array.from(spans).map(span => span.textContent).join(" ").trim();
             if (selectedText) {
-                urls.push(`https://www.google.com/maps?q=${encodeURIComponent(selectedText)}`);
+                urls.push(`${queryUrl}q=${encodeURIComponent(selectedText)}`);
             }
         });
 

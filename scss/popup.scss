@@ -7,6 +7,7 @@
   --background-color: #ffffff;
   --gray-800: #202833;
   --gray-600: #70757a;
+  --gray-500: #a5a9ad;
   --gray-400: #dadce0;
   --gray-300: #eff1f3;
   --gray-200: #f6fafe;
@@ -144,7 +145,7 @@ body {
 
 /* dir bar */
 
-#dirInput {
+.modalFormInput {
   border-radius: 2rem;
   padding-left: 1rem;
 
@@ -166,12 +167,12 @@ body {
   }
 }
 
-.btn-setDir {
+.btn-set {
   position: absolute;
-  right: 1.5rem;
+  right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
-  background-color: var(--primary-color);
+  background-color: var(--gray-500);
   color: white;
   width: 2rem;
   height: 2rem;

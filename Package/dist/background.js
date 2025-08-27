@@ -96,6 +96,10 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
       chrome.contextMenus.remove("googleMapsDirections");
     }
   }
+
+  if (areaName === "local" && changes.authUser) {
+    UpdateUserUrls(changes.authUser.newValue);
+  }
 });
 
 // Track the right-click event
@@ -193,7 +197,11 @@ async function trySuggest(tabId, url, retries = 10) {
 
       if (response && response.content) {
         callApi(linkPrompt, response.content, apiKey, (apiResponse) => {
-          chrome.tabs.sendMessage(tabId, { action: "attachMapLink", content: apiResponse });
+          chrome.tabs.sendMessage(tabId, { 
+            action: "attachMapLink", 
+            content: apiResponse,
+            queryUrl: queryUrl 
+          });
         });
 
         return true;
@@ -270,9 +278,7 @@ function handleSelectedText(selectedText) {
   }
 
   // Use chrome.tabs.create to open a new tab for search
-  const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
-    selectedText
-  )}`;
+  const searchUrl = `${queryUrl}q=${encodeURIComponent(selectedText)}`;
   chrome.tabs.create({ url: searchUrl });
 
   updateHistoryList(selectedText);
@@ -285,7 +291,7 @@ function handleSelectedDir(selectedText) {
   }
 
   chrome.storage.local.get("startAddr", ({ startAddr }) => {
-    const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
+    const directionsUrl = `${routeUrl}api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
     chrome.tabs.create({ url: directionsUrl });
   });
 }
@@ -296,9 +302,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "searchInput") {
     let searchTerm = request.searchTerm;
     if (searchTerm) {
-      const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
-        searchTerm
-      )}`;
+      const searchUrl = `${queryUrl}q=${encodeURIComponent(searchTerm)}`;
       chrome.tabs.create({ url: searchUrl });
       updateHistoryList(searchTerm);
     }
@@ -569,11 +573,20 @@ const DEFAULTS = {
   geminiApiKey: "",
   aesKey: null,
   startAddr: "",
+  authUser: 0,
   videoSummaryToggle: false,
 };
 
 let cache = null;        // holds warmed state while the worker is alive
 let loading = null;      // in-flight promise to dedupe concurrent warms
+
+let queryUrl;
+let routeUrl;
+
+function UpdateUserUrls(newUser) {
+  queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
+  routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
+}
 
 async function ensureWarm() {
   if (cache) return cache;
@@ -588,6 +601,7 @@ async function ensureWarm() {
         }
       }
       cache = v;
+      UpdateUserUrls(v.authUser);
     })
     .finally(() => (loading = null));
   return loading;

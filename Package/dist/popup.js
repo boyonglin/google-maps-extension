@@ -12,6 +12,7 @@ const emptyMessage = document.getElementById("emptyMessage");
 const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
 const geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
 const dirInput = document.getElementById("dirInput");
+const authUserInput = document.getElementById("authUserInput");
 const responseField = document.getElementById("response");
 
 // Lists
@@ -77,6 +78,14 @@ let [hasHistory, hasFavorite, hasSummary, hasInit] = [
 let videoSummaryMode;
 let localVideoToggle;
 let summarizedTabId;
+
+let queryUrl;
+let routeUrl;
+
+function UpdateUserUrls(newUser) {
+  queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
+  routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
@@ -155,6 +164,7 @@ const KEYS = [
   "favoriteList",
   "geminiApiKey",
   "startAddr",
+  "authUser",
   "videoSummaryToggle",
 ];
 
@@ -180,6 +190,7 @@ async function fetchData() {
     favoriteList = [],
     geminiApiKey = "",
     startAddr = "",
+    authUser = 0,
     videoSummaryToggle = false,
   } = await getWarmState();
 
@@ -213,17 +224,11 @@ async function fetchData() {
   (hasInit ? measureContentSizeLast() : retryMeasureContentSize());
 
   gemini.fetchAPIKey(geminiApiKey);
-  fetchStartAddr(startAddr);
+  modal.updateOptionalModal(startAddr, authUser);
   localVideoToggle = videoSummaryToggle;
   videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
-}
 
-function fetchStartAddr(startAddr) {
-  dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
-
-  if (startAddr) {
-    dirInput.placeholder = startAddr;
-  }
+  UpdateUserUrls(authUser);
 }
 
 // Search bar event
