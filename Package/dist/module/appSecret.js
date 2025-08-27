@@ -4,28 +4,33 @@
 
     function attachMapLink(element) {
       // Skip if the element already contains a map link or a YouTube-formatted string
-      if (element.innerHTML.includes('href="https://www.google.com/maps?q=') ||
+      if (element.innerHTML.includes('href="https://www.google.com/maps') ||
         element.querySelector("yt-formatted-string") ||
         element.classList.contains("ytd-compact-video-renderer")) {
         return;
       }
 
+      let processedCandidates = new Set();
+
       candidates.forEach(candidate => {
-        const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(candidate)}`;
+        const searchUrl = `${request.queryUrl}q=${encodeURIComponent(candidate)}`;
         const linkHtml = `<a href="${searchUrl}" target="_blank" style="text-decoration: none; border: 0px;">📌</a>`;
 
         const parts = candidate.split(/\s{4,}/);
         let candidateName = parts[0];
-        let hasReplaced = false;
 
-        // Replace only the first instance of the candidate name with itself followed by the link emoji
-        element.innerHTML = element.innerHTML.replace(new RegExp(candidateName, "g"), (match) => {
-          if (!hasReplaced) {
-            hasReplaced = true;
+        // Skip if already processed this candidate name for this element
+        if (processedCandidates.has(candidateName)) {
+          return;
+        }
+
+        // Check if this candidate name exists in the element text
+        if (element.textContent.includes(candidateName)) {
+          element.innerHTML = element.innerHTML.replace(new RegExp(candidateName), (match) => {
+            processedCandidates.add(candidateName);
             return `${match}${linkHtml}`;
-          }
-          return match;
-        });
+          });
+        }
       });
     }
 

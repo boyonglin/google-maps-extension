@@ -161,8 +161,8 @@
     "message": "Google User (default) = 0",
     "description": "modal auth user input placeholder"
   },
-  "dirNote": {
-    "message": "Launch a map with directions from the starting address to the highlighted text in the context menu.",
+  "optionalNote": {
+    "message": "I. Plan a route from the starting point (right-click / shortcut)\nII. Switch Google account (non-negative integer)",
     "description": "modal direction note"
   },
   "autoAttachLabel": {

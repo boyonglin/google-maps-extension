@@ -79,6 +79,14 @@ let videoSummaryMode;
 let localVideoToggle;
 let summarizedTabId;
 
+let queryUrl;
+let routeUrl;
+
+function UpdateUserUrls(newUser) {
+  queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
+  routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
 
@@ -182,7 +190,7 @@ async function fetchData() {
     favoriteList = [],
     geminiApiKey = "",
     startAddr = "",
-    authUser = "",
+    authUser = 0,
     videoSummaryToggle = false,
   } = await getWarmState();
 
@@ -219,6 +227,8 @@ async function fetchData() {
   modal.updateOptionalModal(startAddr, authUser);
   localVideoToggle = videoSummaryToggle;
   videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
+
+  UpdateUserUrls(authUser);
 }
 
 // Search bar event

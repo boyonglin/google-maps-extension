@@ -22,9 +22,7 @@ class History {
                 }
             } else {
                 const selectedText = liElement.textContent;
-                const searchUrl = `https://www.google.com/maps?q=${encodeURIComponent(
-                    selectedText
-                )}`;
+                const searchUrl = `${queryUrl}q=${encodeURIComponent(selectedText)}`;
 
                 // Check if the clicked element has the "bi" class (favorite icon)
                 if (event.target.classList.contains("bi")) {

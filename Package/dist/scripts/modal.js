@@ -86,16 +86,16 @@ class Modal {
         document.getElementById("authUserForm").addEventListener("submit", (event) => {
             event.preventDefault();
 
-            const authUser = authUserInput.value.trim();
+            const authUser = parseInt(authUserInput.value.trim());
 
-            if (authUser === "") {
-                chrome.storage.local.remove("authUser");
+            if (authUserInput.value.trim() === "" || authUser === 0 || isNaN(authUser)) {
+                chrome.storage.local.set({ authUser: 0 });
                 authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
-            } else if (/^\d+$/.test(authUser) && parseInt(authUser) >= 0) {
+                UpdateUserUrls(0);
+            } else if (/^\d+$/.test(authUser) && authUser > 0) {
                 chrome.storage.local.set({ authUser: authUser });
                 authUserInput.placeholder = `authuser=${authUser}`;
-            } else {
-                // TODO: warn user about invalid input
+                UpdateUserUrls(authUser);
             }
         });
 
