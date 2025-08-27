@@ -4,7 +4,7 @@
 
     function attachMapLink(element) {
       // Skip if the element already contains a map link or a YouTube-formatted string
-      if (element.innerHTML.includes('href="https://www.google.com/maps') ||
+      if (element.querySelector('a[href*="https://www.google.com/maps"]') ||
         element.querySelector("yt-formatted-string") ||
         element.classList.contains("ytd-compact-video-renderer")) {
         return;
@@ -14,7 +14,6 @@
 
       candidates.forEach(candidate => {
         const searchUrl = `${request.queryUrl}q=${encodeURIComponent(candidate)}`;
-        const linkHtml = `<a href="${searchUrl}" target="_blank" style="text-decoration: none; border: 0px;">📌</a>`;
 
         const parts = candidate.split(/\s{4,}/);
         let candidateName = parts[0];
@@ -26,10 +25,43 @@
 
         // Check if this candidate name exists in the element text
         if (element.textContent.includes(candidateName)) {
-          element.innerHTML = element.innerHTML.replace(new RegExp(candidateName), (match) => {
-            processedCandidates.add(candidateName);
-            return `${match}${linkHtml}`;
-          });
+          // Find text nodes containing the candidate name
+          const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+          );
+
+          let textNode;
+          while (textNode = walker.nextNode()) {
+            if (textNode.textContent.includes(candidateName)) {
+              const regex = new RegExp(candidateName);
+              const match = textNode.textContent.match(regex);
+              if (match) {
+                processedCandidates.add(candidateName);
+
+                // Split the text node and insert the pin after the candidate name
+                const beforeText = textNode.textContent.substring(0, match.index + match[0].length);
+                const afterText = textNode.textContent.substring(match.index + match[0].length);
+
+                // Replace the original text node
+                textNode.textContent = beforeText;
+
+                // Create and insert the pin
+                const pin = makePin(searchUrl);
+                textNode.parentNode.insertBefore(pin, textNode.nextSibling);
+
+                // Add the remaining text if any
+                if (afterText) {
+                  const afterTextNode = document.createTextNode(afterText);
+                  textNode.parentNode.insertBefore(afterTextNode, pin.nextSibling);
+                }
+
+                break; // Only process the first occurrence in this element
+              }
+            }
+          }
         }
       });
     }
@@ -48,6 +80,17 @@
         attachMapLink(element);
       });
     }
+  }
+
+  function makePin(href) {
+    const a = document.createElement("a");
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.href = href;
+    a.textContent = "📌";
+    a.style.textDecoration = "none";
+    a.style.border = "0";
+    return a;
   }
 
   // Make the function available globally
