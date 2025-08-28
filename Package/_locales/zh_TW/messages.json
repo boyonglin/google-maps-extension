@@ -3,7 +3,7 @@
     "message": "透過 The Maps Express 搜尋"
   },
   "directionsContext": {
-    "message": "取得 Google Maps 路線"
+    "message": "規劃 Google Maps 路線"
   },
   "searchInputPlaceholder": {
     "message": "搜尋 Google 地圖"
@@ -92,7 +92,7 @@
     "message": "自動附加連結"
   },
   "directionsKeyLabel": {
-    "message": "快速路線"
+    "message": "規劃路線"
   },
   "shortcutsNote": {
     "message": "你可以點擊上方的組合鍵來設定功能快捷鍵，而某些瀏覽器需要將範圍更改為全域（通用）"
@@ -200,5 +200,8 @@
   },
   "openAll": {
     "message": "全部開啟"
+  },
+  "getDirections": {
+    "message": "規劃路線"
   }
 }

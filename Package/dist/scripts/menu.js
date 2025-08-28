@@ -8,6 +8,9 @@ class ContextMenuUtil {
             return;
         }
 
+        // Find the specific item that was right-clicked
+        const clickedItem = event.target.closest(".summary-list, .history-list, .favorite-list");
+
         // Get all list items in the current container based on tab type
         const listItems = listContainer.querySelectorAll(".summary-list, .history-list, .favorite-list");
 
@@ -24,16 +27,21 @@ class ContextMenuUtil {
         contextMenu.style.top = event.pageY + "px";
 
         // Create "Open all URL" option
-        const openAllItem = document.createElement("li");
-        openAllItem.className = "list-group-item list-group-item-action border-0 rounded-2 context-menu-item";
-        openAllItem.textContent = `${chrome.i18n.getMessage("openAll")} (${listItems.length})`;
-
-        openAllItem.addEventListener("click", () => {
+        const openAllOption = this.createOption(contextMenu, `${chrome.i18n.getMessage("openAll")} (${listItems.length})`, () => {
             this.openAllUrls(listItems);
-            contextMenu.remove();
+        });
+        contextMenu.appendChild(openAllOption);
+
+        // Create "Plan Route" option
+        chrome.storage.local.get("startAddr", ({ startAddr }) => {
+            if (clickedItem && startAddr) {
+                const getDirectionsOption = this.createOption(contextMenu, chrome.i18n.getMessage("getDirections"), () => {
+                    this.getDirections(clickedItem, startAddr);
+                });
+                contextMenu.appendChild(getDirectionsOption);
+            }
         });
 
-        contextMenu.appendChild(openAllItem);
         document.body.appendChild(contextMenu);
 
         // Close context menu when clicking elsewhere
@@ -48,6 +56,19 @@ class ContextMenuUtil {
         }, 0);
 
         return contextMenu;
+    }
+
+    static createOption(menu, label, onClick) {
+        const option = document.createElement("li");
+        option.className = "list-group-item list-group-item-action border-0 rounded-2 context-menu-item";
+        option.textContent = label;
+
+        option.addEventListener("click", () => {
+            onClick();
+            menu.remove();
+        });
+
+        return option;
     }
 
     static openAllUrls(listItems) {
@@ -94,5 +115,13 @@ class ContextMenuUtil {
         }
 
         return { groupTitle, groupColor };
+    }
+
+    static getDirections(selectedItem, startAddr) {
+        const span = selectedItem.querySelector("span");
+        const selectedText = span ? span.textContent.trim() : "";
+
+        const directionsUrl = `${routeUrl}api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
+        chrome.tabs.create({ url: directionsUrl });
     }
 }

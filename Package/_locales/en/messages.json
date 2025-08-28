@@ -122,7 +122,7 @@
     "description": "modal tips auto-attach key label"
   },
   "directionsKeyLabel": {
-    "message": "Quick Directions",
+    "message": "Get Directions",
     "description": "modal tips directions key label"
   },
   "shortcutsNote": {
@@ -154,7 +154,7 @@
     "description": "modal optional title"
   },
   "dirPlaceholder": {
-    "message": "Route Starting Point",
+    "message": "Direction Starting Point",
     "description": "modal starting address input placeholder"
   },
   "authUserPlaceholder": {
@@ -162,7 +162,7 @@
     "description": "modal auth user input placeholder"
   },
   "optionalNote": {
-    "message": "I. Plan a route from the starting point (🖱️ / ⌨️)\nII. Switch Google account (0 / 1 / …)",
+    "message": "I. Get directions from starting point (🖱️ / ⌨️)\nII. Switch Google account (0 / 1 / …)",
     "description": "modal direction note"
   },
   "autoAttachLabel": {
@@ -266,5 +266,9 @@
   "openAll": {
     "message": "Open All",
     "description": "gemini context menu open all links label"
+  },
+  "getDirections": {
+    "message": "Get Directions",
+    "description": "context menu get directions option"
   }
 }
