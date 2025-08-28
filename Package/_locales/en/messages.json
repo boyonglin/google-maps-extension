@@ -162,7 +162,7 @@
     "description": "modal auth user input placeholder"
   },
   "optionalNote": {
-    "message": "I. Plan a route from the starting point (right-click / shortcut)\nII. Switch Google account (non-negative integer)",
+    "message": "I. Plan a route from the starting point (🖱️ / ⌨️)\nII. Switch Google account (0 / 1 / …)",
     "description": "modal direction note"
   },
   "autoAttachLabel": {

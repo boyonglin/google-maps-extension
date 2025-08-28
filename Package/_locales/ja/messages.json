@@ -116,7 +116,7 @@
     "message": "個人設定"
   },
   "optionalNote": {
-    "message": "I. 起点からルートを作成（右クリック／ショートカット）\nII. Google アカウントを切り替える（非負整数）"
+    "message": "I. 起点からルートを作成（🖱️ / ⌨️）\nII. Google アカウントを切り替える（0 / 1 / …）"
   },
   "dirPlaceholder": {
     "message": "ルート出発地"
