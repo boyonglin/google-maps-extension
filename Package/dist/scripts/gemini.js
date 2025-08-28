@@ -15,9 +15,11 @@ class Gemini {
             const searchUrl = `${queryUrl}q=${encodeURIComponent(selectedText)}`;
 
             if (event.target.classList.contains("bi")) {
-                const nameSpan = spans[0].textContent;
-                const clueSpan = spans[1].textContent;
-                favorite.addToFavoriteList(nameSpan + " @" + clueSpan);
+                if (spans.length >= 2) {
+                    const nameSpan = spans[0].textContent;
+                    const clueSpan = spans[1].textContent;
+                    favorite.addToFavoriteList(nameSpan + " @" + clueSpan);
+                }
                 event.target.className = "bi bi-patch-check-fill matched spring-animation";
                 setTimeout(function () {
                     event.target.classList.remove("spring-animation");
