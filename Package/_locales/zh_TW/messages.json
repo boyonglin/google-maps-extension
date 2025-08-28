@@ -116,7 +116,7 @@
     "message": "個人設定"
   },
   "optionalNote": {
-    "message": "I. 規劃從起點開始的路線（🖱️ / ⌨️）\nII. 切換 Google 使用者帳號（0 / 1 / …）"
+    "message": "I. 規劃從起點開始的路線：滑鼠右鍵 / 快捷鍵\nII. 切換 Google 使用者帳號：0 / 1 / …"
   },
   "dirPlaceholder": {
     "message": "路線起點"
