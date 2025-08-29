@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "The Maps Express",
-  "version": "1.11.1",
+  "version": "1.11.2",
   "description": "A Shortcut to Google Maps, but Rich and Beautiful.",
   "icons": {
     "16": "images/icon-16.png",
@@ -87,7 +87,8 @@
         "dist/checkStatus.js",
         "dist/module/ExtPay.module.js",
         "dist/module/browser-polyfill.js",
-        "dist/module/gcrypto.js"
+        "dist/module/gcrypto.js",
+        "dist/module/prompt.js"
       ]
     }
   ]
