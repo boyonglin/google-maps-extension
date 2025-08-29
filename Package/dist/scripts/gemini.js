@@ -418,10 +418,15 @@ class Gemini {
             });
         });
 
-        const currentTime = Date.now();
-        chrome.storage.local.set({
-            summaryList: data,
-            timestamp: currentTime,
+        // Respect incognito mode: do not persist summaries when enabled
+        chrome.storage.local.get("isIncognito", ({ isIncognito = false }) => {
+            if (!isIncognito) {
+                const currentTime = Date.now();
+                chrome.storage.local.set({
+                    summaryList: data,
+                    timestamp: currentTime,
+                });
+            }
         });
     }
 

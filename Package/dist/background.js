@@ -362,6 +362,11 @@ function openUrlsInNewGroup(urls, title, color, collapsed) {
 // Add the selected text to history list
 function updateHistoryList(selectedText) {
   chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
+    // Respect incognito mode: do not persist history when enabled
+    if (cache.isIncognito) {
+      return;
+    }
+
     if (!searchHistoryList) {
       searchHistoryList = [];
     }
