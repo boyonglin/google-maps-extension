@@ -143,7 +143,7 @@ body {
   text-decoration: none;
 }
 
-/* dir bar */
+/* optional modal form */
 
 .modalFormInput {
   border-radius: 2rem;
@@ -180,6 +180,43 @@ body {
 
   i {
     padding-top: 1px;
+  }
+}
+
+.incognito-btn {
+  border-radius: 2rem;
+  border-style: dashed;
+  border-color: var(--gray-500);
+
+  &:hover {
+    color: var(--gray-600);
+    border-color: var(--gray-500);
+    background-color: var(--gray-300);
+  }
+
+  &:focus {
+    border-color: var(--gray-500);
+  }
+
+  &:active {
+    color: var(--gray-600) !important;
+    border-color: var(--gray-500) !important;
+    background-color: var(--gray-300) !important;
+  }
+}
+
+.incognito-active {
+  background-color: var(--gray-300);
+
+  &:focus {
+    border-color: var(--gray-500);
+    background-color: var(--gray-300);
+  }
+}
+
+.incognito-just-off {
+  &:hover {
+    background-color: transparent;
   }
 }
 

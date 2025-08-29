@@ -99,6 +99,20 @@ class Modal {
             }
         });
 
+        // Incognito toggle
+        incognitoToggle.addEventListener("click", () => {
+            chrome.storage.local.get("isIncognito", ({ isIncognito = false }) => {
+                const newState = !isIncognito;
+                chrome.storage.local.set({ isIncognito: newState }, () => {
+                    this.updateIncognitoModal(newState);
+                });
+            });
+        });
+
+        incognitoToggle.addEventListener("mouseleave", () => {
+            incognitoToggle.classList.remove("incognito-just-off");
+        });
+
         // Premium panel
         paymentButton.addEventListener("click", () => {
             chrome.runtime.sendMessage({ action: "extPay" });
@@ -148,6 +162,23 @@ class Modal {
 
         if (authUser) {
             authUserInput.placeholder = `authuser=${authUser}`;
+        }
+    }
+
+    updateIncognitoModal(isIncognito) {
+        const incognitoText = document.querySelector(".incognito-text");
+        const incognitoIcon = document.querySelector(".incognito-icon");
+
+        if (isIncognito) {
+            incognitoText.classList.add("d-none");
+            incognitoIcon.classList.remove("d-none");
+            incognitoToggle.classList.add("incognito-active");
+            incognitoToggle.classList.remove("incognito-just-off");
+        } else {
+            incognitoText.classList.remove("d-none");
+            incognitoIcon.classList.add("d-none");
+            incognitoToggle.classList.remove("incognito-active");
+            incognitoToggle.classList.add("incognito-just-off");
         }
     }
 }

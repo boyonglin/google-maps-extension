@@ -197,10 +197,10 @@ async function trySuggest(tabId, url, retries = 10) {
 
       if (response && response.content) {
         callApi(linkPrompt, response.content, apiKey, (apiResponse) => {
-          chrome.tabs.sendMessage(tabId, { 
-            action: "attachMapLink", 
+          chrome.tabs.sendMessage(tabId, {
+            action: "attachMapLink",
             content: apiResponse,
-            queryUrl: queryUrl 
+            queryUrl: queryUrl
           });
         });
 
@@ -574,6 +574,7 @@ const DEFAULTS = {
   aesKey: null,
   startAddr: "",
   authUser: 0,
+  isIncognito: false,
   videoSummaryToggle: false,
 };
 

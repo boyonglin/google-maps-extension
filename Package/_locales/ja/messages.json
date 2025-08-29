@@ -116,13 +116,16 @@
     "message": "個人設定"
   },
   "optionalNote": {
-    "message": "I. 出発地からルート検索：右クリック / ショートカット\nII. Google アカウントを切り替える：0 / 1 / …"
+    "message": "I. 出発地からルート検索：右クリック / ショートカット\nII. Google アカウントを切り替える：0 / 1 / …\nIII. 要約と検索履歴は保存されません"
   },
   "dirPlaceholder": {
     "message": "ルートの出発地"
   },
   "authUserPlaceholder": {
     "message": "Google ユーザー（既定）= 0"
+  },
+  "incognitoToggleText": {
+    "message": "プライベートモードを有効にする"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"

@@ -13,6 +13,7 @@ const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
 const geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
 const dirInput = document.getElementById("dirInput");
 const authUserInput = document.getElementById("authUserInput");
+const incognitoToggle = document.getElementById("incognitoToggle");
 const responseField = document.getElementById("response");
 
 // Lists
@@ -165,6 +166,7 @@ const KEYS = [
   "geminiApiKey",
   "startAddr",
   "authUser",
+  "isIncognito",
   "videoSummaryToggle",
 ];
 
@@ -191,6 +193,7 @@ async function fetchData() {
     geminiApiKey = "",
     startAddr = "",
     authUser = 0,
+    isIncognito = false,
     videoSummaryToggle = false,
   } = await getWarmState();
 
@@ -225,6 +228,7 @@ async function fetchData() {
 
   gemini.fetchAPIKey(geminiApiKey);
   modal.updateOptionalModal(startAddr, authUser);
+  modal.updateIncognitoModal(!!isIncognito);
   localVideoToggle = videoSummaryToggle;
   videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
 
@@ -355,6 +359,7 @@ geminiSummaryButton.addEventListener("click", () => {
 chrome.storage.onChanged.addListener((changes) => {
   const searchHistoryListChange = changes.searchHistoryList;
   const favoriteListChange = changes.favoriteList;
+  const incognitoChange = changes.isIncognito;
 
   if (favoriteListChange && favoriteListChange.newValue) {
     favorite.updateFavorite(favoriteListChange.newValue);
@@ -367,6 +372,10 @@ chrome.storage.onChanged.addListener((changes) => {
     if (newList.length >= oldList.length) {
       fetchData(hasInit);
     }
+  }
+
+  if (incognitoChange) {
+    modal.updateIncognitoModal(!!incognitoChange.newValue);
   }
 });
 

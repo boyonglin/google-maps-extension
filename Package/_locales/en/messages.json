@@ -161,8 +161,12 @@
     "message": "Google User (default) = 0",
     "description": "modal auth user input placeholder"
   },
+  "incognitoToggleText": {
+    "message": "Enable Incognito Mode",
+    "description": "popup incognito toggle button text"
+  },
   "optionalNote": {
-    "message": "I. Get directions from starting point: right-click / shortcut\nII. Switch Google account: 0 / 1 / …",
+    "message": "I. Get directions from starting point: right-click / shortcut\nII. Switch Google account: 0 / 1 / …\nⅢ. Summaries and search history won’t be saved",
     "description": "modal direction note"
   },
   "autoAttachLabel": {
