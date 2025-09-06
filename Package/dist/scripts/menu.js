@@ -40,6 +40,14 @@ class ContextMenuUtil {
                 });
                 contextMenu.appendChild(getDirectionsOption);
             }
+
+            // Always append tidy after
+            contextMenu.appendChild(tidyLocationsOption);
+        });
+
+        // Create "Tidy Locations" option
+        const tidyLocationsOption = this.createOption(contextMenu, chrome.i18n.getMessage("tidyLocations"), () => {
+            this.tidyLocations(listItems);
         });
 
         document.body.appendChild(contextMenu);
@@ -123,5 +131,233 @@ class ContextMenuUtil {
 
         const directionsUrl = `${routeUrl}api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
         chrome.tabs.create({ url: directionsUrl });
+    }
+
+    static tidyLocations(listItems) {
+        // Start breathing effect for the full list container
+        this.startBreathingEffect(listItems);
+
+        // Extract location data from list items
+        const locations = Array.from(listItems)
+            .map(item => {
+                const spans = item.querySelectorAll("span");
+                const locationName = spans[0]?.textContent.trim() || "";
+                const locationClue = spans[1]?.textContent.trim() || "";
+
+                return locationName ? {
+                    name: locationName,
+                    clue: locationClue,
+                    element: item
+                } : null;
+            })
+            .filter(Boolean);
+
+        // Send to background script for Gemini AI processing
+        chrome.runtime.sendMessage({
+            action: "organizeLocations",
+            locations,
+            listType: this.getListType(listItems[0])
+        }, (response) => {
+            // Stop breathing effect when response is received
+            this.stopBreathingEffect(listItems);
+
+            if (response?.success) {
+                this.applyOrganization(response.organizedData, listItems);
+            } else {
+                console.error("Failed to organize locations:", response?.error);
+            }
+        });
+    }
+
+    static getListType(firstItem) {
+        if (firstItem.classList.contains("summary-list")) {
+            return "summary";
+        } else if (firstItem.classList.contains("history-list")) {
+            return "history";
+        } else if (firstItem.classList.contains("favorite-list")) {
+            return "favorite";
+        }
+        return "unknown";
+    }
+
+    static applyOrganization(organizedData, listItems) {
+        if (!organizedData?.categories) {
+            if (organizedData?.rawText) {
+                console.log("Raw AI response:", organizedData.rawText);
+            }
+            return;
+        }
+
+        const container = listItems[0]?.parentElement;
+        if (!container) {
+            console.error("Could not find container for list items");
+            return;
+        }
+
+        // Create element mapping with multiple search strategies
+        const { elementMap, elementsList } = this.createElementMapping(listItems);
+
+        // Clear container
+        elementsList.forEach(item => item.remove());
+        const existingHeaders = container.querySelectorAll('.category-header');
+        existingHeaders.forEach(header => header.remove());
+
+        // Determine layout strategy
+        const currentListType = this.getListType(elementsList[0]);
+        const hasFlexReverse = ["history", "favorite"].includes(currentListType);
+
+        // Render organized categories
+        this.renderCategories(organizedData.categories, container, elementMap, elementsList, hasFlexReverse);
+
+        // Update spacing for boundary items
+        this.updateBoundaryItemSpacing(hasFlexReverse, container);
+
+        measureContentSize();
+    }
+
+    static createElementMapping(listItems) {
+        const elementMap = new Map();
+        const elementsList = Array.from(listItems);
+
+        elementsList.forEach((item, index) => {
+            const locationName = item.querySelector("span")?.textContent.trim();
+            if (!locationName) return;
+
+            // Multiple mapping strategies for robust matching
+            const mappings = [
+                locationName,
+                locationName.toLowerCase().replace(/\s+/g, ' ').trim(),
+                `index_${index}`
+            ];
+
+            mappings.forEach(key => elementMap.set(key, item));
+        });
+
+        return { elementMap, elementsList };
+    }
+
+    static renderCategories(categories, container, elementMap, elementsList, hasFlexReverse) {
+        categories.forEach(category => {
+            const categoryHeader = this.createCategoryHeader(category.name);
+
+            // Add header first for normal layout, last for reversed layout
+            if (!hasFlexReverse) {
+                container.appendChild(categoryHeader);
+            }
+
+            // Add locations to category
+            category.locations.forEach(location => {
+                const element = this.findMatchingElement(location.name, elementMap, elementsList);
+                if (element) {
+                    element.classList.add("mb-3");
+                    container.appendChild(element);
+                } else {
+                    this.logMissingElement(location.name, elementsList);
+                }
+            });
+
+            // Add header last for reversed layout
+            if (hasFlexReverse) {
+                container.appendChild(categoryHeader);
+            }
+        });
+    }
+
+    static createCategoryHeader(categoryName) {
+        const header = document.createElement("div");
+        header.className = "category-header";
+
+        const text = document.createElement("span");
+        text.textContent = categoryName;
+
+        header.appendChild(text);
+        return header;
+    }
+
+    static findMatchingElement(locationName, elementMap, elementsList) {
+        // Try exact match
+        let element = elementMap.get(locationName);
+        if (element) return element;
+
+        // Try normalized match
+        const normalized = locationName.toLowerCase().replace(/\s+/g, ' ').trim();
+        element = elementMap.get(normalized);
+        if (element) return element;
+
+        // Try fuzzy matching
+        for (const [key, el] of elementMap.entries()) {
+            if (!key.startsWith('index_') && key.includes(normalized)) {
+                return el;
+            }
+        }
+
+        // Try partial content matching
+        return elementsList.find(item => {
+            const itemText = item.querySelector("span")?.textContent.trim() || "";
+            return itemText.toLowerCase().includes(normalized) ||
+                   normalized.includes(itemText.toLowerCase());
+        });
+    }
+
+    static logMissingElement(locationName, elementsList) {
+        const availableNames = elementsList
+            .map(item => item.querySelector("span")?.textContent.trim())
+            .filter(Boolean);
+
+        console.log("Available original element names:", availableNames);
+    }
+
+    static updateBoundaryItemSpacing(hasFlexReverse, container) {
+        if (!container) return;
+
+        // Get current DOM elements that are actually in the container
+        const currentItems = container.querySelectorAll(".list-group-item");
+
+        if (currentItems.length === 0) return;
+
+        let targetItem = hasFlexReverse ? container.querySelector(".list-group-item:first-child") : container.querySelector(".list-group-item:last-child");
+
+        if (targetItem) {
+            targetItem.classList.remove("mb-3");
+        }
+    }
+
+    static breathingInterval = null;
+
+    static startBreathingEffect(listItems) {
+        const listContainer = listItems[0]?.parentElement;
+        if (!listContainer) return;
+
+        let opacity = 1;
+        let decreasing = true;
+
+        this.breathingInterval = setInterval(() => {
+            if (decreasing) {
+                opacity -= 0.08;
+                if (opacity <= 0.4) {
+                    decreasing = false;
+                }
+            } else {
+                opacity += 0.08;
+                if (opacity >= 1) {
+                    setTimeout(() => {
+                        decreasing = true;
+                    }, 200);
+                }
+            }
+            listContainer.style.opacity = opacity;
+        }, 100);
+    }
+
+    static stopBreathingEffect(listItems) {
+        if (this.breathingInterval) {
+            clearInterval(this.breathingInterval);
+            this.breathingInterval = null;
+        }
+
+        const listContainer = listItems[0]?.parentElement;
+        if (listContainer) {
+            listContainer.style.opacity = '';
+        }
     }
 }

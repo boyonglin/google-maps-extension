@@ -24,6 +24,44 @@ sub-landmark-2    clue-2
 Here is the provided page content:
 `;
 
+const organizePrompt = `Organize the provided locations into 2-5 logical categories (from the list below) and verify. Respond with a JSON object in this format:
+
+{
+  "categories": [
+    {
+      "name": "Category Name",
+      "locations": [
+        { "name": "Location Name" }
+      ]
+    }
+  ]
+}
+
+Categories:
+- Automotive
+- Business
+- Culture
+- Education
+- Entertainment and Recreation
+- Facilities
+- Finance
+- Food and Drink
+- Geographical Areas
+- Government
+- Health and Wellness
+- Housing
+- Lodging
+- Natural Features
+- Places of Worship
+- Services
+- Shopping
+- Sports
+- Transportation
+- Other
+
+These are locations from the user's collection that need to be organized:
+`;
+
 const askAIPrompt = `Suggest or surprise (don't have to be cliché) a {requestedDestination} itinerary, and use {userLocale} as the display language. Please give me the results in plain HTML only (for example, see the format I provided). The clue could be country or city, but not address. The time shows the estimated time and only the number and time unit information. The final format should look like this example (do not include the example or other tags like <h1>):
 
 <ul class="list-group d-flex">
@@ -42,5 +80,6 @@ const askAIPrompt = `Suggest or surprise (don't have to be cliché) a {requested
 export const GeminiPrompts = {
     summary: summaryPrompt,
     attach: attachPrompt,
+    organize: organizePrompt,
     askAI: askAIPrompt
 }

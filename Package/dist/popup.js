@@ -34,7 +34,6 @@ const videoSummaryButton = document.getElementById("videoSummaryButton");
 const searchButtonGroup = document.getElementById("searchButtonGroup");
 const deleteButtonGroup = document.getElementById("deleteButtonGroup");
 const exportButtonGroup = document.getElementById("exportButtonGroup");
-const geminiButtonGroup = document.getElementById("geminiButtonGroup");
 const clearButton = document.getElementById("clearButton");
 const cancelButton = document.getElementById("cancelButton");
 const deleteButton = document.getElementById("deleteButton");
@@ -72,6 +71,7 @@ const history = new History();
 const gemini = new Gemini();
 const modal = new Modal();
 
+// State variables
 let [hasHistory, hasFavorite, hasSummary, hasInit] = [
   false, false, false, false,
 ];
@@ -87,6 +87,8 @@ function UpdateUserUrls(newUser) {
   queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
   routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
 }
+
+let [historyListChange, favoriteListChange, summaryListChange] = [false, false, false];
 
 document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
@@ -343,6 +345,7 @@ favoriteListButton.addEventListener("click", () => {
   deleteListButton.disabled = false;
 
   remove.updateInput();
+  favoriteListChange = false;
 });
 
 geminiSummaryButton.addEventListener("click", () => {
@@ -353,21 +356,24 @@ geminiSummaryButton.addEventListener("click", () => {
   gemini.checkCurrentTabForYoutube();
 
   gemini.clearExpiredSummary();
+  summaryListChange = false;
 });
 
 // Track the storage change event
 chrome.storage.onChanged.addListener((changes) => {
-  const searchHistoryListChange = changes.searchHistoryList;
-  const favoriteListChange = changes.favoriteList;
+  historyListChange = changes.searchHistoryList;
+  favoriteListChange = changes.favoriteList;
+  summaryListChange = changes.summaryList;
+
   const incognitoChange = changes.isIncognito;
 
   if (favoriteListChange && favoriteListChange.newValue) {
     favorite.updateFavorite(favoriteListChange.newValue);
   }
 
-  if (searchHistoryListChange && searchHistoryListChange.newValue) {
-    const newList = searchHistoryListChange.newValue;
-    const oldList = searchHistoryListChange.oldValue || [];
+  if (historyListChange && historyListChange.newValue) {
+    const newList = historyListChange.newValue;
+    const oldList = historyListChange.oldValue || [];
 
     if (newList.length >= oldList.length) {
       fetchData(hasInit);
@@ -433,7 +439,7 @@ let previousHeight = 0;
 function delayMeasurement() {
   setTimeout(() => {
     measureContentSize();
-  }, 50);
+  }, 100);
 }
 
 function measureContentSize(summary = false) {

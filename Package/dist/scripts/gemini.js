@@ -187,13 +187,21 @@ class Gemini {
                         if (result.summaryList) {
                             hasSummary = true;
                             geminiEmptyMessage.classList.add("d-none");
-                            summaryListContainer.innerHTML = this.constructSummaryHTML(
-                                result.summaryList,
-                                result.favoriteList
-                            );
                             clearButtonSummary.classList.remove("d-none");
-                            apiButton.classList.add("d-none");
                             clearButtonSummary.disabled = false;
+                            apiButton.classList.add("d-none");
+
+                            // Only reconstruct if summary list structure changed or container is empty
+                            if (summaryListChange || summaryListContainer.innerHTML.trim() === "") {
+                                summaryListContainer.innerHTML = this.constructSummaryHTML(
+                                    result.summaryList,
+                                    result.favoriteList
+                                );
+                            } else if (result.favoriteList) {
+                                // Just update the favorite icons if only favorites changed
+                                this.updateSummaryFavoriteIcons(result.favoriteList);
+                            }
+
                             checkTextOverflow();
                             delayMeasurement();
                         }
@@ -208,26 +216,43 @@ class Gemini {
 
     constructSummaryHTML(summaryList, favoriteList = []) {
         let html = '<ul class="list-group d-flex">';
-        const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
 
         summaryList.forEach((item, index) => {
             const isLastItem = index === summaryList.length - 1;
             const mbClass = isLastItem ? "" : "mb-3";
 
-            const icon = favorite.createFavoriteIcon(item.name, trimmedFavorite);
-            const iconHTML = icon.outerHTML;
-
             html += `
-      <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center text-break ${mbClass}">
-        <span>${item.name}</span>
-        <span class="d-none">${item.clue}</span>
-        ${iconHTML}
-      </li>
-    `;
+          <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center text-break ${mbClass}">
+            <span>${item.name}</span>
+            <span class="d-none">${item.clue}</span>
+            <i class="bi"></i>
+          </li>
+        `;
         });
 
         html += "</ul>";
-        return html;
+
+        // Set the HTML first, then update the favorite icons
+        summaryListContainer.innerHTML = html;
+        this.updateSummaryFavoriteIcons(favoriteList);
+
+        return summaryListContainer.innerHTML;
+    }
+
+    // Update only the favorite icons in the summary list without reconstructing the entire list
+    updateSummaryFavoriteIcons(favoriteList = []) {
+        const summaryItems = summaryListContainer.querySelectorAll(".summary-list");
+        const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
+
+        summaryItems.forEach((item) => {
+            const itemName = item.querySelector("span:first-child").textContent;
+            const existingIcon = item.querySelector("i");
+
+            if (existingIcon) {
+                const newIcon = favorite.createFavoriteIcon(itemName, trimmedFavorite);
+                existingIcon.className = newIcon.className;
+            }
+        });
     }
 
     // Get Gemini response

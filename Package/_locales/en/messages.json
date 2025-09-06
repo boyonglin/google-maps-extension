@@ -274,5 +274,9 @@
   "getDirections": {
     "message": "Get Directions",
     "description": "context menu get directions option"
+  },
+  "tidyLocations" : {
+    "message": "Tidy Locations",
+    "description": "context menu tidy locations option"
   }
 }

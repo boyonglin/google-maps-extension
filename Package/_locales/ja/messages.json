@@ -206,5 +206,8 @@
   },
   "getDirections": {
     "message": "ルートを検索"
+  },
+  "tidyLocations" : {
+    "message": "場所を整頓"
   }
 }

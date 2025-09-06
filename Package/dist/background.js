@@ -282,8 +282,50 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "openInGroup") {  // Create a new tab group (if supported)
     openUrlsInNewGroup(
       request.urls, request.groupTitle, request.groupColor, request.collapsed);
+  } else if (request.action === "organizeLocations") {  // Organize locations using Gemini
+    handleOrganizeLocations(request.locations, request.listType, sendResponse);
+    return true;
   }
 });
+
+async function handleOrganizeLocations(locations, listType, sendResponse) {
+  try {
+    const apiKey = await getApiKey();
+
+    // Format locations for the prompt with enhanced context
+    const locationsText = locations.map(loc => {
+      if (loc.clue && loc.clue.trim()) {
+        return `${loc.name} (${loc.clue})`;
+      }
+      return loc.name;
+    }).join('\n');
+
+    callApi(GeminiPrompts.organize, locationsText, apiKey, (response) => {
+      if (response.error) {
+        console.error("Gemini API error:", response.error);
+        sendResponse({ success: false, error: response.error });
+        return;
+      }
+
+      try {
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const organizedData = JSON.parse(jsonMatch[0]);
+          sendResponse({ success: true, organizedData: organizedData });
+        } else {
+          sendResponse({ success: true, organizedData: { rawText: response } });
+        }
+      } catch (parseError) {
+        console.error("Failed to parse JSON response:", parseError);
+        sendResponse({ success: true, organizedData: { rawText: response } });
+      }
+    });
+
+  } catch (error) {
+    console.error("Error organizing locations:", error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
 
 const canGroup =
   !!chrome.tabGroups &&
@@ -407,9 +449,10 @@ async function verifyApiKey(apiKey) {
 }
 
 function callApi(prompt, content, apiKey, sendResponse) {
-  const url = `${endpoint}:generateContent`;
+  const url = prompt.includes("Organize") ? `${endpoint.replace('2.0', '2.5')}:generateContent` : `${endpoint}:generateContent`;
+  const isYouTubeUri = content.includes("youtube.com") || content.includes("youtu.be");
 
-  const data = content.includes("youtube")
+  const data = isYouTubeUri
     ? {
       contents: [{
         parts: [

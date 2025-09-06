@@ -206,5 +206,8 @@
   },
   "getDirections": {
     "message": "規劃路線"
+  },
+  "tidyLocations" : {
+    "message": "整理地點"
   }
 }

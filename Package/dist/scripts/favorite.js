@@ -138,71 +138,73 @@ class Favorite {
 
     // Update the favorite list container
     updateFavorite(favoriteList) {
-        favoriteListContainer.innerHTML = "";
+        if (favoriteListChange || favoriteListContainer.innerHTML.trim() === "") {
+            favoriteListContainer.innerHTML = "";
 
-        if (favoriteList && favoriteList.length > 0) {
-            favoriteEmptyMessage.style.display = "none";
-            hasFavorite = true;
+            if (favoriteList && favoriteList.length > 0) {
+                favoriteEmptyMessage.style.display = "none";
+                hasFavorite = true;
 
-            const ul = document.createElement("ul");
-            ul.className = "list-group d-flex flex-column-reverse";
+                const ul = document.createElement("ul");
+                ul.className = "list-group d-flex flex-column-reverse";
 
-            // Create list item from new selectedText
-            const fragment = document.createDocumentFragment();
-            favoriteList.forEach((selectedText) => {
-                const li = document.createElement("li");
-                li.className =
-                    "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between align-items-center text-break";
+                // Create list item from new selectedText
+                const fragment = document.createDocumentFragment();
+                favoriteList.forEach((selectedText) => {
+                    const li = document.createElement("li");
+                    li.className =
+                        "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between align-items-center text-break";
 
-                const span = document.createElement("span");
-                if (selectedText.includes(" @")) {
-                    const name = selectedText.split(" @")[0];
-                    const clue = selectedText.split(" @")[1];
-                    span.textContent = name;
-                    li.appendChild(span);
+                    const span = document.createElement("span");
+                    if (selectedText.includes(" @")) {
+                        const name = selectedText.split(" @")[0];
+                        const clue = selectedText.split(" @")[1];
+                        span.textContent = name;
+                        li.appendChild(span);
 
-                    const clueSpan = document.createElement("span");
-                    clueSpan.className = "d-none";
-                    clueSpan.textContent = clue;
-                    li.appendChild(clueSpan);
-                } else {
-                    span.textContent = selectedText;
-                    li.appendChild(span);
+                        const clueSpan = document.createElement("span");
+                        clueSpan.className = "d-none";
+                        clueSpan.textContent = clue;
+                        li.appendChild(clueSpan);
+                    } else {
+                        span.textContent = selectedText;
+                        li.appendChild(span);
+                    }
+
+                    const favoriteIcon = document.createElement("i");
+                    favoriteIcon.className = "bi bi-patch-check-fill matched";
+                    li.appendChild(favoriteIcon);
+
+                    const checkbox = document.createElement("input");
+                    checkbox.className = "form-check-input d-none";
+                    checkbox.type = "checkbox";
+                    checkbox.value = "delete";
+                    checkbox.name = "checkDelete";
+                    checkbox.ariaLabel = "Delete";
+                    checkbox.style.cursor = "pointer";
+                    li.appendChild(checkbox);
+                    fragment.appendChild(li);
+
+                    exportButton.disabled = false;
+                });
+                ul.appendChild(fragment);
+                favoriteListContainer.appendChild(ul);
+
+                const lastListItem = favoriteListContainer.querySelector(
+                    ".list-group .list-group-item:first-child"
+                );
+                if (lastListItem) {
+                    lastListItem.classList.remove("mb-3");
                 }
 
-                const favoriteIcon = document.createElement("i");
-                favoriteIcon.className = "bi bi-patch-check-fill matched";
-                li.appendChild(favoriteIcon);
-
-                const checkbox = document.createElement("input");
-                checkbox.className = "form-check-input d-none";
-                checkbox.type = "checkbox";
-                checkbox.value = "delete";
-                checkbox.name = "checkDelete";
-                checkbox.ariaLabel = "Delete";
-                checkbox.style.cursor = "pointer";
-                li.appendChild(checkbox);
-                fragment.appendChild(li);
-
-                exportButton.disabled = false;
-            });
-            ul.appendChild(fragment);
-            favoriteListContainer.appendChild(ul);
-
-            const lastListItem = favoriteListContainer.querySelector(
-                ".list-group .list-group-item:first-child"
-            );
-            if (lastListItem) {
-                lastListItem.classList.remove("mb-3");
+                remove.attachCheckboxEventListener(favoriteListContainer);
+            } else {
+                favoriteEmptyMessage.style.display = "block";
+                hasFavorite = false;
+                exportButton.disabled = true;
             }
-
-            remove.attachCheckboxEventListener(favoriteListContainer);
-            delayMeasurement();
-        } else {
-            favoriteEmptyMessage.style.display = "block";
-            hasFavorite = false;
-            exportButton.disabled = true;
-            delayMeasurement();
         }
+
+        delayMeasurement();
     }
 }
