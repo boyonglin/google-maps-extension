@@ -208,7 +208,7 @@ class ContextMenuUtil {
 
         // Clear container
         elementsList.forEach(item => item.remove());
-        const existingHeaders = container.querySelectorAll('.category-header');
+        const existingHeaders = container.querySelectorAll(".category-header");
         existingHeaders.forEach(header => header.remove());
 
         // Determine layout strategy
@@ -235,7 +235,7 @@ class ContextMenuUtil {
             // Multiple mapping strategies for robust matching
             const mappings = [
                 locationName,
-                locationName.toLowerCase().replace(/\s+/g, ' ').trim(),
+                locationName.toLowerCase().replace(/\s+/g, " ").trim(),
                 `index_${index}`
             ];
 
@@ -289,13 +289,13 @@ class ContextMenuUtil {
         if (element) return element;
 
         // Try normalized match
-        const normalized = locationName.toLowerCase().replace(/\s+/g, ' ').trim();
+        const normalized = locationName.toLowerCase().replace(/\s+/g, " ").trim();
         element = elementMap.get(normalized);
         if (element) return element;
 
         // Try fuzzy matching
         for (const [key, el] of elementMap.entries()) {
-            if (!key.startsWith('index_') && key.includes(normalized)) {
+            if (!key.startsWith("index_") && key.includes(normalized)) {
                 return el;
             }
         }
@@ -366,7 +366,7 @@ class ContextMenuUtil {
 
         const listContainer = listItems[0]?.parentElement;
         if (listContainer) {
-            listContainer.style.opacity = '';
+            listContainer.style.opacity = "";
         }
     }
 }

@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Run payment check in background to avoid blocking UI
-  if ('requestIdleCallback' in window) {
+  if ("requestIdleCallback" in window) {
     requestIdleCallback(() => {
       checkPay();
     });

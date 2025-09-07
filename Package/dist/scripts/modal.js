@@ -1,6 +1,6 @@
 class Modal {
     async addModalListener() {
-        const { encryptApiKey } = await import(chrome.runtime.getURL('dist/module/gcrypto.js'));
+        const { encryptApiKey } = await import(chrome.runtime.getURL("dist/module/gcrypto.js"));
         // Shortcuts configuration link
         for (let i = 0; i < configureElements.length; i++) {
             configureElements[i].onclick = function (event) {

@@ -26,7 +26,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "expandYouTubeDescription") {
     try {
       // Look for the expand button with the specific selector
-      const expandButton = document.querySelector('tp-yt-paper-button#expand.button.style-scope.ytd-text-inline-expander');
+      const expandButton = document.querySelector("tp-yt-paper-button#expand.button.style-scope.ytd-text-inline-expander");
 
       if (expandButton && expandButton.getAttribute("aria-disabled") !== "true") {
         // Click the expand button

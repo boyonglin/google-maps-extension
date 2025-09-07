@@ -298,7 +298,7 @@ async function handleOrganizeLocations(locations, listType, sendResponse) {
         return `${loc.name} (${loc.clue})`;
       }
       return loc.name;
-    }).join('\n');
+    }).join("\n");
 
     callApi(GeminiPrompts.organize, locationsText, apiKey, (response) => {
       if (response.error) {
@@ -449,7 +449,7 @@ async function verifyApiKey(apiKey) {
 }
 
 function callApi(prompt, content, apiKey, sendResponse) {
-  const url = prompt.includes("Organize") ? `${endpoint.replace('2.0', '2.5')}:generateContent` : `${endpoint}:generateContent`;
+  const url = prompt.includes("Organize") ? `${endpoint.replace("2.0", "2.5")}:generateContent` : `${endpoint}:generateContent`;
   const isYouTubeUri = content.includes("youtube.com") || content.includes("youtu.be");
 
   const data = isYouTubeUri
