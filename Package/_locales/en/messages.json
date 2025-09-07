@@ -173,6 +173,10 @@
     "message": "\ud83d\udcccAuto-attach Google Maps link",
     "description": "modal auto-attach feature label"
   },
+  "tidyLabel": {
+    "message": "\ud83e\uddf9Tidy your location list",
+    "description": "modal tidy locations feature label"
+  },
   "moreLabel": {
     "message": "\ud83d\udd25More coming up",
     "description": "modal more feature label"

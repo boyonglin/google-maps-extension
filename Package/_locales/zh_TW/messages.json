@@ -130,6 +130,9 @@
   "autoAttachLabel": {
     "message": "\ud83d\udccc自動附加 Google 地圖連結"
   },
+  "tidyLabel": {
+    "message": "\ud83e\uddf9整理你的地點清單"
+  },
   "moreLabel": {
     "message": "\ud83d\udd25將會有更多的高級魔法"
   },

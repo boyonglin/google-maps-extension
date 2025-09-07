@@ -132,7 +132,8 @@
                 <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#premiumModal">
                     <span class="nav-link text-muted" data-locale="premiumBtnText">Premium</span>
                 </li>
-                <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#optionalModal" id="optionalButton">
+                <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#optionalModal"
+                    id="optionalButton">
                     <span class="nav-link text-muted" data-locale="optionalBtnText">Optional</span>
                 </li>
             </ul>
@@ -185,10 +186,17 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body d-flex flex-column">
-                        <h2 id="preview-h2" class="fs-6 fw-normal text-center my-3" data-locale="autoAttachLabel">📌Auto-attach Google
-                            Maps link</h2>
-                        <div id="preview-video">
-                            <video class="rounded-3" src="images/auto-attach.webm" type="video/webm" autoplay muted loop></video>
+                        <h2 class="preview-h2 fs-6 fw-normal text-center mt-3 mb-4" data-locale="autoAttachLabel">
+                            📌Auto-attach Google Maps link</h2>
+                        <div class="preview-video">
+                            <video class="rounded-3" src="images/auto-attach.webm" type="video/webm" autoplay muted
+                                loop></video>
+                        </div>
+                        <h2 class="preview-h2 fs-6 fw-normal text-center mb-4" data-locale="tidyLabel">
+                            🧹Let your List stay organized</h2>
+                        <div id="tidyVideo" class="preview-video">
+                            <video class="rounded-3" src="images/tidy.webm" type="video/webm" autoplay muted
+                                loop></video>
                         </div>
                         <h2 class="fs-6 fw-normal text-center mb-3" data-locale="moreLabel">👀More coming up</h2>
                         <button id="paymentButton" class="btn btn-send flex-fill my-3">
@@ -237,7 +245,8 @@
                         </form>
 
                         <!-- Incognito Mode Button -->
-                        <button id="incognitoToggle" class="btn btn-outline-secondary modalFormInput w-100 incognito-btn" type="button">
+                        <button id="incognitoToggle"
+                            class="btn btn-outline-secondary modalFormInput w-100 incognito-btn" type="button">
                             <span class="incognito-text" data-locale="incognitoToggleText">Turn on Incognito Mode</span>
                             <span class="incognito-icon d-none"><i class="bi bi-incognito"></i></span>
                         </button>

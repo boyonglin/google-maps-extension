@@ -76,9 +76,14 @@ let [hasHistory, hasFavorite, hasSummary, hasInit] = [
   false, false, false, false,
 ];
 
+let [historyListChange, favoriteListChange, summaryListChange] = [
+  false, false, false
+];
+
 let videoSummaryMode;
 let localVideoToggle;
 let summarizedTabId;
+let stage;
 
 let queryUrl;
 let routeUrl;
@@ -87,8 +92,6 @@ function UpdateUserUrls(newUser) {
   queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
   routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
 }
-
-let [historyListChange, favoriteListChange, summaryListChange] = [false, false, false];
 
 document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
@@ -527,7 +530,7 @@ const pElement = document.querySelector(`p[data-locale="premiumNote"]`);
 
 function checkPay() {
   chrome.runtime.sendMessage({ action: "checkPay" }, (response) => {
-    const stage = response.result;
+    stage = response.result;
 
     // Shortcut display
     if (stage.isTrial || stage.isPremium) {

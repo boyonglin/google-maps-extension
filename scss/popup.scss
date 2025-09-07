@@ -20,6 +20,7 @@
   --google-purple-hover: #6c61a4;
   --google-purple: #8779cd;
   --google-purple-500: #c3bce6;
+  --google-purple-100: #f1effa;
   --google-purple-bg: #fafafd;
 
   /* TC + Emoji safe */
@@ -610,7 +611,7 @@ li:hover .form-check-input {
   pointer-events: none !important;
 }
 
-#preview-video {
+.preview-video {
   position: absolute;
   display: none;
   top: 4rem;
@@ -622,9 +623,14 @@ li:hover .form-check-input {
   }
 }
 
-#preview-h2:hover + #preview-video {
+.preview-h2:hover + .preview-video {
   display: flex;
 }
+
+#tidyVideo {
+  top: 6.5rem;
+}
+
 
 /* scrollbar */
 
@@ -656,6 +662,15 @@ li:hover .form-check-input {
   &:hover {
     color: var(--gray-600);
     background-color: var(--gray-300);
+  }
+}
+
+.premium-option {
+  color: var(--google-purple);
+
+  &:hover {
+    color: var(--google-purple);
+    background-color: var(--google-purple-100);
   }
 }
 

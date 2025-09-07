@@ -45,10 +45,19 @@ class ContextMenuUtil {
             contextMenu.appendChild(tidyLocationsOption);
         });
 
-        // Create "Tidy Locations" option
+        // Create "Tidy Locations" option with premium check
+        const canTidy = stage.isTrial || stage.isPremium;
         const tidyLocationsOption = this.createOption(contextMenu, chrome.i18n.getMessage("tidyLocations"), () => {
-            this.tidyLocations(listItems);
+            if (!canTidy) {
+                document.querySelector('[data-bs-target="#premiumModal"]').click();
+            } else {
+                this.tidyLocations(listItems);
+            }
         });
+
+        if (!canTidy) {
+            tidyLocationsOption.classList.add("premium-option");
+        }
 
         document.body.appendChild(contextMenu);
 

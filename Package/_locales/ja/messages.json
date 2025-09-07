@@ -130,6 +130,9 @@
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"
   },
+  "tidyLabel": {
+    "message": "\ud83e\uddf9あなたの場所リストを整頓"
+  },
   "moreLabel": {
     "message": "\ud83d\udd25今後、さらに多くの上級魔法"
   },

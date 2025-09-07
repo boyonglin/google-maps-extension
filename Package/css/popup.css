@@ -20,6 +20,7 @@
   --google-purple-hover: #6c61a4;
   --google-purple: #8779cd;
   --google-purple-500: #c3bce6;
+  --google-purple-100: #f1effa;
   --google-purple-bg: #fafafd;
   /* TC + Emoji safe */
   --ui-font: "Satoshi-Variable",
@@ -534,19 +535,23 @@ li:hover .form-check-input {
   pointer-events: none !important;
 }
 
-#preview-video {
+.preview-video {
   position: absolute;
   display: none;
   top: 4rem;
 }
-#preview-video video {
+.preview-video video {
   width: calc(100% - 16px);
   border: 8px solid white;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
 }
 
-#preview-h2:hover + #preview-video {
+.preview-h2:hover + .preview-video {
   display: flex;
+}
+
+#tidyVideo {
+  top: 6.5rem;
 }
 
 /* scrollbar */
@@ -577,6 +582,14 @@ li:hover .form-check-input {
 .context-menu-item:hover {
   color: var(--gray-600);
   background-color: var(--gray-300);
+}
+
+.premium-option {
+  color: var(--google-purple);
+}
+.premium-option:hover {
+  color: var(--google-purple);
+  background-color: var(--google-purple-100);
 }
 
 .category-header {
