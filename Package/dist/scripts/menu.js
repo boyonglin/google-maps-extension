@@ -172,8 +172,6 @@ class ContextMenuUtil {
 
             if (response?.success) {
                 this.applyOrganization(response.organizedData, listItems);
-            } else {
-                console.error("Failed to organize locations:", response?.error);
             }
         });
     }
