@@ -24,7 +24,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
   // What's new page
   const userLocale = chrome.i18n.getUILanguage();
-  if (details.reason === "install") {
+  if (details.reason === "install" || details.reason === "update") {
     if (userLocale.startsWith("zh")) {
       chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
     } else {
@@ -322,7 +322,10 @@ async function handleOrganizeLocations(locations, listType, sendResponse) {
     });
 
   } catch (error) {
-    console.error("Error organizing locations:", error);
+    if (error.message.includes("No API key found")) {
+      await tryAPINotify();
+      return;
+    }
     sendResponse({ success: false, error: error.message });
   }
 }
