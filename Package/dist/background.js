@@ -325,7 +325,7 @@ async function handleOrganizeLocations(locations, listType, sendResponse) {
     if (error.message.includes("No API key found")) {
       await tryAPINotify();
     } else {
-      console.error("Failed to organize locations:", response?.error);
+      console.error("Failed to organize locations:", error);
     }
     sendResponse({ success: false, error: error.message });
   }
