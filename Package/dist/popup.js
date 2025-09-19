@@ -47,6 +47,7 @@ const clearButtonSummary = document.getElementById("clearButtonSummary");
 const premiumModal = document.getElementById("premiumModalLabel");
 const closeButton = premiumModal.parentElement.querySelector(".btn-close");
 const optionalButton = document.getElementById("optionalButton");
+const mapsButton = document.getElementById("mapsButton");
 
 // ExtensionPay
 const paymentButton = document.getElementById("paymentButton");
@@ -91,6 +92,9 @@ let routeUrl;
 function UpdateUserUrls(newUser) {
   queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
   routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
+
+  // Update the maps button href to use the dynamic queryUrl
+  mapsButton.href = queryUrl.slice(0, -1); // Remove trailing '&'
 }
 
 document.addEventListener("DOMContentLoaded", () => {

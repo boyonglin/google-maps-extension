@@ -24,7 +24,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
   // What's new page
   const userLocale = chrome.i18n.getUILanguage();
-  if (details.reason === "install" || details.reason === "update") {
+  if (details.reason === "install" || (details.reason === "update" && details.previousVersion !== "1.11.3")) {
     if (userLocale.startsWith("zh")) {
       chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
     } else {

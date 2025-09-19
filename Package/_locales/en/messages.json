@@ -166,7 +166,7 @@
     "description": "popup incognito toggle button text"
   },
   "optionalNote": {
-    "message": "I. Get directions from starting point: right-click / shortcut\nII. Switch Google account: 0 / 1 / …\nⅢ. Summaries and search history won’t be saved",
+    "message": "\u0031\ufe0f\u20e3 Get directions from starting point: right-click / shortcut\n\u0032\ufe0f\u20e3 Switch Google account: 0 / 1 / …\n\u0033\ufe0f\u20e3 Summary and search history won’t be kept",
     "description": "modal direction note"
   },
   "autoAttachLabel": {

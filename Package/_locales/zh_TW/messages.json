@@ -116,7 +116,7 @@
     "message": "個人設定"
   },
   "optionalNote": {
-    "message": "I. 規劃從起點開始的路線：滑鼠右鍵 / 快捷鍵\nII. 切換 Google 使用者帳號：0 / 1 / …\nIII. 摘要與搜尋紀錄不會被儲存"
+    "message": "\u0031\ufe0f\u20e3 規劃從起點開始路線：滑鼠右鍵 / 快捷鍵\n\u0032\ufe0f\u20e3 切換 Google 使用者帳號：0 / 1 / …\n\u0033\ufe0f\u20e3 摘要與搜尋紀錄不會被儲存"
   },
   "dirPlaceholder": {
     "message": "路線起點"
