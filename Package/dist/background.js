@@ -24,7 +24,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
   // What's new page
   const userLocale = chrome.i18n.getUILanguage();
-  if (details.reason === "install" || (details.reason === "update" && details.previousVersion !== "1.11.3")) {
+  if (details.reason === "install" || (details.reason === "update" && details.previousVersion !== "1.11.3" && details.previousVersion !== "1.11.4")) {
     if (userLocale.startsWith("zh")) {
       chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
     } else {
@@ -596,6 +596,7 @@ let loading = null;      // in-flight promise to dedupe concurrent warms
 let queryUrl;
 let routeUrl;
 
+UpdateUserUrls(DEFAULTS.authUser);
 function UpdateUserUrls(newUser) {
   queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
   routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
@@ -646,3 +647,4 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return true;
   }
 });
+
