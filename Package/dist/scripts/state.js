@@ -22,17 +22,6 @@ class State {
     // Dimension cache
     this.previousWidth = 0;
     this.previousHeight = 0;
-
-    // Constants
-    this.keys = [
-      "searchHistoryList",
-      "favoriteList",
-      "geminiApiKey",
-      "startAddr",
-      "authUser",
-      "isIncognito",
-      "videoSummaryToggle",
-    ];
   }
 
   /**

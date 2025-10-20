@@ -145,25 +145,10 @@ function checkTextOverflow() {
   }
 }
 
-const KEYS = [
-  "searchHistoryList",
-  "favoriteList",
-  "geminiApiKey",
-  "startAddr",
-  "authUser",
-  "isIncognito",
-  "videoSummaryToggle",
-];
-
 async function getWarmState() {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ action: "getWarmState" }, (state) => {
-      if (chrome.runtime.lastError || !state) {
-        // Service-worker was asleep → fall back to direct read (slow path)
-        chrome.storage.local.get(KEYS, resolve);
-      } else {
-        resolve(state);
-      }
+      resolve(state ?? {});
     });
   });
 }
@@ -314,7 +299,7 @@ searchHistoryButton.addEventListener("click", () => {
 });
 
 favoriteListButton.addEventListener("click", () => {
-  chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+  getWarmState().then(({ favoriteList = [] }) => {
     favorite.updateFavorite(favoriteList);
   });
 
