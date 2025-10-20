@@ -1,7 +1,7 @@
-import { encryptApiKey } from "./module/gcrypto.js";
-import { GeminiPrompts } from "./module/prompt.js";
-import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSearchUrl, buildDirectionsUrl, buildMapsUrl } from "./module/state.js";
-import ExtPay from "./module/ExtPay.module.js";
+import { encryptApiKey } from "./components/crypto.js";
+import { GeminiPrompts } from "./components/prompt.js";
+import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSearchUrl, buildDirectionsUrl, buildMapsUrl } from "./components/state.js";
+import ExtPay from "./components/ExtPay.module.js";
 
 let maxListLength = 10;
 
@@ -45,8 +45,8 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 // Version comparison utility
 function compareChromeVersions(a, b) {
-  const pa = String(a).split('.').map(Number);
-  const pb = String(b).split('.').map(Number);
+  const pa = String(a).split(".").map(Number);
+  const pb = String(b).split(".").map(Number);
   const len = Math.max(pa.length, pb.length);
   for (let i = 0; i < len; i++) {
     const na = Number.isFinite(pa[i]) ? pa[i] : 0;

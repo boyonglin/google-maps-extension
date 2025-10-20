@@ -1,4 +1,4 @@
-import { decryptApiKey } from "./gcrypto.js";
+import { decryptApiKey } from "./crypto.js";
 
 // URLs
 export let queryUrl = "https://www.google.com/maps?authuser=0&";
