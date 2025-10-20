@@ -68,13 +68,20 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.startAddr) {
     const newStartAddr = changes.startAddr.newValue;
     if (newStartAddr) {
-      chrome.contextMenus.create({
-        id: "googleMapsDirections",
-        title: chrome.i18n.getMessage("directionsContext"),
-        contexts: ["selection"],
+      chrome.contextMenus.remove("googleMapsDirections", () => {
+        // Ignore any errors if the item doesn't exist
+        chrome.runtime.lastError;
+        chrome.contextMenus.create({
+          id: "googleMapsDirections",
+          title: chrome.i18n.getMessage("directionsContext"),
+          contexts: ["selection"],
+        });
       });
     } else {
-      chrome.contextMenus.remove("googleMapsDirections");
+      chrome.contextMenus.remove("googleMapsDirections", () => {
+        // Ignore error if item doesn't exist
+        chrome.runtime.lastError;
+      });
     }
   }
 });
