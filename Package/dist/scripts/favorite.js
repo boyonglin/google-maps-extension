@@ -81,22 +81,23 @@ class Favorite {
             } else {
                 const spans = liElement.querySelectorAll("span");
                 const selectedText = Array.from(spans).map(span => span.textContent).join(" ").trim();
-                const searchUrl = `${queryUrl}q=${encodeURIComponent(selectedText)}`;
-
-                if (event.target.classList.contains("bi")) {
-                    return;
-                } else if (event.target.classList.contains("form-check-input")) {
-                    return;
-                } else {
-                    if (event.button === 1) {
-                        // Middle click
-                        event.preventDefault();
-                        chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
-                    } else if (event.button === 0) {
-                        // Left click
-                        window.open(searchUrl, "_blank");
+                
+                state.buildSearchUrl(selectedText).then(searchUrl => {
+                    if (event.target.classList.contains("bi")) {
+                        return;
+                    } else if (event.target.classList.contains("form-check-input")) {
+                        return;
+                    } else {
+                        if (event.button === 1) {
+                            // Middle click
+                            event.preventDefault();
+                            chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+                        } else if (event.button === 0) {
+                            // Left click
+                            window.open(searchUrl, "_blank");
+                        }
                     }
-                }
+                });
             }
         });
 
@@ -138,12 +139,12 @@ class Favorite {
 
     // Update the favorite list container
     updateFavorite(favoriteList) {
-        if (favoriteListChange || favoriteListContainer.innerHTML.trim() === "") {
+        if (state.favoriteListChanged || favoriteListContainer.innerHTML.trim() === "") {
             favoriteListContainer.innerHTML = "";
 
             if (favoriteList && favoriteList.length > 0) {
                 favoriteEmptyMessage.style.display = "none";
-                hasFavorite = true;
+                state.hasFavorite = true;
 
                 const ul = document.createElement("ul");
                 ul.className = "list-group d-flex flex-column-reverse";
@@ -200,7 +201,7 @@ class Favorite {
                 remove.attachCheckboxEventListener(favoriteListContainer);
             } else {
                 favoriteEmptyMessage.style.display = "block";
-                hasFavorite = false;
+                state.hasFavorite = false;
                 exportButton.disabled = true;
             }
         }

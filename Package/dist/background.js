@@ -1,6 +1,7 @@
-import { decryptApiKey, encryptApiKey } from "./module/gcrypto.js";
-import ExtPay from "./module/ExtPay.module.js";
+import { encryptApiKey } from "./module/gcrypto.js";
 import { GeminiPrompts } from "./module/prompt.js";
+import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSearchUrl, buildDirectionsUrl, buildMapsUrl } from "./module/state.js";
+import ExtPay from "./module/ExtPay.module.js";
 
 let maxListLength = 10;
 
@@ -24,7 +25,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
   // What's new page
   const userLocale = chrome.i18n.getUILanguage();
-  if (details.reason === "install" || (details.reason === "update" && details.previousVersion !== "1.11.3" && details.previousVersion !== "1.11.4")) {
+  if (details.reason === "install" || (details.reason === "update" && isLessThan(details.previousVersion, "1.11.3"))) {
     if (userLocale.startsWith("zh")) {
       chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
     } else {
@@ -42,9 +43,29 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 
-// Add event listener to monitor changes to "startAddr" in storage
-chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local" && changes.startAddr) {
+// Version comparison utility
+function compareChromeVersions(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const na = Number.isFinite(pa[i]) ? pa[i] : 0;
+    const nb = Number.isFinite(pb[i]) ? pb[i] : 0;
+    if (na > nb) return 1;
+    if (na < nb) return -1;
+  }
+  return 0;
+}
+
+const isLessThan = (v, t) => compareChromeVersions(v, t) <  0;
+
+// Storage changes
+chrome.storage.onChanged.addListener((changes, area) => {
+  // Keep module cache in sync (also updates URLs when authUser changes)
+  applyStorageChanges(changes, area);
+
+  // Manage context menu for directions based on presence of startAddr
+  if (area === "local" && changes.startAddr) {
     const newStartAddr = changes.startAddr.newValue;
     if (newStartAddr) {
       chrome.contextMenus.create({
@@ -55,10 +76,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     } else {
       chrome.contextMenus.remove("googleMapsDirections");
     }
-  }
-
-  if (areaName === "local" && changes.authUser) {
-    UpdateUserUrls(changes.authUser.newValue);
   }
 });
 
@@ -210,14 +227,6 @@ async function tryAPINotify(retries = 10) {
   }
 }
 
-async function getApiKey() {
-  await ensureWarm();
-  if (!cache.geminiApiKey) {
-    throw new Error("No API key found. Please provide one.");
-  }
-  return cache.geminiApiKey;
-}
-
 function getContent(tabId, message) {
   return new Promise((resolve, reject) => {
     chrome.tabs.sendMessage(tabId, message, (response) => {
@@ -238,7 +247,7 @@ function handleSelectedText(selectedText) {
   }
 
   // Use chrome.tabs.create to open a new tab for search
-  const searchUrl = `${queryUrl}q=${encodeURIComponent(selectedText)}`;
+  const searchUrl = buildSearchUrl(selectedText);
   chrome.tabs.create({ url: searchUrl });
 
   updateHistoryList(selectedText);
@@ -251,7 +260,7 @@ function handleSelectedDir(selectedText) {
   }
 
   chrome.storage.local.get("startAddr", ({ startAddr }) => {
-    const directionsUrl = `${routeUrl}api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
+    const directionsUrl = buildDirectionsUrl(startAddr, selectedText);
     chrome.tabs.create({ url: directionsUrl });
   });
 }
@@ -262,7 +271,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "searchInput") {
     let searchTerm = request.searchTerm;
     if (searchTerm) {
-      const searchUrl = `${queryUrl}q=${encodeURIComponent(searchTerm)}`;
+      const searchUrl = buildSearchUrl(searchTerm);
       chrome.tabs.create({ url: searchUrl });
       updateHistoryList(searchTerm);
     }
@@ -369,7 +378,7 @@ function openUrlsInNewGroup(urls, title, color, collapsed) {
 function updateHistoryList(selectedText) {
   chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
     // Respect incognito mode: do not persist history when enabled
-    if (cache.isIncognito) {
+    if (getCache().isIncognito) {
       return;
     }
 
@@ -578,72 +587,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Caching mechanism
-const DEFAULTS = {
-  searchHistoryList: [],
-  favoriteList: [],
-  geminiApiKey: "",
-  aesKey: null,
-  startAddr: "",
-  authUser: 0,
-  isIncognito: false,
-  videoSummaryToggle: false,
-};
-
-let cache = null;        // holds warmed state while the worker is alive
-let loading = null;      // in-flight promise to dedupe concurrent warms
-
-let queryUrl;
-let routeUrl;
-
-UpdateUserUrls(DEFAULTS.authUser);
-function UpdateUserUrls(newUser) {
-  queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
-  routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
-}
-
-async function ensureWarm() {
-  if (cache) return cache;
-  if (loading) return loading;
-  loading = chrome.storage.local.get(DEFAULTS)
-    .then(async v => {
-      if (v.geminiApiKey) {
-        try {
-          v.geminiApiKey = await decryptApiKey(v.geminiApiKey);
-        } catch (_e) {
-          v.geminiApiKey = "";
-        }
-      }
-      cache = v;
-      UpdateUserUrls(v.authUser);
-    })
-    .finally(() => (loading = null));
-  return loading;
-}
-
 // 1) Warm on first useful wake-ups
 chrome.tabs.onActivated.addListener(() => { ensureWarm(); });
 
-// 2) Keep cache fresh if some other part of the extension writes
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== "local") return;
-  if (!cache) return;
-  for (const [k, { newValue }] of Object.entries(changes)) {
-    if (k === "geminiApiKey") {
-      decryptApiKey(newValue).then(v => { cache[k] = v; });
-    } else {
-      cache[k] = newValue;
-    }
-  }
-});
-
-// 3) Fast message responder for popup
+// 2) Fast message responder for popup
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "getWarmState") {
-    ensureWarm().then(() => sendResponse(cache));
+    ensureWarm().then(() => sendResponse(getCache()));
     return true;
   } else if (request.action === "getApiKey") {
     getApiKey().then(apiKey => sendResponse({ apiKey }));
+    return true;
+  } else if (request.action === "buildSearchUrl") {
+    sendResponse({ url: buildSearchUrl(request.query) });
+    return true;
+  } else if (request.action === "buildDirectionsUrl") {
+    sendResponse({ url: buildDirectionsUrl(request.origin, request.destination) });
+    return true;
+  } else if (request.action === "buildMapsUrl") {
+    sendResponse({ url: buildMapsUrl() });
     return true;
   }
 });
