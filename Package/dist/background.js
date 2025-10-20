@@ -4,6 +4,27 @@ import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSe
 import ExtPay from "./components/ExtPay.module.js";
 
 let maxListLength = 10;
+const RECEIVING_END_ERR = "Receiving end does not exist";
+
+// Utilities
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function withRetry(attempt, { retries = 10, delay = 1000, canRetry } = {}) {
+  const shouldRetry =
+    canRetry || ((err) => String(err?.message || err).includes(RECEIVING_END_ERR));
+  while (retries > 0) {
+    try {
+      return await attempt();
+    } catch (err) {
+      if (shouldRetry(err)) {
+        await sleep(delay);
+        retries--;
+        continue;
+      }
+      throw err;
+    }
+  }
+}
 
 chrome.runtime.onInstalled.addListener((details) => {
   // Create the right-click context menu items
@@ -151,56 +172,6 @@ chrome.commands.onCommand.addListener((command) => {
   });
 });
 
-async function tryAddrNotify(retries = 10) {
-  while (retries > 0) {
-    const response = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "addrNotify" }, (response) => {
-        if (chrome.runtime.lastError) {
-          resolve(chrome.runtime.lastError.message);
-        } else {
-          resolve(null); // No error, message sent
-        }
-      });
-    });
-
-    if (response && response.includes("Receiving end does not exist")) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      retries--;
-    } else {
-      break; // No error, loop stop
-    }
-  }
-}
-
-// Retry mechanism for trying to suggest places from the content
-async function trySuggest(tabId, url, retries = 10) {
-  while (retries > 0) {
-    try {
-      const apiKey = await getApiKey();
-      const response = await getContent(tabId, { action: "getContent" });
-
-      if (response && response.content) {
-        callApi(GeminiPrompts.attach, response.content, apiKey, (apiResponse) => {
-          chrome.tabs.sendMessage(tabId, {
-            action: "attachMapLink",
-            content: apiResponse,
-            queryUrl: queryUrl
-          });
-        });
-
-        return true;
-      }
-    } catch (error) {
-      if (error.message.includes("Receiving end does not exist")) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
-        retries--;
-      } else {
-        throw new Error(`Something went wrong! Please report the issue to the developer: ${error.message}`);
-      }
-    }
-  }
-}
-
 async function tryAndCheckApi(tabId, url) {
   try {
     await getApiKey();
@@ -213,25 +184,59 @@ async function tryAndCheckApi(tabId, url) {
   await trySuggest(tabId, url);
 }
 
-async function tryAPINotify(retries = 10) {
-  while (retries > 0) {
-    const response = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "apiNotify" }, (response) => {
-        if (chrome.runtime.lastError) {
-          resolve(chrome.runtime.lastError.message);
-        } else {
-          resolve(null); // No error, message sent
-        }
-      });
-    });
+async function tryAddrNotify(retries = 10) {
+  return withRetry(
+    () =>
+      new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: "addrNotify" }, () => {
+          if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+          resolve(null);
+        });
+      }),
+    { retries }
+  );
+}
 
-    if (response && response.includes("Receiving end does not exist")) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      retries--;
-    } else {
-      break; // No error, loop stop
+// Retry mechanism for trying to suggest places from the content
+async function trySuggest(tabId, url, retries = 10) {
+  return withRetry(
+    async () => {
+      const apiKey = await getApiKey();
+      const response = await getContent(tabId, { action: "getContent" });
+
+      if (!response || !response.content) {
+        // Treat as transient: trigger retry
+        throw new Error(RECEIVING_END_ERR);
+      }
+
+      callApi(GeminiPrompts.attach, response.content, apiKey, (apiResponse) => {
+        chrome.tabs.sendMessage(tabId, {
+          action: "attachMapLink",
+          content: apiResponse,
+          queryUrl: queryUrl,
+        });
+      });
+
+      return true;
+    },
+    {
+      retries,
+      canRetry: (err) => String(err?.message || err).includes(RECEIVING_END_ERR),
     }
-  }
+  );
+}
+
+async function tryAPINotify(retries = 10) {
+  return withRetry(
+    () =>
+      new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: "apiNotify" }, () => {
+          if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+          resolve(null);
+        });
+      }),
+    { retries }
+  );
 }
 
 function getContent(tabId, message) {
