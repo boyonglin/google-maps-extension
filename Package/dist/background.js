@@ -1,7 +1,7 @@
-import { encryptApiKey } from "./components/crypto.js";
-import { GeminiPrompts } from "./components/prompt.js";
-import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSearchUrl, buildDirectionsUrl, buildMapsUrl } from "./components/state.js";
-import ExtPay from "./components/ExtPay.module.js";
+import { encryptApiKey } from "./utils/crypto.js";
+import { GeminiPrompts } from "./types/prompt.js";
+import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSearchUrl, buildDirectionsUrl, buildMapsUrl } from "./hooks/backgroundState.js";
+import ExtPay from "./utils/ExtPay.module.js";
 
 let maxListLength = 10;
 const RECEIVING_END_ERR = "Receiving end does not exist";

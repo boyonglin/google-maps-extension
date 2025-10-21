@@ -63,7 +63,7 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "dist/components/appSecret.js",
+        "dist/utils/appSecret.js",
         "dist/contentScript.js"
       ],
       "css": ["css/iframe.css"]
@@ -85,11 +85,12 @@
         "dist/inject.js",
         "dist/ejectLite.js",
         "dist/checkStatus.js",
-        "dist/components/ExtPay.module.js",
-        "dist/components/browser-polyfill.js",
-        "dist/components/crypto.js",
-        "dist/components/prompt.js",
-        "dist/components/state.js"
+        "dist/utils/ExtPay.module.js",
+        "dist/utils/browser-polyfill.js",
+        "dist/utils/crypto.js",
+        "dist/hooks/backgroundState.js",
+        "dist/hooks/popupState.js",
+        "dist/types/prompt.js"
       ]
     }
   ]
