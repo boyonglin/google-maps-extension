@@ -1,8 +1,30 @@
-import { decryptApiKey, encryptApiKey } from "./module/gcrypto.js";
-import ExtPay from "./module/ExtPay.module.js";
-import { GeminiPrompts } from "./module/prompt.js";
+import { encryptApiKey } from "./utils/crypto.js";
+import { geminiPrompts } from "./utils/prompt.js";
+import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSearchUrl, buildDirectionsUrl, buildMapsUrl } from "./hooks/backgroundState.js";
+import ExtPay from "./utils/ExtPay.module.js";
 
 let maxListLength = 10;
+const RECEIVING_END_ERR = "Receiving end does not exist";
+
+// Utilities
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function withRetry(attempt, { retries = 10, delay = 1000, canRetry } = {}) {
+  const shouldRetry =
+    canRetry || ((err) => String(err?.message || err).includes(RECEIVING_END_ERR));
+  while (retries > 0) {
+    try {
+      return await attempt();
+    } catch (err) {
+      if (shouldRetry(err)) {
+        await sleep(delay);
+        retries--;
+        continue;
+      }
+      throw err;
+    }
+  }
+}
 
 chrome.runtime.onInstalled.addListener((details) => {
   // Create the right-click context menu items
@@ -24,7 +46,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
   // What's new page
   const userLocale = chrome.i18n.getUILanguage();
-  if (details.reason === "install" || (details.reason === "update" && details.previousVersion !== "1.11.3" && details.previousVersion !== "1.11.4")) {
+  if (details.reason === "install" || (details.reason === "update" && isLessThan(details.previousVersion, "1.11.3"))) {
     if (userLocale.startsWith("zh")) {
       chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
     } else {
@@ -42,23 +64,46 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 
-// Add event listener to monitor changes to "startAddr" in storage
-chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local" && changes.startAddr) {
+// Version comparison utility
+function compareChromeVersions(a, b) {
+  const pa = String(a).split(".").map(Number);
+  const pb = String(b).split(".").map(Number);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const na = Number.isFinite(pa[i]) ? pa[i] : 0;
+    const nb = Number.isFinite(pb[i]) ? pb[i] : 0;
+    if (na > nb) return 1;
+    if (na < nb) return -1;
+  }
+  return 0;
+}
+
+const isLessThan = (v, t) => compareChromeVersions(v, t) <  0;
+
+// Storage changes
+chrome.storage.onChanged.addListener((changes, area) => {
+  // Keep module cache in sync (also updates URLs when authUser changes)
+  applyStorageChanges(changes, area);
+
+  // Manage context menu for directions based on presence of startAddr
+  if (area === "local" && changes.startAddr) {
     const newStartAddr = changes.startAddr.newValue;
     if (newStartAddr) {
-      chrome.contextMenus.create({
-        id: "googleMapsDirections",
-        title: chrome.i18n.getMessage("directionsContext"),
-        contexts: ["selection"],
+      chrome.contextMenus.remove("googleMapsDirections", () => {
+        // Ignore any errors if the item doesn't exist
+        chrome.runtime.lastError;
+        chrome.contextMenus.create({
+          id: "googleMapsDirections",
+          title: chrome.i18n.getMessage("directionsContext"),
+          contexts: ["selection"],
+        });
       });
     } else {
-      chrome.contextMenus.remove("googleMapsDirections");
+      chrome.contextMenus.remove("googleMapsDirections", () => {
+        // Ignore error if item doesn't exist
+        chrome.runtime.lastError;
+      });
     }
-  }
-
-  if (areaName === "local" && changes.authUser) {
-    UpdateUserUrls(changes.authUser.newValue);
   }
 });
 
@@ -127,56 +172,6 @@ chrome.commands.onCommand.addListener((command) => {
   });
 });
 
-async function tryAddrNotify(retries = 10) {
-  while (retries > 0) {
-    const response = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "addrNotify" }, (response) => {
-        if (chrome.runtime.lastError) {
-          resolve(chrome.runtime.lastError.message);
-        } else {
-          resolve(null); // No error, message sent
-        }
-      });
-    });
-
-    if (response && response.includes("Receiving end does not exist")) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      retries--;
-    } else {
-      break; // No error, loop stop
-    }
-  }
-}
-
-// Retry mechanism for trying to suggest places from the content
-async function trySuggest(tabId, url, retries = 10) {
-  while (retries > 0) {
-    try {
-      const apiKey = await getApiKey();
-      const response = await getContent(tabId, { action: "getContent" });
-
-      if (response && response.content) {
-        callApi(GeminiPrompts.attach, response.content, apiKey, (apiResponse) => {
-          chrome.tabs.sendMessage(tabId, {
-            action: "attachMapLink",
-            content: apiResponse,
-            queryUrl: queryUrl
-          });
-        });
-
-        return true;
-      }
-    } catch (error) {
-      if (error.message.includes("Receiving end does not exist")) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
-        retries--;
-      } else {
-        throw new Error(`Something went wrong! Please report the issue to the developer: ${error.message}`);
-      }
-    }
-  }
-}
-
 async function tryAndCheckApi(tabId, url) {
   try {
     await getApiKey();
@@ -189,33 +184,59 @@ async function tryAndCheckApi(tabId, url) {
   await trySuggest(tabId, url);
 }
 
-async function tryAPINotify(retries = 10) {
-  while (retries > 0) {
-    const response = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "apiNotify" }, (response) => {
-        if (chrome.runtime.lastError) {
-          resolve(chrome.runtime.lastError.message);
-        } else {
-          resolve(null); // No error, message sent
-        }
-      });
-    });
-
-    if (response && response.includes("Receiving end does not exist")) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      retries--;
-    } else {
-      break; // No error, loop stop
-    }
-  }
+async function tryAddrNotify(retries = 10) {
+  return withRetry(
+    () =>
+      new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: "addrNotify" }, () => {
+          if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+          resolve(null);
+        });
+      }),
+    { retries }
+  );
 }
 
-async function getApiKey() {
-  await ensureWarm();
-  if (!cache.geminiApiKey) {
-    throw new Error("No API key found. Please provide one.");
-  }
-  return cache.geminiApiKey;
+// Retry mechanism for trying to suggest places from the content
+async function trySuggest(tabId, url, retries = 10) {
+  return withRetry(
+    async () => {
+      const apiKey = await getApiKey();
+      const response = await getContent(tabId, { action: "getContent" });
+
+      if (!response || !response.content) {
+        // Treat as transient: trigger retry
+        throw new Error(RECEIVING_END_ERR);
+      }
+
+      callApi(geminiPrompts.attach, response.content, apiKey, (apiResponse) => {
+        chrome.tabs.sendMessage(tabId, {
+          action: "attachMapLink",
+          content: apiResponse,
+          queryUrl: queryUrl,
+        });
+      });
+
+      return true;
+    },
+    {
+      retries,
+      canRetry: (err) => String(err?.message || err).includes(RECEIVING_END_ERR),
+    }
+  );
+}
+
+async function tryAPINotify(retries = 10) {
+  return withRetry(
+    () =>
+      new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: "apiNotify" }, () => {
+          if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+          resolve(null);
+        });
+      }),
+    { retries }
+  );
 }
 
 function getContent(tabId, message) {
@@ -238,7 +259,7 @@ function handleSelectedText(selectedText) {
   }
 
   // Use chrome.tabs.create to open a new tab for search
-  const searchUrl = `${queryUrl}q=${encodeURIComponent(selectedText)}`;
+  const searchUrl = buildSearchUrl(selectedText);
   chrome.tabs.create({ url: searchUrl });
 
   updateHistoryList(selectedText);
@@ -251,7 +272,7 @@ function handleSelectedDir(selectedText) {
   }
 
   chrome.storage.local.get("startAddr", ({ startAddr }) => {
-    const directionsUrl = `${routeUrl}api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
+    const directionsUrl = buildDirectionsUrl(startAddr, selectedText);
     chrome.tabs.create({ url: directionsUrl });
   });
 }
@@ -262,7 +283,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "searchInput") {
     let searchTerm = request.searchTerm;
     if (searchTerm) {
-      const searchUrl = `${queryUrl}q=${encodeURIComponent(searchTerm)}`;
+      const searchUrl = buildSearchUrl(searchTerm);
       chrome.tabs.create({ url: searchUrl });
       updateHistoryList(searchTerm);
     }
@@ -300,7 +321,7 @@ async function handleOrganizeLocations(locations, listType, sendResponse) {
       return loc.name;
     }).join("\n");
 
-    callApi(GeminiPrompts.organize, locationsText, apiKey, (response) => {
+    callApi(geminiPrompts.organize, locationsText, apiKey, (response) => {
       if (response.error) {
         console.error("Gemini API error:", response.error);
         sendResponse({ success: false, error: response.error });
@@ -369,7 +390,7 @@ function openUrlsInNewGroup(urls, title, color, collapsed) {
 function updateHistoryList(selectedText) {
   chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
     // Respect incognito mode: do not persist history when enabled
-    if (cache.isIncognito) {
+    if (getCache().isIncognito) {
       return;
     }
 
@@ -417,10 +438,10 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     // Special case for YouTube video descriptions
     if (request.url.startsWith("https://www.youtube")) {
-      const ytSummaryPrompt = GeminiPrompts.summary.replace("(marked by <h1>, <h2>, <h3>, or <strong>) ", "");
+      const ytSummaryPrompt = geminiPrompts.summary.replace("(marked by <h1>, <h2>, <h3>, or <strong>) ", "");
       callApi(ytSummaryPrompt, request.text, request.apiKey, sendResponse);
     } else {
-      callApi(GeminiPrompts.summary, request.text, request.apiKey, sendResponse);
+      callApi(geminiPrompts.summary, request.text, request.apiKey, sendResponse);
     }
     return true; // Will respond asynchronously
   }
@@ -428,7 +449,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "summarizeVideo" && request.text) {
     console.log("summarize video: ", request.text);
     getApiKey().then(apiKey => {
-      callApi(GeminiPrompts.summary, request.text, apiKey, sendResponse);
+      callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
     });
     return true; // Will respond asynchronously
   }
@@ -578,72 +599,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Caching mechanism
-const DEFAULTS = {
-  searchHistoryList: [],
-  favoriteList: [],
-  geminiApiKey: "",
-  aesKey: null,
-  startAddr: "",
-  authUser: 0,
-  isIncognito: false,
-  videoSummaryToggle: false,
-};
-
-let cache = null;        // holds warmed state while the worker is alive
-let loading = null;      // in-flight promise to dedupe concurrent warms
-
-let queryUrl;
-let routeUrl;
-
-UpdateUserUrls(DEFAULTS.authUser);
-function UpdateUserUrls(newUser) {
-  queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
-  routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
-}
-
-async function ensureWarm() {
-  if (cache) return cache;
-  if (loading) return loading;
-  loading = chrome.storage.local.get(DEFAULTS)
-    .then(async v => {
-      if (v.geminiApiKey) {
-        try {
-          v.geminiApiKey = await decryptApiKey(v.geminiApiKey);
-        } catch (_e) {
-          v.geminiApiKey = "";
-        }
-      }
-      cache = v;
-      UpdateUserUrls(v.authUser);
-    })
-    .finally(() => (loading = null));
-  return loading;
-}
-
 // 1) Warm on first useful wake-ups
 chrome.tabs.onActivated.addListener(() => { ensureWarm(); });
 
-// 2) Keep cache fresh if some other part of the extension writes
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== "local") return;
-  if (!cache) return;
-  for (const [k, { newValue }] of Object.entries(changes)) {
-    if (k === "geminiApiKey") {
-      decryptApiKey(newValue).then(v => { cache[k] = v; });
-    } else {
-      cache[k] = newValue;
-    }
-  }
-});
-
-// 3) Fast message responder for popup
+// 2) Fast message responder for popup
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "getWarmState") {
-    ensureWarm().then(() => sendResponse(cache));
+    ensureWarm().then(() => sendResponse(getCache()));
     return true;
   } else if (request.action === "getApiKey") {
     getApiKey().then(apiKey => sendResponse({ apiKey }));
+    return true;
+  } else if (request.action === "buildSearchUrl") {
+    sendResponse({ url: buildSearchUrl(request.query) });
+    return true;
+  } else if (request.action === "buildDirectionsUrl") {
+    sendResponse({ url: buildDirectionsUrl(request.origin, request.destination) });
+    return true;
+  } else if (request.action === "buildMapsUrl") {
+    sendResponse({ url: buildMapsUrl() });
     return true;
   }
 });

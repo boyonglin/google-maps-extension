@@ -22,33 +22,34 @@ class History {
                 }
             } else {
                 const selectedText = liElement.textContent;
-                const searchUrl = `${queryUrl}q=${encodeURIComponent(selectedText)}`;
+                
+                state.buildSearchUrl(selectedText).then(searchUrl => {
+                    // Check if the clicked element has the "bi" class (favorite icon)
+                    if (event.target.classList.contains("bi")) {
+                        // Add the selected text to the favorite list
+                        favorite.addToFavoriteList(selectedText);
+                        event.target.className =
+                            "bi bi-patch-check-fill matched spring-animation";
+                        setTimeout(function () {
+                            event.target.classList.remove("spring-animation");
+                        }, 500);
 
-                // Check if the clicked element has the "bi" class (favorite icon)
-                if (event.target.classList.contains("bi")) {
-                    // Add the selected text to the favorite list
-                    favorite.addToFavoriteList(selectedText);
-                    event.target.className =
-                        "bi bi-patch-check-fill matched spring-animation";
-                    setTimeout(function () {
-                        event.target.classList.remove("spring-animation");
-                    }, 500);
-
-                    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-                        favorite.updateFavorite(favoriteList);
-                    });
-                } else if (event.target.classList.contains("form-check-input")) {
-                    return;
-                } else {
-                    if (event.button === 1) {
-                        // Middle click
-                        event.preventDefault();
-                        chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
-                    } else if (event.button === 0) {
-                        // Left click
-                        window.open(searchUrl, "_blank");
+                        chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+                            favorite.updateFavorite(favoriteList);
+                        });
+                    } else if (event.target.classList.contains("form-check-input")) {
+                        return;
+                    } else {
+                        if (event.button === 1) {
+                            // Middle click
+                            event.preventDefault();
+                            chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+                        } else if (event.button === 0) {
+                            // Left click
+                            window.open(searchUrl, "_blank");
+                        }
                     }
-                }
+                });
             }
         });
 
@@ -68,7 +69,7 @@ class History {
                 .getMessage("clearedUpMsg")
                 .replace(/\n/g, "<br>");
 
-            hasHistory = false;
+            state.hasHistory = false;
 
             // Send a message to background.js to request clearing of selected text list data
             chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });

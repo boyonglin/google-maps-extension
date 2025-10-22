@@ -86,7 +86,7 @@ class Remove {
             chrome.storage.local.set({ searchHistoryList: updatedList });
 
             if (updatedList.length === 0) {
-                hasHistory = false;
+                state.hasHistory = false;
                 clearButton.disabled = true;
                 searchHistoryUl[0].classList.add("d-none");
                 emptyMessage.style.display = "block";
@@ -131,7 +131,7 @@ class Remove {
             chrome.storage.local.set({ favoriteList: updatedList });
 
             if (updatedList.length === 0) {
-                hasFavorite = false;
+                state.hasFavorite = false;
                 exportButton.disabled = true;
                 favoriteUl[0].classList.add("d-none");
                 favoriteEmptyMessage.style.display = "block";

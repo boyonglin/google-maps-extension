@@ -46,7 +46,7 @@ class ContextMenuUtil {
         });
 
         // Create "Tidy Locations" option with premium check
-        const canTidy = stage.isTrial || stage.isPremium;
+        const canTidy = state.paymentStage.isTrial || state.paymentStage.isPremium;
         const tidyLocationsOption = this.createOption(contextMenu, chrome.i18n.getMessage("tidyLocations"), () => {
             if (!canTidy) {
                 document.querySelector('[data-bs-target="#premiumModal"]').click();
@@ -92,26 +92,33 @@ class ContextMenuUtil {
         const urls = [];
         const { groupTitle, groupColor } = this.getGroupInfo(listItems[0]);
 
-        listItems.forEach(item => {
+        const promises = Array.from(listItems).map(item => {
             const spans = item.querySelectorAll("span");
             const selectedText = Array.from(spans).map(span => span.textContent).join(" ").trim();
             if (selectedText) {
-                urls.push(`${queryUrl}q=${encodeURIComponent(selectedText)}`);
+                return state.buildSearchUrl(selectedText);
             }
+            return Promise.resolve(null);
         });
 
-        chrome.runtime.sendMessage({ action: "canGroup" }, (resp) => {
-            if (resp && resp.canGroup) {
-                chrome.runtime.sendMessage({
-                    action: "openInGroup",
-                    urls: urls,
-                    groupTitle,
-                    groupColor,
-                    collapsed: listItems.length > 10 ? true : false
-                });
-            } else {
-                urls.forEach(url => chrome.runtime.sendMessage({ action: "openTab", url }));
-            }
+        Promise.all(promises).then(resolvedUrls => {
+            resolvedUrls.forEach(url => {
+                if (url) urls.push(url);
+            });
+
+            chrome.runtime.sendMessage({ action: "canGroup" }, (resp) => {
+                if (resp && resp.canGroup) {
+                    chrome.runtime.sendMessage({
+                        action: "openInGroup",
+                        urls: urls,
+                        groupTitle,
+                        groupColor,
+                        collapsed: listItems.length > 10 ? true : false
+                    });
+                } else {
+                    urls.forEach(url => chrome.runtime.sendMessage({ action: "openTab", url }));
+                }
+            });
         });
     }
 
@@ -138,8 +145,9 @@ class ContextMenuUtil {
         const span = selectedItem.querySelector("span");
         const selectedText = span ? span.textContent.trim() : "";
 
-        const directionsUrl = `${routeUrl}api=1&origin=${encodeURIComponent(startAddr)}&destination=${encodeURIComponent(selectedText)}`;
-        chrome.tabs.create({ url: directionsUrl });
+        state.buildDirectionsUrl(startAddr, selectedText).then(directionsUrl => {
+            chrome.tabs.create({ url: directionsUrl });
+        });
     }
 
     static tidyLocations(listItems) {

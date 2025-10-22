@@ -77,7 +77,7 @@ const askAIPrompt = `Suggest or surprise (don't have to be cliché) a {requested
 </ul>
 `;
 
-export const GeminiPrompts = {
+export const geminiPrompts = {
     summary: summaryPrompt,
     attach: attachPrompt,
     organize: organizePrompt,

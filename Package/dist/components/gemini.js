@@ -12,26 +12,28 @@ class Gemini {
 
             const spans = liElement.querySelectorAll("span");
             const selectedText = Array.from(spans).map(span => span.textContent).join(" ").trim();
-            const searchUrl = `${queryUrl}q=${encodeURIComponent(selectedText)}`;
-
-            if (event.target.classList.contains("bi")) {
-                if (spans.length >= 2) {
+            
+            state.buildSearchUrl(selectedText).then(searchUrl => {
+                if (event.target.classList.contains("bi")) {
                     const nameSpan = spans[0].textContent;
                     const clueSpan = spans[1].textContent;
-                    favorite.addToFavoriteList(nameSpan + " @" + clueSpan);
-                }
-                event.target.className = "bi bi-patch-check-fill matched spring-animation";
-                setTimeout(function () {
-                    event.target.classList.remove("spring-animation");
-                }, 500);
+                    if (spans.length >= 2) {
+                        favorite.addToFavoriteList(nameSpan + " @" + clueSpan);
+                    } else {
+                        favorite.addToFavoriteList(nameSpan);
+                    }
+                    event.target.className = "bi bi-patch-check-fill matched spring-animation";
+                    setTimeout(function () {
+                        event.target.classList.remove("spring-animation");
+                    }, 500);
 
-                chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-                    favorite.updateFavorite(favoriteList);
-                });
-            } else {
-                // window.open(searchUrl, "_blank", "popup");
-                chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
-            }
+                    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+                        favorite.updateFavorite(favoriteList);
+                    });
+                } else {
+                    chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+                }
+            });
         });
 
         summaryListContainer.addEventListener("contextmenu", (event) => {
@@ -41,7 +43,7 @@ class Gemini {
         clearButtonSummary.addEventListener("click", () => {
             chrome.storage.local.remove(["summaryList", "timestamp"]);
 
-            hasSummary = false;
+            state.hasSummary = false;
             summaryListContainer.innerHTML = "";
             geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
             clearButtonSummary.classList.add("d-none");
@@ -53,13 +55,13 @@ class Gemini {
 
         // Video Summary Button toggle functionality
         videoSummaryButton.addEventListener("click", () => {
-            localVideoToggle = !localVideoToggle;
+            state.localVideoToggle = !state.localVideoToggle;
 
             // Save new state to localStorage
-            chrome.storage.local.set({ videoSummaryToggle: localVideoToggle });
+            chrome.storage.local.set({ videoSummaryToggle: state.localVideoToggle });
 
             // Update button appearance
-            if (localVideoToggle) {
+            if (state.localVideoToggle) {
                 videoSummaryButton.classList.add("active-button");
                 videoSummaryButton.classList.remove("no-hover-temp");
             } else {
@@ -121,14 +123,14 @@ class Gemini {
     // Check if current tab URL contains "youtube" and show/hide videoSummaryButton
     async checkCurrentTabForYoutube() {
         const isGeminiActive = geminiSummaryButton.classList.contains("active-button");
-        if (videoSummaryMode === undefined) {
+        if (state.videoSummaryMode === undefined) {
             const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
             const currentTabUrl = tabs[0]?.url || "";
             const youtubeMatch = currentTabUrl.match(/youtube\.com\/(?:watch\?v=|shorts\/)(.{11})/);
 
             if (youtubeMatch) {
                 const videoId = youtubeMatch[1];
-                videoSummaryMode = Boolean(videoId);
+                state.videoSummaryMode = Boolean(videoId);
                 try {
                     const videoLength = await this.scrapeLen(videoId);
 
@@ -147,11 +149,11 @@ class Gemini {
                 chrome.storage.local.remove("currentVideoInfo");
             }
 
-            videoSummaryButton.classList.toggle("active-button", localVideoToggle);
+            videoSummaryButton.classList.toggle("active-button", state.localVideoToggle);
         }
 
         if (isGeminiActive) {
-            videoSummaryButton.classList.toggle("d-none", !videoSummaryMode);
+            videoSummaryButton.classList.toggle("d-none", !state.videoSummaryMode);
         }
     }
 
@@ -173,7 +175,7 @@ class Gemini {
                     const elapsedTime = (currentTime - result.timestamp) / 1000;
                     if (elapsedTime > 86400) {
                         // Data is expired, clear it and show empty state
-                        hasSummary = false;
+                        state.hasSummary = false;
                         summaryListContainer.innerHTML = "";
                         geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
                         clearButtonSummary.classList.add("d-none");
@@ -185,14 +187,14 @@ class Gemini {
                         delayMeasurement();
                     } else {
                         if (result.summaryList) {
-                            hasSummary = true;
+                            state.hasSummary = true;
                             geminiEmptyMessage.classList.add("d-none");
                             clearButtonSummary.classList.remove("d-none");
                             clearButtonSummary.disabled = false;
                             apiButton.classList.add("d-none");
 
                             // Only reconstruct if summary list structure changed or container is empty
-                            if (summaryListChange || summaryListContainer.innerHTML.trim() === "") {
+                            if (state.summaryListChanged || summaryListContainer.innerHTML.trim() === "") {
                                 summaryListContainer.innerHTML = this.constructSummaryHTML(
                                     result.summaryList,
                                     result.favoriteList
@@ -407,7 +409,7 @@ class Gemini {
         if (lastListItem) {
             lastListItem.classList.remove("mb-3");
         }
-        hasSummary = true;
+        state.hasSummary = true;
         geminiEmptyMessage.classList.remove("shineText");
         geminiEmptyMessage.classList.add("d-none");
         clearButtonSummary.classList.remove("d-none");
@@ -458,7 +460,7 @@ class Gemini {
     RecordSummaryTab() {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const currentTab = tabs[0];
-            summarizedTabId = currentTab.id;
+            state.summarizedTabId = currentTab.id;
         });
     }
 
@@ -469,7 +471,7 @@ class Gemini {
             geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
         }
 
-        hasSummary = false;
+        state.hasSummary = false;
         geminiEmptyMessage.classList.remove("shineText");
         clearButtonSummary.classList.add("d-none");
         apiButton.classList.remove("d-none");

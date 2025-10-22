@@ -148,8 +148,8 @@ You can export your favorite places as a CSV file and import them into Google My
 .
 ├── _locales/               # Localization files (en, zh_TW, ja)
 ├── dist/
-│   ├── scripts/            # Functional scripts
-│   ├── modules/            # Modular scripts
+│   ├── scripts/            # Functional scripts (popup.js)
+│   ├── components/         # Modular scripts (background.js)
 │   ├── popup.js            # Main script
 │   ├── background.js       # Event handling and browser interaction
 │   ├── contentScript.js    # Accessing webpage content

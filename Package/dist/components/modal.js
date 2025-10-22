@@ -1,6 +1,6 @@
 class Modal {
     async addModalListener() {
-        const { encryptApiKey } = await import(chrome.runtime.getURL("dist/module/gcrypto.js"));
+        const { encryptApiKey } = await import(chrome.runtime.getURL("dist/utils/crypto.js"));
         // Shortcuts configuration link
         for (let i = 0; i < configureElements.length; i++) {
             configureElements[i].onclick = function (event) {
@@ -91,11 +91,9 @@ class Modal {
             if (authUserInput.value.trim() === "" || authUser === 0 || isNaN(authUser)) {
                 chrome.storage.local.set({ authUser: 0 });
                 authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
-                UpdateUserUrls(0);
             } else if (/^\d+$/.test(authUser) && authUser > 0) {
                 chrome.storage.local.set({ authUser: authUser });
                 authUserInput.placeholder = `authuser=${authUser}`;
-                UpdateUserUrls(authUser);
             }
         });
 

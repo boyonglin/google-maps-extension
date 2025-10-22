@@ -53,6 +53,7 @@ const mapsButton = document.getElementById("mapsButton");
 const paymentButton = document.getElementById("paymentButton");
 const restoreButton = document.getElementById("restoreButton");
 const shortcutTip = document.getElementsByClassName("premium-only");
+const premiumNoteElement = document.querySelector(`p[data-locale="premiumNote"]`);
 
 // Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
@@ -66,36 +67,13 @@ const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
 
 // Import Scripts
+const state = new State();
 const remove = new Remove();
 const favorite = new Favorite();
 const history = new History();
 const gemini = new Gemini();
 const modal = new Modal();
-
-// State variables
-let [hasHistory, hasFavorite, hasSummary, hasInit] = [
-  false, false, false, false,
-];
-
-let [historyListChange, favoriteListChange, summaryListChange] = [
-  false, false, false
-];
-
-let videoSummaryMode;
-let localVideoToggle;
-let summarizedTabId;
-let stage;
-
-let queryUrl;
-let routeUrl;
-
-function UpdateUserUrls(newUser) {
-  queryUrl = `https://www.google.com/maps?authuser=${newUser}&`;
-  routeUrl = `https://www.google.com/maps/dir/?authuser=${newUser}&`;
-
-  // Update the maps button href to use the dynamic queryUrl
-  mapsButton.href = queryUrl.slice(0, -1); // Remove trailing '&'
-}
+const payment = new Payment();
 
 document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
@@ -109,10 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Run payment check in background to avoid blocking UI
   if ("requestIdleCallback" in window) {
     requestIdleCallback(() => {
-      checkPay();
+      payment.checkPay();
     });
   } else {
-    setTimeout(() => checkPay(), 0);
+    setTimeout(() => payment.checkPay(), 0);
   }
 
   // Add event listeners
@@ -169,25 +147,10 @@ function checkTextOverflow() {
   }
 }
 
-const KEYS = [
-  "searchHistoryList",
-  "favoriteList",
-  "geminiApiKey",
-  "startAddr",
-  "authUser",
-  "isIncognito",
-  "videoSummaryToggle",
-];
-
 async function getWarmState() {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ action: "getWarmState" }, (state) => {
-      if (chrome.runtime.lastError || !state) {
-        // Service-worker was asleep → fall back to direct read (slow path)
-        chrome.storage.local.get(KEYS, resolve);
-      } else {
-        resolve(state);
-      }
+      resolve(state ?? {});
     });
   });
 }
@@ -208,7 +171,7 @@ async function fetchData() {
 
   if (searchHistoryList.length) {
     emptyMessage.style.display = "none";
-    hasHistory = true;
+    state.hasHistory = true;
     clearButton.disabled = false;
 
     const ul = document.createElement("ul");
@@ -227,21 +190,22 @@ async function fetchData() {
     first?.classList.remove("mb-3");
   } else {
     emptyMessage.style.display = "block";
-    hasHistory = false;
+    state.hasHistory = false;
     clearButton.disabled = true;
   }
 
   remove.attachCheckboxEventListener(searchHistoryListContainer);
 
-  (hasInit ? measureContentSizeLast() : retryMeasureContentSize());
+  (state.hasInit ? measureContentSizeLast() : retryMeasureContentSize());
 
   gemini.fetchAPIKey(geminiApiKey);
   modal.updateOptionalModal(startAddr, authUser);
   modal.updateIncognitoModal(!!isIncognito);
-  localVideoToggle = videoSummaryToggle;
+  state.localVideoToggle = videoSummaryToggle;
   videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
 
-  UpdateUserUrls(authUser);
+  // Update maps button with current authUser from background
+  state.buildMapsButtonUrl();
 }
 
 // Search bar event
@@ -322,7 +286,7 @@ function showPage(tabName) {
 searchHistoryButton.addEventListener("click", () => {
   showPage("history");
 
-  if (!hasHistory) {
+  if (!state.hasHistory) {
     emptyMessage.style.display = "block";
     clearButton.disabled = true;
   } else {
@@ -337,13 +301,13 @@ searchHistoryButton.addEventListener("click", () => {
 });
 
 favoriteListButton.addEventListener("click", () => {
-  chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+  getWarmState().then(({ favoriteList = [] }) => {
     favorite.updateFavorite(favoriteList);
   });
 
   showPage("favorite");
 
-  if (!hasFavorite) {
+  if (!state.hasFavorite) {
     favoriteEmptyMessage.style.display = "block";
   } else {
     favoriteEmptyMessage.style.display = "none";
@@ -352,7 +316,7 @@ favoriteListButton.addEventListener("click", () => {
   deleteListButton.disabled = false;
 
   remove.updateInput();
-  favoriteListChange = false;
+  state.favoriteListChanged = false;
 });
 
 geminiSummaryButton.addEventListener("click", () => {
@@ -363,32 +327,36 @@ geminiSummaryButton.addEventListener("click", () => {
   gemini.checkCurrentTabForYoutube();
 
   gemini.clearExpiredSummary();
-  summaryListChange = false;
+  state.summaryListChanged = false;
 });
 
 // Track the storage change event
 chrome.storage.onChanged.addListener((changes) => {
-  historyListChange = changes.searchHistoryList;
-  favoriteListChange = changes.favoriteList;
-  summaryListChange = changes.summaryList;
-
+  state.historyListChanged = changes.searchHistoryList;
+  state.favoriteListChanged = changes.favoriteList;
+  state.summaryListChanged = changes.summaryList;
+  
   const incognitoChange = changes.isIncognito;
 
-  if (favoriteListChange && favoriteListChange.newValue) {
-    favorite.updateFavorite(favoriteListChange.newValue);
+  if (state.favoriteListChanged && state.favoriteListChanged.newValue) {
+    favorite.updateFavorite(state.favoriteListChanged.newValue);
   }
 
-  if (historyListChange && historyListChange.newValue) {
-    const newList = historyListChange.newValue;
-    const oldList = historyListChange.oldValue || [];
+  if (state.historyListChanged && state.historyListChanged.newValue) {
+    const newList = state.historyListChanged.newValue;
+    const oldList = state.historyListChanged.oldValue || [];
 
     if (newList.length >= oldList.length) {
-      fetchData(hasInit);
+      fetchData(state.hasInit);
     }
   }
 
   if (incognitoChange) {
     modal.updateIncognitoModal(!!incognitoChange.newValue);
+  }
+
+  if (changes.authUser) {
+    state.buildMapsButtonUrl();
   }
 });
 
@@ -433,14 +401,21 @@ const apiSaveButton = document.querySelectorAll(".modal-body #apiForm button");
 apiSaveButton[0].title = chrome.i18n.getMessage("saveLabel");
 clearButtonSummary.title = chrome.i18n.getMessage("clearSummaryLabel");
 
-// Measure the frame and title bar sizes from different OS
+// Resize utils
 const body = document.body;
-const frameWidth = window.outerWidth - window.innerWidth;
-const titleBarHeight = window.outerHeight - window.innerHeight;
 
-// Cache previous dimensions to avoid unnecessary updates
-let previousWidth = 0;
-let previousHeight = 0;
+function currentDimensions() {
+  return {
+    width: body.offsetWidth,
+    height: body.offsetHeight,
+  };
+}
+
+function sendUpdateIframeSize(id, width, height) {
+  chrome.tabs.sendMessage(id, {
+    action: "updateIframeSize", width, height
+  });
+}
 
 // Prevent layout glitch
 function delayMeasurement() {
@@ -449,50 +424,40 @@ function delayMeasurement() {
   }, 100);
 }
 
+function retryMeasureContentSize() {
+  if (body.offsetWidth === 0) {
+    setTimeout(retryMeasureContentSize, 100);
+  } else {
+    measureContentSize();
+    state.hasInit = true;
+  }
+}
+
 function measureContentSize(summary = false) {
-  const currentWidth = body.offsetWidth;
-  const currentHeight = body.offsetHeight;
+  const { width: currentWidth, height: currentHeight } = currentDimensions();
 
   // Only update if dimensions have changed
-  if (currentWidth !== previousWidth || currentHeight !== previousHeight) {
-    previousWidth = currentWidth;
-    previousHeight = currentHeight;
+  if (currentWidth !== state.previousWidth || currentHeight !== state.previousHeight) {
+    state.updateDimensions(currentWidth, currentHeight);
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      contentTabId = summary ? summarizedTabId : tabs[0].id;
+      contentTabId = summary ? state.summarizedTabId : tabs[0].id;
 
-      chrome.tabs.sendMessage(contentTabId, {
-        action: "updateIframeSize",
-        width: currentWidth,
-        height: currentHeight,
-        frameWidth: frameWidth,
-        titleBarHeight: titleBarHeight,
-      });
+      sendUpdateIframeSize(contentTabId, currentWidth, currentHeight);
 
       if (summary) {
-        summarizedTabId = undefined;
+        state.summarizedTabId = undefined;
       }
     });
   }
 }
 
-function retryMeasureContentSize() {
-  if (document.body.offsetWidth === 0) {
-    setTimeout(retryMeasureContentSize, 100);
-  } else {
-    measureContentSize();
-    hasInit = true;
-  }
-}
-
 // If the focus tab is changed
 function measureContentSizeLast() {
-  const currentWidth = body.offsetWidth;
-  const currentHeight = body.offsetHeight;
+  const { width: currentWidth, height: currentHeight } = currentDimensions();
 
-  if (currentWidth !== previousWidth || currentHeight !== previousHeight) {
-    previousWidth = currentWidth;
-    previousHeight = currentHeight;
+  if (currentWidth !== state.previousWidth || currentHeight !== state.previousHeight) {
+    state.updateDimensions(currentWidth, currentHeight);
 
     chrome.tabs.query({ active: false, lastFocusedWindow: true }, (tabs) => {
       let LastAccessedTab = tabs[0];
@@ -506,13 +471,7 @@ function measureContentSizeLast() {
           }
         });
 
-        chrome.tabs.sendMessage(LastAccessedTab.id, {
-          action: "updateIframeSize",
-          width: currentWidth,
-          height: currentHeight,
-          frameWidth: frameWidth,
-          titleBarHeight: titleBarHeight,
-        });
+        sendUpdateIframeSize(LastAccessedTab.id, currentWidth, currentHeight);
       }
     });
   }
@@ -529,62 +488,6 @@ document.addEventListener("keydown", (event) => {
     });
   }
 });
-
-const pElement = document.querySelector(`p[data-locale="premiumNote"]`);
-
-function checkPay() {
-  chrome.runtime.sendMessage({ action: "checkPay" }, (response) => {
-    stage = response.result;
-
-    // Shortcut display
-    if (stage.isTrial || stage.isPremium) {
-      Array.from(shortcutTip).forEach((element) => {
-        element.classList.remove("premium-only");
-      });
-    }
-
-    // Note display
-    if (stage.isFirst) {
-      pElement.innerHTML = chrome.i18n.getMessage("firstNote");
-    } else if (stage.isTrial) {
-      const date = new Date(stage.trialEnd);
-      const shortDate = date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-      const time = date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      const trialEndOn = `${shortDate}, ${time}`;
-      paymentSpan.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
-      pElement.innerHTML = chrome.i18n.getMessage("remindNote");
-      modal.text2Modal("premiumNote", "Gemini AI", "apiModal");
-      modal.text2Modal("premiumNote", "Alt+S / ⌥+S", "tipsModal");
-    } else if (stage.isPremium) {
-      pElement.innerHTML = chrome.i18n.getMessage("premiumNote");
-      modal.text2Link(
-        "premiumNote",
-        "回饋",
-        "https://forms.fillout.com/t/dFSEkAwKYKus"
-      );
-      modal.text2Link(
-        "premiumNote",
-        "feedback",
-        "https://forms.fillout.com/t/dFSEkAwKYKus"
-      );
-      modal.text2Link(
-        "premiumNote",
-        "フィードバック",
-        "https://forms.fillout.com/t/dFSEkAwKYKus"
-      );
-    } else if (stage.isFree) {
-      pElement.innerHTML = chrome.i18n.getMessage("freeNote");
-      modal.text2Link("premiumNote", "ExtensionPay", "https://extensionpay.com/");
-    }
-  });
-}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "apiNotify") {
@@ -610,7 +513,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === "checkYoutube") {
-    videoSummaryMode = undefined;
+    state.videoSummaryMode = undefined;
     gemini.checkCurrentTabForYoutube();
   }
 });

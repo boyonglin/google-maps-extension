@@ -31,9 +31,7 @@
             <div class="container mb-3">
                 <div class="row justify-content-between">
                     <div class="col-auto d-flex align-items-center px-0">
-                        <h6 id="subtitle" class="my-0 ticket-box" data-locale="searchHistorySubtitle">
-                            Search History
-                        </h6>
+                        <h6 id="subtitle" class="my-0 ticket-box" data-locale="searchHistorySubtitle"></h6>
                     </div>
                     <div class="col-auto ml-auto d-flex align-items-center px-0">
                         <div class="row g-1">
@@ -73,8 +71,7 @@
                 </div>
             </div>
             <p id="emptyMessage" class="text-muted text-center py-4 page-H" data-locale="historyEmptyMsg"></p>
-            <p id="favoriteEmptyMessage" class="text-muted text-center py-4 page-F" data-locale="favoriteEmptyMsg">
-            </p>
+            <p id="favoriteEmptyMessage" class="text-muted text-center py-4 page-F" data-locale="favoriteEmptyMsg"></p>
             <p id="geminiEmptyMessage" class="text-muted text-center py-4 page-G" data-locale="geminiEmptyMsg"></p>
             <div id="searchHistoryList" class="overflow-auto mb-4 page-H"></div>
             <div id="favoriteList" class="overflow-auto mb-4 page-F d-none"></div>
@@ -85,38 +82,37 @@
             </div>
             <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3 page-H">
                 <button id="clearButton" class="btn btn-light me-3 w-25">
-                    <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span>
+                    <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText"></span>
                 </button>
                 <a id="mapsButton" href="#" target="_blank" class="btn btn-primary btn-maps flex-fill">
-                    <i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText">Google
-                        Maps</span></a>
+                    <i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText"></span></a>
             </div>
             <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-D">
                 <button id="cancelButton" class="btn btn-light me-3 w-25">
-                    <span data-locale="cancelBtnText">Cancel</span>
+                    <span data-locale="cancelBtnText"></span>
                 </button>
                 <a id="deleteButton" class="btn btn-danger btn-delete flex-fill">
                     <i class="bi bi-trash-fill me-2"></i><span></span></a>
             </div>
             <div id="exportButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-F">
                 <button id="exportButton" class="btn btn-light me-3 w-50">
-                    <i class="bi bi-download me-2"></i><span data-locale="exportBtnText">Export</span>
+                    <i class="bi bi-download me-2"></i><span data-locale="exportBtnText"></span>
                 </button>
                 <button id="importButton" class="btn btn-light w-50">
-                    <i class="bi bi-upload me-2"></i><span data-locale="importBtnText">Import</span>
+                    <i class="bi bi-upload me-2"></i><span data-locale="importBtnText"></span>
                 </button>
                 <input type="file" id="fileInput" style="display: none" accept=".csv" aria-label="Import" />
             </div>
             <div id="geminiButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-G">
                 <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal"
                     data-bs-target="#apiModal">
-                    <i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText">API</span>
+                    <i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText"></span>
                 </button>
                 <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none">
-                    <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span>
+                    <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText"></span>
                 </button>
                 <button id="sendButton" class="btn btn-send flex-fill">
-                    <i class="bi bi-stars me-2"></i><span data-locale="sendBtnText">Summary</span>
+                    <i class="bi bi-stars me-2"></i><span data-locale="sendBtnText"></span>
                 </button>
             </div>
         </section>
@@ -124,17 +120,17 @@
             <ul class="nav justify-content-center border-top">
                 <li type="button" class="nav-item">
                     <a href="https://bento.me/the-maps-express" target="_blank" class="nav-link text-muted"
-                        data-locale="aboutBtnText">About</a>
+                        data-locale="aboutBtnText"></a>
                 </li>
                 <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#tipsModal">
-                    <span class="nav-link text-muted" data-locale="tipsBtnText">Tip</span>
+                    <span class="nav-link text-muted" data-locale="tipsBtnText"></span>
                 </li>
                 <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#premiumModal">
-                    <span class="nav-link text-muted" data-locale="premiumBtnText">Premium</span>
+                    <span class="nav-link text-muted" data-locale="premiumBtnText"></span>
                 </li>
                 <li type="button" class="nav-item" data-bs-toggle="modal" data-bs-target="#optionalModal"
                     id="optionalButton">
-                    <span class="nav-link text-muted" data-locale="optionalBtnText">Optional</span>
+                    <span class="nav-link text-muted" data-locale="optionalBtnText"></span>
                 </li>
             </ul>
         </footer>
@@ -142,38 +138,37 @@
             <div class="modal-dialog modal-dialog-centered modal-xs">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-6" id="tipsModalLabel" data-locale="shortcutsTitle">Shortcuts</h1>
+                        <h1 class="modal-title fs-6" id="tipsModalLabel" data-locale="shortcutsTitle"></h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="d-flex justify-content-between mt-3">
-                            <h2 class="fs-6 fw-normal" data-locale="quickSearchKeyLabel">Quick Search</h2>
+                            <h2 class="fs-6 fw-normal" data-locale="quickSearchKeyLabel"></h2>
                             <p type="button" class="text-muted" title="Keyboard shortcuts">
                                 Ctrl+Shift+S / &#8984;+&#8679;+S
                             </p>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <h2 class="fs-6 fw-normal" data-locale="searchBarKeyLabel">Search Bar</h2>
+                            <h2 class="fs-6 fw-normal" data-locale="searchBarKeyLabel"></h2>
                             <p type="button" class="text-muted" title="Keyboard shortcuts">
                                 Alt+Shift+S / &#8997;+&#8679;+S
                             </p>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <h2 class="fs-6 fw-normal premium-only" data-locale="autoAttachKeyLabel">Auto Attach</h2>
+                            <h2 class="fs-6 fw-normal premium-only" data-locale="autoAttachKeyLabel"></h2>
                             <p type="button" class="text-muted premium-only" title="Keyboard shortcuts">
                                 Alt+S / &#8997;+S
                             </p>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <h2 class="fs-6 fw-normal" data-locale="directionsKeyLabel">Quick Directions</h2>
+                            <h2 class="fs-6 fw-normal" data-locale="directionsKeyLabel"></h2>
                             <p type="button" class="text-muted" title="Keyboard shortcuts">
                                 Alt+R / &#8997;+R
                             </p>
                         </div>
                     </div>
                     <div class="modal-footer d-flex justify-content-start">
-                        <p class="text-muted" data-locale="shortcutsNote">You can click key combinations above to set
-                            extensions shortcuts.</p>
+                        <p class="text-muted" data-locale="shortcutsNote"></p>
                     </div>
                 </div>
             </div>
@@ -182,32 +177,30 @@
             <div class="modal-dialog modal-dialog-centered modal-xs">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-6" id="premiumModalLabel" data-locale="premiumTitle">Premium</h1>
+                        <h1 class="modal-title fs-6" id="premiumModalLabel" data-locale="premiumTitle"></h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body d-flex flex-column">
-                        <h2 class="preview-h2 fs-6 fw-normal text-center mt-3 mb-3" data-locale="autoAttachLabel">
-                            📌Auto-attach Google Maps link</h2>
+                        <h2 class="preview-h2 fs-6 fw-normal text-center mt-3 mb-3" data-locale="autoAttachLabel"></h2>
                         <div class="preview-video">
                             <video class="rounded-3" src="images/auto-attach.webm" type="video/webm" autoplay muted
                                 loop></video>
                         </div>
-                        <h2 class="preview-h2 fs-6 fw-normal text-center mb-3" data-locale="tidyLabel">
-                            🧹Let your List stay organized</h2>
+                        <h2 class="preview-h2 fs-6 fw-normal text-center mb-3" data-locale="tidyLabel"></h2>
                         <div id="tidyVideo" class="preview-video">
                             <video class="rounded-3" src="images/tidy.webm" type="video/webm" autoplay muted
                                 loop></video>
                         </div>
                         <!-- <h2 class="fs-6 fw-normal text-center mb-3" data-locale="moreLabel">👀More coming up</h2> -->
                         <button id="paymentButton" class="btn btn-send flex-fill my-3">
-                            <span data-locale="paymentLabel">Life Time $5.00</span>
+                            <span data-locale="paymentLabel"></span>
                         </button>
                         <button id="restoreButton" class="btn btn-light flex-fill mb-3">
-                            <span data-locale="restoreLabel">Restore Purchase</span>
+                            <span data-locale="restoreLabel"></span>
                         </button>
                     </div>
                     <div class="modal-footer d-flex justify-content-start">
-                        <p class="text-muted" data-locale="premiumNote">Pay through ExtensionPay and Stripe.</p>
+                        <p class="text-muted" data-locale="premiumNote"></p>
                     </div>
                 </div>
             </div>
@@ -216,7 +209,7 @@
             <div class="modal-dialog modal-dialog-centered modal-xs">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-6" id="optionalModalLabel" data-locale="optionalTitle">Optional</h1>
+                        <h1 class="modal-title fs-6" id="optionalModalLabel" data-locale="optionalTitle"></h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -247,7 +240,7 @@
                         <!-- Incognito Mode Button -->
                         <button id="incognitoToggle"
                             class="btn btn-outline-secondary modalFormInput w-100 incognito-btn" type="button">
-                            <span class="incognito-text" data-locale="incognitoToggleText">Turn on Incognito Mode</span>
+                            <span class="incognito-text" data-locale="incognitoToggleText"></span>
                             <span class="incognito-icon d-none"><i class="bi bi-incognito"></i></span>
                         </button>
                     </div>
@@ -261,7 +254,7 @@
             <div class="modal-dialog modal-dialog-centered modal-xs">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-6" id="apiModalLabel" data-locale="apiTitle">Set up your API key</h1>
+                        <h1 class="modal-title fs-6" id="apiModalLabel" data-locale="apiTitle"></h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -274,20 +267,20 @@
                         </form>
                     </div>
                     <div class="modal-footer d-flex justify-content-start">
-                        <p class="text-muted" data-locale="apiNote">You can obtain a free
-                            API key from Google AI Studio, with a limit of 15 requests/minute and 1,500 requests/day.
-                        </p>
+                        <p class="text-muted" data-locale="apiNote"></p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <script defer src="dist/scripts/menu.js"></script>
-    <script defer src="dist/scripts/remove.js"></script>
-    <script defer src="dist/scripts/favorite.js"></script>
-    <script defer src="dist/scripts/history.js"></script>
-    <script defer src="dist/scripts/gemini.js"></script>
-    <script defer src="dist/scripts/modal.js"></script>
+    <script defer src="dist/hooks/popupState.js"></script>
+    <script defer src="dist/components/menu.js"></script>
+    <script defer src="dist/components/remove.js"></script>
+    <script defer src="dist/components/favorite.js"></script>
+    <script defer src="dist/components/history.js"></script>
+    <script defer src="dist/components/gemini.js"></script>
+    <script defer src="dist/components/modal.js"></script>
+    <script defer src="dist/utils/payment.js"></script>
     <script defer src="dist/popup.js"></script>
     <script src="vendor/bootstrap.min.js"></script>
 </body>
