@@ -53,6 +53,7 @@ const mapsButton = document.getElementById("mapsButton");
 const paymentButton = document.getElementById("paymentButton");
 const restoreButton = document.getElementById("restoreButton");
 const shortcutTip = document.getElementsByClassName("premium-only");
+const premiumNoteElement = document.querySelector(`p[data-locale="premiumNote"]`);
 
 // Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
@@ -72,6 +73,7 @@ const favorite = new Favorite();
 const history = new History();
 const gemini = new Gemini();
 const modal = new Modal();
+const payment = new Payment();
 
 document.addEventListener("DOMContentLoaded", () => {
   searchInput.focus();
@@ -85,10 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Run payment check in background to avoid blocking UI
   if ("requestIdleCallback" in window) {
     requestIdleCallback(() => {
-      checkPay();
+      payment.checkPay();
     });
   } else {
-    setTimeout(() => checkPay(), 0);
+    setTimeout(() => payment.checkPay(), 0);
   }
 
   // Add event listeners
@@ -486,62 +488,6 @@ document.addEventListener("keydown", (event) => {
     });
   }
 });
-
-const pElement = document.querySelector(`p[data-locale="premiumNote"]`);
-
-function checkPay() {
-  chrome.runtime.sendMessage({ action: "checkPay" }, (response) => {
-    state.paymentStage = response.result;
-
-    // Shortcut display
-    if (state.paymentStage.isTrial || state.paymentStage.isPremium) {
-      Array.from(shortcutTip).forEach((element) => {
-        element.classList.remove("premium-only");
-      });
-    }
-
-    // Note display
-    if (state.paymentStage.isFirst) {
-      pElement.innerHTML = chrome.i18n.getMessage("firstNote");
-    } else if (state.paymentStage.isTrial) {
-      const date = new Date(state.paymentStage.trialEnd);
-      const shortDate = date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-      const time = date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      const trialEndOn = `${shortDate}, ${time}`;
-      paymentSpan.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
-      pElement.innerHTML = chrome.i18n.getMessage("remindNote");
-      modal.text2Modal("premiumNote", "Gemini AI", "apiModal");
-      modal.text2Modal("premiumNote", "Alt+S / ⌥+S", "tipsModal");
-    } else if (state.paymentStage.isPremium) {
-      pElement.innerHTML = chrome.i18n.getMessage("premiumNote");
-      modal.text2Link(
-        "premiumNote",
-        "回饋",
-        "https://forms.fillout.com/t/dFSEkAwKYKus"
-      );
-      modal.text2Link(
-        "premiumNote",
-        "feedback",
-        "https://forms.fillout.com/t/dFSEkAwKYKus"
-      );
-      modal.text2Link(
-        "premiumNote",
-        "フィードバック",
-        "https://forms.fillout.com/t/dFSEkAwKYKus"
-      );
-    } else if (state.paymentStage.isFree) {
-      pElement.innerHTML = chrome.i18n.getMessage("freeNote");
-      modal.text2Link("premiumNote", "ExtensionPay", "https://extensionpay.com/");
-    }
-  });
-}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "apiNotify") {
