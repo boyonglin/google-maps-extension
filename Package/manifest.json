@@ -88,9 +88,9 @@
         "dist/utils/ExtPay.module.js",
         "dist/utils/browser-polyfill.js",
         "dist/utils/crypto.js",
+        "dist/utils/prompt.js",
         "dist/hooks/backgroundState.js",
-        "dist/hooks/popupState.js",
-        "dist/types/prompt.js"
+        "dist/hooks/popupState.js"
       ]
     }
   ]

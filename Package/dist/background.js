@@ -1,5 +1,5 @@
 import { encryptApiKey } from "./utils/crypto.js";
-import { GeminiPrompts } from "./types/prompt.js";
+import { geminiPrompts } from "./utils/prompt.js";
 import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSearchUrl, buildDirectionsUrl, buildMapsUrl } from "./hooks/backgroundState.js";
 import ExtPay from "./utils/ExtPay.module.js";
 
@@ -209,7 +209,7 @@ async function trySuggest(tabId, url, retries = 10) {
         throw new Error(RECEIVING_END_ERR);
       }
 
-      callApi(GeminiPrompts.attach, response.content, apiKey, (apiResponse) => {
+      callApi(geminiPrompts.attach, response.content, apiKey, (apiResponse) => {
         chrome.tabs.sendMessage(tabId, {
           action: "attachMapLink",
           content: apiResponse,
@@ -321,7 +321,7 @@ async function handleOrganizeLocations(locations, listType, sendResponse) {
       return loc.name;
     }).join("\n");
 
-    callApi(GeminiPrompts.organize, locationsText, apiKey, (response) => {
+    callApi(geminiPrompts.organize, locationsText, apiKey, (response) => {
       if (response.error) {
         console.error("Gemini API error:", response.error);
         sendResponse({ success: false, error: response.error });
@@ -438,10 +438,10 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     // Special case for YouTube video descriptions
     if (request.url.startsWith("https://www.youtube")) {
-      const ytSummaryPrompt = GeminiPrompts.summary.replace("(marked by <h1>, <h2>, <h3>, or <strong>) ", "");
+      const ytSummaryPrompt = geminiPrompts.summary.replace("(marked by <h1>, <h2>, <h3>, or <strong>) ", "");
       callApi(ytSummaryPrompt, request.text, request.apiKey, sendResponse);
     } else {
-      callApi(GeminiPrompts.summary, request.text, request.apiKey, sendResponse);
+      callApi(geminiPrompts.summary, request.text, request.apiKey, sendResponse);
     }
     return true; // Will respond asynchronously
   }
@@ -449,7 +449,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "summarizeVideo" && request.text) {
     console.log("summarize video: ", request.text);
     getApiKey().then(apiKey => {
-      callApi(GeminiPrompts.summary, request.text, apiKey, sendResponse);
+      callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
     });
     return true; // Will respond asynchronously
   }
