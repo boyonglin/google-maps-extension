@@ -32,7 +32,7 @@ class State {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(
         { action: "buildSearchUrl", query: q },
-        (response) => resolve(response.url)
+        (response) => resolve(response?.url)
       );
     });
   }
@@ -46,7 +46,7 @@ class State {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(
         { action: "buildDirectionsUrl", origin, destination },
-        (response) => resolve(response.url)
+        (response) => resolve(response?.url)
       );
     });
   }
@@ -74,4 +74,8 @@ class State {
     this.previousWidth = width;
     this.previousHeight = height;
   }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = State;
 }
