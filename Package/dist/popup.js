@@ -441,7 +441,7 @@ function measureContentSize(summary = false) {
     state.updateDimensions(currentWidth, currentHeight);
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      contentTabId = summary ? state.summarizedTabId : tabs[0].id;
+      let contentTabId = summary ? state.summarizedTabId : tabs[0].id;
 
       sendUpdateIframeSize(contentTabId, currentWidth, currentHeight);
 

@@ -16,8 +16,8 @@ class Gemini {
             state.buildSearchUrl(selectedText).then(searchUrl => {
                 if (event.target.classList.contains("bi")) {
                     const nameSpan = spans[0].textContent;
-                    const clueSpan = spans[1].textContent;
                     if (spans.length >= 2) {
+                        const clueSpan = spans[1].textContent;
                         favorite.addToFavoriteList(nameSpan + " @" + clueSpan);
                     } else {
                         favorite.addToFavoriteList(nameSpan);
@@ -425,7 +425,8 @@ class Gemini {
 
         listItems.forEach((item) => {
             const nameSpan = item.querySelector("span:first-child").textContent;
-            const clueSpan = item.querySelector("span.d-none").textContent;
+            const clueElem = item.querySelector("span.d-none");
+            const clueSpan = clueElem ? clueElem.textContent : "";
             data.push({ name: nameSpan, clue: clueSpan });
         });
 

@@ -26,7 +26,7 @@ class Favorite {
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function (event) {
+            reader.onload = (event) => {
                 try {
                     let importedData = [];
                     const fileContent = event.target.result;
