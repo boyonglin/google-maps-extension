@@ -4,24 +4,21 @@ import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSe
 import ExtPay from "./utils/ExtPay.module.js";
 
 let maxListLength = 10;
-const RECEIVING_END_ERR = "Receiving end does not exist";
 
 // Utilities
+const RECEIVING_END_ERR = "Receiving end does not exist";
+const DEFAULT_CAN_RETRY = (err) =>
+  String(err?.message ?? err).includes(RECEIVING_END_ERR);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function withRetry(attempt, { retries = 10, delay = 1000, canRetry } = {}) {
-  const shouldRetry =
-    canRetry || ((err) => String(err?.message || err).includes(RECEIVING_END_ERR));
-  while (retries > 0) {
+async function withRetry(attempt, { retries = 10, delay = 100, canRetry = DEFAULT_CAN_RETRY } = {}) {
+  for (let retry_count = 0; retry_count <= retries; retry_count++) {
     try {
-      return await attempt();
+      return await attempt(retry_count);
     } catch (err) {
-      if (shouldRetry(err)) {
-        await sleep(delay);
-        retries--;
-        continue;
-      }
-      throw err;
+      const willRetry = retry_count < retries && canRetry(err);
+      if (!willRetry) throw err;
+      await sleep(delay * (2 ** retry_count)); // Exponential backoff
     }
   }
 }
@@ -136,12 +133,12 @@ chrome.commands.onCommand.addListener((command) => {
 
           // In trial period
           if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
-            await tryAndCheckApi(tabId, url);
+            await tryAndCheckApi(tabId);
             chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
           } else {
             // Paid user
             if (user.paid) {
-              await tryAndCheckApi(tabId, url);
+              await tryAndCheckApi(tabId);
               chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
             }
             // Free user
@@ -172,7 +169,7 @@ chrome.commands.onCommand.addListener((command) => {
   });
 });
 
-async function tryAndCheckApi(tabId, url) {
+async function tryAndCheckApi(tabId) {
   try {
     await getApiKey();
   } catch (error) {
@@ -181,33 +178,18 @@ async function tryAndCheckApi(tabId, url) {
     await tryAPINotify();
     return;
   }
-  await trySuggest(tabId, url);
-}
-
-async function tryAddrNotify(retries = 10) {
-  return withRetry(
-    () =>
-      new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage({ action: "addrNotify" }, () => {
-          if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
-          resolve(null);
-        });
-      }),
-    { retries }
-  );
+  await trySuggest(tabId);
 }
 
 // Retry mechanism for trying to suggest places from the content
-async function trySuggest(tabId, url, retries = 10) {
+async function trySuggest(tabId, retries = 10) {
   return withRetry(
     async () => {
       const apiKey = await getApiKey();
-      const response = await getContent(tabId, { action: "getContent" });
+      const response = await getContent(tabId);
 
-      if (!response || !response.content) {
-        // Treat as transient: trigger retry
-        throw new Error(RECEIVING_END_ERR);
-      }
+      // Treat as transient: trigger retry
+      if (!response?.content) throw new Error(RECEIVING_END_ERR);
 
       callApi(geminiPrompts.attach, response.content, apiKey, (apiResponse) => {
         chrome.tabs.sendMessage(tabId, {
@@ -219,35 +201,35 @@ async function trySuggest(tabId, url, retries = 10) {
 
       return true;
     },
-    {
-      retries,
-      canRetry: (err) => String(err?.message || err).includes(RECEIVING_END_ERR),
-    }
+    { retries }
+  );
+}
+
+async function tryAddrNotify(retries = 10) {
+  return withRetry(
+    () => sendChromeMessage({ message: { action: "addrNotify" } }),
+    { retries }
   );
 }
 
 async function tryAPINotify(retries = 10) {
   return withRetry(
-    () =>
-      new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage({ action: "apiNotify" }, () => {
-          if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
-          resolve(null);
-        });
-      }),
+    () => sendChromeMessage({ message: { action: "apiNotify" } }),
     { retries }
   );
 }
 
-function getContent(tabId, message) {
-  return new Promise((resolve, reject) => {
-    chrome.tabs.sendMessage(tabId, message, (response) => {
-      if (chrome.runtime.lastError) {
-        return reject(chrome.runtime.lastError);
-      }
-      resolve(response);
-    });
-  });
+function getContent(tabId) {
+  if (!Number.isSafeInteger(tabId)) {
+    return Promise.reject(new Error("Invalid tabId for getContent"));
+  }
+  return sendChromeMessage({ tabId, message: { action: "getContent" } });
+}
+
+function sendChromeMessage({ tabId, message } = {}) {
+  return tabId != null
+    ? chrome.tabs.sendMessage(tabId, message)
+    : chrome.runtime.sendMessage(message);
 }
 
 // Handle selected text and send messages to background.js

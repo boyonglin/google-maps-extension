@@ -66,7 +66,7 @@
       });
     }
 
-    ["h1", "h2", "h3", "strong", "p"].forEach(tag => {
+    ["h1", "h2", "h3", "strong", "p", "td"].forEach(tag => {
       document.querySelectorAll(tag).forEach(element => {
         attachMapLink(element);
       });

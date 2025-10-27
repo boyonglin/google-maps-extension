@@ -4,8 +4,9 @@ import { decryptApiKey } from "../utils/crypto.js";
 export let queryUrl = "https://www.google.com/maps?authuser=0&";
 export let routeUrl = "https://www.google.com/maps/dir/?authuser=0&";
 
-export function UpdateUserUrls(authUser) {
-  const au = Number.isFinite(Number(authUser)) ? Number(authUser) : 0;
+export function updateUserUrls(authUser) {
+  const n = Number(authUser);
+  const au = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
   queryUrl = `https://www.google.com/maps?authuser=${au}&`;
   routeUrl = `https://www.google.com/maps/dir/?authuser=${au}&`;
 }
@@ -50,7 +51,7 @@ export async function ensureWarm() {
         }
       }
       cache = v;
-      UpdateUserUrls(v.authUser);
+      updateUserUrls(v.authUser);
       return cache;
     })
     .finally(() => { loading = null; });
@@ -68,17 +69,15 @@ export async function getApiKey() {
   return k;
 }
 
-export function applyStorageChanges(changes, area) {
+export async function applyStorageChanges(changes, area) {
   if (area !== "local") return;
   if (!cache) cache = { ...DEFAULTS };
   for (const [k, { newValue }] of Object.entries(changes)) {
     if (k === "geminiApiKey") {
-      decryptApiKey(newValue)
-        .then(v => { cache[k] = v; })
-        .catch(() => { cache[k] = ""; });
+      cache[k] = await decryptApiKey(newValue);
     } else {
       cache[k] = newValue;
-      if (k === "authUser") UpdateUserUrls(newValue);
+      if (k === "authUser") updateUserUrls(newValue);
     }
   }
 }

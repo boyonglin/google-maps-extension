@@ -1,17 +1,3 @@
-/**
- * Unit Tests for popupState.js
- * 
- * This test suite provides comprehensive coverage for the State class
- * used in the Chrome extension popup.
- * 
- * Coverage includes:
- * - Constructor initialization
- * - All public methods
- * - Chrome API interactions
- * - Error handling
- * - Edge cases
- */
-
 const State = require('../Package/dist/hooks/popupState.js');
 
 describe('State Class', () => {
