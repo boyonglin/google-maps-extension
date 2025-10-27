@@ -74,7 +74,11 @@ export async function applyStorageChanges(changes, area) {
   if (!cache) cache = { ...DEFAULTS };
   for (const [k, { newValue }] of Object.entries(changes)) {
     if (k === "geminiApiKey") {
-      cache[k] = await decryptApiKey(newValue);
+      try {
+        cache[k] = await decryptApiKey(newValue);
+      } catch (_e) {
+        cache[k] = "";
+      }
     } else {
       cache[k] = newValue;
       if (k === "authUser") updateUserUrls(newValue);

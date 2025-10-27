@@ -227,9 +227,21 @@ function getContent(tabId) {
 }
 
 function sendChromeMessage({ tabId, message } = {}) {
-  return tabId != null
-    ? chrome.tabs.sendMessage(tabId, message)
-    : chrome.runtime.sendMessage(message);
+  return new Promise((resolve, reject) => {
+    const done = (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(response);
+      }
+    };
+
+    if (tabId != null) {
+      chrome.tabs.sendMessage(tabId, message, done);
+    } else {
+      chrome.runtime.sendMessage(message, done);
+    }
+  });
 }
 
 // Handle selected text and send messages to background.js

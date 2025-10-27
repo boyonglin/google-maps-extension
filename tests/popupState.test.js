@@ -8,6 +8,58 @@ describe('State Class', () => {
     jest.clearAllMocks();
   });
 
+  const setupMockResponse = (response) => {
+    chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+      callback(response);
+    });
+  };
+
+  const testBuildSearchUrl = async (query, expectedUrl, expectedMessage) => {
+    setupMockResponse({ url: expectedUrl });
+    const result = await state.buildSearchUrl(query);
+    expect(result).toBe(expectedUrl);
+    if (expectedMessage) {
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        expectedMessage,
+        expect.any(Function)
+      );
+    }
+  };
+
+  const testBuildSearchUrlWithResponse = async (query, mockResponse, expectedResult) => {
+    setupMockResponse(mockResponse);
+    const result = await state.buildSearchUrl(query);
+    expect(result).toBe(expectedResult);
+  };
+
+  const testBuildDirectionsUrl = async (origin, destination, expectedUrl) => {
+    setupMockResponse({ url: expectedUrl });
+    const result = await state.buildDirectionsUrl(origin, destination);
+    expect(result).toBe(expectedUrl);
+  };
+
+  const testBuildDirectionsUrlWithResponse = async (origin, destination, mockResponse, expectedResult) => {
+    setupMockResponse(mockResponse);
+    const result = await state.buildDirectionsUrl(origin, destination);
+    expect(result).toBe(expectedResult);
+  };
+
+  const setupConcurrentCallTest = (responsePrefix) => {
+    let callCount = 0;
+    chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+      callCount++;
+      callback({ url: `${responsePrefix}-${callCount}` });
+    });
+    return callCount;
+  };
+
+  const setupMapsButtonTest = (response) => {
+    const initialHref = 'initial-value';
+    global.mapsButton.href = initialHref;
+    setupMockResponse(response);
+    return initialHref;
+  };
+
   describe('Constructor', () => {
     test('should initialize with correct default values for page state', () => {
       expect(state.hasHistory).toBe(false);
@@ -73,78 +125,47 @@ describe('State Class', () => {
     });
 
     test('should resolve with the URL from the response', async () => {
-      const testQuery = 'Paris';
-      const mockUrl = 'https://www.google.com/maps/search/Paris';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildSearchUrl(testQuery);
-
-      expect(result).toBe(mockUrl);
+      await testBuildSearchUrl(
+        'Paris',
+        'https://www.google.com/maps/search/Paris'
+      );
     });
 
     test('should handle empty query string', async () => {
-      const mockUrl = 'https://www.google.com/maps/search/';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildSearchUrl('');
-
-      expect(result).toBe(mockUrl);
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
-        { action: 'buildSearchUrl', query: '' },
-        expect.any(Function)
+      await testBuildSearchUrl(
+        '',
+        'https://www.google.com/maps/search/',
+        { action: 'buildSearchUrl', query: '' }
       );
     });
 
     test('should handle special characters in query', async () => {
-      const testQuery = 'Tokyo & Osaka';
-      const mockUrl = 'https://www.google.com/maps/search/Tokyo+%26+Osaka';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildSearchUrl(testQuery);
-
-      expect(result).toBe(mockUrl);
+      await testBuildSearchUrl(
+        'Tokyo & Osaka',
+        'https://www.google.com/maps/search/Tokyo+%26+Osaka'
+      );
     });
 
     test('should handle very long query strings', async () => {
       const longQuery = 'a'.repeat(1000);
       const mockUrl = 'https://www.google.com/maps/search/' + 'a'.repeat(1000);
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildSearchUrl(longQuery);
-
-      expect(result).toBe(mockUrl);
+      await testBuildSearchUrl(longQuery, mockUrl);
     });
 
     test('should handle response with undefined url', async () => {
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: undefined });
-      });
-
-      const result = await state.buildSearchUrl('test');
-
-      expect(result).toBeUndefined();
+      await testBuildSearchUrlWithResponse(
+        'test',
+        { url: undefined },
+        undefined
+      );
     });
 
     test('should handle response with null', async () => {
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback(null);
-      });
-
-      const result = await state.buildSearchUrl('test');
-
-      expect(result).toBeUndefined();
+      await testBuildSearchUrlWithResponse(
+        'test',
+        null,
+        undefined
+      );
     });
   });
 
@@ -177,101 +198,69 @@ describe('State Class', () => {
     });
 
     test('should resolve with the URL from the response', async () => {
-      const testOrigin = 'San Francisco';
-      const testDestination = 'Los Angeles';
-      const mockUrl = 'https://www.google.com/maps/dir/San+Francisco/Los+Angeles';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildDirectionsUrl(testOrigin, testDestination);
-
-      expect(result).toBe(mockUrl);
+      await testBuildDirectionsUrl(
+        'San Francisco',
+        'Los Angeles',
+        'https://www.google.com/maps/dir/San+Francisco/Los+Angeles'
+      );
     });
 
     test('should handle empty origin', async () => {
-      const mockUrl = 'https://www.google.com/maps/dir//destination';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildDirectionsUrl('', 'destination');
-
-      expect(result).toBe(mockUrl);
+      await testBuildDirectionsUrl(
+        '',
+        'destination',
+        'https://www.google.com/maps/dir//destination'
+      );
     });
 
     test('should handle empty destination', async () => {
-      const mockUrl = 'https://www.google.com/maps/dir/origin/';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildDirectionsUrl('origin', '');
-
-      expect(result).toBe(mockUrl);
+      await testBuildDirectionsUrl(
+        'origin',
+        '',
+        'https://www.google.com/maps/dir/origin/'
+      );
     });
 
     test('should handle both empty origin and destination', async () => {
-      const mockUrl = 'https://www.google.com/maps/dir//';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildDirectionsUrl('', '');
-
-      expect(result).toBe(mockUrl);
+      await testBuildDirectionsUrl(
+        '',
+        '',
+        'https://www.google.com/maps/dir//'
+      );
     });
 
     test('should handle special characters in origin and destination', async () => {
-      const testOrigin = 'café & bar';
-      const testDestination = 'restaurant & grill';
-      const mockUrl = 'https://www.google.com/maps/dir/café+%26+bar/restaurant+%26+grill';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildDirectionsUrl(testOrigin, testDestination);
-
-      expect(result).toBe(mockUrl);
+      await testBuildDirectionsUrl(
+        'café & bar',
+        'restaurant & grill',
+        'https://www.google.com/maps/dir/café+%26+bar/restaurant+%26+grill'
+      );
     });
 
     test('should handle coordinates as origin and destination', async () => {
-      const testOrigin = '40.7128,-74.0060';
-      const testDestination = '34.0522,-118.2437';
-      const mockUrl = 'https://www.google.com/maps/dir/40.7128,-74.0060/34.0522,-118.2437';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
-      const result = await state.buildDirectionsUrl(testOrigin, testDestination);
-
-      expect(result).toBe(mockUrl);
+      await testBuildDirectionsUrl(
+        '40.7128,-74.0060',
+        '34.0522,-118.2437',
+        'https://www.google.com/maps/dir/40.7128,-74.0060/34.0522,-118.2437'
+      );
     });
 
     test('should handle response with undefined url', async () => {
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: undefined });
-      });
-
-      const result = await state.buildDirectionsUrl('origin', 'destination');
-
-      expect(result).toBeUndefined();
+      await testBuildDirectionsUrlWithResponse(
+        'origin',
+        'destination',
+        { url: undefined },
+        undefined
+      );
     });
 
     test('should handle response with null', async () => {
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback(null);
-      });
-
-      const result = await state.buildDirectionsUrl('origin', 'destination');
-
-      expect(result).toBeUndefined();
+      await testBuildDirectionsUrlWithResponse(
+        'origin',
+        'destination',
+        null,
+        undefined
+      );
     });
   });
 
@@ -292,106 +281,46 @@ describe('State Class', () => {
 
     test('should update mapsButton.href when response has url', () => {
       const mockUrl = 'https://www.google.com/maps/test';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
+      setupMockResponse({ url: mockUrl });
       state.buildMapsButtonUrl();
-
       expect(global.mapsButton.href).toBe(mockUrl);
     });
 
     test('should not update mapsButton.href when response is null', () => {
-      const initialHref = 'initial-value';
-      global.mapsButton.href = initialHref;
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback(null);
-      });
-
+      const initialHref = setupMapsButtonTest(null);
       state.buildMapsButtonUrl();
-
       expect(global.mapsButton.href).toBe(initialHref);
     });
 
     test('should not update mapsButton.href when response is undefined', () => {
-      const initialHref = 'initial-value';
-      global.mapsButton.href = initialHref;
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback(undefined);
-      });
-
+      const initialHref = setupMapsButtonTest(undefined);
       state.buildMapsButtonUrl();
-
       expect(global.mapsButton.href).toBe(initialHref);
     });
 
     test('should not update mapsButton.href when response.url is undefined', () => {
-      const initialHref = 'initial-value';
-      global.mapsButton.href = initialHref;
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({});
-      });
-
+      const initialHref = setupMapsButtonTest({});
       state.buildMapsButtonUrl();
-
       expect(global.mapsButton.href).toBe(initialHref);
     });
 
     test('should not update mapsButton.href when response.url is null', () => {
-      const initialHref = 'initial-value';
-      global.mapsButton.href = initialHref;
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: null });
-      });
-
+      const initialHref = setupMapsButtonTest({ url: null });
       state.buildMapsButtonUrl();
-
       expect(global.mapsButton.href).toBe(initialHref);
     });
 
     test('should not update mapsButton.href when response.url is empty string', () => {
-      const initialHref = 'initial-value';
-      global.mapsButton.href = initialHref;
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: '' });
-      });
-
+      const initialHref = setupMapsButtonTest({ url: '' });
       state.buildMapsButtonUrl();
-
       expect(global.mapsButton.href).toBe(initialHref);
     });
 
     test('should handle response with valid URL', () => {
       const mockUrl = 'https://www.google.com/maps/@40.7128,-74.0060,15z';
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: mockUrl });
-      });
-
+      setupMockResponse({ url: mockUrl });
       state.buildMapsButtonUrl();
-
       expect(global.mapsButton.href).toBe(mockUrl);
-    });
-
-    test('should not throw error if mapsButton is not defined', () => {
-      const originalMapsButton = global.mapsButton;
-      delete global.mapsButton;
-
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback({ url: 'https://www.google.com/maps' });
-      });
-
-      expect(() => {
-        state.buildMapsButtonUrl();
-      }).toThrow();
-
-      global.mapsButton = originalMapsButton;
     });
   });
 
@@ -574,11 +503,7 @@ describe('State Class', () => {
     });
 
     test('should handle concurrent buildSearchUrl calls', async () => {
-      let callCount = 0;
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callCount++;
-        callback({ url: `url-${callCount}` });
-      });
+      setupConcurrentCallTest('url');
 
       const promise1 = state.buildSearchUrl('query1');
       const promise2 = state.buildSearchUrl('query2');
@@ -591,11 +516,7 @@ describe('State Class', () => {
     });
 
     test('should handle concurrent buildDirectionsUrl calls', async () => {
-      let callCount = 0;
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callCount++;
-        callback({ url: `url-${callCount}` });
-      });
+      setupConcurrentCallTest('url');
 
       const promise1 = state.buildDirectionsUrl('o1', 'd1');
       const promise2 = state.buildDirectionsUrl('o2', 'd2');

@@ -1,6 +1,6 @@
 module.exports = {
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  setupFilesAfterEnv: ['./tests/setup.js'],
   collectCoverageFrom: [
     'Package/dist/hooks/popupState.js',
     '!**/node_modules/**'
