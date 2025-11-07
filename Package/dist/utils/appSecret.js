@@ -1,5 +1,10 @@
 (() => {
   function attachMapLinkToPage(request) {
+    // Handle null, undefined, or empty content
+    if (!request || !request.content) {
+      return;
+    }
+
     let candidates = request.content.split("\n").map(item => item.trim()).filter(item => item !== "");
 
     function attachMapLink(element) {
@@ -36,7 +41,9 @@
           let textNode;
           while (textNode = walker.nextNode()) {
             if (textNode.textContent.includes(candidateName)) {
-              const regex = new RegExp(candidateName);
+              // Escape special regex characters to match literal strings
+              const escapedCandidate = candidateName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const regex = new RegExp(escapedCandidate);
               const match = textNode.textContent.match(regex);
               if (match) {
                 processedCandidates.add(candidateName);
@@ -89,7 +96,7 @@
     a.href = href;
     a.textContent = "📌";
     a.style.textDecoration = "none";
-    a.style.border = "0";
+    a.style.border = "0px";
     return a;
   }
 
