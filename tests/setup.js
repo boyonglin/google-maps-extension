@@ -14,7 +14,7 @@ global.crypto = {
   },
   getRandomValues: jest.fn((array) => {
     for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
+      array[i] = (i * 37 + 127) % 256;
     }
     return array;
   })
