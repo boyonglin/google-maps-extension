@@ -3,6 +3,7 @@ module.exports = {
   setupFilesAfterEnv: ['./tests/setup.js'],
   collectCoverageFrom: [
     'Package/dist/hooks/popupState.js',
+    'Package/dist/hooks/backgroundState.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',

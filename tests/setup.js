@@ -3,6 +3,27 @@
  * This file configures the test environment for testing Chrome extension code
  */
 
+// Mock Web Crypto API
+global.crypto = {
+  subtle: {
+    generateKey: jest.fn(),
+    importKey: jest.fn(),
+    exportKey: jest.fn(),
+    encrypt: jest.fn(),
+    decrypt: jest.fn()
+  },
+  getRandomValues: jest.fn((array) => {
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
+    return array;
+  })
+};
+
+// Mock btoa and atob for Node.js environment
+global.btoa = (str) => Buffer.from(str, 'binary').toString('base64');
+global.atob = (str) => Buffer.from(str, 'base64').toString('binary');
+
 // Mock Chrome API
 global.chrome = {
   runtime: {
@@ -25,6 +46,10 @@ global.chrome = {
       set: jest.fn(),
       remove: jest.fn(),
       clear: jest.fn()
+    },
+    onChanged: {
+      addListener: jest.fn(),
+      removeListener: jest.fn()
     }
   },
   tabs: {

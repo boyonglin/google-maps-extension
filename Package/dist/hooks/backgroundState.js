@@ -5,6 +5,11 @@ export let queryUrl = "https://www.google.com/maps?authuser=0&";
 export let routeUrl = "https://www.google.com/maps/dir/?authuser=0&";
 
 export function updateUserUrls(authUser) {
+  // Arrays should default to 0 instead of being coerced to numbers
+  if (Array.isArray(authUser) || (typeof authUser === 'object' && authUser !== null)) {
+    authUser = 0;
+  }
+  
   const n = Number(authUser);
   const au = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
   queryUrl = `https://www.google.com/maps?authuser=${au}&`;
@@ -24,7 +29,7 @@ export function buildMapsUrl() {
 }
 
 // Cache
-export const DEFAULTS = {
+export const DEFAULTS = Object.freeze({
   searchHistoryList: [],
   favoriteList: [],
   geminiApiKey: "",
@@ -33,7 +38,7 @@ export const DEFAULTS = {
   authUser: 0,
   isIncognito: false,
   videoSummaryToggle: false,
-};
+});
 
 let cache = null;
 let loading = null;
@@ -84,4 +89,13 @@ export async function applyStorageChanges(changes, area) {
       if (k === "authUser") updateUserUrls(newValue);
     }
   }
+}
+
+// This helps with test isolation without affecting production code
+export function __resetCacheForTesting() {
+  cache = null;
+  loading = null;
+  // Reset URLs to default values
+  queryUrl = "https://www.google.com/maps?authuser=0&";
+  routeUrl = "https://www.google.com/maps/dir/?authuser=0&";
 }
