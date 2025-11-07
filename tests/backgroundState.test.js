@@ -10,6 +10,32 @@ jest.mock('../Package/dist/utils/crypto.js', () => ({
 
 const { decryptApiKey } = require('../Package/dist/utils/crypto.js');
 
+// Helper function to set up mock storage data
+const setupMockStorage = (overrides = {}) => {
+  const mockStorageData = {
+    searchHistoryList: [],
+    favoriteList: [],
+    geminiApiKey: "",
+    aesKey: null,
+    startAddr: "",
+    authUser: 0,
+    isIncognito: false,
+    videoSummaryToggle: false,
+    ...overrides
+  };
+  chrome.storage.local.get.mockResolvedValue(mockStorageData);
+  return mockStorageData;
+};
+
+// Helper function to set up mock storage with decryption
+const setupMockStorageWithDecryption = (decryptedApiKey, storageOverrides = {}) => {
+  const mockData = setupMockStorage(storageOverrides);
+  if (decryptedApiKey !== null) {
+    decryptApiKey.mockResolvedValue(decryptedApiKey);
+  }
+  return mockData;
+};
+
 describe('backgroundState.js - URL Building Functions', () => {
   let backgroundState;
   let updateUserUrls, buildSearchUrl, buildDirectionsUrl, buildMapsUrl, DEFAULTS;
@@ -303,7 +329,7 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
 
   describe('ensureWarm', () => {
     test('should load data from chrome.storage.local on first call', async () => {
-      const mockStorageData = {
+      setupMockStorageWithDecryption('decrypted-api-key', {
         searchHistoryList: ['Tokyo', 'Paris'],
         favoriteList: ['Home', 'Work'],
         geminiApiKey: 'encrypted.key.data',
@@ -312,10 +338,7 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
         authUser: 3,
         isIncognito: false,
         videoSummaryToggle: true,
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
-      decryptApiKey.mockResolvedValue('decrypted-api-key');
+      });
 
       const result = await ensureWarm();
 
@@ -327,13 +350,10 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
     });
 
     test('should return cached data on subsequent calls', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         searchHistoryList: ['New York'],
         geminiApiKey: '',
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
 
       // First call
       const result1 = await ensureWarm();
@@ -345,12 +365,9 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
     });
 
     test('should handle empty geminiApiKey', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         geminiApiKey: '',
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
 
       const result = await ensureWarm();
 
@@ -359,12 +376,9 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
     });
 
     test('should handle decryption failure gracefully', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         geminiApiKey: 'corrupted.encrypted.data',
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
       decryptApiKey.mockRejectedValue(new Error('Decryption failed'));
 
       const result = await ensureWarm();
@@ -373,12 +387,9 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
     });
 
     test('should update URLs based on stored authUser', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         authUser: 5,
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
 
       await ensureWarm();
 
@@ -388,12 +399,9 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
     });
 
     test('should handle concurrent calls correctly', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         geminiApiKey: '',
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
 
       // Make multiple concurrent calls
       const promises = [
@@ -418,12 +426,9 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
     });
 
     test('should handle null apiKey from storage', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         geminiApiKey: null,
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
 
       const result = await ensureWarm();
       expect(result.geminiApiKey).toBeNull();
@@ -437,13 +442,10 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
     });
 
     test('should return cached data after ensureWarm', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         searchHistoryList: ['Cached Location'],
         geminiApiKey: '',
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
 
       await ensureWarm();
       const result = backgroundState.getCache();
@@ -459,13 +461,9 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
 
   describe('getApiKey', () => {
     test('should return decrypted API key after ensureWarm', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorageWithDecryption('my-secret-api-key', {
         geminiApiKey: 'encrypted.key',
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
-      decryptApiKey.mockResolvedValue('my-secret-api-key');
+      });
 
       const apiKey = await getApiKey();
 
@@ -473,61 +471,46 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
     });
 
     test('should throw error when API key is not found', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         geminiApiKey: '',
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
 
       await expect(getApiKey()).rejects.toThrow('No API key found. Please provide one.');
     });
 
     test('should throw error when API key is null', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         geminiApiKey: null,
-      };
-
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
 
       await expect(getApiKey()).rejects.toThrow('No API key found. Please provide one.');
     });
 
     test('should throw error when API key is undefined', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
-      };
+      const mockStorageData = setupMockStorage({});
       delete mockStorageData.geminiApiKey;
-
       chrome.storage.local.get.mockResolvedValue(mockStorageData);
 
       await expect(getApiKey()).rejects.toThrow('No API key found. Please provide one.');
     });
 
     test('should call ensureWarm if cache is not initialized', async () => {
-      const mockStorageData = {
-        ...DEFAULTS,
-        geminiApiKey: 'test.key',
-      };
+      setupMockStorageWithDecryption('my-api-key', {
+        geminiApiKey: 'encrypted.key',
+      });
 
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
-      decryptApiKey.mockResolvedValue('decrypted-key');
-
-      await getApiKey();
-
+      const apiKey = await getApiKey();
       expect(chrome.storage.local.get).toHaveBeenCalled();
+      expect(apiKey).toBe('my-api-key');
     });
   });
 
   describe('applyStorageChanges', () => {
     beforeEach(async () => {
       // Initialize cache first
-      const mockStorageData = {
-        ...DEFAULTS,
+      setupMockStorage({
         geminiApiKey: '',
-      };
-      chrome.storage.local.get.mockResolvedValue(mockStorageData);
+      });
       await ensureWarm();
       jest.clearAllMocks();
     });
@@ -694,15 +677,11 @@ describe('backgroundState.js - Integration & Performance Tests', () => {
   });
 
   test('should handle complete flow: load cache, update, build URLs', async () => {
-    const mockStorageData = {
-      ...backgroundState.DEFAULTS,
+    setupMockStorageWithDecryption('initial-api-key', {
       authUser: 2,
       searchHistoryList: ['Previous Search'],
       geminiApiKey: 'initial.encrypted.key',
-    };
-
-    chrome.storage.local.get.mockResolvedValue(mockStorageData);
-    decryptApiKey.mockResolvedValue('initial-api-key');
+    });
 
     // Load cache
     await ensureWarm();
@@ -734,12 +713,9 @@ describe('backgroundState.js - Integration & Performance Tests', () => {
   });
 
   test('should handle error recovery in API key decryption', async () => {
-    const mockStorageData = {
-      ...backgroundState.DEFAULTS,
+    setupMockStorage({
       geminiApiKey: 'corrupted.key',
-    };
-
-    chrome.storage.local.get.mockResolvedValue(mockStorageData);
+    });
     decryptApiKey.mockRejectedValue(new Error('Bad decryption'));
 
     // First load with corrupted key
@@ -758,13 +734,10 @@ describe('backgroundState.js - Integration & Performance Tests', () => {
   });
 
   test('should maintain cache consistency across multiple operations', async () => {
-    const mockStorageData = {
-      ...backgroundState.DEFAULTS,
+    setupMockStorage({
       searchHistoryList: ['Item 1'],
       favoriteList: ['Fav 1'],
-    };
-
-    chrome.storage.local.get.mockResolvedValue(mockStorageData);
+    });
 
     await ensureWarm();
 
@@ -788,8 +761,7 @@ describe('backgroundState.js - Integration & Performance Tests', () => {
   });
 
   test('should not create new cache objects unnecessarily', async () => {
-    const mockStorageData = { ...backgroundState.DEFAULTS, geminiApiKey: '' };
-    chrome.storage.local.get.mockResolvedValue(mockStorageData);
+    setupMockStorage({ geminiApiKey: '' });
 
     await ensureWarm();
     const cache1 = backgroundState.getCache();
@@ -818,14 +790,11 @@ describe('backgroundState.js - Integration & Performance Tests', () => {
     const largeHistoryList = Array.from({ length: 1000 }, (_, i) => `Location ${i}`);
     const largeFavoriteList = Array.from({ length: 1000 }, (_, i) => `Favorite ${i}`);
 
-    const mockStorageData = {
-      ...backgroundState.DEFAULTS,
+    setupMockStorage({
       searchHistoryList: largeHistoryList,
       favoriteList: largeFavoriteList,
       geminiApiKey: '',
-    };
-
-    chrome.storage.local.get.mockResolvedValue(mockStorageData);
+    });
 
     const startTime = Date.now();
     await ensureWarm();
@@ -840,15 +809,10 @@ describe('backgroundState.js - Integration & Performance Tests', () => {
   });
 
   test('should handle concurrent ensureWarm calls with decryption', async () => {
-    const mockStorageData = {
-      ...backgroundState.DEFAULTS,
-      geminiApiKey: 'encrypted.key',
-    };
-
     let callCount = 0;
     chrome.storage.local.get.mockImplementation(() => {
       return new Promise(resolve => {
-        setTimeout(() => resolve(mockStorageData), 10);
+        setTimeout(() => resolve(setupMockStorage({ geminiApiKey: 'encrypted.key' })), 10);
       });
     });
 

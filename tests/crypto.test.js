@@ -595,12 +595,6 @@ describe('crypto.js - API Key Encryption/Decryption', () => {
       
       chrome.storage.local.get.mockResolvedValue({ aesKey: mockAesKey });
       crypto.subtle.importKey.mockResolvedValue(mockCryptoKey);
-      crypto.getRandomValues.mockImplementation((arr) => {
-        for (let i = 0; i < arr.length; i++) {
-          arr[i] = Math.floor(Math.random() * 256);
-        }
-        return arr;
-      });
       crypto.subtle.encrypt.mockImplementation(() => 
         Promise.resolve(new Uint8Array([1, 2, 3, 4]).buffer)
       );
