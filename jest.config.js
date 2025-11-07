@@ -4,6 +4,7 @@ module.exports = {
   collectCoverageFrom: [
     'Package/dist/hooks/popupState.js',
     'Package/dist/hooks/backgroundState.js',
+    'Package/dist/utils/crypto.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',

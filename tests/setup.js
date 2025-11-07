@@ -24,6 +24,11 @@ global.crypto = {
 global.btoa = (str) => Buffer.from(str, 'binary').toString('base64');
 global.atob = (str) => Buffer.from(str, 'base64').toString('binary');
 
+// Mock TextEncoder and TextDecoder for Node.js environment
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
 // Mock Chrome API
 global.chrome = {
   runtime: {
@@ -70,6 +75,25 @@ beforeEach(() => {
   jest.clearAllMocks();
   global.chrome.runtime.lastError = null;
   global.mapsButton.href = '';
+  
+  // Restore crypto mocks after clearAllMocks
+  // clearAllMocks removes the subtle object entirely, so we need to recreate it
+  if (!global.crypto.subtle) {
+    global.crypto.subtle = {};
+  }
+  
+  global.crypto.subtle.generateKey = jest.fn();
+  global.crypto.subtle.importKey = jest.fn();
+  global.crypto.subtle.exportKey = jest.fn();
+  global.crypto.subtle.encrypt = jest.fn();
+  global.crypto.subtle.decrypt = jest.fn();
+  
+  global.crypto.getRandomValues = jest.fn((array) => {
+    for (let i = 0; i < array.length; i++) {
+      array[i] = (i * 37 + 127) % 256;
+    }
+    return array;
+  });
 });
 
 // Console warnings/errors configuration
