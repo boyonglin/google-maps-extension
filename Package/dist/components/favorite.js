@@ -185,11 +185,11 @@ class Favorite {
                     checkbox.style.cursor = "pointer";
                     li.appendChild(checkbox);
                     fragment.appendChild(li);
-
-                    exportButton.disabled = false;
                 });
                 ul.appendChild(fragment);
                 favoriteListContainer.appendChild(ul);
+
+                exportButton.disabled = false;
 
                 const lastListItem = favoriteListContainer.querySelector(
                     ".list-group .list-group-item:first-child"
@@ -208,4 +208,9 @@ class Favorite {
 
         delayMeasurement();
     }
+}
+
+// Export for testing
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = Favorite;
 }

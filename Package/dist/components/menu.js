@@ -383,6 +383,6 @@ class ContextMenuUtil {
 }
 
 // Export for testing
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
     module.exports = ContextMenuUtil;
 }

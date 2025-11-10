@@ -137,6 +137,51 @@ const expectCalledWithPartial = (mockFn, expectedPartial) => {
     );
 };
 
+/**
+ * Create a spy on window.open and auto-restore after callback
+ * @param {Function} testFn - Test function that receives the spy
+ */
+const withWindowOpenSpy = async (testFn) => {
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
+    try {
+        await testFn(openSpy);
+    } finally {
+        openSpy.mockRestore();
+    }
+};
+
+/**
+ * Create and dispatch a mouse event
+ * @param {HTMLElement} target - Target element
+ * @param {number} button - Mouse button (0=left, 1=middle, 2=right)
+ * @param {Object} props - Additional event properties
+ */
+const createMouseEvent = (target, button = 0, props = {}) => {
+    const event = new MouseEvent('mousedown', {
+        bubbles: true,
+        button,
+        ...props
+    });
+    Object.defineProperty(event, 'target', {
+        value: target,
+        enumerable: true
+    });
+    return event;
+};
+
+/**
+ * Setup mock file input for file upload testing
+ * @param {HTMLInputElement} fileInput - File input element
+ * @param {string} content - File content
+ */
+const mockFileUpload = (fileInput, content) => {
+    const mockFile = { mockContent: content };
+    Object.defineProperty(fileInput, 'files', {
+        value: [mockFile],
+        writable: true
+    });
+};
+
 module.exports = {
     mockRuntimeMessage,
     mockStorageGet,
@@ -147,5 +192,8 @@ module.exports = {
     createMockListItems,
     mockI18n,
     cleanupDOM,
-    expectCalledWithPartial
+    expectCalledWithPartial,
+    withWindowOpenSpy,
+    createMouseEvent,
+    mockFileUpload
 };

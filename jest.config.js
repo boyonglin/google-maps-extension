@@ -9,6 +9,7 @@ module.exports = {
     'Package/dist/contentScript.js',
     'Package/dist/components/menu.js',
     'Package/dist/components/remove.js',
+    'Package/dist/components/favorite.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',
