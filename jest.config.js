@@ -6,6 +6,7 @@ module.exports = {
     'Package/dist/hooks/backgroundState.js',
     'Package/dist/utils/crypto.js',
     'Package/dist/utils/appSecret.js',
+    'Package/dist/contentScript.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',
