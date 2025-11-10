@@ -1,6 +1,6 @@
 class Remove {
     addRemoveListener() {
-        cancelButton.addEventListener("click", this.backToNormal);
+        cancelButton.addEventListener("click", () => this.backToNormal());
 
         deleteButton.addEventListener("click", () => {
             if (searchHistoryButton.classList.contains("active-button")) {
@@ -79,6 +79,8 @@ class Remove {
         });
 
         chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
+            if (!searchHistoryList) return;
+            
             // Filter out the selected texts from the search history list
             const updatedList = searchHistoryList.filter(
                 (item) => !selectedTexts.includes(item)
@@ -117,14 +119,16 @@ class Remove {
             const historyIElements = searchHistoryListContainer.querySelectorAll("i");
 
             historyIElements.forEach((icon) => {
-                const spanText = icon.parentElement.querySelector("span").textContent;
-                if (selectedText === spanText) {
+                const parentSpan = icon.parentElement?.querySelector("span");
+                if (parentSpan && selectedText === parentSpan.textContent) {
                     icon.className = "bi bi-patch-plus-fill";
                 }
             });
         });
 
         chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+            if (!favoriteList) return;
+            
             const updatedList = favoriteList.filter(
                 (item) => !selectedTexts.includes(item)
             );
@@ -227,4 +231,9 @@ class Remove {
             li.classList.add(listType + "-list");
         });
     }
+}
+
+// Export for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Remove;
 }

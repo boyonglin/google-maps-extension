@@ -103,11 +103,18 @@ const mockI18n = (messages = {}) => {
         openAll: 'Open All',
         getDirections: 'Get Directions',
         tidyLocations: 'Tidy Locations',
+        deleteBtnText: 'Delete ($1)',
+        deleteBtnTextEmpty: 'Delete',
+        clearedUpMsg: 'All cleared up!\nNothing to see here.',
         ...messages
     };
     
-    global.chrome.i18n.getMessage.mockImplementation((key) => {
-        return defaultMessages[key] || key;
+    global.chrome.i18n.getMessage.mockImplementation((key, substitutions) => {
+        const message = defaultMessages[key] || key;
+        if (substitutions) {
+            return message.replace('$1', substitutions);
+        }
+        return message;
     });
 };
 

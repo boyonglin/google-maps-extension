@@ -17,6 +17,7 @@ global.measureContentSize = jest.fn();
 
 // Load the module
 const ContextMenuUtil = require('../Package/dist/components/menu.js');
+const { mockStorageGet, mockRuntimeMessage, wait, mockI18n } = require('./testHelpers');
 
 describe('ContextMenuUtil', () => {
     let mockEvent;
@@ -24,28 +25,8 @@ describe('ContextMenuUtil', () => {
     let mockListItems;
 
     // ============================================================================
-    // Helper Functions - Reduce Redundant Code
+    // Helper Functions - Test-Specific
     // ============================================================================
-
-    /**
-     * Helper: Mock chrome.storage.local.get with optional data
-     * Most common pattern in tests - used 14 times
-     */
-    const mockStorageGet = (data = {}) => {
-        global.chrome.storage.local.get.mockImplementation((key, callback) => {
-            callback(data);
-        });
-    };
-
-    /**
-     * Helper: Mock chrome.runtime.sendMessage with response
-     * Common pattern for async operations
-     */
-    const mockRuntimeMessage = (response) => {
-        global.chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-            if (callback) callback(response);
-        });
-    };
 
     /**
      * Helper: Create mock context menu and wait for async operations
@@ -54,7 +35,7 @@ describe('ContextMenuUtil', () => {
     const createMenuAndWait = async (delay = 50) => {
         mockEvent.target.closest = jest.fn(() => mockListItems[0]);
         const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await wait(delay);
         return menu;
     };
 
@@ -101,14 +82,7 @@ describe('ContextMenuUtil', () => {
         jest.clearAllMocks();
 
         // Setup default i18n mock
-        global.chrome.i18n.getMessage.mockImplementation((key) => {
-            const messages = {
-                openAll: 'Open All',
-                getDirections: 'Get Directions',
-                tidyLocations: 'Tidy Locations'
-            };
-            return messages[key] || key;
-        });
+        mockI18n();
 
         // Reset state to defaults
         setPaymentStage(false, false);
@@ -238,7 +212,7 @@ describe('ContextMenuUtil', () => {
             mockStorageGet({ startAddr: 'New York' });
             const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
             
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait(50);
 
             expect(menu.textContent).not.toContain('Get Directions');
         });
@@ -265,7 +239,7 @@ describe('ContextMenuUtil', () => {
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
             const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await wait(10);
             
             const outsideClick = new MouseEvent('click', { bubbles: true });
             document.body.dispatchEvent(outsideClick);
@@ -278,7 +252,7 @@ describe('ContextMenuUtil', () => {
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
             const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await wait(10);
             
             // Menu should still exist after clicking inside
             expect(document.querySelector('.context-menu')).toBeTruthy();
@@ -387,7 +361,7 @@ describe('ContextMenuUtil', () => {
             mockRuntimeMessage({ canGroup: true });
 
             await ContextMenuUtil.openAllUrls(mockListItems);
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait(50);
 
             expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -430,7 +404,7 @@ describe('ContextMenuUtil', () => {
 
             await ContextMenuUtil.openAllUrls(manyItems);
 
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait(50);
 
             expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -454,7 +428,7 @@ describe('ContextMenuUtil', () => {
 
             await ContextMenuUtil.openAllUrls(mockListItems);
 
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait(50);
 
             expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith(
                 expect.objectContaining({ action: 'openTab', url: 'http://test.com/Location 1' })
@@ -481,7 +455,7 @@ describe('ContextMenuUtil', () => {
 
             await ContextMenuUtil.openAllUrls(mockListItems);
 
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait(50);
 
             expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -505,7 +479,7 @@ describe('ContextMenuUtil', () => {
 
             await ContextMenuUtil.openAllUrls(mockListItems);
 
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait(50);
 
             expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -565,7 +539,7 @@ describe('ContextMenuUtil', () => {
 
             await ContextMenuUtil.getDirections(item, 'Times Square');
 
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait(50);
 
             expect(global.state.buildDirectionsUrl).toHaveBeenCalledWith('Times Square', 'Central Park');
         });
@@ -577,7 +551,7 @@ describe('ContextMenuUtil', () => {
 
             await ContextMenuUtil.getDirections(item, 'Start');
 
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait(50);
 
             expect(global.state.buildDirectionsUrl).toHaveBeenCalledWith('Start', '');
         });
@@ -593,7 +567,7 @@ describe('ContextMenuUtil', () => {
 
             await ContextMenuUtil.getDirections(item, 'Start');
 
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait(50);
 
             expect(global.chrome.tabs.create).toHaveBeenCalledWith({ url: directionsUrl });
         });

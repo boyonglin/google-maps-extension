@@ -8,6 +8,7 @@ module.exports = {
     'Package/dist/utils/appSecret.js',
     'Package/dist/contentScript.js',
     'Package/dist/components/menu.js',
+    'Package/dist/components/remove.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',
