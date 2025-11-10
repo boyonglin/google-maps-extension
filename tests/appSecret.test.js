@@ -9,6 +9,20 @@
  * 4. Handling special cases like YouTube descriptions
  */
 
+// Import DOMPurify for safe HTML sanitization
+const createDOMPurify = require('isomorphic-dompurify');
+const DOMPurify = createDOMPurify(window);
+
+// Configure DOMPurify to allow custom YouTube elements and preserve all attributes
+DOMPurify.addHook('uponSanitizeElement', (node, data) => {
+  // Allow custom YouTube elements
+  if (data.tagName === 'yt-formatted-string' || 
+      data.tagName === 'ytd-text-inline-expander' ||
+      data.tagName === 'yt-attributed-string') {
+    data.allowedTags[data.tagName] = true;
+  }
+});
+
 describe('appSecret.js - Map Link Attachment', () => {
   
   let attachMapLinkToPage;
@@ -24,9 +38,29 @@ describe('appSecret.js - Map Link Attachment', () => {
     queryUrl
   });
 
+  // Helper function to safely set HTML content (avoiding XSS warnings)
+  const setBodyHTML = (html) => {
+    // Clear existing content
+    while (document.body.firstChild) {
+      document.body.removeChild(document.body.firstChild);
+    }
+    
+    // Use DOMPurify to sanitize HTML and create a safe DOM structure
+    const sanitized = DOMPurify.sanitize(html);
+    
+    // Use DOMParser API (completely avoids innerHTML)
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(sanitized, 'text/html');
+    
+    // Append all children from parsed document body
+    Array.from(doc.body.childNodes).forEach(node => {
+      document.body.appendChild(node.cloneNode(true));
+    });
+  };
+
   // Helper function to setup DOM and execute attachment
   const setupAndAttach = (html, content, queryUrl = DEFAULT_QUERY_URL) => {
-    document.body.innerHTML = html;
+    setBodyHTML(html);
     attachMapLinkToPage(createRequest(content, queryUrl));
   };
 
@@ -36,9 +70,16 @@ describe('appSecret.js - Map Link Attachment', () => {
   // Helper to get the first map link
   const getFirstMapLink = () => document.querySelector(MAPS_LINK_SELECTOR);
 
+  // Helper to clear body content safely (avoiding innerHTML)
+  const clearBody = () => {
+    while (document.body.firstChild) {
+      document.body.removeChild(document.body.firstChild);
+    }
+  };
+
   beforeEach(() => {
     // Clear document
-    document.body.innerHTML = '';
+    clearBody();
 
     // Reset the global namespace
     delete globalThis.attachMapLinkToPage;
@@ -54,7 +95,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   afterEach(() => {
-    document.body.innerHTML = '';
+    clearBody();
     delete globalThis.attachMapLinkToPage;
   });
 
@@ -297,7 +338,7 @@ describe('appSecret.js - Map Link Attachment', () => {
       ['undefined', undefined],
       ['whitespace-only', '   \n\n\t\t  \n  ']
     ])('should handle %s content gracefully', (type, content) => {
-      document.body.innerHTML = '<h1>Central Park</h1>';
+      setBodyHTML('<h1>Central Park</h1>');
       
       expect(() => attachMapLinkToPage(createRequest(content))).not.toThrow();
       expect(getMapLinks().length).toBe(0);
@@ -314,7 +355,7 @@ describe('appSecret.js - Map Link Attachment', () => {
       ['unicode', '東京タワー is tall', 1],
       ['very long name', 'A'.repeat(500), 1]
     ])('should handle candidate with %s', (type, text, expectedCount) => {
-      document.body.innerHTML = `<h1>${text}</h1>`;
+      setBodyHTML(`<h1>${text}</h1>`);
       attachMapLinkToPage(createRequest(text.split(' ')[0] || text));
 
       expect(getMapLinks().length).toBe(expectedCount);
@@ -352,7 +393,7 @@ describe('appSecret.js - Map Link Attachment', () => {
     
     test('should use provided queryUrl', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Central Park</h1>';
+      setBodyHTML('<h1>Central Park</h1>');
       const request = {
         content: 'Central Park',
         queryUrl: 'https://custom.maps.com/search?q='
@@ -368,7 +409,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should append encoded query to queryUrl', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Central Park</h1>';
+      setBodyHTML('<h1>Central Park</h1>');
       const request = {
         content: 'Central Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -384,7 +425,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle queryUrl without trailing &', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Central Park</h1>';
+      setBodyHTML('<h1>Central Park</h1>');
       const request = {
         content: 'Central Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1'
@@ -403,7 +444,7 @@ describe('appSecret.js - Map Link Attachment', () => {
     
     test('should use regex for matching candidate names', () => {
       // Arrange
-      document.body.innerHTML = '<h1>The Central Park is nice</h1>';
+      setBodyHTML('<h1>The Central Park is nice</h1>');
       const request = {
         content: 'Central Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -419,7 +460,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle regex special characters in candidate name', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Visit [Test] Location today</h1>';
+      setBodyHTML('<h1>Visit [Test] Location today</h1>');
       const request = {
         content: '[Test] Location',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -437,7 +478,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle parentheses in candidate name', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Location (Test) Place</h1>';
+      setBodyHTML('<h1>Location (Test) Place</h1>');
       const request = {
         content: 'Location (Test) Place',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -453,7 +494,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle plus sign in candidate name', () => {
       // Arrange
-      document.body.innerHTML = '<h1>C++ Museum</h1>';
+      setBodyHTML('<h1>C++ Museum</h1>');
       const request = {
         content: 'C++ Museum',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -469,7 +510,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle asterisk in candidate name', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Test* Location</h1>';
+      setBodyHTML('<h1>Test* Location</h1>');
       const request = {
         content: 'Test* Location',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -485,7 +526,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle dollar sign in candidate name', () => {
       // Arrange
-      document.body.innerHTML = '<h1>$ Store Location</h1>';
+      setBodyHTML('<h1>$ Store Location</h1>');
       const request = {
         content: '$ Store Location',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -501,7 +542,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle caret in candidate name', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Test^ Location</h1>';
+      setBodyHTML('<h1>Test^ Location</h1>');
       const request = {
         content: 'Test^ Location',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -517,7 +558,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle backslash in candidate name', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Test\\ Location</h1>';
+      setBodyHTML('<h1>Test\\ Location</h1>');
       const request = {
         content: 'Test\\ Location',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -533,7 +574,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle pipe character in candidate name', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Test | Location</h1>';
+      setBodyHTML('<h1>Test | Location</h1>');
       const request = {
         content: 'Test | Location',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -549,7 +590,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should match whole candidate name', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Park Avenue is not Central Park</h1>';
+      setBodyHTML('<h1>Park Avenue is not Central Park</h1>');
       const request = {
         content: 'Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -571,13 +612,13 @@ describe('appSecret.js - Map Link Attachment', () => {
     
     test('should use TreeWalker for finding text nodes', () => {
       // Arrange
-      document.body.innerHTML = `
+      setBodyHTML(`
         <h1>
           <span>Visit</span>
           <strong>Central Park</strong>
           <span>today</span>
         </h1>
-      `;
+      `);
       const request = {
         content: 'Central Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -593,7 +634,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should maintain DOM structure after pin insertion', () => {
       // Arrange
-      document.body.innerHTML = '<h1 class="title" id="main">Central Park</h1>';
+      setBodyHTML('<h1 class="title" id="main">Central Park</h1>');
       const request = {
         content: 'Central Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -611,7 +652,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should split text nodes correctly', () => {
       // Arrange
-      document.body.innerHTML = '<p>Before Central Park After</p>';
+      setBodyHTML('<p>Before Central Park After</p>');
       const request = {
         content: 'Central Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -637,7 +678,7 @@ describe('appSecret.js - Map Link Attachment', () => {
       for (let i = 0; i < 100; i++) {
         html += `<p>Location ${i}: Central Park</p>`;
       }
-      document.body.innerHTML = html;
+      setBodyHTML(html);
       
       const request = {
         content: 'Central Park',
@@ -661,7 +702,7 @@ describe('appSecret.js - Map Link Attachment', () => {
       for (let i = 0; i < 50; i++) {
         candidates.push(`Location ${i}`);
       }
-      document.body.innerHTML = '<h1>' + candidates.join(' and ') + '</h1>';
+      setBodyHTML('<h1>' + candidates.join(' and ') + '</h1>');
       
       const request = {
         content: candidates.join('\n'),
@@ -684,7 +725,7 @@ describe('appSecret.js - Map Link Attachment', () => {
     
     test('should work with real-world HTML structure', () => {
       // Arrange - Simulate a blog post
-      document.body.innerHTML = `
+      setBodyHTML(`
         <article>
           <h1>My Trip to New York</h1>
           <p>I visited <strong>Central Park</strong> and it was amazing!</p>
@@ -696,7 +737,7 @@ describe('appSecret.js - Map Link Attachment', () => {
             <li>Empire State Building</li>
           </ul>
         </article>
-      `;
+      `);
       const request = {
         content: 'Central Park\nStatue of Liberty\nTimes Square\nEmpire State Building',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -712,7 +753,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle mixed content types', () => {
       // Arrange
-      document.body.innerHTML = `
+      setBodyHTML(`
         <div>
           <h1>Central Park</h1>
           <table>
@@ -720,7 +761,7 @@ describe('appSecret.js - Map Link Attachment', () => {
           </table>
           <p><strong>Empire State Building</strong></p>
         </div>
-      `;
+      `);
       const request = {
         content: 'Central Park\nTimes Square\nEmpire State Building',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -739,7 +780,7 @@ describe('appSecret.js - Map Link Attachment', () => {
     
     test('should match candidate with exact case', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Central Park is nice</h1>';
+      setBodyHTML('<h1>Central Park is nice</h1>');
       const request = {
         content: 'Central Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -755,7 +796,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should not match if case differs', () => {
       // Arrange
-      document.body.innerHTML = '<h1>central park is nice</h1>';
+      setBodyHTML('<h1>central park is nice</h1>');
       const request = {
         content: 'Central Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -774,7 +815,7 @@ describe('appSecret.js - Map Link Attachment', () => {
     
     test('should handle single character candidate', () => {
       // Arrange
-      document.body.innerHTML = '<h1>A is a letter</h1>';
+      setBodyHTML('<h1>A is a letter</h1>');
       const request = {
         content: 'A',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -790,7 +831,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle candidate with only spaces (trimmed away)', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Central Park</h1>';
+      setBodyHTML('<h1>Central Park</h1>');
       const request = {
         content: '     ',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -806,7 +847,7 @@ describe('appSecret.js - Map Link Attachment', () => {
 
     test('should handle candidate with newlines in the middle', () => {
       // Arrange
-      document.body.innerHTML = '<h1>Central\nPark is nice</h1>';
+      setBodyHTML('<h1>Central\nPark is nice</h1>');
       const request = {
         content: 'Central\nPark',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
