@@ -9,23 +9,7 @@ jest.mock('../Package/dist/utils/crypto.js', () => ({
 }));
 
 const { decryptApiKey } = require('../Package/dist/utils/crypto.js');
-
-// Helper function to set up mock storage data
-const setupMockStorage = (overrides = {}) => {
-  const mockStorageData = {
-    searchHistoryList: [],
-    favoriteList: [],
-    geminiApiKey: "",
-    aesKey: null,
-    startAddr: "",
-    authUser: 0,
-    isIncognito: false,
-    videoSummaryToggle: false,
-    ...overrides
-  };
-  chrome.storage.local.get.mockResolvedValue(mockStorageData);
-  return mockStorageData;
-};
+const { setupMockStorage } = require('./testHelpers');
 
 // Helper function to set up mock storage with decryption
 const setupMockStorageWithDecryption = (decryptedApiKey, storageOverrides = {}) => {

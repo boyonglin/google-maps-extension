@@ -62,6 +62,9 @@ global.chrome = {
     create: jest.fn(),
     update: jest.fn(),
     sendMessage: jest.fn()
+  },
+  i18n: {
+    getMessage: jest.fn()
   }
 };
 

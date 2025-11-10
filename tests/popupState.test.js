@@ -1,4 +1,5 @@
 const State = require('../Package/dist/hooks/popupState.js');
+const { setupMockResponse } = require('./testHelpers');
 
 describe('State Class', () => {
   let state;
@@ -7,12 +8,6 @@ describe('State Class', () => {
     state = new State();
     jest.clearAllMocks();
   });
-
-  const setupMockResponse = (response) => {
-    chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-      callback(response);
-    });
-  };
 
   const testBuildSearchUrl = async (query, expectedUrl, expectedMessage) => {
     setupMockResponse({ url: expectedUrl });

@@ -7,6 +7,7 @@ module.exports = {
     'Package/dist/utils/crypto.js',
     'Package/dist/utils/appSecret.js',
     'Package/dist/contentScript.js',
+    'Package/dist/components/menu.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',

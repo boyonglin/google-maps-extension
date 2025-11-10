@@ -32,19 +32,6 @@ class ContextMenuUtil {
         });
         contextMenu.appendChild(openAllOption);
 
-        // Create "Plan Route" option
-        chrome.storage.local.get("startAddr", ({ startAddr }) => {
-            if (clickedItem && startAddr) {
-                const getDirectionsOption = this.createOption(contextMenu, chrome.i18n.getMessage("getDirections"), () => {
-                    this.getDirections(clickedItem, startAddr);
-                });
-                contextMenu.appendChild(getDirectionsOption);
-            }
-
-            // Always append tidy after
-            contextMenu.appendChild(tidyLocationsOption);
-        });
-
         // Create "Tidy Locations" option with premium check
         const canTidy = state.paymentStage.isTrial || state.paymentStage.isPremium;
         const tidyLocationsOption = this.createOption(contextMenu, chrome.i18n.getMessage("tidyLocations"), () => {
@@ -58,6 +45,19 @@ class ContextMenuUtil {
         if (!canTidy) {
             tidyLocationsOption.classList.add("premium-option");
         }
+
+        // Create "Plan Route" option
+        chrome.storage.local.get("startAddr", ({ startAddr }) => {
+            if (clickedItem && startAddr) {
+                const getDirectionsOption = this.createOption(contextMenu, chrome.i18n.getMessage("getDirections"), () => {
+                    this.getDirections(clickedItem, startAddr);
+                });
+                contextMenu.appendChild(getDirectionsOption);
+            }
+
+            // Always append tidy after
+            contextMenu.appendChild(tidyLocationsOption);
+        });
 
         document.body.appendChild(contextMenu);
 
@@ -89,6 +89,10 @@ class ContextMenuUtil {
     }
 
     static openAllUrls(listItems) {
+        if (!listItems || listItems.length === 0) {
+            return;
+        }
+        
         const urls = [];
         const { groupTitle, groupColor } = this.getGroupInfo(listItems[0]);
 
@@ -319,6 +323,7 @@ class ContextMenuUtil {
             .map(item => item.querySelector("span")?.textContent.trim())
             .filter(Boolean);
 
+        console.log(`Could not find element for location: "${locationName}"`);
         console.log("Available original element names:", availableNames);
     }
 
@@ -375,4 +380,9 @@ class ContextMenuUtil {
             listContainer.style.opacity = "";
         }
     }
+}
+
+// Export for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ContextMenuUtil;
 }
