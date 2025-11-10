@@ -182,6 +182,73 @@ const mockFileUpload = (fileInput, content) => {
     });
 };
 
+/**
+ * Create a mock list item for history/favorite lists
+ * Consolidated helper to reduce duplication across test files
+ * @param {string} text - Item text content
+ * @param {Object} options - Configuration options
+ * @param {string[]} options.favoriteList - List of favorites to check against
+ * @param {boolean} options.isChecked - Whether checkbox should be checked
+ * @param {string} options.className - CSS class (history-list, favorite-list, etc)
+ * @param {string} options.clueText - Additional clue text for favorites
+ * @returns {HTMLLIElement}
+ */
+const createMockListItem = (text, options = {}) => {
+    const {
+        favoriteList = [],
+        isChecked = false,
+        className = 'history-list',
+        clueText = null
+    } = options;
+    
+    const li = document.createElement('li');
+    li.className = `list-group-item ${className}`;
+    
+    const span = document.createElement('span');
+    span.textContent = text;
+    li.appendChild(span);
+    
+    // Add clue text for favorites
+    if (clueText) {
+        const clueSpan = document.createElement('span');
+        clueSpan.className = 'd-none';
+        clueSpan.textContent = clueText;
+        li.appendChild(clueSpan);
+    }
+    
+    // Add icon
+    const icon = document.createElement('i');
+    icon.className = favoriteList.includes(text) 
+        ? 'bi bi-patch-check-fill matched' 
+        : 'bi bi-patch-plus-fill';
+    li.appendChild(icon);
+    
+    // Add checkbox
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = isChecked;
+    checkbox.classList.add('form-check-input', 'd-none');
+    checkbox.name = 'checkDelete';
+    checkbox.value = 'delete';
+    checkbox.ariaLabel = 'Delete';
+    checkbox.style.cursor = 'pointer';
+    li.appendChild(checkbox);
+    
+    return li;
+};
+
+/**
+ * Test constants for common test data
+ */
+const TEST_CONSTANTS = {
+    LOCATION: 'Test Location',
+    LONG_TEXT: 'A'.repeat(1000),
+    SPECIAL_CHARS: '<script>alert("xss")</script>',
+    UNICODE: '北京 東京 Москва 🗺️',
+    WHITESPACE: '   ',
+    URL: 'http://maps.test/search'
+};
+
 module.exports = {
     mockRuntimeMessage,
     mockStorageGet,
@@ -195,5 +262,7 @@ module.exports = {
     expectCalledWithPartial,
     withWindowOpenSpy,
     createMouseEvent,
-    mockFileUpload
+    mockFileUpload,
+    createMockListItem,
+    TEST_CONSTANTS
 };

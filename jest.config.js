@@ -10,6 +10,7 @@ module.exports = {
     'Package/dist/components/menu.js',
     'Package/dist/components/remove.js',
     'Package/dist/components/favorite.js',
+    'Package/dist/components/history.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',

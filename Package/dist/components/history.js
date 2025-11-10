@@ -21,7 +21,7 @@ class History {
                     remove.updateDeleteCount();
                 }
             } else {
-                const selectedText = liElement.textContent;
+                const selectedText = liElement.querySelector("span")?.textContent;
                 
                 state.buildSearchUrl(selectedText).then(searchUrl => {
                     // Check if the clicked element has the "bi" class (favorite icon)
@@ -49,6 +49,8 @@ class History {
                             window.open(searchUrl, "_blank");
                         }
                     }
+                }).catch(error => {
+                    console.error('Failed to build search URL:', error);
                 });
             }
         });
@@ -100,4 +102,9 @@ class History {
 
         return li;
     }
+}
+
+// Export for testing
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = History;
 }
