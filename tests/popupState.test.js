@@ -390,71 +390,146 @@ describe('State Class', () => {
     });
   });
 
-  describe('State Properties Mutation', () => {
-    test('should allow mutation of hasHistory property', () => {
+  describe('State Management Behaviors', () => {
+    test('should track component initialization states independently', () => {
+      // Simulate component lifecycle
+      expect(state.hasInit).toBe(false);
       expect(state.hasHistory).toBe(false);
+      expect(state.hasFavorite).toBe(false);
+      
+      // Initialize first component
       state.hasHistory = true;
       expect(state.hasHistory).toBe(true);
-    });
-
-    test('should allow mutation of hasFavorite property', () => {
-      expect(state.hasFavorite).toBe(false);
+      expect(state.hasFavorite).toBe(false); // Others remain unchanged
+      
+      // Initialize second component
       state.hasFavorite = true;
+      expect(state.hasHistory).toBe(true);
       expect(state.hasFavorite).toBe(true);
-    });
-
-    test('should allow mutation of hasSummary property', () => {
-      expect(state.hasSummary).toBe(false);
-      state.hasSummary = true;
-      expect(state.hasSummary).toBe(true);
-    });
-
-    test('should allow mutation of hasInit property', () => {
-      expect(state.hasInit).toBe(false);
+      
+      // Mark fully initialized
       state.hasInit = true;
       expect(state.hasInit).toBe(true);
     });
 
-    test('should allow mutation of historyListChanged property', () => {
+    test('should track list change flags for triggering re-renders', () => {
+      // Simulate data changes requiring UI updates
       expect(state.historyListChanged).toBe(false);
+      expect(state.favoriteListChanged).toBe(false);
+      
+      // History item added
       state.historyListChanged = true;
       expect(state.historyListChanged).toBe(true);
-    });
-
-    test('should allow mutation of favoriteListChanged property', () => {
       expect(state.favoriteListChanged).toBe(false);
+      
+      // After re-render, flag reset
+      state.historyListChanged = false;
+      expect(state.historyListChanged).toBe(false);
+      
+      // Multiple flags can be set
+      state.historyListChanged = true;
       state.favoriteListChanged = true;
-      expect(state.favoriteListChanged).toBe(true);
-    });
-
-    test('should allow mutation of summaryListChanged property', () => {
-      expect(state.summaryListChanged).toBe(false);
       state.summaryListChanged = true;
+      expect(state.historyListChanged).toBe(true);
+      expect(state.favoriteListChanged).toBe(true);
       expect(state.summaryListChanged).toBe(true);
     });
 
-    test('should allow mutation of videoSummaryMode property', () => {
+    test('should manage video summary mode state transitions', () => {
+      // Start with no active video summary
       expect(state.videoSummaryMode).toBeUndefined();
-      state.videoSummaryMode = 'active';
-      expect(state.videoSummaryMode).toBe('active');
-    });
-
-    test('should allow mutation of localVideoToggle property', () => {
       expect(state.localVideoToggle).toBe(false);
-      state.localVideoToggle = true;
-      expect(state.localVideoToggle).toBe(true);
-    });
-
-    test('should allow mutation of summarizedTabId property', () => {
       expect(state.summarizedTabId).toBeUndefined();
+      
+      // User activates video summary
+      state.videoSummaryMode = 'processing';
+      state.localVideoToggle = true;
       state.summarizedTabId = 12345;
+      
+      expect(state.videoSummaryMode).toBe('processing');
+      expect(state.localVideoToggle).toBe(true);
       expect(state.summarizedTabId).toBe(12345);
+      
+      // Summary completes
+      state.videoSummaryMode = 'completed';
+      expect(state.videoSummaryMode).toBe('completed');
+      expect(state.summarizedTabId).toBe(12345); // Tab ID persists
+      
+      // User deactivates
+      state.localVideoToggle = false;
+      state.videoSummaryMode = undefined;
+      expect(state.localVideoToggle).toBe(false);
+      expect(state.videoSummaryMode).toBeUndefined();
     });
 
-    test('should allow mutation of paymentStage property', () => {
+    test('should manage payment stage lifecycle', () => {
+      // Default state: no payment stage
       expect(state.paymentStage).toBeNull();
+      
+      // User subscribes
+      state.paymentStage = 'trial';
+      expect(state.paymentStage).toBe('trial');
+      
+      // Upgrades to premium
       state.paymentStage = 'premium';
       expect(state.paymentStage).toBe('premium');
+      
+      // Downgrade or cancellation
+      state.paymentStage = null;
+      expect(state.paymentStage).toBeNull();
+    });
+
+    test('should preserve dimensions cache through operations', async () => {
+      // Initial state
+      expect(state.previousWidth).toBe(0);
+      expect(state.previousHeight).toBe(0);
+      
+      // First render
+      state.updateDimensions(800, 600);
+      expect(state.previousWidth).toBe(800);
+      expect(state.previousHeight).toBe(600);
+      
+      // Perform operations that might affect state
+      setupMockResponse({ url: 'https://maps.google.com' });
+      await state.buildSearchUrl('test');
+      
+      // Dimensions should persist
+      expect(state.previousWidth).toBe(800);
+      expect(state.previousHeight).toBe(600);
+      
+      // Window resize
+      state.updateDimensions(1024, 768);
+      expect(state.previousWidth).toBe(1024);
+      expect(state.previousHeight).toBe(768);
+    });
+
+    test('should handle state flags in realistic workflow sequence', async () => {
+      const state1 = new State();
+      const state2 = new State();
+      
+      // Simulate popup opening: initialization sequence
+      expect(state1.hasInit).toBe(false);
+      
+      // Load history component
+      state1.hasHistory = true;
+      expect(state1.hasHistory).toBe(true);
+      expect(state1.historyListChanged).toBe(false);
+      
+      // User adds item, flag change
+      state1.historyListChanged = true;
+      expect(state1.historyListChanged).toBe(true);
+      
+      // Load other components
+      state1.hasFavorite = true;
+      state1.hasSummary = true;
+      
+      // Mark initialized
+      state1.hasInit = true;
+      expect(state1.hasInit).toBe(true);
+      
+      // Second instance should be independent
+      expect(state2.hasInit).toBe(false);
+      expect(state2.hasHistory).toBe(false);
     });
   });
 
