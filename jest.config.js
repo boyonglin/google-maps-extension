@@ -12,6 +12,7 @@ module.exports = {
     'Package/dist/components/favorite.js',
     'Package/dist/components/history.js',
     'Package/dist/components/gemini.js',
+    'Package/dist/components/modal.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',
