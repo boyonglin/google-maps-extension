@@ -11,6 +11,7 @@ module.exports = {
     'Package/dist/components/remove.js',
     'Package/dist/components/favorite.js',
     'Package/dist/components/history.js',
+    'Package/dist/components/gemini.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',

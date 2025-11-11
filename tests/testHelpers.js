@@ -183,14 +183,15 @@ const mockFileUpload = (fileInput, content) => {
 };
 
 /**
- * Create a mock list item for history/favorite lists
+ * Create a mock list item for history/favorite/summary lists
  * Consolidated helper to reduce duplication across test files
  * @param {string} text - Item text content
  * @param {Object} options - Configuration options
  * @param {string[]} options.favoriteList - List of favorites to check against
  * @param {boolean} options.isChecked - Whether checkbox should be checked
- * @param {string} options.className - CSS class (history-list, favorite-list, etc)
- * @param {string} options.clueText - Additional clue text for favorites
+ * @param {string} options.className - CSS class (history-list, favorite-list, summary-list)
+ * @param {string} options.clueText - Additional clue text for favorites/summaries
+ * @param {boolean} options.includeCheckbox - Whether to add checkbox (default: true)
  * @returns {HTMLLIElement}
  */
 const createMockListItem = (text, options = {}) => {
@@ -198,7 +199,8 @@ const createMockListItem = (text, options = {}) => {
         favoriteList = [],
         isChecked = false,
         className = 'history-list',
-        clueText = null
+        clueText = null,
+        includeCheckbox = true
     } = options;
     
     const li = document.createElement('li');
@@ -208,7 +210,7 @@ const createMockListItem = (text, options = {}) => {
     span.textContent = text;
     li.appendChild(span);
     
-    // Add clue text for favorites
+    // Add clue text for favorites/summaries
     if (clueText) {
         const clueSpan = document.createElement('span');
         clueSpan.className = 'd-none';
@@ -223,18 +225,51 @@ const createMockListItem = (text, options = {}) => {
         : 'bi bi-patch-plus-fill';
     li.appendChild(icon);
     
-    // Add checkbox
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = isChecked;
-    checkbox.classList.add('form-check-input', 'd-none');
-    checkbox.name = 'checkDelete';
-    checkbox.value = 'delete';
-    checkbox.ariaLabel = 'Delete';
-    checkbox.style.cursor = 'pointer';
-    li.appendChild(checkbox);
+    // Add checkbox (optional for summary lists)
+    if (includeCheckbox) {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isChecked;
+        checkbox.classList.add('form-check-input', 'd-none');
+        checkbox.name = 'checkDelete';
+        checkbox.value = 'delete';
+        checkbox.ariaLabel = 'Delete';
+        checkbox.style.cursor = 'pointer';
+        li.appendChild(checkbox);
+    }
     
     return li;
+};
+
+/**
+ * Mock chrome.tabs.query with response (supports both callback and Promise API)
+ * @param {Array} tabs - Array of tab objects to return
+ */
+const mockTabsQuery = (tabs) => {
+    chrome.tabs.query.mockImplementation((query, callback) => {
+        const promise = Promise.resolve(tabs);
+        if (callback) {
+            promise.then(callback);
+        }
+        return promise;
+    });
+};
+
+/**
+ * Mock chrome.tabs.sendMessage with response
+ * @param {*} response - Response to return
+ * @param {boolean} hasError - Whether to simulate chrome.runtime.lastError
+ */
+const mockTabsSendMessage = (response, hasError = false) => {
+    chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        if (hasError) {
+            chrome.runtime.lastError = { message: 'error' };
+        }
+        if (callback) callback(response);
+        if (hasError) {
+            chrome.runtime.lastError = null;
+        }
+    });
 };
 
 /**
@@ -264,5 +299,7 @@ module.exports = {
     createMouseEvent,
     mockFileUpload,
     createMockListItem,
+    mockTabsQuery,
+    mockTabsSendMessage,
     TEST_CONSTANTS
 };
