@@ -1,6 +1,10 @@
 class Payment {
   checkPay() {
     chrome.runtime.sendMessage({ action: "checkPay" }, (response) => {
+      if (!response || !response.result) {
+        return;
+      }
+      
       state.paymentStage = response.result;
 
       this.updateShortcutDisplay();
@@ -50,4 +54,8 @@ class Payment {
     });
     return `${shortDate}, ${time}`;
   }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = Payment;
 }

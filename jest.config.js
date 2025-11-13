@@ -13,6 +13,7 @@ module.exports = {
     'Package/dist/components/history.js',
     'Package/dist/components/gemini.js',
     'Package/dist/components/modal.js',
+    'Package/dist/utils/payment.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',
