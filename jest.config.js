@@ -14,6 +14,7 @@ module.exports = {
     'Package/dist/components/gemini.js',
     'Package/dist/components/modal.js',
     'Package/dist/utils/payment.js',
+    'Package/dist/popup.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',

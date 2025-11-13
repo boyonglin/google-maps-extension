@@ -37,7 +37,8 @@ global.chrome = {
       addListener: jest.fn(),
       removeListener: jest.fn()
     },
-    lastError: null
+    lastError: null,
+    getURL: jest.fn((path) => `chrome-extension://mock-id/${path}`)
   },
   storage: {
     local: {
@@ -63,8 +64,81 @@ global.chrome = {
     update: jest.fn(),
     sendMessage: jest.fn()
   },
+  scripting: {
+    executeScript: jest.fn()
+  },
   i18n: {
-    getMessage: jest.fn()
+    getMessage: jest.fn((key, substitutions) => {
+      // Return a reasonable default for i18n messages
+      const messages = {
+        searchHistorySubtitle: 'Search History',
+        favoriteListSubtitle: 'Favorite List',
+        geminiSummarySubtitle: 'Gemini Summary',
+        searchInputPlaceholder: 'Search Google Maps',
+        videoLabel: 'Video Summary',
+        geminiLabel: 'Gemini Summary',
+        historyLabel: 'History',
+        favoriteLabel: 'Favorite',
+        deleteLabel: 'Delete',
+        enterLabel: 'Enter',
+        shortcutsLabel: 'Shortcuts',
+        saveLabel: 'Save',
+        clearSummaryLabel: 'Clear Summary',
+        plusLabel: 'Add to favorites',
+        clearedUpMsg: 'All cleared!',
+        historyEmptyMsg: 'No search history yet',
+        favoriteEmptyMsg: 'No favorites yet',
+        geminiEmptyMsg: 'No summary yet',
+        geminiFirstMsg: 'Please set your API key first',
+        geminiLoadMsg: 'Loading... Estimated time: NaN seconds',
+        geminiErrorMsg: 'An error occurred',
+        geminiOverloadMsg: 'Service is overloaded',
+        apiPlaceholder: 'Enter your API key',
+        apiInvalidMsg: 'Invalid API key',
+        deleteBtnText: `Delete ${substitutions}`,
+        deleteBtnTextEmpty: 'Select items to delete',
+        clearBtnText: 'Clear',
+        mapsBtnText: 'Open Maps',
+        cancelBtnText: 'Cancel',
+        exportBtnText: 'Export',
+        importBtnText: 'Import',
+        apiBtnText: 'API',
+        sendBtnText: 'Send',
+        aboutBtnText: 'About',
+        tipsBtnText: 'Tips',
+        premiumBtnText: 'Premium',
+        optionalBtnText: 'Settings',
+        shortcutsTitle: 'Keyboard Shortcuts',
+        premiumTitle: 'Premium Features',
+        optionalTitle: 'Optional Settings',
+        apiTitle: 'API Settings',
+        dirPlaceholder: 'Enter starting address',
+        authUserPlaceholder: 'Enter authuser value',
+        incognitoToggleText: 'Incognito Mode',
+        importErrorMsg: 'Import failed',
+        openAll: 'Open All',
+        tidyLocations: 'Tidy Locations',
+        getDirections: 'Get Directions',
+        quickSearchKeyLabel: 'Quick Search',
+        searchBarKeyLabel: 'Search Bar',
+        autoAttachKeyLabel: 'Auto Attach',
+        directionsKeyLabel: 'Directions',
+        shortcutsNote: 'Configure shortcuts in browser settings',
+        premiumNote: 'Premium features note',
+        optionalNote: 'Optional settings note',
+        apiNote: 'Get your API key from Google AI Studio',
+        autoAttachLabel: 'Auto Attach',
+        tidyLabel: 'Tidy',
+        moreLabel: 'More',
+        paymentLabel: 'Purchase',
+        restoreLabel: 'Restore',
+        firstNote: 'First time note',
+        trialNote: `Trial ends on ${substitutions}`,
+        remindNote: 'Trial reminder',
+        freeNote: 'Free version note'
+      };
+      return messages[key] || key;
+    })
   }
 };
 
@@ -73,11 +147,22 @@ global.mapsButton = {
   href: ''
 };
 
+// Mock requestAnimationFrame and requestIdleCallback
+global.requestAnimationFrame = jest.fn((cb) => {
+  cb();
+  return 1;
+});
+
+global.requestIdleCallback = jest.fn((cb) => {
+  cb();
+  return 1;
+});
+
 // Reset all mocks before each test
 beforeEach(() => {
   jest.clearAllMocks();
   global.chrome.runtime.lastError = null;
-  global.mapsButton.href = '';
+  global.mapsButton = { href: '' };
   
   // Restore crypto mocks after clearAllMocks
   // clearAllMocks removes the subtle object entirely, so we need to recreate it
@@ -96,6 +181,17 @@ beforeEach(() => {
       array[i] = (i * 37 + 127) % 256;
     }
     return array;
+  });
+  
+  // Reset animation frame and idle callback
+  global.requestAnimationFrame = jest.fn((cb) => {
+    cb();
+    return 1;
+  });
+  
+  global.requestIdleCallback = jest.fn((cb) => {
+    cb();
+    return 1;
   });
 });
 

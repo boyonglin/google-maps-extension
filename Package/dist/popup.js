@@ -67,15 +67,25 @@ const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
 
 // Import Scripts
-const state = new State();
-const remove = new Remove();
-const favorite = new Favorite();
-const history = new History();
-const gemini = new Gemini();
-const modal = new Modal();
-const payment = new Payment();
+let state, remove, favorite, history, gemini, modal, payment;
 
-document.addEventListener("DOMContentLoaded", () => {
+function initializeDependencies(deps = {}) {
+  state = deps.state || new State();
+  remove = deps.remove || new Remove();
+  favorite = deps.favorite || new Favorite();
+  history = deps.history || new History();
+  gemini = deps.gemini || new Gemini();
+  modal = deps.modal || new Modal();
+  payment = deps.payment || new Payment();
+  
+  return { state, remove, favorite, history, gemini, modal, payment };
+}
+
+function initializePopup() {
+  if (!state) {
+    initializeDependencies();
+  }
+  
   searchInput.focus();
 
   // Optimize by running heavy operations asynchronously
@@ -106,6 +116,10 @@ document.addEventListener("DOMContentLoaded", () => {
       document.activeElement.blur();
     }
   });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initializePopup();
 });
 
 document.addEventListener("readystatechange", () => {
@@ -517,3 +531,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     gemini.checkCurrentTabForYoutube();
   }
 });
+
+if (typeof State === "undefined" && typeof require !== "undefined") {
+  global.State = require("./hooks/popupState");
+  global.Remove = require("./components/remove");
+  global.Favorite = require("./components/favorite");
+  global.History = require("./components/history");
+  global.Gemini = require("./components/gemini");
+  global.Modal = require("./components/modal");
+  global.Payment = require("./utils/payment");
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    initializeDependencies,
+    initializePopup,
+    popupLayout,
+    showPage,
+    checkTextOverflow,
+    getWarmState,
+    fetchData,
+    currentDimensions,
+    sendUpdateIframeSize,
+    delayMeasurement,
+    retryMeasureContentSize,
+    measureContentSize,
+    measureContentSizeLast
+  };
+}
