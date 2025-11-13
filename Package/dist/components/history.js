@@ -67,9 +67,8 @@ class History {
             searchHistoryListContainer.innerHTML = "";
 
             emptyMessage.style.display = "block";
-            emptyMessage.innerHTML = chrome.i18n
-                .getMessage("clearedUpMsg")
-                .replace(/\n/g, "<br>");
+            const message = chrome.i18n.getMessage("clearedUpMsg");
+            emptyMessage.innerHTML = message ? message.replace(/\n/g, "<br>") : "";
 
             state.hasHistory = false;
 

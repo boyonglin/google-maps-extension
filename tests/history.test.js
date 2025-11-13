@@ -27,7 +27,7 @@ global.ContextMenuUtil = {
 
 global.measureContentSize = jest.fn();
 
-// Load the module
+// Load modules
 const History = require('../Package/dist/components/history.js');
 const { 
     mockStorageGet, 
@@ -40,12 +40,10 @@ const {
     createMockListItem,
     TEST_CONSTANTS
 } = require('./testHelpers');
+const { setupPopupDOM, teardownPopupDOM } = require('./popupDOMFixture');
 
 describe('History Component', () => {
     let historyInstance;
-    
-    // Global DOM elements that history.js expects to exist
-    let searchHistoryListContainer, clearButton, emptyMessage;
 
     // ============================================================================
     // Helper Functions - Test-Specific
@@ -53,6 +51,7 @@ describe('History Component', () => {
 
     /**
      * Helper: Create mock history list item (using shared helper)
+     * Note: Keep this for edge case testing where we need specific structures
      */
     const createMockHistoryItem = (text, favoriteList = [], isChecked = false) => {
         return createMockListItem(text, {
@@ -62,43 +61,18 @@ describe('History Component', () => {
         });
     };
 
-    /**
-     * Helper: Setup DOM environment
-     */
-    const setupDOM = () => {
-        // Container
-        searchHistoryListContainer = document.createElement('div');
-        searchHistoryListContainer.id = 'searchHistoryList';
-        global.searchHistoryListContainer = searchHistoryListContainer;
-        
-        // Clear button
-        clearButton = document.createElement('button');
-        clearButton.id = 'clearButton';
-        clearButton.disabled = true;
-        global.clearButton = clearButton;
-        
-        // Empty message
-        emptyMessage = document.createElement('div');
-        emptyMessage.id = 'emptyMessage';
-        emptyMessage.style.display = 'none';
-        global.emptyMessage = emptyMessage;
-        
-        // Append to body
-        document.body.appendChild(searchHistoryListContainer);
-        document.body.appendChild(clearButton);
-        document.body.appendChild(emptyMessage);
-    };
-
     // ============================================================================
     // Test Setup/Teardown
     // ============================================================================
 
     beforeEach(() => {
-        // Clear DOM
-        document.body.innerHTML = '';
+        // Setup popup DOM (provides all required elements)
+        setupPopupDOM();
         
-        // Setup DOM
-        setupDOM();
+        // Get references to DOM elements (now provided by popup fixture)
+        global.searchHistoryListContainer = document.getElementById('searchHistoryList');
+        global.clearButton = document.getElementById('clearButton');
+        global.emptyMessage = document.getElementById('emptyMessage');
         
         // Reset state
         global.state = {
@@ -142,7 +116,7 @@ describe('History Component', () => {
     });
 
     afterEach(() => {
-        cleanupDOM();
+        teardownPopupDOM();
         jest.useRealTimers();
     });
 
@@ -1047,11 +1021,17 @@ describe('History Component', () => {
         });
 
         test('should handle null chrome.i18n.getMessage', () => {
+            // Fixed: history.js now checks if getMessage returns null before calling replace()
+            historyInstance.addHistoryPageListener();
             chrome.i18n.getMessage.mockReturnValue(null);
             
-            clearButton.click();
+            // Should not throw an error
+            expect(() => {
+                clearButton.click();
+            }).not.toThrow();
             
-            // Should handle gracefully even with null
+            // Should still clear the list and disable button
+            expect(clearButton.disabled).toBe(true);
             expect(emptyMessage.innerHTML).toBe('');
         });
 

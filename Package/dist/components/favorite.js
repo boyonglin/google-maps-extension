@@ -2,6 +2,10 @@ class Favorite {
     addFavoritePageListener() {
         exportButton.addEventListener("click", () => {
             chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
+                if (!favoriteList || !Array.isArray(favoriteList)) {
+                    return;
+                }
+                
                 const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
                 const csv = "name\n" + trimmedFavorite.map((item) => `${item},`).join("\n");
 

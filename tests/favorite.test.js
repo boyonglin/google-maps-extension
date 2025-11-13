@@ -41,16 +41,13 @@ global.ContextMenuUtil = {
 
 global.delayMeasurement = jest.fn();
 
-// Load the module
+// Load modules
 const Favorite = require('../Package/dist/components/favorite.js');
 const { mockStorageGet, mockStorageSet, mockI18n, cleanupDOM, wait, withWindowOpenSpy, createMouseEvent, mockFileUpload } = require('./testHelpers');
+const { setupPopupDOM, teardownPopupDOM } = require('./popupDOMFixture');
 
 describe('Favorite Component', () => {
     let favoriteInstance;
-    
-    // Global DOM elements that favorite.js expects to exist
-    let exportButton, importButton, fileInput;
-    let favoriteListContainer, favoriteEmptyMessage;
 
     // ============================================================================
     // Helper Functions - Test-Specific
@@ -58,6 +55,7 @@ describe('Favorite Component', () => {
 
     /**
      * Helper: Create mock favorite list item with checkbox and icon
+     * Note: Keep this for edge case testing where we need specific structures
      */
     const createMockFavoriteItem = (text, clueText = null, isChecked = false) => {
         const li = document.createElement('li');
@@ -91,6 +89,7 @@ describe('Favorite Component', () => {
 
     /**
      * Helper: Create mock history item for updateHistoryFavoriteIcons tests
+     * Note: Keep this for specific test scenarios
      */
     const createMockHistoryItem = (text) => {
         const li = document.createElement('li');
@@ -108,55 +107,23 @@ describe('Favorite Component', () => {
         return li;
     };
 
-    /**
-     * Helper: Setup DOM environment
-     */
-    const setupDOM = () => {
-        // Buttons
-        exportButton = document.createElement('button');
-        exportButton.id = 'exportButton';
-        exportButton.disabled = true;
-        global.exportButton = exportButton;
-        
-        importButton = document.createElement('button');
-        importButton.id = 'importButton';
-        global.importButton = importButton;
-        
-        fileInput = document.createElement('input');
-        fileInput.id = 'fileInput';
-        fileInput.type = 'file';
-        fileInput.click = jest.fn();
-        global.fileInput = fileInput;
-        
-        // Containers
-        favoriteListContainer = document.createElement('div');
-        favoriteListContainer.id = 'favoriteList';
-        global.favoriteListContainer = favoriteListContainer;
-        
-        // Messages
-        favoriteEmptyMessage = document.createElement('div');
-        favoriteEmptyMessage.id = 'favoriteEmptyMessage';
-        favoriteEmptyMessage.style.display = 'none';
-        global.favoriteEmptyMessage = favoriteEmptyMessage;
-        
-        // Append to body
-        document.body.appendChild(exportButton);
-        document.body.appendChild(importButton);
-        document.body.appendChild(fileInput);
-        document.body.appendChild(favoriteListContainer);
-        document.body.appendChild(favoriteEmptyMessage);
-    };
-
     // ============================================================================
     // Test Setup/Teardown
     // ============================================================================
 
     beforeEach(() => {
-        // Clear DOM
-        document.body.innerHTML = '';
+        // Setup popup DOM (provides all required elements)
+        setupPopupDOM();
         
-        // Setup DOM
-        setupDOM();
+        // Get references to DOM elements (now provided by popup fixture)
+        global.exportButton = document.getElementById('exportButton');
+        global.importButton = document.getElementById('importButton');
+        global.fileInput = document.getElementById('fileInput');
+        global.favoriteListContainer = document.getElementById('favoriteList');
+        global.favoriteEmptyMessage = document.getElementById('favoriteEmptyMessage');
+        
+        // Mock fileInput.click for tests that verify import button behavior
+        global.fileInput.click = jest.fn();
         
         // Reset state
         global.state = {
@@ -187,7 +154,7 @@ describe('Favorite Component', () => {
     });
 
     afterEach(() => {
-        cleanupDOM();
+        teardownPopupDOM();
     });
 
     // ============================================================================
@@ -223,9 +190,10 @@ describe('Favorite Component', () => {
             });
 
             test('should handle null/undefined favoriteList gracefully', () => {
+                // Fixed: favorite.js now checks if favoriteList exists before mapping
                 mockStorageGet({ favoriteList: null });
                 
-                // After fix, should not throw an error
+                // Should not throw an error
                 expect(() => {
                     exportButton.click();
                 }).not.toThrow();

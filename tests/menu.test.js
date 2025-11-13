@@ -18,6 +18,7 @@ global.measureContentSize = jest.fn();
 // Load the module
 const ContextMenuUtil = require('../Package/dist/components/menu.js');
 const { mockStorageGet, mockRuntimeMessage, wait, mockI18n } = require('./testHelpers');
+const { setupPopupDOM, teardownPopupDOM } = require('./popupDOMFixture');
 
 describe('ContextMenuUtil', () => {
     let mockEvent;
@@ -51,8 +52,11 @@ describe('ContextMenuUtil', () => {
     // ============================================================================
 
     beforeEach(() => {
-        // Reset DOM
-        document.body.innerHTML = '';
+        // Setup popup DOM using fixture
+        setupPopupDOM();
+        
+        // Get list container from popup fixture
+        mockListContainer = document.getElementById('searchHistoryList');
         
         // Mock event
         mockEvent = {
@@ -61,10 +65,6 @@ describe('ContextMenuUtil', () => {
             pageY: 200,
             target: document.createElement('div')
         };
-
-        // Mock list container
-        mockListContainer = document.createElement('div');
-        document.body.appendChild(mockListContainer);
 
         // Mock list items
         mockListItems = [];
@@ -100,6 +100,9 @@ describe('ContextMenuUtil', () => {
             clearInterval(ContextMenuUtil.breathingInterval);
             ContextMenuUtil.breathingInterval = null;
         }
+        
+        // Teardown popup DOM
+        teardownPopupDOM();
     });
 
     describe('createContextMenu', () => {
@@ -113,10 +116,9 @@ describe('ContextMenuUtil', () => {
         });
 
         test('should return early if delete mode is active', () => {
-            const deleteButton = document.createElement('button');
-            deleteButton.id = 'deleteListButton';
+            // Use existing deleteListButton from popup fixture
+            const deleteButton = document.getElementById('deleteListButton');
             deleteButton.classList.add('active-button');
-            document.body.appendChild(deleteButton);
 
             const result = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
@@ -219,10 +221,10 @@ describe('ContextMenuUtil', () => {
 
         test('should trigger premium modal when non-premium user clicks tidy', async () => {
             setPaymentStage(false, false);
-            const premiumButton = document.createElement('button');
-            premiumButton.setAttribute('data-bs-target', '#premiumModal');
+            
+            // Use existing premium modal trigger from popup fixture
+            const premiumButton = document.querySelector('[data-bs-target="#premiumModal"]');
             premiumButton.click = jest.fn();
-            document.body.appendChild(premiumButton);
 
             mockStorageGet({});
             const menu = await createMenuAndWait();

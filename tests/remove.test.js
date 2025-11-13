@@ -20,22 +20,13 @@ global.state = {
     hasFavorite: false
 };
 
-// Load the module
+// Load modules
 const Remove = require('../Package/dist/components/remove.js');
 const { mockStorageGet, mockStorageSet, mockI18n } = require('./testHelpers');
+const { setupPopupDOM, teardownPopupDOM } = require('./popupDOMFixture');
 
 describe('Remove Component', () => {
     let removeInstance;
-    
-    // Global DOM elements that remove.js expects to exist
-    let cancelButton, deleteButton, deleteListButton;
-    let searchHistoryButton, favoriteListButton, geminiSummaryButton;
-    let searchButtonGroup, exportButtonGroup, deleteButtonGroup;
-    let deleteButtonSpan;
-    let searchHistoryListContainer, favoriteListContainer;
-    let clearButton, exportButton;
-    let searchHistoryUl, favoriteUl;
-    let emptyMessage, favoriteEmptyMessage;
 
     // ============================================================================
     // Helper Functions - Test-Specific
@@ -43,6 +34,7 @@ describe('Remove Component', () => {
 
     /**
      * Helper: Create mock list item with checkbox and icon
+     * Note: Keep this for edge case testing where we need specific structures
      */
     const createMockListItem = (text, clueText = null, isChecked = false) => {
         const li = document.createElement('li');
@@ -72,126 +64,40 @@ describe('Remove Component', () => {
         return li;
     };
 
-    /**
-     * Helper: Setup DOM environment
-     * Note: This is specific to remove.test.js as it sets up many global DOM elements
-     */
-    const setupDOM = () => {
-        // Buttons
-        cancelButton = document.createElement('button');
-        cancelButton.id = 'cancelButton';
-        global.cancelButton = cancelButton;
-        
-        deleteButton = document.createElement('button');
-        deleteButton.id = 'deleteButton';
-        deleteButton.classList.add('disabled');
-        global.deleteButton = deleteButton;
-        
-        deleteListButton = document.createElement('button');
-        deleteListButton.id = 'deleteListButton';
-        global.deleteListButton = deleteListButton;
-        
-        searchHistoryButton = document.createElement('button');
-        searchHistoryButton.id = 'searchHistoryButton';
-        searchHistoryButton.classList.add('active-button');
-        global.searchHistoryButton = searchHistoryButton;
-        
-        favoriteListButton = document.createElement('button');
-        favoriteListButton.id = 'favoriteListButton';
-        global.favoriteListButton = favoriteListButton;
-        
-        geminiSummaryButton = document.createElement('button');
-        geminiSummaryButton.id = 'geminiSummaryButton';
-        global.geminiSummaryButton = geminiSummaryButton;
-        
-        // Button groups
-        searchButtonGroup = document.createElement('div');
-        searchButtonGroup.id = 'searchButtonGroup';
-        global.searchButtonGroup = searchButtonGroup;
-        
-        exportButtonGroup = document.createElement('div');
-        exportButtonGroup.id = 'exportButtonGroup';
-        exportButtonGroup.classList.add('d-none');
-        global.exportButtonGroup = exportButtonGroup;
-        
-        deleteButtonGroup = document.createElement('div');
-        deleteButtonGroup.id = 'deleteButtonGroup';
-        deleteButtonGroup.classList.add('d-none');
-        global.deleteButtonGroup = deleteButtonGroup;
-        
-        // Button spans
-        deleteButtonSpan = document.createElement('span');
-        deleteButton.appendChild(deleteButtonSpan);
-        global.deleteButtonSpan = deleteButtonSpan;
-        
-        // List containers
-        searchHistoryListContainer = document.createElement('div');
-        searchHistoryListContainer.id = 'searchHistoryList';
-        global.searchHistoryListContainer = searchHistoryListContainer;
-        
-        favoriteListContainer = document.createElement('div');
-        favoriteListContainer.id = 'favoriteList';
-        global.favoriteListContainer = favoriteListContainer;
-        
-        // UL elements
-        const historyUlElement = document.createElement('ul');
-        searchHistoryListContainer.appendChild(historyUlElement);
-        searchHistoryUl = [historyUlElement];
-        global.searchHistoryUl = searchHistoryUl;
-        
-        const favoriteUlElement = document.createElement('ul');
-        favoriteListContainer.appendChild(favoriteUlElement);
-        favoriteUl = [favoriteUlElement];
-        global.favoriteUl = favoriteUl;
-        
-        // Other buttons
-        clearButton = document.createElement('button');
-        clearButton.id = 'clearButton';
-        global.clearButton = clearButton;
-        
-        exportButton = document.createElement('button');
-        exportButton.id = 'exportButton';
-        global.exportButton = exportButton;
-        
-        // Messages
-        emptyMessage = document.createElement('div');
-        emptyMessage.id = 'emptyMessage';
-        emptyMessage.style.display = 'none';
-        global.emptyMessage = emptyMessage;
-        
-        favoriteEmptyMessage = document.createElement('div');
-        favoriteEmptyMessage.id = 'favoriteEmptyMessage';
-        favoriteEmptyMessage.style.display = 'none';
-        global.favoriteEmptyMessage = favoriteEmptyMessage;
-        
-        // Append to body
-        document.body.appendChild(cancelButton);
-        document.body.appendChild(deleteButton);
-        document.body.appendChild(deleteListButton);
-        document.body.appendChild(searchHistoryButton);
-        document.body.appendChild(favoriteListButton);
-        document.body.appendChild(geminiSummaryButton);
-        document.body.appendChild(searchButtonGroup);
-        document.body.appendChild(exportButtonGroup);
-        document.body.appendChild(deleteButtonGroup);
-        document.body.appendChild(searchHistoryListContainer);
-        document.body.appendChild(favoriteListContainer);
-        document.body.appendChild(clearButton);
-        document.body.appendChild(exportButton);
-        document.body.appendChild(emptyMessage);
-        document.body.appendChild(favoriteEmptyMessage);
-    };
-
     // ============================================================================
     // Test Setup/Teardown
     // ============================================================================
 
     beforeEach(() => {
-        // Clear DOM
-        document.body.innerHTML = '';
+        // Setup popup DOM (provides all required elements)
+        setupPopupDOM();
         
-        // Setup DOM
-        setupDOM();
+        // Get references to DOM elements (now provided by popup fixture)
+        global.cancelButton = document.getElementById('cancelButton');
+        global.deleteButton = document.querySelector('#deleteButton');
+        global.deleteListButton = document.getElementById('deleteListButton');
+        global.searchHistoryButton = document.getElementById('searchHistoryButton');
+        global.favoriteListButton = document.getElementById('favoriteListButton');
+        global.geminiSummaryButton = document.getElementById('geminiSummaryButton');
+        global.searchButtonGroup = document.getElementById('searchButtonGroup');
+        global.exportButtonGroup = document.getElementById('exportButtonGroup');
+        global.deleteButtonGroup = document.getElementById('deleteButtonGroup');
+        global.deleteButtonSpan = document.querySelector('#deleteButton span');
+        global.searchHistoryListContainer = document.getElementById('searchHistoryList');
+        global.favoriteListContainer = document.getElementById('favoriteList');
+        global.clearButton = document.getElementById('clearButton');
+        global.exportButton = document.getElementById('exportButton');
+        global.emptyMessage = document.getElementById('emptyMessage');
+        global.favoriteEmptyMessage = document.getElementById('favoriteEmptyMessage');
+        
+        // Create UL arrays for the component (it expects arrays)
+        const historyUl = document.createElement('ul');
+        global.searchHistoryListContainer.appendChild(historyUl);
+        global.searchHistoryUl = [historyUl];
+        
+        const favoriteUl = document.createElement('ul');
+        global.favoriteListContainer.appendChild(favoriteUl);
+        global.favoriteUl = [favoriteUl];
         
         // Reset state
         global.state = {
@@ -209,7 +115,7 @@ describe('Remove Component', () => {
     });
 
     afterEach(() => {
-        document.body.innerHTML = '';
+        teardownPopupDOM();
     });
 
     // ============================================================================
