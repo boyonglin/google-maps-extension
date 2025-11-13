@@ -479,7 +479,6 @@ class Gemini {
     }
 }
 
-// Export for testing
 if (typeof module !== "undefined" && module.exports) {
     module.exports = Gemini;
 }

@@ -210,7 +210,6 @@ class Favorite {
     }
 }
 
-// Export for testing
 if (typeof module !== "undefined" && module.exports) {
     module.exports = Favorite;
 }
