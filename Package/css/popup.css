@@ -147,6 +147,10 @@ body {
   text-decoration: none;
 }
 
+.footer-li {
+  cursor: pointer;
+}
+
 /* optional modal form */
 .modalFormInput {
   border-radius: 2rem;

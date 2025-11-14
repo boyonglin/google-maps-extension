@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "The Maps Express",
-  "version": "1.11.6",
+  "version": "1.12.0",
   "description": "A Shortcut to Google Maps, but Rich and Beautiful.",
   "icons": {
     "16": "images/icon-16.png",

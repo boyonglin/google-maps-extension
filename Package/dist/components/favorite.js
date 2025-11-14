@@ -2,6 +2,10 @@ class Favorite {
     addFavoritePageListener() {
         exportButton.addEventListener("click", () => {
             chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
+                if (!favoriteList || !Array.isArray(favoriteList)) {
+                    return;
+                }
+                
                 const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
                 const csv = "name\n" + trimmedFavorite.map((item) => `${item},`).join("\n");
 
@@ -26,7 +30,7 @@ class Favorite {
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function (event) {
+            reader.onload = (event) => {
                 try {
                     let importedData = [];
                     const fileContent = event.target.result;
@@ -185,11 +189,11 @@ class Favorite {
                     checkbox.style.cursor = "pointer";
                     li.appendChild(checkbox);
                     fragment.appendChild(li);
-
-                    exportButton.disabled = false;
                 });
                 ul.appendChild(fragment);
                 favoriteListContainer.appendChild(ul);
+
+                exportButton.disabled = false;
 
                 const lastListItem = favoriteListContainer.querySelector(
                     ".list-group .list-group-item:first-child"
@@ -208,4 +212,8 @@ class Favorite {
 
         delayMeasurement();
     }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = Favorite;
 }

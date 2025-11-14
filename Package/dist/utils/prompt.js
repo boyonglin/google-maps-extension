@@ -59,7 +59,7 @@ Categories:
 - Transportation
 - Other
 
-These are locations from the user's collection that need to be organized:
+These are locations from the user's collection that need to be organized (ensure ALL locations are included in your response):
 `;
 
 const askAIPrompt = `Suggest or surprise (don't have to be cliché) a {requestedDestination} itinerary, and use {userLocale} as the display language. Please give me the results in plain HTML only (for example, see the format I provided). The clue could be country or city, but not address. The time shows the estimated time and only the number and time unit information. The final format should look like this example (do not include the example or other tags like <h1>):

@@ -1,7 +1,11 @@
 // Track tab messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (!request) {
+    return;
+  }
+  
   // Get the selected text from the webpage
-  if (request && request.action === "getSelectedText") {
+  if (request.action === "getSelectedText") {
     const selectedText = window.getSelection().toString();
     sendResponse({ selectedText });
   }
@@ -39,7 +43,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           document.querySelector('button[aria-label*="more"]') ||
           document.querySelector('button[aria-label*="Show more"]');
 
-        if (altExpandButton) {
+        if (altExpandButton && altExpandButton.getAttribute("aria-disabled") !== "true") {
           altExpandButton.click();
           sendResponse({ expanded: true });
         } else {
@@ -63,8 +67,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "finishIframe") {
     let iframeContainer = document.getElementById("TMEiframe");
-    iframeContainer.style.opacity = "1";
-    iframeContainer.style.transition = "width 0.3s ease-in-out, height 0.3s ease-in-out";
+    
+    if (iframeContainer) {
+      iframeContainer.style.opacity = "1";
+      iframeContainer.style.transition = "width 0.3s ease-in-out, height 0.3s ease-in-out";
+    }
   }
 
   if (request.action === "consoleQuote" && request.stage) {
@@ -84,25 +91,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// Get plain text from an element (visible text || including hidden text)
+function getTextContent(element) {
+  if (!element) return "";
+  return element.innerText || element.textContent;
+}
+
+// Remove header and footer text from bodyText
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function getContent() {
   // Get the summary topic
   const titleElement = document.querySelector("head > title");
-  const titleText = titleElement ? titleElement.innerText : "";
+  const titleText = getTextContent(titleElement);
   const summaryTopic = `Page's main topic: <title>${titleText}</title>`;
-
-  // Get the plain text of the body (visible text || including hidden text)
-  const bodyText = document.body.innerText || document.body.textContent;
 
   const headerElement = document.querySelector("header");
   const footerElement = document.querySelector("footer");
-  const headerText = headerElement ? headerElement.innerText : "";
-  const footerText = footerElement ? footerElement.innerText : "";
+  const headerText = getTextContent(headerElement);
+  const footerText = getTextContent(footerElement);
 
-  // Remove header and footer text from bodyText
-  function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
+  const bodyText = getTextContent(document.body);
   let bodyElement = bodyText;
 
   if (headerText) {
@@ -119,8 +130,9 @@ function getContent() {
   function wrapTag(tag) {
     const elements = document.querySelectorAll(tag);
     elements.forEach(element => {
-      const text = `<${tag}>${element.innerText}</${tag}>`;
-      bodyElement = bodyElement.replace(element.innerText, text);
+      const elementText = getTextContent(element);
+      const text = `<${tag}>${elementText}</${tag}>`;
+      bodyElement = bodyElement.replace(elementText, text);
     });
   }
 

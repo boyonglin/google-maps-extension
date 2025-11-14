@@ -1,6 +1,20 @@
 class Modal {
+    // Allow dependency injection for testing
+    constructor(encryptApiKeyFn = null) {
+        this.encryptApiKey = encryptApiKeyFn;
+    }
+
+    // Load crypto module dynamically (for browser extension context)
+    async loadCrypto() {
+        if (!this.encryptApiKey) {
+            const { encryptApiKey } = await import(chrome.runtime.getURL("dist/utils/crypto.js"));
+            this.encryptApiKey = encryptApiKey;
+        }
+    }
+
     async addModalListener() {
-        const { encryptApiKey } = await import(chrome.runtime.getURL("dist/utils/crypto.js"));
+        await this.loadCrypto();
+
         // Shortcuts configuration link
         for (let i = 0; i < configureElements.length; i++) {
             configureElements[i].onclick = function (event) {
@@ -22,7 +36,7 @@ class Modal {
             event.preventDefault();
             const apiKey = apiInput.value.trim();
 
-            const encrypted = apiKey ? await encryptApiKey(apiKey) : "";
+            const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
             chrome.storage.local.set({ geminiApiKey: encrypted });
 
             if (!apiKey) {
@@ -121,7 +135,7 @@ class Modal {
         });
 
         closeButton.addEventListener("click", () => {
-            checkPay();
+            payment.checkPay();
         });
     }
 
@@ -179,4 +193,8 @@ class Modal {
             incognitoToggle.classList.add("incognito-just-off");
         }
     }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = Modal;
 }

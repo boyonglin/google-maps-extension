@@ -21,7 +21,7 @@ class History {
                     remove.updateDeleteCount();
                 }
             } else {
-                const selectedText = liElement.textContent;
+                const selectedText = liElement.querySelector("span")?.textContent;
                 
                 state.buildSearchUrl(selectedText).then(searchUrl => {
                     // Check if the clicked element has the "bi" class (favorite icon)
@@ -49,6 +49,8 @@ class History {
                             window.open(searchUrl, "_blank");
                         }
                     }
+                }).catch(error => {
+                    console.error('Failed to build search URL:', error);
                 });
             }
         });
@@ -65,9 +67,8 @@ class History {
             searchHistoryListContainer.innerHTML = "";
 
             emptyMessage.style.display = "block";
-            emptyMessage.innerHTML = chrome.i18n
-                .getMessage("clearedUpMsg")
-                .replace(/\n/g, "<br>");
+            const message = chrome.i18n.getMessage("clearedUpMsg");
+            emptyMessage.innerHTML = message ? message.replace(/\n/g, "<br>") : "";
 
             state.hasHistory = false;
 
@@ -100,4 +101,8 @@ class History {
 
         return li;
     }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = History;
 }
