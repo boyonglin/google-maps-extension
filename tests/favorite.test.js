@@ -3,26 +3,10 @@
  * Tests cover all methods with comprehensive mocking of Chrome APIs and DOM manipulation
  */
 
-// Mock global functions and objects before requiring module
-global.URL = {
-    createObjectURL: jest.fn(() => 'blob:mock-url')
-};
-
-global.Blob = jest.fn(function MockBlob(content, options) {
-    this.content = content;
-    this.options = options;
-});
-
-global.FileReader = class MockFileReader {
-    readAsText(file) {
-        // Simulate async file reading
-        setTimeout(() => {
-            if (this.onload) {
-                this.onload({ target: { result: file.mockContent || '' } });
-            }
-        }, 0);
-    }
-};
+// Capture original globals to restore after tests
+const originalURL = global.URL;
+const originalBlob = global.Blob;
+const originalFileReader = global.FileReader;
 
 global.state = {
     favoriteListChanged: false,
@@ -43,73 +27,45 @@ global.delayMeasurement = jest.fn();
 
 // Load modules
 const Favorite = require('../Package/dist/components/favorite.js');
-const { mockStorageGet, mockStorageSet, mockI18n, cleanupDOM, wait, withWindowOpenSpy, createMouseEvent, mockFileUpload } = require('./testHelpers');
+const { mockChromeStorage, mockI18n, wait, withWindowOpenSpy, createMouseEvent, mockFileUpload, createMockListItem } = require('./testHelpers');
 const { setupPopupDOM, teardownPopupDOM } = require('./popupDOMFixture');
 
 describe('Favorite Component', () => {
     let favoriteInstance;
 
     // ============================================================================
-    // Helper Functions - Test-Specific
-    // ============================================================================
-
-    /**
-     * Helper: Create mock favorite list item with checkbox and icon
-     * Note: Keep this for edge case testing where we need specific structures
-     */
-    const createMockFavoriteItem = (text, clueText = null, isChecked = false) => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item favorite-list';
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = isChecked;
-        checkbox.classList.add('form-check-input', 'd-none');
-        
-        const icon = document.createElement('i');
-        icon.className = 'bi bi-patch-check-fill matched';
-        
-        const span = document.createElement('span');
-        span.textContent = text;
-        
-        li.appendChild(span);
-        
-        if (clueText) {
-            const clueSpan = document.createElement('span');
-            clueSpan.className = 'd-none';
-            clueSpan.textContent = clueText;
-            li.appendChild(clueSpan);
-        }
-        
-        li.appendChild(icon);
-        li.appendChild(checkbox);
-        
-        return li;
-    };
-
-    /**
-     * Helper: Create mock history item for updateHistoryFavoriteIcons tests
-     * Note: Keep this for specific test scenarios
-     */
-    const createMockHistoryItem = (text) => {
-        const li = document.createElement('li');
-        li.className = 'history-list';
-        
-        const span = document.createElement('span');
-        span.textContent = text;
-        
-        const icon = document.createElement('i');
-        icon.className = 'bi bi-patch-plus-fill';
-        
-        li.appendChild(span);
-        li.appendChild(icon);
-        
-        return li;
-    };
-
-    // ============================================================================
     // Test Setup/Teardown
     // ============================================================================
+
+    beforeAll(() => {
+        // Mock global APIs - save originals for restoration
+        global.URL = {
+            createObjectURL: jest.fn(() => 'blob:mock-url')
+        };
+        
+        global.Blob = jest.fn(function MockBlob(content, options) {
+            this.content = content;
+            this.options = options;
+        });
+        
+        global.FileReader = class MockFileReader {
+            readAsText(file) {
+                // Simulate async file reading
+                setTimeout(() => {
+                    if (this.onload) {
+                        this.onload({ target: { result: file.mockContent || '' } });
+                    }
+                }, 0);
+            }
+        };
+    });
+
+    afterAll(() => {
+        // Restore original globals
+        global.URL = originalURL;
+        global.Blob = originalBlob;
+        global.FileReader = originalFileReader;
+    });
 
     beforeEach(() => {
         // Setup popup DOM (provides all required elements)
@@ -147,7 +103,7 @@ describe('Favorite Component', () => {
             plusLabel: 'Add to favorites',
             importErrorMsg: 'Import failed. Please check file format.'
         });
-        mockStorageSet();
+        mockChromeStorage();
         
         // Create new instance
         favoriteInstance = new Favorite();
@@ -168,7 +124,7 @@ describe('Favorite Component', () => {
             });
 
             test('should export favorite list as CSV', async () => {
-                mockStorageGet({ favoriteList: ['Place 1', 'Place 2 @Clue'] });
+                mockChromeStorage({ favoriteList: ['Place 1', 'Place 2 @Clue'] });
                 
                 // Just verify no error is thrown - export functionality works
                 expect(() => {
@@ -179,7 +135,7 @@ describe('Favorite Component', () => {
             });
 
             test('should trim clue text from exported favorites', async () => {
-                mockStorageGet({ favoriteList: ['Place 1 @Clue 1', 'Place 2', 'Place 3 @Clue 3'] });
+                mockChromeStorage({ favoriteList: ['Place 1 @Clue 1', 'Place 2', 'Place 3 @Clue 3'] });
                 
                 // Verify export completes without error
                 expect(() => {
@@ -191,7 +147,7 @@ describe('Favorite Component', () => {
 
             test('should handle null/undefined favoriteList gracefully', () => {
                 // Fixed: favorite.js now checks if favoriteList exists before mapping
-                mockStorageGet({ favoriteList: null });
+                mockChromeStorage({ favoriteList: null });
                 
                 // Should not throw an error
                 expect(() => {
@@ -200,7 +156,7 @@ describe('Favorite Component', () => {
             });
 
             test('should create CSV with correct format', async () => {
-                mockStorageGet({ favoriteList: ['Location A', 'Location B'] });
+                mockChromeStorage({ favoriteList: ['Location A', 'Location B'] });
                 
                 // Verify export completes without error
                 expect(() => {
@@ -235,7 +191,7 @@ describe('Favorite Component', () => {
                 const updateIconsSpy = jest.spyOn(favoriteInstance, 'updateHistoryFavoriteIcons');
                 
                 const storageSetPromise = new Promise((resolve) => {
-                    mockStorageSet((data) => {
+                    mockChromeStorage({}, (data) => {
                         resolve(data);
                     });
                 });
@@ -253,7 +209,7 @@ describe('Favorite Component', () => {
                 mockFileUpload(fileInput, '');
                 
                 const storageSetPromise = new Promise((resolve) => {
-                    mockStorageSet((data) => resolve(data));
+                    mockChromeStorage({}, (data) => resolve(data));
                 });
                 
                 fileInput.dispatchEvent(new Event('change'));
@@ -267,7 +223,7 @@ describe('Favorite Component', () => {
                 mockFileUpload(fileInput, 'name\n');
                 
                 const storageSetPromise = new Promise((resolve) => {
-                    mockStorageSet((data) => resolve(data));
+                    mockChromeStorage({}, (data) => resolve(data));
                 });
                 
                 fileInput.dispatchEvent(new Event('change'));
@@ -281,7 +237,7 @@ describe('Favorite Component', () => {
                 mockFileUpload(fileInput, 'name\n  Location 1,\n\n  Location 2,  \n');
                 
                 const storageSetPromise = new Promise((resolve) => {
-                    mockStorageSet((data) => resolve(data));
+                    mockChromeStorage({}, (data) => resolve(data));
                 });
                 
                 fileInput.dispatchEvent(new Event('change'));
@@ -353,7 +309,7 @@ describe('Favorite Component', () => {
                 mockFileUpload(fileInput, 'name\nLocation 1,\n');
                 
                 const storageSetPromise = new Promise((resolve) => {
-                    mockStorageSet(() => resolve());
+                    mockChromeStorage({}, () => resolve());
                 });
                 
                 fileInput.dispatchEvent(new Event('change'));
@@ -371,7 +327,7 @@ describe('Favorite Component', () => {
             });
 
             test('should handle click on LI element', async () => {
-                const li = createMockFavoriteItem('Test Location');
+                const li = createMockListItem('Test Location', { className: 'favorite-list', favoriteList: ['Test Location'] });
                 favoriteListContainer.appendChild(li);
                 
                 global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
@@ -388,7 +344,7 @@ describe('Favorite Component', () => {
             });
 
             test('should handle click on child element within LI', async () => {
-                const li = createMockFavoriteItem('Test Location');
+                const li = createMockListItem('Test Location', { className: 'favorite-list', favoriteList: ['Test Location'] });
                 favoriteListContainer.appendChild(li);
                 
                 global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
@@ -406,7 +362,7 @@ describe('Favorite Component', () => {
             });
 
             test('should handle middle click to open in new tab via runtime message', async () => {
-                const li = createMockFavoriteItem('Test Location');
+                const li = createMockListItem('Test Location', { className: 'favorite-list', favoriteList: ['Test Location'] });
                 favoriteListContainer.appendChild(li);
                 
                 global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
@@ -436,7 +392,7 @@ describe('Favorite Component', () => {
             });
 
             test('should toggle checkbox in delete mode', () => {
-                const li = createMockFavoriteItem('Test Location');
+                const li = createMockListItem('Test Location', { className: 'favorite-list', favoriteList: ['Test Location'] });
                 li.classList.add('delete-list');
                 li.classList.remove('favorite-list');
                 favoriteListContainer.appendChild(li);
@@ -453,7 +409,7 @@ describe('Favorite Component', () => {
             });
 
             test('should not toggle if clicking on checkbox directly in delete mode', () => {
-                const li = createMockFavoriteItem('Test Location');
+                const li = createMockListItem('Test Location', { className: 'favorite-list', favoriteList: ['Test Location'] });
                 li.classList.add('delete-list');
                 favoriteListContainer.appendChild(li);
                 
@@ -467,7 +423,7 @@ describe('Favorite Component', () => {
             });
 
             test('should not open URL if clicking on icon', async () => {
-                const li = createMockFavoriteItem('Test Location');
+                const li = createMockListItem('Test Location', { className: 'favorite-list', favoriteList: ['Test Location'] });
                 favoriteListContainer.appendChild(li);
                 
                 global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
@@ -486,7 +442,7 @@ describe('Favorite Component', () => {
             });
 
             test('should not open URL if clicking on checkbox in favorite mode', async () => {
-                const li = createMockFavoriteItem('Test Location');
+                const li = createMockListItem('Test Location', { className: 'favorite-list', favoriteList: ['Test Location'] });
                 favoriteListContainer.appendChild(li);
                 
                 global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
@@ -621,15 +577,15 @@ describe('Favorite Component', () => {
             const historyContainer = document.createElement('div');
             document.body.appendChild(historyContainer);
             
-            const item1 = createMockHistoryItem('Location 1');
-            const item2 = createMockHistoryItem('Location 2');
-            const item3 = createMockHistoryItem('Location 3');
+            const item1 = createMockListItem('Location 1', { className: 'history-list', includeCheckbox: false });
+            const item2 = createMockListItem('Location 2', { className: 'history-list', includeCheckbox: false });
+            const item3 = createMockListItem('Location 3', { className: 'history-list', includeCheckbox: false });
             
             historyContainer.appendChild(item1);
             historyContainer.appendChild(item2);
             historyContainer.appendChild(item3);
             
-            mockStorageGet({ favoriteList: ['Location 1', 'Location 3'] });
+            mockChromeStorage({ favoriteList: ['Location 1', 'Location 3'] });
             
             favoriteInstance.updateHistoryFavoriteIcons();
             
@@ -648,11 +604,11 @@ describe('Favorite Component', () => {
             const historyContainer = document.createElement('div');
             document.body.appendChild(historyContainer);
             
-            const item1 = createMockHistoryItem('Location 1');
+            const item1 = createMockListItem('Location 1', { className: 'history-list', includeCheckbox: false });
             item1.querySelector('i').className = 'bi bi-patch-check-fill matched';
             historyContainer.appendChild(item1);
             
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
             
             favoriteInstance.updateHistoryFavoriteIcons();
             
@@ -666,11 +622,11 @@ describe('Favorite Component', () => {
             const historyContainer = document.createElement('div');
             document.body.appendChild(historyContainer);
             
-            const item1 = createMockHistoryItem('Location 1');
+            const item1 = createMockListItem('Location 1', { className: 'history-list', includeCheckbox: false });
             item1.querySelector('i').className = 'bi bi-patch-check-fill matched';
             historyContainer.appendChild(item1);
             
-            mockStorageGet({ favoriteList: null });
+            mockChromeStorage({ favoriteList: null });
             
             favoriteInstance.updateHistoryFavoriteIcons();
             
@@ -683,7 +639,7 @@ describe('Favorite Component', () => {
         });
 
         test('should handle no history items gracefully', () => {
-            mockStorageGet({ favoriteList: ['Location 1'] });
+            mockChromeStorage({ favoriteList: ['Location 1'] });
             
             expect(() => {
                 favoriteInstance.updateHistoryFavoriteIcons();
@@ -694,7 +650,7 @@ describe('Favorite Component', () => {
             const container = document.createElement('div');
             document.body.appendChild(container);
             
-            const historyItem = createMockHistoryItem('Location 1');
+            const historyItem = createMockListItem('Location 1', { className: 'history-list', includeCheckbox: false });
             const otherItem = document.createElement('div');
             otherItem.className = 'other-list';
             const span = document.createElement('span');
@@ -707,7 +663,7 @@ describe('Favorite Component', () => {
             container.appendChild(historyItem);
             container.appendChild(otherItem);
             
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
             
             favoriteInstance.updateHistoryFavoriteIcons();
             
@@ -1002,7 +958,7 @@ describe('Favorite Component', () => {
         test('complete export workflow', async () => {
             favoriteInstance.addFavoritePageListener();
             
-            mockStorageGet({ favoriteList: ['Place 1', 'Place 2 @Clue'] });
+            mockChromeStorage({ favoriteList: ['Place 1', 'Place 2 @Clue'] });
             
             // Verify complete export workflow runs without error
             expect(() => {
@@ -1021,7 +977,7 @@ describe('Favorite Component', () => {
             const updateIconsSpy = jest.spyOn(favoriteInstance, 'updateHistoryFavoriteIcons');
             
             const storageSetPromise = new Promise((resolve) => {
-                mockStorageSet((data) => resolve(data));
+                mockChromeStorage({}, (data) => resolve(data));
             });
             
             fileInput.dispatchEvent(new Event('change'));
@@ -1133,7 +1089,7 @@ describe('Favorite Component', () => {
             
             favoriteInstance.updateHistoryFavoriteIcons();
             
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await wait();
             
             // Should not throw
         });

@@ -30,12 +30,10 @@ global.measureContentSize = jest.fn();
 // Load modules
 const History = require('../Package/dist/components/history.js');
 const { 
-    mockStorageGet, 
-    mockStorageSet, 
+    mockChromeStorage, 
     mockI18n, 
-    cleanupDOM, 
-    wait, 
-    withWindowOpenSpy, 
+    wait,
+    withWindowOpenSpy,
     createMouseEvent,
     createMockListItem,
     TEST_CONSTANTS
@@ -109,7 +107,7 @@ describe('History Component', () => {
             clearedUpMsg: 'All cleared up!\nNothing to see here.',
             plusLabel: 'Add to favorites'
         });
-        mockStorageSet();
+        mockChromeStorage();
         
         // Create new instance
         historyInstance = new History();
@@ -302,7 +300,7 @@ describe('History Component', () => {
                 searchHistoryListContainer.appendChild(li);
                 
                 global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
-                mockStorageGet({ favoriteList: [] });
+                mockChromeStorage({ favoriteList: [] });
                 
                 const icon = li.querySelector('i');
                 icon.classList.add('bi');
@@ -322,7 +320,7 @@ describe('History Component', () => {
                 expect(icon.className).toContain('spring-animation');
                 
                 // Wait for the animation timeout to complete (500ms)
-                await new Promise(resolve => setTimeout(resolve, 600));
+                await wait(500);
                 
                 expect(icon.classList.contains('spring-animation')).toBe(false);
             });
@@ -334,7 +332,7 @@ describe('History Component', () => {
                 global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
                 
                 const favoriteList = ['Existing Place'];
-                mockStorageGet({ favoriteList });
+                mockChromeStorage({ favoriteList });
                 
                 const icon = li.querySelector('i');
                 icon.classList.add('bi');
@@ -821,7 +819,7 @@ describe('History Component', () => {
             historyInstance.addHistoryPageListener();
             
             global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
             
             const icon = li.querySelector('i');
             icon.classList.add('bi');
@@ -835,7 +833,7 @@ describe('History Component', () => {
             expect(icon.className).toContain('spring-animation');
             
             // Wait for the animation timeout to complete (500ms)
-            await new Promise(resolve => setTimeout(resolve, 600));
+            await wait(500);
             
             expect(icon.classList.contains('spring-animation')).toBe(false);
         });
@@ -1005,7 +1003,7 @@ describe('History Component', () => {
             historyInstance.addHistoryPageListener();
             
             global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
             
             const icon = li.querySelector('i');
             icon.classList.add('bi');

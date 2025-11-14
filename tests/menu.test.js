@@ -17,7 +17,7 @@ global.measureContentSize = jest.fn();
 
 // Load the module
 const ContextMenuUtil = require('../Package/dist/components/menu.js');
-const { mockStorageGet, mockRuntimeMessage, wait, mockI18n } = require('./testHelpers');
+const { mockChromeStorage, wait, mockI18n } = require('./testHelpers');
 const { setupPopupDOM, teardownPopupDOM } = require('./popupDOMFixture');
 
 describe('ContextMenuUtil', () => {
@@ -108,7 +108,7 @@ describe('ContextMenuUtil', () => {
     describe('createContextMenu', () => {
         test('should call preventDefault on event', () => {
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
-            mockStorageGet({});
+            mockChromeStorage({});
 
             ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
@@ -132,7 +132,7 @@ describe('ContextMenuUtil', () => {
             document.body.appendChild(existingMenu);
 
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
-            mockStorageGet({});
+            mockChromeStorage({});
 
             ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
@@ -142,7 +142,7 @@ describe('ContextMenuUtil', () => {
 
         test('should create context menu with correct positioning', () => {
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
-            mockStorageGet({});
+            mockChromeStorage({});
 
             const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
@@ -154,7 +154,7 @@ describe('ContextMenuUtil', () => {
 
         test('should create "Open all URL" option', () => {
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
-            mockStorageGet({});
+            mockChromeStorage({});
 
             const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
@@ -163,7 +163,7 @@ describe('ContextMenuUtil', () => {
 
         test('should add premium-option class when user cannot tidy', async () => {
             setPaymentStage(false, false);
-            mockStorageGet({});
+            mockChromeStorage({});
             const menu = await createMenuAndWait();
             
             const tidyOption = Array.from(menu.querySelectorAll('.context-menu-item'))
@@ -175,7 +175,7 @@ describe('ContextMenuUtil', () => {
 
         test('should not add premium-option class when user is on trial', async () => {
             setPaymentStage(true, false);
-            mockStorageGet({});
+            mockChromeStorage({});
             const menu = await createMenuAndWait();
             
             const tidyOption = Array.from(menu.querySelectorAll('.context-menu-item'))
@@ -186,7 +186,7 @@ describe('ContextMenuUtil', () => {
 
         test('should not add premium-option class when user is premium', async () => {
             setPaymentStage(false, true);
-            mockStorageGet({});
+            mockChromeStorage({});
             const menu = await createMenuAndWait();
             
             const tidyOption = Array.from(menu.querySelectorAll('.context-menu-item'))
@@ -196,14 +196,14 @@ describe('ContextMenuUtil', () => {
         });
 
         test('should add "Get Directions" option when clickedItem and startAddr exist', async () => {
-            mockStorageGet({ startAddr: 'New York' });
+            mockChromeStorage({ startAddr: 'New York' });
             const menu = await createMenuAndWait();
 
             expect(menu.textContent).toContain('Get Directions');
         });
 
         test('should not add "Get Directions" option when startAddr is missing', async () => {
-            mockStorageGet({});
+            mockChromeStorage({});
             const menu = await createMenuAndWait();
 
             expect(menu.textContent).not.toContain('Get Directions');
@@ -211,7 +211,7 @@ describe('ContextMenuUtil', () => {
 
         test('should not add "Get Directions" option when clickedItem is null', async () => {
             mockEvent.target.closest = jest.fn(() => null);
-            mockStorageGet({ startAddr: 'New York' });
+            mockChromeStorage({ startAddr: 'New York' });
             const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
             
             await wait(50);
@@ -226,7 +226,7 @@ describe('ContextMenuUtil', () => {
             const premiumButton = document.querySelector('[data-bs-target="#premiumModal"]');
             premiumButton.click = jest.fn();
 
-            mockStorageGet({});
+            mockChromeStorage({});
             const menu = await createMenuAndWait();
             
             const tidyOption = Array.from(menu.querySelectorAll('.context-menu-item'))
@@ -237,7 +237,7 @@ describe('ContextMenuUtil', () => {
         });
 
         test('should set up click listener to close menu when clicking outside', async () => {
-            mockStorageGet({});
+            mockChromeStorage({});
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
             const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
@@ -250,7 +250,7 @@ describe('ContextMenuUtil', () => {
         });
 
         test('should not close menu when clicking inside', async () => {
-            mockStorageGet({});
+            mockChromeStorage({});
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
             const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
@@ -360,7 +360,7 @@ describe('ContextMenuUtil', () => {
                 Promise.resolve(`http://test.com/${text}`)
             );
             
-            mockRuntimeMessage({ canGroup: true });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ canGroup: true }); });
 
             await ContextMenuUtil.openAllUrls(mockListItems);
             await wait(50);
@@ -586,7 +586,7 @@ describe('ContextMenuUtil', () => {
 
         test('should start breathing effect', () => {
             const spy = jest.spyOn(ContextMenuUtil, 'startBreathingEffect');
-            mockRuntimeMessage({ success: false });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ success: false }); });
 
             ContextMenuUtil.tidyLocations(mockListItems);
 
@@ -602,7 +602,7 @@ describe('ContextMenuUtil', () => {
             mockListItems[0].appendChild(span1);
             mockListItems[0].appendChild(span2);
 
-            mockRuntimeMessage({ success: false });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ success: false }); });
             
             ContextMenuUtil.tidyLocations(mockListItems);
 
@@ -624,7 +624,7 @@ describe('ContextMenuUtil', () => {
             emptyItem.className = 'summary-list';
             const itemsWithEmpty = [...mockListItems, emptyItem];
 
-            mockRuntimeMessage({ success: false });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ success: false }); });
 
             ContextMenuUtil.tidyLocations(itemsWithEmpty);
 
@@ -633,7 +633,7 @@ describe('ContextMenuUtil', () => {
         });
 
         test('should send organize request with correct action', () => {
-            mockRuntimeMessage({ success: false });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ success: false }); });
 
             ContextMenuUtil.tidyLocations(mockListItems);
 
@@ -645,7 +645,7 @@ describe('ContextMenuUtil', () => {
 
         test('should include list type in request', () => {
             mockListItems[0].className = 'history-list';
-            mockRuntimeMessage({ success: false });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ success: false }); });
 
             ContextMenuUtil.tidyLocations(mockListItems);
 
@@ -1001,21 +1001,6 @@ describe('ContextMenuUtil', () => {
             const locationElement = container.querySelector('.summary-list');
             expect(locationElement.classList.contains('mb-3')).toBe(true);
         });
-
-        test('should handle missing location elements', () => {
-            const consoleSpy = jest.spyOn(ContextMenuUtil, 'logMissingElement');
-            
-            const categories = [
-                {
-                    name: 'Category',
-                    locations: [{ name: 'Nonexistent Location' }]
-                }
-            ];
-
-            ContextMenuUtil.renderCategories(categories, container, elementMap, elementsList, false);
-
-            expect(consoleSpy).toHaveBeenCalled();
-        });
     });
 
     describe('createCategoryHeader', () => {
@@ -1080,36 +1065,6 @@ describe('ContextMenuUtil', () => {
             const element = ContextMenuUtil.findMatchingElement('index', elementMap, elementsList);
 
             expect(element).toBeUndefined();
-        });
-    });
-
-    describe('logMissingElement', () => {
-        test('should log available element names', () => {
-            const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-            ContextMenuUtil.logMissingElement('Missing', mockListItems);
-
-            expect(consoleSpy).toHaveBeenCalledWith(
-                'Available original element names:',
-                ['Location 1', 'Location 2', 'Location 3']
-            );
-
-            consoleSpy.mockRestore();
-        });
-
-        test('should filter out elements without span', () => {
-            const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-            const emptyItem = document.createElement('div');
-            const items = [...mockListItems, emptyItem];
-
-            ContextMenuUtil.logMissingElement('Missing', items);
-
-            expect(consoleSpy).toHaveBeenCalledWith(
-                'Available original element names:',
-                ['Location 1', 'Location 2', 'Location 3']
-            );
-
-            consoleSpy.mockRestore();
         });
     });
 

@@ -441,7 +441,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.action === "summarizeVideo" && request.text) {
-    console.log("summarize video: ", request.text);
     getApiKey().then(apiKey => {
       callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
     });

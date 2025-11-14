@@ -185,8 +185,26 @@ const captureEventListeners = (eventPaths) => {
  * Create a promise that resolves after a delay
  * @param {number} ms - Milliseconds to wait
  * @returns {Promise}
+ * @deprecated Use flushPromises() instead for deterministic async testing
  */
 const wait = (ms = 50) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Flush all pending promises in the microtask queue
+ * This is the preferred way to wait for async operations in tests
+ * as it's deterministic and doesn't rely on arbitrary timeouts.
+ * Uses process.nextTick for Node.js compatibility or setTimeout(0) as fallback.
+ * @returns {Promise<void>}
+ * @example
+ * // Instead of: await new Promise(resolve => setTimeout(resolve, 100));
+ * // Use: await flushPromises();
+ */
+const flushPromises = () => {
+    if (typeof process !== 'undefined' && process.nextTick) {
+        return new Promise(resolve => process.nextTick(resolve));
+    }
+    return new Promise(resolve => setTimeout(resolve, 0));
+};
 
 // ============================================================================
 // DOM Utilities
@@ -453,7 +471,8 @@ module.exports = {
     setupMockStorage,
     
     // Async Utilities
-    wait,
+    wait,                            // @deprecated - Use flushPromises
+    flushPromises,                   // NEW: Deterministic promise flushing
     
     // DOM Utilities
     createMockListItems,

@@ -22,47 +22,11 @@ global.state = {
 
 // Load modules
 const Remove = require('../Package/dist/components/remove.js');
-const { mockStorageGet, mockStorageSet, mockI18n } = require('./testHelpers');
+const { mockChromeStorage, mockI18n, createMockListItem } = require('./testHelpers');
 const { setupPopupDOM, teardownPopupDOM } = require('./popupDOMFixture');
 
 describe('Remove Component', () => {
     let removeInstance;
-
-    // ============================================================================
-    // Helper Functions - Test-Specific
-    // ============================================================================
-
-    /**
-     * Helper: Create mock list item with checkbox and icon
-     * Note: Keep this for edge case testing where we need specific structures
-     */
-    const createMockListItem = (text, clueText = null, isChecked = false) => {
-        const li = document.createElement('li');
-        li.className = 'history-list';
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = isChecked;
-        checkbox.classList.add('d-none');
-        
-        const icon = document.createElement('i');
-        icon.className = 'bi bi-patch-check-fill';
-        
-        const span = document.createElement('span');
-        span.textContent = text;
-        
-        li.appendChild(checkbox);
-        li.appendChild(icon);
-        li.appendChild(span);
-        
-        if (clueText) {
-            const clueSpan = document.createElement('span');
-            clueSpan.textContent = clueText;
-            li.appendChild(clueSpan);
-        }
-        
-        return li;
-    };
 
     // ============================================================================
     // Test Setup/Teardown
@@ -108,7 +72,7 @@ describe('Remove Component', () => {
         // Reset mocks
         jest.clearAllMocks();
         mockI18n();
-        mockStorageSet();
+        mockChromeStorage();
         
         // Create new instance
         removeInstance = new Remove();
@@ -281,15 +245,15 @@ describe('Remove Component', () => {
         });
 
         test('should remove checked items from DOM', () => {
-            const li1 = createMockListItem('Location 1', null, true);
-            const li2 = createMockListItem('Location 2', null, false);
-            const li3 = createMockListItem('Location 3', null, true);
+            const li1 = createMockListItem('Location 1', { isChecked: true });
+            const li2 = createMockListItem('Location 2', { isChecked: false });
+            const li3 = createMockListItem('Location 3', { isChecked: true });
             
             searchHistoryListContainer.appendChild(li1);
             searchHistoryListContainer.appendChild(li2);
             searchHistoryListContainer.appendChild(li3);
             
-            mockStorageGet({ searchHistoryList: ['Location 1', 'Location 2', 'Location 3'] });
+            mockChromeStorage({ searchHistoryList: ['Location 1', 'Location 2', 'Location 3'] });
             
             removeInstance.deleteFromHistoryList();
             
@@ -299,13 +263,13 @@ describe('Remove Component', () => {
         });
 
         test('should update chrome storage with filtered list', () => {
-            const li1 = createMockListItem('Location 1', null, true);
-            const li2 = createMockListItem('Location 2', null, false);
+            const li1 = createMockListItem('Location 1', { isChecked: true });
+            const li2 = createMockListItem('Location 2', { isChecked: false });
             
             searchHistoryListContainer.appendChild(li1);
             searchHistoryListContainer.appendChild(li2);
             
-            mockStorageGet({ searchHistoryList: ['Location 1', 'Location 2'] });
+            mockChromeStorage({ searchHistoryList: ['Location 1', 'Location 2'] });
             
             removeInstance.deleteFromHistoryList();
             
@@ -315,10 +279,10 @@ describe('Remove Component', () => {
         });
 
         test('should set hasHistory to false when all items deleted', () => {
-            const li1 = createMockListItem('Location 1', null, true);
+            const li1 = createMockListItem('Location 1', { isChecked: true });
             searchHistoryListContainer.appendChild(li1);
             
-            mockStorageGet({ searchHistoryList: ['Location 1'] });
+            mockChromeStorage({ searchHistoryList: ['Location 1'] });
             
             removeInstance.deleteFromHistoryList();
             
@@ -326,10 +290,10 @@ describe('Remove Component', () => {
         });
 
         test('should disable clearButton when all items deleted', () => {
-            const li1 = createMockListItem('Location 1', null, true);
+            const li1 = createMockListItem('Location 1', { isChecked: true });
             searchHistoryListContainer.appendChild(li1);
             
-            mockStorageGet({ searchHistoryList: ['Location 1'] });
+            mockChromeStorage({ searchHistoryList: ['Location 1'] });
             
             removeInstance.deleteFromHistoryList();
             
@@ -337,10 +301,10 @@ describe('Remove Component', () => {
         });
 
         test('should hide history ul and show empty message when all items deleted', () => {
-            const li1 = createMockListItem('Location 1', null, true);
+            const li1 = createMockListItem('Location 1', { isChecked: true });
             searchHistoryListContainer.appendChild(li1);
             
-            mockStorageGet({ searchHistoryList: ['Location 1'] });
+            mockChromeStorage({ searchHistoryList: ['Location 1'] });
             
             removeInstance.deleteFromHistoryList();
             
@@ -350,13 +314,13 @@ describe('Remove Component', () => {
         });
 
         test('should not change hasHistory when some items remain', () => {
-            const li1 = createMockListItem('Location 1', null, true);
-            const li2 = createMockListItem('Location 2', null, false);
+            const li1 = createMockListItem('Location 1', { isChecked: true });
+            const li2 = createMockListItem('Location 2', { isChecked: false });
             
             searchHistoryListContainer.appendChild(li1);
             searchHistoryListContainer.appendChild(li2);
             
-            mockStorageGet({ searchHistoryList: ['Location 1', 'Location 2'] });
+            mockChromeStorage({ searchHistoryList: ['Location 1', 'Location 2'] });
             
             removeInstance.deleteFromHistoryList();
             
@@ -364,10 +328,10 @@ describe('Remove Component', () => {
         });
 
         test('should handle items with no checked boxes', () => {
-            const li1 = createMockListItem('Location 1', null, false);
+            const li1 = createMockListItem('Location 1', { isChecked: false });
             searchHistoryListContainer.appendChild(li1);
             
-            mockStorageGet({ searchHistoryList: ['Location 1'] });
+            mockChromeStorage({ searchHistoryList: ['Location 1'] });
             
             removeInstance.deleteFromHistoryList();
             
@@ -387,8 +351,8 @@ describe('Remove Component', () => {
         });
 
         test('should remove checked items from DOM', () => {
-            const li1 = createMockListItem('Favorite 1', null, true);
-            const li2 = createMockListItem('Favorite 2', null, false);
+            const li1 = createMockListItem('Favorite 1', { isChecked: true });
+            const li2 = createMockListItem('Favorite 2', { isChecked: false });
             
             li1.className = 'favorite-list';
             li2.className = 'favorite-list';
@@ -396,7 +360,7 @@ describe('Remove Component', () => {
             favoriteListContainer.appendChild(li1);
             favoriteListContainer.appendChild(li2);
             
-            mockStorageGet({ favoriteList: ['Favorite 1', 'Favorite 2'] });
+            mockChromeStorage({ favoriteList: ['Favorite 1', 'Favorite 2'] });
             
             removeInstance.deleteFromFavoriteList();
             
@@ -406,11 +370,11 @@ describe('Remove Component', () => {
         });
 
         test('should handle items with clue text', () => {
-            const li1 = createMockListItem('Favorite 1', 'Clue 1', true);
+            const li1 = createMockListItem('Favorite 1', { clueText: 'Clue 1', isChecked: true });
             li1.className = 'favorite-list';
             favoriteListContainer.appendChild(li1);
             
-            mockStorageGet({ favoriteList: ['Favorite 1 @Clue 1'] });
+            mockChromeStorage({ favoriteList: ['Favorite 1 @Clue 1'] });
             
             removeInstance.deleteFromFavoriteList();
             
@@ -427,11 +391,11 @@ describe('Remove Component', () => {
             searchHistoryListContainer.appendChild(historyLi);
             
             // Create favorite item with same name
-            const favoriteLi = createMockListItem('Location 1', null, true);
+            const favoriteLi = createMockListItem('Location 1', { isChecked: true });
             favoriteLi.className = 'favorite-list';
             favoriteListContainer.appendChild(favoriteLi);
             
-            mockStorageGet({ favoriteList: ['Location 1'] });
+            mockChromeStorage({ favoriteList: ['Location 1'] });
             
             removeInstance.deleteFromFavoriteList();
             
@@ -439,8 +403,8 @@ describe('Remove Component', () => {
         });
 
         test('should update chrome storage with filtered list', () => {
-            const li1 = createMockListItem('Favorite 1', null, true);
-            const li2 = createMockListItem('Favorite 2', null, false);
+            const li1 = createMockListItem('Favorite 1', { isChecked: true });
+            const li2 = createMockListItem('Favorite 2', { isChecked: false });
             
             li1.className = 'favorite-list';
             li2.className = 'favorite-list';
@@ -448,7 +412,7 @@ describe('Remove Component', () => {
             favoriteListContainer.appendChild(li1);
             favoriteListContainer.appendChild(li2);
             
-            mockStorageGet({ favoriteList: ['Favorite 1', 'Favorite 2'] });
+            mockChromeStorage({ favoriteList: ['Favorite 1', 'Favorite 2'] });
             
             removeInstance.deleteFromFavoriteList();
             
@@ -458,11 +422,11 @@ describe('Remove Component', () => {
         });
 
         test('should set hasFavorite to false when all items deleted', () => {
-            const li1 = createMockListItem('Favorite 1', null, true);
+            const li1 = createMockListItem('Favorite 1', { isChecked: true });
             li1.className = 'favorite-list';
             favoriteListContainer.appendChild(li1);
             
-            mockStorageGet({ favoriteList: ['Favorite 1'] });
+            mockChromeStorage({ favoriteList: ['Favorite 1'] });
             
             removeInstance.deleteFromFavoriteList();
             
@@ -470,11 +434,11 @@ describe('Remove Component', () => {
         });
 
         test('should disable exportButton when all items deleted', () => {
-            const li1 = createMockListItem('Favorite 1', null, true);
+            const li1 = createMockListItem('Favorite 1', { isChecked: true });
             li1.className = 'favorite-list';
             favoriteListContainer.appendChild(li1);
             
-            mockStorageGet({ favoriteList: ['Favorite 1'] });
+            mockChromeStorage({ favoriteList: ['Favorite 1'] });
             
             removeInstance.deleteFromFavoriteList();
             
@@ -482,11 +446,11 @@ describe('Remove Component', () => {
         });
 
         test('should hide favorite ul and show empty message when all items deleted', () => {
-            const li1 = createMockListItem('Favorite 1', null, true);
+            const li1 = createMockListItem('Favorite 1', { isChecked: true });
             li1.className = 'favorite-list';
             favoriteListContainer.appendChild(li1);
             
-            mockStorageGet({ favoriteList: ['Favorite 1'] });
+            mockChromeStorage({ favoriteList: ['Favorite 1'] });
             
             removeInstance.deleteFromFavoriteList();
             
@@ -496,8 +460,8 @@ describe('Remove Component', () => {
         });
 
         test('should not change hasFavorite when some items remain', () => {
-            const li1 = createMockListItem('Favorite 1', null, true);
-            const li2 = createMockListItem('Favorite 2', null, false);
+            const li1 = createMockListItem('Favorite 1', { isChecked: true });
+            const li2 = createMockListItem('Favorite 2', { isChecked: false });
             
             li1.className = 'favorite-list';
             li2.className = 'favorite-list';
@@ -505,7 +469,7 @@ describe('Remove Component', () => {
             favoriteListContainer.appendChild(li1);
             favoriteListContainer.appendChild(li2);
             
-            mockStorageGet({ favoriteList: ['Favorite 1', 'Favorite 2'] });
+            mockChromeStorage({ favoriteList: ['Favorite 1', 'Favorite 2'] });
             
             removeInstance.deleteFromFavoriteList();
             
@@ -514,7 +478,7 @@ describe('Remove Component', () => {
 
         test('should handle history icon update when parent element is null', () => {
             // Create favorite item without corresponding history item
-            const favoriteLi = createMockListItem('Favorite 1', null, true);
+            const favoriteLi = createMockListItem('Favorite 1', { isChecked: true });
             favoriteLi.className = 'favorite-list';
             favoriteListContainer.appendChild(favoriteLi);
             
@@ -522,7 +486,7 @@ describe('Remove Component', () => {
             const orphanIcon = document.createElement('i');
             searchHistoryListContainer.appendChild(orphanIcon);
             
-            mockStorageGet({ favoriteList: ['Favorite 1'] });
+            mockChromeStorage({ favoriteList: ['Favorite 1'] });
             
             // Should not throw error
             expect(() => {
@@ -551,7 +515,7 @@ describe('Remove Component', () => {
         });
 
         test('should remove checked-list class when checkbox is unchecked', () => {
-            const li = createMockListItem('Location 1', null, true);
+            const li = createMockListItem('Location 1', { isChecked: true });
             li.classList.add('checked-list');
             const checkbox = li.querySelector('input');
             searchHistoryListContainer.appendChild(li);
@@ -606,7 +570,7 @@ describe('Remove Component', () => {
 
     describe('updateDeleteCount', () => {
         test('should enable delete button when items are checked', () => {
-            const li = createMockListItem('Location 1', null, true);
+            const li = createMockListItem('Location 1', { isChecked: true });
             searchHistoryListContainer.appendChild(li);
             searchHistoryButton.classList.add('active-button');
             
@@ -616,7 +580,7 @@ describe('Remove Component', () => {
         });
 
         test('should disable delete button when no items are checked', () => {
-            const li = createMockListItem('Location 1', null, false);
+            const li = createMockListItem('Location 1', { isChecked: false });
             searchHistoryListContainer.appendChild(li);
             searchHistoryButton.classList.add('active-button');
             
@@ -626,8 +590,8 @@ describe('Remove Component', () => {
         });
 
         test('should update button text with count for history list', () => {
-            const li1 = createMockListItem('Location 1', null, true);
-            const li2 = createMockListItem('Location 2', null, true);
+            const li1 = createMockListItem('Location 1', { isChecked: true });
+            const li2 = createMockListItem('Location 2', { isChecked: true });
             searchHistoryListContainer.appendChild(li1);
             searchHistoryListContainer.appendChild(li2);
             searchHistoryButton.classList.add('active-button');
@@ -638,9 +602,9 @@ describe('Remove Component', () => {
         });
 
         test('should update button text with count for favorite list', () => {
-            const li1 = createMockListItem('Favorite 1', null, true);
-            const li2 = createMockListItem('Favorite 2', null, true);
-            const li3 = createMockListItem('Favorite 3', null, true);
+            const li1 = createMockListItem('Favorite 1', { isChecked: true });
+            const li2 = createMockListItem('Favorite 2', { isChecked: true });
+            const li3 = createMockListItem('Favorite 3', { isChecked: true });
             favoriteListContainer.appendChild(li1);
             favoriteListContainer.appendChild(li2);
             favoriteListContainer.appendChild(li3);
@@ -660,7 +624,7 @@ describe('Remove Component', () => {
         });
 
         test('should use i18n for delete button text', () => {
-            const li = createMockListItem('Location 1', null, true);
+            const li = createMockListItem('Location 1', { isChecked: true });
             searchHistoryListContainer.appendChild(li);
             searchHistoryButton.classList.add('active-button');
             
@@ -796,7 +760,7 @@ describe('Remove Component', () => {
         });
 
         test('should uncheck checkboxes', () => {
-            const li = createMockListItem('Location 1', null, true);
+            const li = createMockListItem('Location 1', { isChecked: true });
             
             removeInstance.updateListElements([li], 'history');
             
@@ -855,7 +819,7 @@ describe('Remove Component', () => {
             searchHistoryListContainer.appendChild(li2);
             
             removeInstance.addRemoveListener();
-            mockStorageGet({ searchHistoryList: ['Location 1', 'Location 2'] });
+            mockChromeStorage({ searchHistoryList: ['Location 1', 'Location 2'] });
             
             // Enter delete mode
             deleteListButton.click();
@@ -880,7 +844,7 @@ describe('Remove Component', () => {
             favoriteListContainer.appendChild(li2);
             
             removeInstance.addRemoveListener();
-            mockStorageGet({ favoriteList: ['Favorite 1', 'Favorite 2'] });
+            mockChromeStorage({ favoriteList: ['Favorite 1', 'Favorite 2'] });
             
             // Enter delete mode
             searchHistoryButton.classList.remove('active-button');
@@ -929,7 +893,7 @@ describe('Remove Component', () => {
 
     describe('Edge Cases', () => {
         test('should handle empty search history list', () => {
-            mockStorageGet({ searchHistoryList: [] });
+            mockChromeStorage({ searchHistoryList: [] });
             
             expect(() => {
                 removeInstance.deleteFromHistoryList();
@@ -937,7 +901,7 @@ describe('Remove Component', () => {
         });
 
         test('should handle empty favorite list', () => {
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
             
             expect(() => {
                 removeInstance.deleteFromFavoriteList();
@@ -945,11 +909,11 @@ describe('Remove Component', () => {
         });
 
         test('should handle undefined favorite list in storage', () => {
-            const li = createMockListItem('Favorite 1', null, true);
+            const li = createMockListItem('Favorite 1', { isChecked: true });
             li.className = 'favorite-list';
             favoriteListContainer.appendChild(li);
             
-            mockStorageGet({});
+            mockChromeStorage({});
             
             // Should not crash when favoriteList is undefined
             expect(() => {
@@ -962,7 +926,7 @@ describe('Remove Component', () => {
             searchHistoryListContainer.appendChild(li);
             li.querySelector('input').checked = true;
             
-            mockStorageGet({ searchHistoryList: ['!@#$%^&*()'] });
+            mockChromeStorage({ searchHistoryList: ['!@#$%^&*()'] });
             
             expect(() => {
                 removeInstance.deleteFromHistoryList();
@@ -975,7 +939,7 @@ describe('Remove Component', () => {
             searchHistoryListContainer.appendChild(li);
             li.querySelector('input').checked = true;
             
-            mockStorageGet({ searchHistoryList: [longText] });
+            mockChromeStorage({ searchHistoryList: [longText] });
             
             expect(() => {
                 removeInstance.deleteFromHistoryList();
@@ -983,10 +947,10 @@ describe('Remove Component', () => {
         });
 
         test('should handle missing storage data', () => {
-            const li = createMockListItem('Location 1', null, true);
+            const li = createMockListItem('Location 1', { isChecked: true });
             searchHistoryListContainer.appendChild(li);
             
-            mockStorageGet({});
+            mockChromeStorage({});
             
             // Should not crash, though storage callback won't execute properly
             expect(() => {
@@ -1019,7 +983,7 @@ describe('Remove Component', () => {
             
             favoriteListContainer.appendChild(li);
             
-            mockStorageGet({ favoriteList: ['Location @Clue 1'] });
+            mockChromeStorage({ favoriteList: ['Location @Clue 1'] });
             
             // Should handle extra spans gracefully
             expect(() => {

@@ -237,10 +237,19 @@ const originalWarn = console.warn;
 beforeAll(() => {
   // Suppress expected warnings in tests
   console.error = jest.fn((...args) => {
+    const firstArg = args[0];
+    const errorString = String(firstArg);
+    
+    // Check for JSDOM navigation errors
     if (
-      typeof args[0] === 'string' &&
-      (args[0].includes('Not implemented: HTMLFormElement.prototype.submit') ||
-       args[0].includes('Warning: ReactDOM.render'))
+      (typeof firstArg === 'string' &&
+       (firstArg.includes('Not implemented: HTMLFormElement.prototype.submit') ||
+        firstArg.includes('Warning: ReactDOM.render') ||
+        firstArg.includes('Not implemented: navigation'))) ||
+      (firstArg instanceof Error && 
+       (firstArg.message?.includes('Not implemented: navigation') ||
+        firstArg.message?.includes('Not implemented: HTMLFormElement'))) ||
+      errorString.includes('Not implemented: navigation')
     ) {
       return;
     }

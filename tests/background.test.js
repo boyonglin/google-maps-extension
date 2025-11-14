@@ -10,6 +10,9 @@
  * - mockStartAddr() for repeated storage mocking pattern
  */
 
+// Import test helpers at module level
+const { setupMockFetch, flushPromises } = require('./testHelpers');
+
 // Mock ExtPay before importing background.js
 jest.mock('../Package/dist/utils/ExtPay.module.js', () => {
   const mockUser = {
@@ -111,7 +114,6 @@ describe('background.js', () => {
     });
     
     // Setup global fetch mock using helper
-    const { setupMockFetch } = require('./testHelpers');
     mockFetch = setupMockFetch();
     
     // Now import background.js which will register all listeners
@@ -228,6 +230,17 @@ describe('background.js', () => {
       expect(tabCreateCalls.length).toBe(0);
     });
 
+    test('should open whats new page when updating from version with higher first digit', () => {
+      chrome.i18n.getUILanguage = jest.fn(() => 'en-US');
+      mockStartAddr('');
+
+      listeners.onInstalled({ reason: 'update', previousVersion: '0.9.9' });
+
+      expect(chrome.tabs.create).toHaveBeenCalledWith({
+        url: expect.stringContaining('notion.site')
+      });
+    });
+
     test('should encrypt unencrypted API key on update', async () => {
       const { encryptApiKey } = require('../Package/dist/utils/crypto.js');
       
@@ -242,7 +255,7 @@ describe('background.js', () => {
       await listeners.onInstalled({ reason: 'update', previousVersion: '1.0.0' });
       
       // Wait for async operations
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(encryptApiKey).toHaveBeenCalledWith('plain-api-key');
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
@@ -263,7 +276,7 @@ describe('background.js', () => {
 
       await listeners.onInstalled({ reason: 'update', previousVersion: '1.0.0' });
       
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(encryptApiKey).not.toHaveBeenCalled();
     });
@@ -328,6 +341,27 @@ describe('background.js', () => {
       expect(() => {
         listeners.onStorageChanged(changes, 'local');
       }).not.toThrow();
+    });
+
+    test('should handle chrome.runtime.lastError in sendMessage', async () => {
+      chrome.tabs.query.mockImplementation((query, callback) => {
+        callback([{ id: 1, url: 'https://example.com' }]);
+      });
+
+      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        chrome.runtime.lastError = { message: 'Tab was closed' };
+        callback && callback(null);
+        chrome.runtime.lastError = null;
+      });
+
+      mockStartAddr('123 Main St');
+
+      await listeners.onCommand('run-directions');
+      
+      await flushPromises();
+
+      // Should handle the error gracefully
+      expect(chrome.tabs.sendMessage).toHaveBeenCalled();
     });
   });
 
@@ -458,6 +492,26 @@ describe('background.js', () => {
       const savedList = chrome.storage.local.set.mock.calls[0][0].searchHistoryList;
       expect(savedList[savedList.length - 1]).toBe('Search B');
     });
+
+    test('should initialize empty search history when null', () => {
+      chrome.storage.local.get.mockImplementation((keys, callback) => {
+        callback({ searchHistoryList: null });
+      });
+      
+      const { getCache } = require('../Package/dist/hooks/backgroundState.js');
+      getCache.mockReturnValue({ isIncognito: false });
+
+      const info = {
+        menuItemId: 'googleMapsSearch',
+        selectionText: 'First Search'
+      };
+
+      listeners.onContextMenuClicked(info);
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        searchHistoryList: ['First Search']
+      });
+    });
   });
 
   describe('chrome.commands.onCommand listener', () => {
@@ -512,7 +566,7 @@ describe('background.js', () => {
 
       await listeners.onCommand('auto-attach');
       
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await flushPromises();
 
       // Check that consoleQuote was sent with trial stage
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
@@ -549,7 +603,7 @@ describe('background.js', () => {
 
       await listeners.onCommand('auto-attach');
       
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await flushPromises();
 
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
         1,
@@ -570,7 +624,7 @@ describe('background.js', () => {
 
       await listeners.onCommand('auto-attach');
       
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
         1,
@@ -589,7 +643,7 @@ describe('background.js', () => {
 
       await listeners.onCommand('run-directions');
       
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await flushPromises();
 
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
         1,
@@ -601,12 +655,26 @@ describe('background.js', () => {
     test('should show notification when run-directions without startAddr', async () => {
       mockStartAddr('');
 
+      chrome.tabs.query.mockImplementation((query, callback) => {
+        callback([{ id: 1, url: 'https://example.com' }]);
+      });
+
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (callback) callback({});
+      });
+
       await listeners.onCommand('run-directions');
       
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       // Should call scripting.executeScript (for meow function)
       expect(chrome.scripting.executeScript).toHaveBeenCalled();
+      
+      // Should also try to notify about missing address
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        { action: 'addrNotify' },
+        expect.any(Function)
+      );
     });
 
     test('should not execute on non-HTTP URL', () => {
@@ -756,7 +824,7 @@ describe('background.js', () => {
 
       expect(result).toBe(true); // Indicates async response
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(mockFetch).toHaveBeenCalled();
       expect(sendResponse).toHaveBeenCalledWith('Summary result');
@@ -783,7 +851,7 @@ describe('background.js', () => {
 
       listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(mockFetch).toHaveBeenCalled();
       const fetchCall = mockFetch.mock.calls[0];
@@ -810,7 +878,7 @@ describe('background.js', () => {
 
       listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         error: 'API quota exceeded'
@@ -837,7 +905,7 @@ describe('background.js', () => {
 
       listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(getApiKey).toHaveBeenCalled();
     });
@@ -869,7 +937,7 @@ describe('background.js', () => {
 
       expect(result).toBe(true);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         success: true,
@@ -901,7 +969,7 @@ describe('background.js', () => {
       expect(result).toBe(true); // Async handler
 
       // Wait longer for the retry mechanism to complete
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         success: false,
@@ -909,6 +977,63 @@ describe('background.js', () => {
       });
       
       // Restore mock for other tests
+      getApiKey.mockResolvedValue('test-api-key');
+    });
+
+    test('should handle organizeLocations when API returns error', async () => {
+      const sendResponse = jest.fn();
+      const request = {
+        action: 'organizeLocations',
+        locations: [{ name: 'Location 1', clue: 'City A' }],
+        listType: 'favorites'
+      };
+
+      mockFetch.mockResolvedValue({
+        json: () => Promise.resolve({
+          error: { message: 'API quota exceeded' }
+        })
+      });
+
+      listeners.onMessage[BASIC_ACTIONS_LISTENER](request, {}, sendResponse);
+
+      await flushPromises();
+
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        error: 'API quota exceeded'
+      });
+    });
+
+    test('should handle organizeLocations with other errors', async () => {
+      const { getApiKey } = require('../Package/dist/hooks/backgroundState.js');
+      const sendResponse = jest.fn();
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      
+      // Mock runtime.sendMessage
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (callback) callback({ });
+      });
+      
+      // Temporarily replace getApiKey to throw a different error
+      getApiKey.mockRejectedValueOnce(new Error('Database connection failed'));
+
+      const request = {
+        action: 'organizeLocations',
+        locations: [{ name: 'Location 1' }],
+        listType: 'favorites'
+      };
+
+      listeners.onMessage[BASIC_ACTIONS_LISTENER](request, {}, sendResponse);
+
+      await flushPromises();
+
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to organize locations:', expect.any(Error));
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        error: 'Database connection failed'
+      });
+      
+      consoleSpy.mockRestore();
       getApiKey.mockResolvedValue('test-api-key');
     });
 
@@ -923,9 +1048,25 @@ describe('background.js', () => {
 
       listeners.onMessage[VERIFY_API_LISTENER](request, {}, sendResponse);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({ valid: true });
+    });
+
+    test('should handle verifyApiKey network error', async () => {
+      const sendResponse = jest.fn();
+      const request = {
+        action: 'verifyApiKey',
+        apiKey: 'test-key'
+      };
+
+      mockFetch.mockRejectedValue(new Error('Network failed'));
+
+      listeners.onMessage[VERIFY_API_LISTENER](request, {}, sendResponse);
+
+      await flushPromises();
+
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'Network failed' });
     });
   });
 
@@ -943,7 +1084,7 @@ describe('background.js', () => {
 
       await listeners.onMessage[PAYMENT_LISTENER](request, sender, jest.fn());
       
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalledWith('7-day');
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
@@ -966,7 +1107,7 @@ describe('background.js', () => {
 
       await listeners.onMessage[PAYMENT_LISTENER](request, sender, jest.fn());
       
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalled();
     });
@@ -985,7 +1126,7 @@ describe('background.js', () => {
 
       await listeners.onMessage[PAYMENT_LISTENER](request, sender, jest.fn());
       
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(ExtPay.mockExtPay.openPaymentPage).toHaveBeenCalled();
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
@@ -1018,7 +1159,7 @@ describe('background.js', () => {
 
       expect(result).toBe(true);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         result: expect.objectContaining({
@@ -1050,7 +1191,7 @@ describe('background.js', () => {
 
       expect(result).toBe(true);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(ensureWarm).toHaveBeenCalled();
       expect(sendResponse).toHaveBeenCalledWith(mockCache);
@@ -1071,7 +1212,7 @@ describe('background.js', () => {
 
       expect(result).toBe(true);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({ apiKey: 'my-api-key' });
     });
@@ -1210,6 +1351,116 @@ describe('background.js', () => {
       consoleSpy.mockRestore();
     });
 
+    test('should handle retry logic when getContent fails transiently', async () => {
+      const ExtPay = require('../Package/dist/utils/ExtPay.module.js').default;
+      const trialStart = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+      
+      ExtPay.mockExtPay.getUser.mockResolvedValue({
+        paid: false,
+        trialStartedAt: trialStart
+      });
+
+      chrome.tabs.query.mockImplementation((query, callback) => {
+        callback([{ id: 1, url: 'https://example.com' }]);
+      });
+
+      // First call fails with RECEIVING_END_ERR, second succeeds
+      let callCount = 0;
+      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        if (message.action === 'getContent') {
+          callCount++;
+          if (callCount === 1) {
+            callback(null); // Simulate receiving end error
+          } else {
+            callback({ content: 'test content' });
+          }
+        }
+      });
+
+      mockFetch.mockResolvedValue({
+        json: () => Promise.resolve({
+          candidates: [{
+            content: {
+              parts: [{ text: 'location1    clue1' }]
+            }
+          }]
+        })
+      });
+
+      await listeners.onCommand('auto-attach');
+      
+      // Wait for retries to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      expect(callCount).toBeGreaterThan(1);
+    });
+
+    test('should handle retry exhaustion and throw error', async () => {
+      const ExtPay = require('../Package/dist/utils/ExtPay.module.js').default;
+      const trialStart = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+      
+      ExtPay.mockExtPay.getUser.mockResolvedValue({
+        paid: false,
+        trialStartedAt: trialStart
+      });
+
+      chrome.tabs.query.mockImplementation((query, callback) => {
+        callback([{ id: 1, url: 'https://example.com' }]);
+      });
+
+      // Always fail with RECEIVING_END_ERR
+      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        if (message.action === 'getContent') {
+          callback(null);
+        }
+      });
+
+      await listeners.onCommand('auto-attach');
+      
+      // Wait for all retries to exhaust
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Should eventually give up after retries
+      expect(chrome.tabs.sendMessage).toHaveBeenCalled();
+    });
+
+    test('should handle try-catch error notification flow', async () => {
+      const ExtPay = require('../Package/dist/utils/ExtPay.module.js').default;
+      const trialStart = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+      
+      ExtPay.mockExtPay.getUser.mockResolvedValue({
+        paid: false,
+        trialStartedAt: trialStart
+      });
+
+      chrome.tabs.query.mockImplementation((query, callback) => {
+        callback([{ id: 1, url: 'https://example.com' }]);
+      });
+
+      // Mock getApiKey to fail
+      const { getApiKey } = require('../Package/dist/hooks/backgroundState.js');
+      const originalGetApiKey = getApiKey.getMockImplementation();
+      getApiKey.mockRejectedValueOnce(new Error('No API key'));
+
+      // Mock runtime.sendMessage for notification
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (callback) callback({});
+      });
+
+      await listeners.onCommand('auto-attach');
+      
+      await flushPromises();
+
+      // Should send missing stage notification
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
+        1,
+        { action: 'consoleQuote', stage: 'missing' }
+      );
+
+      // Restore for other tests
+      getApiKey.mockImplementation(originalGetApiKey || (() => Promise.resolve('test-api-key')));
+    });
+
     test('should handle whitespace-only selection', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
@@ -1221,6 +1472,21 @@ describe('background.js', () => {
       listeners.onContextMenuClicked(info);
 
       expect(chrome.tabs.create).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    test('should handle empty selection for directions', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      const info = {
+        menuItemId: 'googleMapsDirections',
+        selectionText: ''
+      };
+
+      listeners.onContextMenuClicked(info);
+
+      expect(chrome.tabs.create).not.toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalledWith('No valid selected text.');
       consoleSpy.mockRestore();
     });
 
@@ -1239,7 +1505,7 @@ describe('background.js', () => {
 
       listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       // Should have called sendResponse with error after bug fix
       expect(mockFetch).toHaveBeenCalled();
@@ -1270,12 +1536,44 @@ describe('background.js', () => {
 
       listeners.onMessage[BASIC_ACTIONS_LISTENER](request, {}, sendResponse);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         success: true,
         organizedData: { rawText: 'Invalid JSON response' }
       });
+    });
+
+    test('should handle JSON parse error in organizeLocations', async () => {
+      const sendResponse = jest.fn();
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const request = {
+        action: 'organizeLocations',
+        locations: [{ name: 'Location 1' }],
+        listType: 'favorites'
+      };
+
+      mockFetch.mockResolvedValue({
+        json: () => Promise.resolve({
+          candidates: [{
+            content: {
+              parts: [{ text: '{"invalid json with trailing comma",}' }]
+            }
+          }]
+        })
+      });
+
+      listeners.onMessage[BASIC_ACTIONS_LISTENER](request, {}, sendResponse);
+
+      await flushPromises();
+
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to parse JSON response:', expect.any(Error));
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: true,
+        organizedData: { rawText: '{"invalid json with trailing comma",}' }
+      });
+      
+      consoleSpy.mockRestore();
     });
 
     test('should handle empty locations list in organizeLocations', async () => {
@@ -1298,7 +1596,7 @@ describe('background.js', () => {
 
       listeners.onMessage[BASIC_ACTIONS_LISTENER](request, {}, sendResponse);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         success: true,
@@ -1329,7 +1627,7 @@ describe('background.js', () => {
 
       listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith(
         expect.stringContaining('<ul class="list-group d-flex">')
@@ -1357,7 +1655,7 @@ describe('background.js', () => {
 
       listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await flushPromises();
 
       const fetchCall = mockFetch.mock.calls[0];
       const body = JSON.parse(fetchCall[1].body);

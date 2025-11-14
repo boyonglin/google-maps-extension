@@ -96,7 +96,10 @@ const cleanupGlobalDOMElements = () => {
 const setupApiKeyStorage = (encryptedKey = 'encrypted_key', aesKey = 'test_aes_key') => {
     const storageData = { geminiApiKey: encryptedKey, aesKey };
     chrome.storage.local.get.mockResolvedValue(storageData);
-    mockRuntimeMessage(storageData);
+    // Mock runtime message to return storage data for any action
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback(storageData);
+    });
     return storageData;
 };
 
@@ -140,9 +143,8 @@ const {
     mockI18n, 
     cleanupDOM,
     wait,
-    mockRuntimeMessage,
-    mockStorageGet,
-    mockStorageSet
+    mockChromeRuntimeMessage,
+    mockChromeStorage
 } = require('./testHelpers');
 
 // Now require Modal after setting up all mocks
@@ -239,7 +241,7 @@ describe('Modal Component - Full Coverage', () => {
         test('should encrypt and store valid API key', async () => {
             await modalInstance.addModalListener();
 
-            mockRuntimeMessage({ valid: true });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ valid: true }); });
 
             const form = document.getElementById('apiForm');
             submitForm(form, apiInput, 'test-api-key-12345');
@@ -293,7 +295,7 @@ describe('Modal Component - Full Coverage', () => {
         test('should handle invalid API key response', async () => {
             await modalInstance.addModalListener();
 
-            mockRuntimeMessage({ valid: false });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ valid: false }); });
 
             const form = document.getElementById('apiForm');
             submitForm(form, apiInput, 'invalid-key');
@@ -309,7 +311,7 @@ describe('Modal Component - Full Coverage', () => {
         test('should handle API verification error', async () => {
             await modalInstance.addModalListener();
 
-            mockRuntimeMessage({ error: 'Network error' });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ error: 'Network error' }); });
 
             const form = document.getElementById('apiForm');
             submitForm(form, apiInput, 'test-key');
@@ -460,7 +462,7 @@ describe('Modal Component - Full Coverage', () => {
     describe('addModalListener - Incognito Toggle', () => {
         test('should toggle incognito from false to true', async () => {
             setupIncognitoStorage(false);
-            mockStorageSet();
+            mockChromeStorage({}, () => {}); // Setup storage.set mock
 
             const updateSpy = jest.spyOn(modalInstance, 'updateIncognitoModal');
 

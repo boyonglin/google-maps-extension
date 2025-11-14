@@ -11,6 +11,7 @@
  */
 
 const { setupPopupDOM, teardownPopupDOM } = require('./popupDOMFixture');
+const { flushPromises } = require('./testHelpers');
 const State = require('../Package/dist/hooks/popupState');
 const Remove = require('../Package/dist/components/remove');
 const Favorite = require('../Package/dist/components/favorite');
@@ -123,7 +124,7 @@ describe('popup.js', () => {
       popup.initializePopup();
       
       // Wait for async operations
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await flushPromises();
       
       expect(mockRemove.addRemoveListener).toHaveBeenCalled();
       expect(mockFavorite.addFavoritePageListener).toHaveBeenCalled();

@@ -34,14 +34,13 @@ global.fetch = jest.fn();
 // Load the module
 const Gemini = require('../Package/dist/components/gemini.js');
 const { 
-    mockStorageGet, 
+    mockChromeStorage, 
     mockI18n, 
-    cleanupDOM, 
+    cleanupDOM,
     wait,
     createMockListItem,
     mockTabsQuery,
-    mockTabsSendMessage,
-    mockRuntimeMessage
+    mockTabsSendMessage
 } = require('./testHelpers');
 
 describe('Gemini Component', () => {
@@ -137,7 +136,7 @@ describe('Gemini Component', () => {
             summaryListContainer.appendChild(mockItem);
 
             state.buildSearchUrl.mockResolvedValue('https://maps.test/search');
-            mockRuntimeMessage({});
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({}); });
 
             const clickEvent = new MouseEvent('click', { bubbles: true });
             Object.defineProperty(clickEvent, 'target', { value: mockItem, enumerable: true });
@@ -159,7 +158,7 @@ describe('Gemini Component', () => {
             const span = mockItem.querySelector('span');
 
             state.buildSearchUrl.mockResolvedValue('https://maps.test/search');
-            mockRuntimeMessage({});
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({}); });
 
             const clickEvent = new MouseEvent('click', { bubbles: true });
             Object.defineProperty(clickEvent, 'target', { value: span, enumerable: true });
@@ -181,7 +180,7 @@ describe('Gemini Component', () => {
             const icon = mockItem.querySelector('i');
 
             state.buildSearchUrl.mockResolvedValue('https://maps.test/search');
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
 
             const clickEvent = new MouseEvent('click', { bubbles: true });
             Object.defineProperty(clickEvent, 'target', { value: icon, enumerable: true });
@@ -202,7 +201,7 @@ describe('Gemini Component', () => {
             const icon = mockItem.querySelector('i');
 
             state.buildSearchUrl.mockResolvedValue('https://maps.test/search');
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
 
             const clickEvent = new MouseEvent('click', { bubbles: true });
             Object.defineProperty(clickEvent, 'target', { value: icon, enumerable: true });
@@ -222,7 +221,7 @@ describe('Gemini Component', () => {
             const icon = mockItem.querySelector('i');
 
             state.buildSearchUrl.mockResolvedValue('https://maps.test/search');
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
 
             const clickEvent = new MouseEvent('click', { bubbles: true });
             Object.defineProperty(clickEvent, 'target', { value: icon, enumerable: true });
@@ -245,7 +244,7 @@ describe('Gemini Component', () => {
 
             state.buildSearchUrl.mockResolvedValue('https://maps.test/search');
             const mockFavorites = ['Restaurant'];
-            mockStorageGet({ favoriteList: mockFavorites });
+            mockChromeStorage({ favoriteList: mockFavorites });
 
             const clickEvent = new MouseEvent('click', { bubbles: true });
             Object.defineProperty(clickEvent, 'target', { value: icon, enumerable: true });
@@ -435,7 +434,7 @@ describe('Gemini Component', () => {
 
     describe('fetchAPIKey', () => {
         test('should verify valid API key and update placeholder', async () => {
-            mockRuntimeMessage({ valid: true });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ valid: true }); });
 
             geminiInstance.fetchAPIKey('test-api-key-1234');
 
@@ -450,7 +449,7 @@ describe('Gemini Component', () => {
         });
 
         test('should handle invalid API key', async () => {
-            mockRuntimeMessage({ valid: false });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ valid: false }); });
 
             geminiInstance.fetchAPIKey('invalid-key');
 
@@ -461,7 +460,7 @@ describe('Gemini Component', () => {
         });
 
         test('should handle API key verification error', async () => {
-            mockRuntimeMessage({ error: 'Network error' });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ error: 'Network error' }); });
 
             geminiInstance.fetchAPIKey('test-key');
 
@@ -479,7 +478,7 @@ describe('Gemini Component', () => {
         });
 
         test('should set default placeholder message initially', async () => {
-            mockRuntimeMessage({ valid: true });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ valid: true }); });
 
             geminiInstance.fetchAPIKey('test-key');
 
@@ -612,7 +611,7 @@ describe('Gemini Component', () => {
         test('should clear expired summary data (older than 24 hours)', () => {
             const oldTimestamp = Date.now() - (86401 * 1000); // 1 second over 24 hours
             
-            mockStorageGet({
+            mockChromeStorage({
                 summaryList: [{ name: 'Place', clue: 'Info' }],
                 timestamp: oldTimestamp,
                 favoriteList: []
@@ -640,7 +639,7 @@ describe('Gemini Component', () => {
             favorite.createFavoriteIcon.mockReturnValue(document.createElement('i'));
             geminiInstance.constructSummaryHTML = jest.fn().mockReturnValue('<ul></ul>');
 
-            mockStorageGet({
+            mockChromeStorage({
                 summaryList,
                 timestamp: recentTimestamp,
                 favoriteList
@@ -658,7 +657,7 @@ describe('Gemini Component', () => {
         });
 
         test('should handle empty summary list', () => {
-            mockStorageGet({
+            mockChromeStorage({
                 summaryList: [],
                 timestamp: null,
                 favoriteList: []
@@ -677,7 +676,7 @@ describe('Gemini Component', () => {
             state.summaryListChanged = true;
             geminiInstance.constructSummaryHTML = jest.fn().mockReturnValue('<ul><li>Place</li></ul>');
 
-            mockStorageGet({
+            mockChromeStorage({
                 summaryList,
                 timestamp: recentTimestamp,
                 favoriteList: []
@@ -698,7 +697,7 @@ describe('Gemini Component', () => {
             summaryListContainer.innerHTML = '<ul><li>Place</li></ul>';
             geminiInstance.updateSummaryFavoriteIcons = jest.fn();
 
-            mockStorageGet({
+            mockChromeStorage({
                 summaryList,
                 timestamp: recentTimestamp,
                 favoriteList
@@ -843,7 +842,7 @@ describe('Gemini Component', () => {
         test('should process video summarization successfully', async () => {
             const mockResponse = '<ul><li>Summary item 1</li></ul>';
             
-            mockRuntimeMessage(mockResponse);
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback(mockResponse); });
 
             geminiInstance.summarizeFromGeminiVideoUnderstanding('https://youtube.com/watch?v=test123');
 
@@ -865,8 +864,8 @@ describe('Gemini Component', () => {
         test('should handle video summarization error', async () => {
             const mockError = { error: 'API error' };
             
-            mockStorageGet({ currentVideoInfo: null });
-            mockRuntimeMessage(mockError);
+            mockChromeStorage({ currentVideoInfo: null });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback(mockError); });
 
             geminiInstance.summarizeFromGeminiVideoUnderstanding('https://youtube.com/watch?v=test123');
 
@@ -876,7 +875,7 @@ describe('Gemini Component', () => {
         });
 
         test('should call chrome.storage to get video info for time estimate', async () => {
-            mockRuntimeMessage('<ul></ul>');
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback('<ul></ul>'); });
 
             geminiInstance.summarizeFromGeminiVideoUnderstanding('https://youtube.com/watch?v=test123');
 
@@ -900,7 +899,7 @@ describe('Gemini Component', () => {
         });
 
         test('should expand YouTube description and summarize', async () => {
-            mockRuntimeMessage({ apiKey: 'test-api-key' });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ apiKey: 'test-api-key' }); });
             mockTabsQuery([{ id: 1, url: 'https://www.youtube.com/watch?v=test' }]);
             mockTabsSendMessage({});
 
@@ -928,7 +927,7 @@ describe('Gemini Component', () => {
         });
 
         test('should summarize non-YouTube page directly', async () => {
-            mockRuntimeMessage({ apiKey: 'test-api-key' });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ apiKey: 'test-api-key' }); });
             mockTabsQuery([{ id: 1, url: 'https://www.example.com' }]);
             mockTabsSendMessage({});
 
@@ -946,7 +945,7 @@ describe('Gemini Component', () => {
         test('should handle content script error', async () => {
             geminiInstance.ResponseErrorMsg = jest.fn();
             
-            mockRuntimeMessage({ apiKey: 'test-api-key' });
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ apiKey: 'test-api-key' }); });
             mockTabsQuery([{ id: 1, url: 'https://www.example.com' }]);
             mockTabsSendMessage(undefined, true);
 
@@ -1056,7 +1055,7 @@ describe('Gemini Component', () => {
 
         test('should summarize content successfully', async () => {
             const mockResponse = '<ul><li>Summary</li></ul>';
-            mockRuntimeMessage(mockResponse);
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback(mockResponse); });
 
             geminiInstance.summarizeContent('content', 'api-key', 'https://example.com');
 
@@ -1078,7 +1077,7 @@ describe('Gemini Component', () => {
 
         test('should handle API error', async () => {
             const mockError = { error: 'API rate limit exceeded' };
-            mockRuntimeMessage(mockError);
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback(mockError); });
 
             geminiInstance.summarizeContent('content', 'api-key', 'https://example.com');
 
@@ -1091,7 +1090,7 @@ describe('Gemini Component', () => {
 
         test('should handle HTML parsing error', async () => {
             const invalidResponse = 'Not valid HTML';
-            mockRuntimeMessage(invalidResponse);
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback(invalidResponse); });
             geminiInstance.createSummaryList.mockImplementation(() => {
                 throw new Error('Parse error');
             });
@@ -1129,7 +1128,7 @@ describe('Gemini Component', () => {
                 </ul>
             `;
 
-            mockStorageGet({ favoriteList: ['Place 1'] });
+            mockChromeStorage({ favoriteList: ['Place 1'] });
 
             geminiInstance.createSummaryList(mockResponse);
 
@@ -1152,7 +1151,7 @@ describe('Gemini Component', () => {
                 </ul>
             `;
 
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
 
             geminiInstance.createSummaryList(mockResponse);
 
@@ -1164,7 +1163,7 @@ describe('Gemini Component', () => {
             geminiEmptyMessage.classList.add('shineText');
             const mockResponse = '<ul><li class="summary-list"><span>Place</span></li></ul>';
 
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
 
             geminiInstance.createSummaryList(mockResponse);
 
@@ -1181,7 +1180,7 @@ describe('Gemini Component', () => {
                 </ul>
             `;
 
-            mockStorageGet({ favoriteList: [], isIncognito: false });
+            mockChromeStorage({ favoriteList: [], isIncognito: false });
 
             geminiInstance.createSummaryList(mockResponse);
 
@@ -1196,7 +1195,7 @@ describe('Gemini Component', () => {
         test('should not store summary in incognito mode', () => {
             const mockResponse = '<ul><li class="summary-list"><span>Place</span></li></ul>';
 
-            mockStorageGet({ favoriteList: [], isIncognito: true });
+            mockChromeStorage({ favoriteList: [], isIncognito: true });
 
             geminiInstance.createSummaryList(mockResponse);
 
@@ -1213,7 +1212,7 @@ describe('Gemini Component', () => {
             mockIcon.className = 'bi bi-patch-check-fill';
 
             favorite.createFavoriteIcon.mockReturnValue(mockIcon);
-            mockStorageGet({ favoriteList: ['Place'] });
+            mockChromeStorage({ favoriteList: ['Place'] });
 
             geminiInstance.createSummaryList(mockResponse);
 
@@ -1223,7 +1222,7 @@ describe('Gemini Component', () => {
         test('should handle items without clue spans', () => {
             const mockResponse = '<ul><li class="summary-list"><span>Place</span></li></ul>';
 
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
 
             geminiInstance.createSummaryList(mockResponse);
 
@@ -1314,7 +1313,7 @@ describe('Gemini Component', () => {
 
         test('should handle empty summary list from API', () => {
             const mockResponse = '<ul class="list-group"></ul>';
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
 
             geminiInstance.createSummaryList(mockResponse);
 
@@ -1323,7 +1322,7 @@ describe('Gemini Component', () => {
 
         test('should handle malformed HTML response gracefully', () => {
             const mockResponse = '<div>Not a list</div>';
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
 
             expect(() => {
                 geminiInstance.createSummaryList(mockResponse);
@@ -1337,7 +1336,7 @@ describe('Gemini Component', () => {
                     <span class="d-none">   </span>
                 </li></ul>
             `;
-            mockStorageGet({ favoriteList: [] });
+            mockChromeStorage({ favoriteList: [] });
 
             geminiInstance.createSummaryList(mockResponse);
 
@@ -1351,7 +1350,7 @@ describe('Gemini Component', () => {
         test('should handle clearExpiredSummary with exactly 24 hours', () => {
             const exactTimestamp = Date.now() - (86400 * 1000);
             
-            mockStorageGet({
+            mockChromeStorage({
                 summaryList: [{ name: 'Place', clue: '' }],
                 timestamp: exactTimestamp,
                 favoriteList: []
@@ -1364,7 +1363,7 @@ describe('Gemini Component', () => {
         });
 
         test('should handle video summary requests', async () => {
-            mockRuntimeMessage('<ul></ul>');
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback('<ul></ul>'); });
 
             geminiInstance.summarizeFromGeminiVideoUnderstanding('https://youtube.com/watch?v=test');
 
@@ -1399,7 +1398,7 @@ describe('Gemini Component', () => {
             summaryListContainer.appendChild(mockItem);
 
             state.buildSearchUrl.mockResolvedValue('https://maps.test/search');
-            mockRuntimeMessage({});
+            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({}); });
 
             const clickEvent = new MouseEvent('click', { bubbles: true });
             Object.defineProperty(clickEvent, 'target', { value: mockItem, enumerable: true });

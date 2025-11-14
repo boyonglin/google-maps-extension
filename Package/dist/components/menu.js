@@ -270,8 +270,6 @@ class ContextMenuUtil {
                 if (element) {
                     element.classList.add("mb-3");
                     container.appendChild(element);
-                } else {
-                    this.logMissingElement(location.name, elementsList);
                 }
             });
 
@@ -316,15 +314,6 @@ class ContextMenuUtil {
             return itemText.toLowerCase().includes(normalized) ||
                    normalized.includes(itemText.toLowerCase());
         });
-    }
-
-    static logMissingElement(locationName, elementsList) {
-        const availableNames = elementsList
-            .map(item => item.querySelector("span")?.textContent.trim())
-            .filter(Boolean);
-
-        console.log(`Could not find element for location: "${locationName}"`);
-        console.log("Available original element names:", availableNames);
     }
 
     static updateBoundaryItemSpacing(hasFlexReverse, container) {

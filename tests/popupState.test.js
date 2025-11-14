@@ -1,5 +1,5 @@
-const State = require('../Package/dist/hooks/popupState.js');
-const { setupMockResponse } = require('./testHelpers');
+const State = require('../Package/dist/hooks/popupState');
+const { mockChromeRuntimeMessage } = require('./testHelpers');
 
 describe('State Class', () => {
   let state;
@@ -10,7 +10,7 @@ describe('State Class', () => {
   });
 
   const testBuildSearchUrl = async (query, expectedUrl, expectedMessage) => {
-    setupMockResponse({ url: expectedUrl });
+    mockChromeRuntimeMessage({ 'buildSearchUrl': { url: expectedUrl } });
     const result = await state.buildSearchUrl(query);
     expect(result).toBe(expectedUrl);
     if (expectedMessage) {
@@ -22,19 +22,19 @@ describe('State Class', () => {
   };
 
   const testBuildSearchUrlWithResponse = async (query, mockResponse, expectedResult) => {
-    setupMockResponse(mockResponse);
+    mockChromeRuntimeMessage({ 'buildSearchUrl': mockResponse });
     const result = await state.buildSearchUrl(query);
     expect(result).toBe(expectedResult);
   };
 
   const testBuildDirectionsUrl = async (origin, destination, expectedUrl) => {
-    setupMockResponse({ url: expectedUrl });
+    mockChromeRuntimeMessage({ 'buildDirectionsUrl': { url: expectedUrl } });
     const result = await state.buildDirectionsUrl(origin, destination);
     expect(result).toBe(expectedUrl);
   };
 
   const testBuildDirectionsUrlWithResponse = async (origin, destination, mockResponse, expectedResult) => {
-    setupMockResponse(mockResponse);
+    mockChromeRuntimeMessage({ 'buildDirectionsUrl': mockResponse });
     const result = await state.buildDirectionsUrl(origin, destination);
     expect(result).toBe(expectedResult);
   };
@@ -48,10 +48,10 @@ describe('State Class', () => {
     return callCount;
   };
 
-  const setupMapsButtonTest = (response) => {
+  const setupMapsButtonTest = (response, action = 'buildMapsUrl') => {
     const initialHref = 'initial-value';
     global.mapsButton.href = initialHref;
-    setupMockResponse(response);
+    mockChromeRuntimeMessage({ [action]: response });
     return initialHref;
   };
 
@@ -276,7 +276,7 @@ describe('State Class', () => {
 
     test('should update mapsButton.href when response has url', () => {
       const mockUrl = 'https://www.google.com/maps/test';
-      setupMockResponse({ url: mockUrl });
+      mockChromeRuntimeMessage({ 'buildMapsUrl': { url: mockUrl } });
       state.buildMapsButtonUrl();
       expect(global.mapsButton.href).toBe(mockUrl);
     });
@@ -313,7 +313,7 @@ describe('State Class', () => {
 
     test('should handle response with valid URL', () => {
       const mockUrl = 'https://www.google.com/maps/@40.7128,-74.0060,15z';
-      setupMockResponse({ url: mockUrl });
+      mockChromeRuntimeMessage({ 'buildMapsUrl': { url: mockUrl } });
       state.buildMapsButtonUrl();
       expect(global.mapsButton.href).toBe(mockUrl);
     });
@@ -490,7 +490,7 @@ describe('State Class', () => {
       expect(state.previousHeight).toBe(600);
       
       // Perform operations that might affect state
-      setupMockResponse({ url: 'https://maps.google.com' });
+      mockChromeRuntimeMessage({ 'buildSearchUrl': { url: 'https://maps.google.com' } });
       await state.buildSearchUrl('test');
       
       // Dimensions should persist
