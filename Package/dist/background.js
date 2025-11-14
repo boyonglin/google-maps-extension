@@ -10,6 +10,7 @@ const RECEIVING_END_ERR = "Receiving end does not exist";
 const DEFAULT_CAN_RETRY = (err) =>
   String(err?.message ?? err).includes(RECEIVING_END_ERR);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const MAX_RETRY_DELAY = 5000; // Cap exponential backoff at 5 seconds
 
 async function withRetry(attempt, { retries = 10, delay = 100, canRetry = DEFAULT_CAN_RETRY } = {}) {
   for (let retry_count = 0; retry_count <= retries; retry_count++) {
@@ -18,7 +19,8 @@ async function withRetry(attempt, { retries = 10, delay = 100, canRetry = DEFAUL
     } catch (err) {
       const willRetry = retry_count < retries && canRetry(err);
       if (!willRetry) throw err;
-      await sleep(delay * (2 ** retry_count)); // Exponential backoff
+      const backoffDelay = Math.min(delay * (2 ** retry_count), MAX_RETRY_DELAY);
+      await sleep(backoffDelay);
     }
   }
 }
