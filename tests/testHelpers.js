@@ -161,7 +161,9 @@ const captureEventListeners = (eventPaths) => {
         
         // Navigate to the parent object (e.g., chrome.runtime)
         for (let i = 0; i < parts.length - 1; i++) {
-            target = target[parts[i]];
+            if (Object.prototype.hasOwnProperty.call(target, parts[i])) {
+                target = target[parts[i]];
+            }
         }
         
         const eventName = parts[parts.length - 1];

@@ -787,7 +787,7 @@ describe('background.js', () => {
       });
 
       chrome.tabs.create.mockImplementation((opts, callback) => {
-        callback({ id: Math.random() });
+        callback({ id: 100 });
       });
 
       chrome.tabs.group.mockImplementation((opts, callback) => {
