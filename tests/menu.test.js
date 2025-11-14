@@ -239,7 +239,7 @@ describe('ContextMenuUtil', () => {
         test('should set up click listener to close menu when clicking outside', async () => {
             mockChromeStorage({});
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
-            const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
+            ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
             await wait(10);
             
@@ -252,7 +252,7 @@ describe('ContextMenuUtil', () => {
         test('should not close menu when clicking inside', async () => {
             mockChromeStorage({});
             mockEvent.target.closest = jest.fn(() => mockListItems[0]);
-            const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
+            ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
 
             await wait(10);
             
@@ -1266,8 +1266,6 @@ describe('ContextMenuUtil', () => {
             global.chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
                 callback({ success: true, organizedData });
             });
-
-            const container = mockListItems[0].parentElement;
 
             ContextMenuUtil.tidyLocations(mockListItems);
 
