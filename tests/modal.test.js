@@ -89,32 +89,7 @@ const cleanupGlobalDOMElements = () => {
 // Test-Specific Helper Functions
 // ============================================================================
 
-/**
- * Helper: Setup API key storage mock data
- * Reduces repetition in tests that need API key storage
- */
-const setupApiKeyStorage = (encryptedKey = 'encrypted_key', aesKey = 'test_aes_key') => {
-    const storageData = { geminiApiKey: encryptedKey, aesKey };
-    chrome.storage.local.get.mockResolvedValue(storageData);
-    // Mock runtime message to return storage data for any action
-    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback(storageData);
-    });
-    return storageData;
-};
 
-/**
- * Helper: Setup payment stage state
- * Reduces repetition in tests that check payment features
- */
-const setupPaymentStage = (isTrial = false, isPremium = false) => {
-    global.state.paymentStage = {
-        isTrial,
-        isPremium,
-        isFirst: !isTrial && !isPremium,
-        isFree: !isTrial && !isPremium
-    };
-};
 
 /**
  * Helper: Create and dispatch form submit event
@@ -143,7 +118,6 @@ const {
     mockI18n, 
     cleanupDOM,
     wait,
-    mockChromeRuntimeMessage,
     mockChromeStorage
 } = require('./testHelpers');
 

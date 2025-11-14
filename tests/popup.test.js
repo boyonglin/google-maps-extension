@@ -186,7 +186,6 @@ describe('popup.js', () => {
       const historyElements = document.getElementsByClassName('page-H');
       const favoriteElements = document.getElementsByClassName('page-F');
       const geminiElements = document.getElementsByClassName('page-G');
-      const deleteElements = document.getElementsByClassName('page-D');
       
       Array.from(historyElements).forEach(el => {
         expect(el.classList.contains('d-none')).toBe(false);
@@ -278,8 +277,6 @@ describe('popup.js', () => {
       popup.initializeDependencies({ state: mockState });
       
       const clearButton = document.getElementById('clearButton');
-      const cancelButton = document.getElementById('cancelButton');
-      const clearButtonSummary = document.getElementById('clearButtonSummary');
       
       // Mock offsetHeight to simulate overflow
       const mapsButtonSpan = document.getElementById('mapsButtonSpan');
@@ -943,7 +940,6 @@ describe('popup.js', () => {
       
       // Enter key should not be stopped after composition ends
       const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
-      const stopSpy = jest.spyOn(enterEvent, 'stopPropagation');
       document.dispatchEvent(enterEvent);
       
       // Note: stopPropagation should not be called when not composing
