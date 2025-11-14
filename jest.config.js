@@ -15,6 +15,7 @@ module.exports = {
     'Package/dist/components/modal.js',
     'Package/dist/utils/payment.js',
     'Package/dist/popup.js',
+    'Package/dist/background.js',
     '!**/node_modules/**'
   ],
   coverageDirectory: 'coverage',

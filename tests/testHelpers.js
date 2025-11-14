@@ -3,9 +3,14 @@
  * Common utilities to reduce code duplication across test files
  */
 
+// ============================================================================
+// Chrome API Mocking Utilities
+// ============================================================================
+
 /**
- * Mock chrome.runtime.sendMessage with a response
+ * Mock chrome.runtime.sendMessage with a simple response
  * @param {Object} response - The response object to return
+ * @deprecated Use mockChromeRuntimeMessage for more control
  */
 const mockRuntimeMessage = (response) => {
     global.chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
@@ -14,8 +19,26 @@ const mockRuntimeMessage = (response) => {
 };
 
 /**
+ * Mock chrome.runtime.sendMessage with action-based routing
+ * @param {Object} actionResponses - Map of action names to response objects
+ * @example
+ * mockChromeRuntimeMessage({
+ *   'getWarmState': { searchHistoryList: [], favoriteList: [] },
+ *   'buildSearchUrl': { url: 'https://maps.google.com' }
+ * });
+ */
+const mockChromeRuntimeMessage = (actionResponses = {}) => {
+    chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        const response = actionResponses[message.action] || {};
+        if (callback) callback(response);
+        return true;
+    });
+};
+
+/**
  * Mock chrome.storage.local.get with data
  * @param {Object} data - The data to return
+ * @deprecated Use mockChromeStorage for batch operations
  */
 const mockStorageGet = (data = {}) => {
     global.chrome.storage.local.get.mockImplementation((key, callback) => {
@@ -26,6 +49,7 @@ const mockStorageGet = (data = {}) => {
 /**
  * Mock chrome.storage.local.set
  * @param {Function} callback - Optional callback to execute
+ * @deprecated Use mockChromeStorage for batch operations
  */
 const mockStorageSet = (callback) => {
     global.chrome.storage.local.set.mockImplementation((data, cb) => {
@@ -35,9 +59,31 @@ const mockStorageSet = (callback) => {
 };
 
 /**
+ * Mock both chrome.storage.local.get and set in one call
+ * @param {Object} getResponse - Data to return from get operations
+ * @param {Function} setCallback - Optional callback when set is called with data
+ * @example
+ * mockChromeStorage({ favoriteList: ['Tokyo'] }, (data) => {
+ *   console.log('Storage set with:', data);
+ * });
+ */
+const mockChromeStorage = (getResponse = {}, setCallback = null) => {
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+        callback(getResponse);
+    });
+    
+    if (setCallback) {
+        chrome.storage.local.set.mockImplementation((data, callback) => {
+            setCallback(data);
+            if (callback) callback();
+        });
+    }
+};
+
+/**
  * Setup chrome.runtime.sendMessage mock with response
- * Similar pattern used in popupState.test.js
  * @param {Object} response - Response object
+ * @deprecated Use mockChromeRuntimeMessage instead
  */
 const setupMockResponse = (response) => {
     chrome.runtime.sendMessage.mockImplementation((message, callback) => {
@@ -68,11 +114,83 @@ const setupMockStorage = (overrides = {}) => {
 };
 
 /**
+ * Mock global fetch API with responses
+ * @param {Array|Object} responses - Single response or array of responses for consecutive calls
+ * @returns {jest.Mock} The mock fetch function
+ * @example
+ * // Single response for all calls
+ * setupMockFetch({ json: () => Promise.resolve({ data: 'test' }) });
+ * 
+ * // Different responses for consecutive calls
+ * setupMockFetch([
+ *   { json: () => Promise.resolve({ data: 'first' }) },
+ *   { json: () => Promise.resolve({ data: 'second' }) }
+ * ]);
+ */
+const setupMockFetch = (responses = []) => {
+    const mockFetch = jest.fn();
+    if (Array.isArray(responses)) {
+        responses.forEach(r => mockFetch.mockResolvedValueOnce(r));
+    } else {
+        mockFetch.mockResolvedValue(responses);
+    }
+    global.fetch = mockFetch;
+    return mockFetch;
+};
+
+/**
+ * Capture Chrome API event listeners for testing
+ * Useful for testing background scripts that register event listeners on load
+ * @param {string[]} eventPaths - Array of event listener paths (e.g., ['runtime.onMessage', 'tabs.onActivated'])
+ * @returns {Object} Map of captured listeners
+ * @example
+ * const listeners = captureEventListeners([
+ *   'runtime.onMessage',
+ *   'tabs.onActivated',
+ *   'storage.onChanged'
+ * ]);
+ * // Later in tests:
+ * listeners.runtime_onMessage[0]({ action: 'test' }, {}, jest.fn());
+ */
+const captureEventListeners = (eventPaths) => {
+    const captured = {};
+    
+    eventPaths.forEach(path => {
+        const parts = path.split('.');
+        let target = chrome;
+        
+        // Navigate to the parent object (e.g., chrome.runtime)
+        for (let i = 0; i < parts.length - 1; i++) {
+            target = target[parts[i]];
+        }
+        
+        const eventName = parts[parts.length - 1];
+        const key = path.replace(/\./g, '_'); // runtime.onMessage -> runtime_onMessage
+        
+        // Mock addListener to capture the callback
+        target[eventName].addListener.mockImplementation((fn) => {
+            if (!captured[key]) captured[key] = [];
+            captured[key].push(fn);
+        });
+    });
+    
+    return captured;
+};
+
+// ============================================================================
+// Async Utilities
+// ============================================================================
+
+/**
  * Create a promise that resolves after a delay
  * @param {number} ms - Milliseconds to wait
  * @returns {Promise}
  */
 const wait = (ms = 50) => new Promise(resolve => setTimeout(resolve, ms));
+
+// ============================================================================
+// DOM Utilities
+// ============================================================================
 
 /**
  * Create mock list items for testing (pattern from menu.test.js)
@@ -95,8 +213,10 @@ const createMockListItems = (count = 3, className = 'summary-list', textGenerato
 };
 
 /**
- * Setup mock i18n messages
- * @param {Object} messages - Key-value pairs of message keys and translations
+ * Setup mock i18n messages with default translations
+ * @param {Object} messages - Key-value pairs of message keys and translations (merges with defaults)
+ * @example
+ * mockI18n({ customKey: 'Custom Value' });
  */
 const mockI18n = (messages = {}) => {
     const defaultMessages = {
@@ -125,10 +245,16 @@ const cleanupDOM = () => {
     document.body.innerHTML = '';
 };
 
+// ============================================================================
+// Jest Assertion Helpers
+// ============================================================================
+
 /**
  * Assert that a function was called with partial object matching
  * @param {Function} mockFn - Jest mock function
  * @param {Object} expectedPartial - Partial object to match
+ * @example
+ * expectCalledWithPartial(chrome.storage.local.set, { favoriteList: ['Tokyo'] });
  */
 const expectCalledWithPartial = (mockFn, expectedPartial) => {
     expect(mockFn).toHaveBeenCalledWith(
@@ -140,6 +266,11 @@ const expectCalledWithPartial = (mockFn, expectedPartial) => {
 /**
  * Create a spy on window.open and auto-restore after callback
  * @param {Function} testFn - Test function that receives the spy
+ * @example
+ * await withWindowOpenSpy(async (openSpy) => {
+ *   myFunction();
+ *   expect(openSpy).toHaveBeenCalledWith('https://example.com');
+ * });
  */
 const withWindowOpenSpy = async (testFn) => {
     const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
@@ -149,6 +280,10 @@ const withWindowOpenSpy = async (testFn) => {
         openSpy.mockRestore();
     }
 };
+
+// ============================================================================
+// Event and Interaction Utilities
+// ============================================================================
 
 /**
  * Create and dispatch a mouse event
@@ -244,6 +379,8 @@ const createMockListItem = (text, options = {}) => {
 /**
  * Mock chrome.tabs.query with response (supports both callback and Promise API)
  * @param {Array} tabs - Array of tab objects to return
+ * @example
+ * mockTabsQuery([{ id: 1, url: 'https://example.com' }]);
  */
 const mockTabsQuery = (tabs) => {
     chrome.tabs.query.mockImplementation((query, callback) => {
@@ -259,6 +396,9 @@ const mockTabsQuery = (tabs) => {
  * Mock chrome.tabs.sendMessage with response
  * @param {*} response - Response to return
  * @param {boolean} hasError - Whether to simulate chrome.runtime.lastError
+ * @example
+ * mockTabsSendMessage({ success: true });
+ * mockTabsSendMessage(null, true); // Simulate error
  */
 const mockTabsSendMessage = (response, hasError = false) => {
     chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
@@ -272,6 +412,10 @@ const mockTabsSendMessage = (response, hasError = false) => {
     });
 };
 
+// ============================================================================
+// Test Data Constants
+// ============================================================================
+
 /**
  * Test constants for common test data
  */
@@ -284,22 +428,49 @@ const TEST_CONSTANTS = {
     URL: 'http://maps.test/search'
 };
 
+// ============================================================================
+// Module Exports
+// ============================================================================
+
 module.exports = {
-    mockRuntimeMessage,
-    mockStorageGet,
-    mockStorageSet,
-    setupMockResponse,
-    setupMockStorage,
-    wait,
-    createMockListItems,
-    mockI18n,
-    cleanupDOM,
-    expectCalledWithPartial,
-    withWindowOpenSpy,
-    createMouseEvent,
-    mockFileUpload,
-    createMockListItem,
+    // Chrome API Mocking
+    mockRuntimeMessage,              // @deprecated - Use mockChromeRuntimeMessage
+    mockChromeRuntimeMessage,        // NEW: Action-based message routing
+    mockStorageGet,                  // @deprecated - Use mockChromeStorage
+    mockStorageSet,                  // @deprecated - Use mockChromeStorage
+    mockChromeStorage,               // NEW: Batch storage mocking
+    setupMockResponse,               // @deprecated - Use mockChromeRuntimeMessage
     mockTabsQuery,
     mockTabsSendMessage,
+    
+    // Fetch Mocking
+    setupMockFetch,                  // NEW: Mock global fetch API
+    
+    // Event Listener Capture
+    captureEventListeners,           // NEW: Capture Chrome event listeners
+    
+    // Storage Setup
+    setupMockStorage,
+    
+    // Async Utilities
+    wait,
+    
+    // DOM Utilities
+    createMockListItems,
+    createMockListItem,
+    cleanupDOM,
+    mockI18n,
+    
+    // Jest Assertions
+    expectCalledWithPartial,
+    
+    // Spy Helpers
+    withWindowOpenSpy,
+    
+    // Event Utilities
+    createMouseEvent,
+    mockFileUpload,
+    
+    // Constants
     TEST_CONSTANTS
 };

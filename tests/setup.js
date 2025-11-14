@@ -37,6 +37,9 @@ global.chrome = {
       addListener: jest.fn(),
       removeListener: jest.fn()
     },
+    onInstalled: {
+      addListener: jest.fn()
+    },
     lastError: null,
     getURL: jest.fn((path) => `chrome-extension://mock-id/${path}`)
   },
@@ -62,12 +65,44 @@ global.chrome = {
     query: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
-    sendMessage: jest.fn()
+    sendMessage: jest.fn(),
+    group: jest.fn(),
+    onActivated: {
+      addListener: jest.fn()
+    }
   },
   scripting: {
     executeScript: jest.fn()
   },
+  contextMenus: {
+    create: jest.fn(),
+    remove: jest.fn(),
+    onClicked: {
+      addListener: jest.fn()
+    }
+  },
+  commands: {
+    onCommand: {
+      addListener: jest.fn()
+    }
+  },
+  action: {
+    onClicked: {
+      addListener: jest.fn()
+    },
+    setIcon: jest.fn()
+  },
+  windows: {
+    getCurrent: jest.fn()
+  },
+  tabGroups: {
+    update: jest.fn()
+  },
+  management: {
+    getSelf: jest.fn()
+  },
   i18n: {
+    getUILanguage: jest.fn(() => 'en-US'),
     getMessage: jest.fn((key, substitutions) => {
       // Return a reasonable default for i18n messages
       const messages = {

@@ -447,15 +447,16 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     });
     return true; // Will respond asynchronously
   }
+});
 
-  chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-    if (request.action === "verifyApiKey") {
-      verifyApiKey(request.apiKey)
-        .then(sendResponse)
-        .catch(err => sendResponse({ error: err.message }));
-      return true;
-    }
-  });
+// Registered event listeners at module level
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (request.action === "verifyApiKey") {
+    verifyApiKey(request.apiKey)
+      .then(sendResponse)
+      .catch(err => sendResponse({ error: err.message }));
+    return true;
+  }
 });
 
 const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash";
@@ -509,6 +510,10 @@ function callApi(prompt, content, apiKey, sendResponse) {
         sendResponse(generatedText);
       }
     })
+    .catch(error => {
+      console.error("API call failed:", error);
+      sendResponse({ error: error.message || "Network error occurred" });
+    });
 }
 
 // iframe injection
