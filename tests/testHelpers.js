@@ -162,8 +162,9 @@ const captureEventListeners = (eventPaths) => {
         // Navigate to the parent object (e.g., chrome.runtime)
         for (let i = 0; i < parts.length - 1; i++) {
             const part = parts[i];
-            if (Object.prototype.hasOwnProperty.call(target, part) && typeof target[part] === 'object') {
-                target = target[part];
+            const descriptor = Object.getOwnPropertyDescriptor(target, part);
+            if (descriptor && typeof descriptor.value === 'object' && descriptor.value !== null) {
+                target = descriptor.value;
             }
         }
         
@@ -171,8 +172,9 @@ const captureEventListeners = (eventPaths) => {
         const key = path.replace(/\./g, '_'); // runtime.onMessage -> runtime_onMessage
         
         // Mock addListener to capture the callback
-        if (target && Object.prototype.hasOwnProperty.call(target, eventName)) {
-            target[eventName].addListener.mockImplementation((fn) => {
+        const eventDescriptor = Object.getOwnPropertyDescriptor(target, eventName);
+        if (eventDescriptor && eventDescriptor.value) {
+            eventDescriptor.value.addListener.mockImplementation((fn) => {
                 if (!captured[key]) captured[key] = [];
                 captured[key].push(fn);
             });
