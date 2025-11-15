@@ -56,6 +56,7 @@ class Payment {
         return `${shortDate}, ${time}`;
     }
 }
+// CommonJS export for tests
 if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
     module.exports = Payment;
 }

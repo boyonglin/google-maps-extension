@@ -10,15 +10,6 @@ interface State {
   paymentStage: PaymentStage | null;
 }
 
-declare const state: State;
-declare const shortcutTip: HTMLCollectionOf<Element>;
-declare const premiumNoteElement: HTMLElement;
-declare const paymentSpan: HTMLElement;
-declare const modal: {
-  text2Modal: (noteId: string, text: string, modalId: string) => void;
-  text2Link: (noteId: string, text: string, url: string) => void;
-};
-
 class Payment {
   checkPay(): void {
     chrome.runtime.sendMessage({ action: "checkPay" }, (response) => {
@@ -80,7 +71,6 @@ class Payment {
 }
 
 // CommonJS export for tests
-declare const module: { exports: any } | undefined;
 if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
   module.exports = Payment;
 }
