@@ -1,6 +1,12 @@
 module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['./tests/setup.js'],
+  preset: 'ts-jest/presets/js-with-babel',
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.js$': 'babel-jest',
+  },
+  moduleFileExtensions: ['ts', 'js'],
   collectCoverageFrom: [
     'Package/dist/hooks/popupState.js',
     'Package/dist/hooks/backgroundState.js',

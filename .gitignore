@@ -5,3 +5,6 @@ node_modules/
 coverage/
 
 .vscode/
+
+# TypeScript build info
+*.tsbuildinfo
