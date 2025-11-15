@@ -58,14 +58,47 @@ The easiest way to get started is to install The Maps Express directly from the 
 
 If you want to develop and test your own version locally, follow these steps:
 
-1.  **Open Browser Extensions**: Navigate to your browser's extensions page and click "Manage extensions".<br>
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/boyonglin/google-maps-extension.git
+    cd google-maps-extension
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Build TypeScript files**:
+    ```bash
+    npm run build
+    ```
+
+4.  **Open Browser Extensions**: Navigate to your browser's extensions page and click "Manage extensions".<br>
     <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/117902e8-d4ac-4208-9f81-37f35489954f" style="border-radius: 8px" width="320" alt="Manage extensions">
 
-2.  **Enable Developer Mode**: Toggle on "Developer mode".<br>
+5.  **Enable Developer Mode**: Toggle on "Developer mode".<br>
     <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/56922b20-cae3-48c1-bb3e-810cf09e9df9" style="border-radius: 8px" width="320" alt="Developer mode">
 
-3.  **Load Unpacked Extension**: Click "Load unpacked" and select the cloned project folder to complete the installation.<br>
+6.  **Load Unpacked Extension**: Click "Load unpacked" and select the `Package` folder from the cloned project to complete the installation.<br>
     <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/358c9c2c-4698-402d-a141-451fabcc3913" style="border-radius: 8px" width="800" alt="Load unpacked">
+
+### TypeScript Development
+
+This project uses TypeScript for enhanced type safety and better developer experience. See [TYPESCRIPT.md](TYPESCRIPT.md) for:
+- TypeScript configuration and setup
+- Build and watch commands
+- Migration guide and best practices
+- Examples of TypeScript benefits with Copilot
+
+To develop with TypeScript:
+```bash
+# Watch mode for automatic compilation
+npm run build:watch
+
+# Run tests
+npm test
+```
 
 ---
 
@@ -133,6 +166,7 @@ You can export your favorite places as a CSV file and import them into Google My
 ## 🛠️ Tech Stack
 
 -   **Manifest V3**
+-   **TypeScript** - Type-safe development with enhanced IDE support
 -   **Bootstrap 5.3.0**
 -   **Gemini 2.0 Flash**
 -   **ExtPay** (Payment Gateway)
@@ -146,22 +180,29 @@ You can export your favorite places as a CSV file and import them into Google My
 
 ```
 .
-├── _locales/               # Localization files (en, zh_TW, ja)
+├── src/                    # TypeScript source files
+│   ├── utils/             # Utility modules
+│   ├── hooks/             # State management
+│   ├── components/        # UI components
+│   └── types/             # Type definitions
+├── _locales/              # Localization files (en, zh_TW, ja)
 ├── dist/
-│   ├── scripts/            # Functional scripts (popup.js)
-│   ├── components/         # Modular scripts (background.js)
-│   ├── popup.js            # Main script
-│   ├── background.js       # Event handling and browser interaction
-│   ├── contentScript.js    # Accessing webpage content
-│   ├── inject.js           # Injecting iframe into the webpage
-│   ├── ejectLite.js        # Ejecting iframe from the webpage
-│   └── checkStatus.js      # Checking the status of the iframe
-├── scss/                   # Style sources
-├── images/                 # Extension icons and demo assets
-├── vendor/                 # 3rd-party libraries
-├── popup.html              # HTML for the popup interface
-└── manifest.json           # Configuration file for the extension
+│   ├── scripts/           # Functional scripts (popup.js)
+│   ├── components/        # Modular scripts (background.js)
+│   ├── popup.js           # Main script
+│   ├── background.js      # Event handling and browser interaction
+│   ├── contentScript.js   # Accessing webpage content
+│   ├── inject.js          # Injecting iframe into the webpage
+│   ├── ejectLite.js       # Ejecting iframe from the webpage
+│   └── checkStatus.js     # Checking the status of the iframe
+├── scss/                  # Style sources
+├── images/                # Extension icons and demo assets
+├── vendor/                # 3rd-party libraries
+├── popup.html             # HTML for the popup interface
+└── manifest.json          # Configuration file for the extension
 ```
+
+See [TYPESCRIPT.md](TYPESCRIPT.md) for TypeScript development guide and [TYPESCRIPT_EXAMPLES.md](TYPESCRIPT_EXAMPLES.md) for examples of TypeScript benefits.
 
 ---
 
