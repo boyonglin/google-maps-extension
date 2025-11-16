@@ -133,12 +133,41 @@ You can export your favorite places as a CSV file and import them into Google My
 ## 🛠️ Tech Stack
 
 -   **Manifest V3**
+-   **TypeScript** (Type checking and IntelliSense)
 -   **Bootstrap 5.3.0**
 -   **Gemini 2.0 Flash**
 -   **ExtPay** (Payment Gateway)
 -   **localStorage**
 -   **HTML iframe**
 -   **i18n** (Localization)
+
+---
+
+## 💻 Development
+
+### TypeScript Support
+
+This project includes TypeScript support for better developer experience and AI-powered code suggestions. See [TYPESCRIPT.md](TYPESCRIPT.md) for detailed documentation.
+
+**Key Features:**
+- Type checking for JavaScript code
+- IntelliSense for Chrome APIs
+- Enhanced GitHub Copilot suggestions
+- JSDoc annotations for better documentation
+
+**Run type checks:**
+```bash
+npm run type-check
+```
+
+### Testing
+
+Run tests with Jest:
+```bash
+npm test                # Run all tests
+npm run test:watch      # Watch mode
+npm run test:coverage   # With coverage
+```
 
 ---
 
