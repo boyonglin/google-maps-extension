@@ -35,7 +35,7 @@ export interface ChromeMessage {
   title?: string;
   color?: string;
   collapsed?: boolean;
-  user?: any;
+  user?: ExtPayUser;
 }
 
 /**
@@ -143,7 +143,7 @@ export interface GeminiResponse {
 export type RetryOptions = {
   retries?: number;
   delay?: number;
-  canRetry?: (error: any) => boolean;
+  canRetry?: (error: unknown) => boolean;
 };
 
 export {}; // Ensure this file is treated as a module
