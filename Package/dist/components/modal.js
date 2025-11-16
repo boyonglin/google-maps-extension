@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify';
+"use strict";
 class Modal {
     // Allow dependency injection for testing
     constructor(encryptApiKeyFn = null) {
@@ -7,7 +7,12 @@ class Modal {
     // Load crypto module dynamically (for browser extension context)
     async loadCrypto() {
         if (!this.encryptApiKey) {
-            const { encryptApiKey } = await import(chrome.runtime.getURL("dist/utils/crypto.js"));
+            const url = chrome.runtime.getURL("dist/utils/crypto.js");
+            // Validate URL is from our extension
+            if (!url.startsWith(chrome.runtime.getURL(""))) {
+                throw new Error("Invalid module URL");
+            }
+            const { encryptApiKey } = await import(url);
             this.encryptApiKey = encryptApiKey;
         }
     }
@@ -31,34 +36,40 @@ class Modal {
         // Save the API key
         const apiForm = document.getElementById("apiForm");
         if (apiForm) {
-            apiForm.addEventListener("submit", async (event) => {
+            apiForm.addEventListener("submit", (event) => {
                 event.preventDefault();
                 const apiKey = apiInput.value.trim();
                 if (!this.encryptApiKey) {
                     console.error("Encryption function not loaded");
                     return;
                 }
-                const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
-                chrome.storage.local.set({ geminiApiKey: encrypted });
-                if (!apiKey) {
-                    apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-                    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-                    sendButton.disabled = true;
-                    return;
-                }
-                chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, ({ valid, error } = {}) => {
-                    if (error || !valid) {
-                        geminiEmptyMessage.classList.remove("d-none");
+                // Handle async operation properly
+                void (async () => {
+                    if (!this.encryptApiKey) {
+                        return;
+                    }
+                    const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
+                    chrome.storage.local.set({ geminiApiKey: encrypted });
+                    if (!apiKey) {
                         apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-                        geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
+                        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
                         sendButton.disabled = true;
+                        return;
                     }
-                    else {
-                        apiInput.placeholder = "............" + apiKey.slice(-4);
-                        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-                        sendButton.disabled = false;
-                    }
-                });
+                    chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, ({ valid, error } = {}) => {
+                        if (error || !valid) {
+                            geminiEmptyMessage.classList.remove("d-none");
+                            apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+                            geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
+                            sendButton.disabled = true;
+                        }
+                        else {
+                            apiInput.placeholder = "............" + apiKey.slice(-4);
+                            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+                            sendButton.disabled = false;
+                        }
+                    });
+                })();
             });
         }
         this.text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
@@ -138,37 +149,45 @@ class Modal {
     text2Link(dataLocale, linkText, linkHref) {
         const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
         if (pElement) {
-            const originalText = pElement.textContent || "";
-            // Create a safe anchor element
-            const anchor = document.createElement('a');
-            anchor.href = linkHref;
-            anchor.target = "_blank";
-            anchor.rel = "noopener noreferrer";
-            anchor.textContent = linkText;
-            // Replace the text with the new content containing the anchor
-            const newText = originalText.replace(linkText, anchor.outerHTML);
-            // Configure DOMPurify to allow target attribute
-            pElement.innerHTML = DOMPurify.sanitize(newText, {
-                ALLOWED_ATTR: ['href', 'target', 'rel', 'data-bs-toggle', 'data-bs-target']
-            });
+            // Use safe DOM manipulation instead of innerHTML
+            const textContent = pElement.textContent || "";
+            const textParts = textContent.split(linkText);
+            // Clear and rebuild the element safely
+            pElement.textContent = '';
+            for (let i = 0; i < textParts.length; i++) {
+                pElement.appendChild(document.createTextNode(textParts[i]));
+                if (i < textParts.length - 1) {
+                    // Create a safe anchor element
+                    const anchor = document.createElement('a');
+                    anchor.href = linkHref;
+                    anchor.target = "_blank";
+                    anchor.rel = "noopener noreferrer";
+                    anchor.textContent = linkText;
+                    pElement.appendChild(anchor);
+                }
+            }
         }
     }
     text2Modal(dataLocale, linkText, modalId) {
         const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
         if (pElement) {
-            const originalText = pElement.textContent || "";
-            // Create a safe anchor element
-            const anchor = document.createElement('a');
-            anchor.href = "#";
-            anchor.setAttribute('data-bs-toggle', 'modal');
-            anchor.setAttribute('data-bs-target', `#${modalId}`);
-            anchor.textContent = linkText;
-            // Replace the text with the new content containing the anchor
-            const newText = originalText.replace(linkText, anchor.outerHTML);
-            // Configure DOMPurify to allow Bootstrap modal attributes
-            pElement.innerHTML = DOMPurify.sanitize(newText, {
-                ALLOWED_ATTR: ['href', 'target', 'rel', 'data-bs-toggle', 'data-bs-target']
-            });
+            // Use safe DOM manipulation instead of innerHTML
+            const textContent = pElement.textContent || "";
+            const textParts = textContent.split(linkText);
+            // Clear and rebuild the element safely
+            pElement.textContent = '';
+            for (let i = 0; i < textParts.length; i++) {
+                pElement.appendChild(document.createTextNode(textParts[i]));
+                if (i < textParts.length - 1) {
+                    // Create a safe anchor element
+                    const anchor = document.createElement('a');
+                    anchor.href = "#";
+                    anchor.setAttribute('data-bs-toggle', 'modal');
+                    anchor.setAttribute('data-bs-target', `#${modalId}`);
+                    anchor.textContent = linkText;
+                    pElement.appendChild(anchor);
+                }
+            }
         }
     }
     updateOptionalModal(startAddr, authUser) {

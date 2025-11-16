@@ -6,7 +6,10 @@ function bufToB64(buf: ArrayBuffer): string {
 function b64ToBuf(b64: string): ArrayBuffer {
   const bin = atob(b64);
   const buf = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  for (let i = 0; i < bin.length; i++) {
+    const charCode = bin.charCodeAt(i);
+    buf[i] = charCode;
+  }
   return buf.buffer;
 }
 

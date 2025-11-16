@@ -75,18 +75,31 @@ export async function applyStorageChanges(changes, area) {
         // Validate key exists in DEFAULTS to prevent object injection
         if (!(k in DEFAULTS))
             continue;
-        if (k === "geminiApiKey") {
+        // Use type-safe access
+        const key = k;
+        if (key === "geminiApiKey") {
             try {
-                cache[k] = await decryptApiKey(String(newValue));
+                cache.geminiApiKey = await decryptApiKey(String(newValue));
             }
             catch {
-                cache[k] = "";
+                cache.geminiApiKey = "";
             }
         }
-        else {
-            cache[k] = newValue;
-            if (k === "authUser")
-                updateUserUrls(newValue);
+        else if (key === "searchHistoryList" || key === "favoriteList") {
+            cache[key] = newValue;
+        }
+        else if (key === "aesKey") {
+            cache[key] = newValue;
+        }
+        else if (key === "authUser") {
+            cache[key] = newValue;
+            updateUserUrls(newValue);
+        }
+        else if (key === "startAddr") {
+            cache[key] = newValue;
+        }
+        else if (key === "isIncognito" || key === "videoSummaryToggle") {
+            cache[key] = newValue;
         }
     }
 }

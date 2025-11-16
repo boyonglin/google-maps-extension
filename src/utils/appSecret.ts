@@ -6,7 +6,7 @@ interface AttachMapLinkRequest {
 (() => {
   function attachMapLinkToPage(request: AttachMapLinkRequest): void {
     // Handle null, undefined, or empty content
-    if (!request?.content) {
+    if (!request || !request.content) {
       return;
     }
 
@@ -45,16 +45,16 @@ interface AttachMapLinkRequest {
           let textNode: Node | null;
           while ((textNode = walker.nextNode())) {
             if (textNode.textContent && textNode.textContent.includes(candidateName)) {
-              // Escape special regex characters to match literal strings
-              const escapedCandidate = candidateName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              const regex = new RegExp(escapedCandidate);
-              const match = textNode.textContent.match(regex);
-              if (match && match.index !== undefined) {
+              // Use literal string matching to avoid security warnings
+              const textContentStr = textNode.textContent;
+              const matchIndex = textContentStr.indexOf(candidateName);
+              
+              if (matchIndex !== -1) {
                 processedCandidates.add(candidateName);
 
                 // Split the text node and insert the pin after the candidate name
-                const beforeText = textNode.textContent.substring(0, match.index + match[0].length);
-                const afterText = textNode.textContent.substring(match.index + match[0].length);
+                const beforeText = textContentStr.substring(0, matchIndex + candidateName.length);
+                const afterText = textContentStr.substring(matchIndex + candidateName.length);
 
                 // Replace the original text node
                 textNode.textContent = beforeText;

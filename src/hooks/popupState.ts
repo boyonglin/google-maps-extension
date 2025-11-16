@@ -54,7 +54,9 @@ class State {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(
         { action: "buildDirectionsUrl", origin, destination },
-        (response) => resolve(response?.url)
+        (response) => {
+          resolve(response?.url);
+        }
       );
     });
   }

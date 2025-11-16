@@ -524,7 +524,7 @@ describe('Modal Component - Full Coverage', () => {
             expect(pElement.innerHTML).toContain('<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>');
         });
 
-        test('BUG: only replaces first occurrence', () => {
+        test('replaces all occurrences (bug fix)', () => {
             const pElement = document.createElement('p');
             pElement.setAttribute('data-locale', 'multi');
             pElement.innerHTML = 'Link here and Link there';
@@ -533,7 +533,7 @@ describe('Modal Component - Full Coverage', () => {
             modalInstance.text2Link('multi', 'Link', 'https://example.com');
 
             const count = (pElement.innerHTML.match(/href="https:\/\/example.com"/g) || []).length;
-            expect(count).toBe(1); // Bug: should be 2
+            expect(count).toBe(2); // Now correctly replaces all occurrences
         });
     });
 

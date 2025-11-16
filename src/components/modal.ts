@@ -1,5 +1,3 @@
-import DOMPurify from 'dompurify';
-
 type EncryptApiKeyFn = (apiKey: string) => Promise<string>;
 
 declare const configureElements: HTMLCollectionOf<Element>;
@@ -24,7 +22,12 @@ class Modal {
     // Load crypto module dynamically (for browser extension context)
     async loadCrypto(): Promise<void> {
         if (!this.encryptApiKey) {
-            const { encryptApiKey } = await import(chrome.runtime.getURL("dist/utils/crypto.js"));
+            const url = chrome.runtime.getURL("dist/utils/crypto.js");
+            // Validate URL is from our extension
+            if (!url.startsWith(chrome.runtime.getURL(""))) {
+                throw new Error("Invalid module URL");
+            }
+            const { encryptApiKey } = await import(url);
             this.encryptApiKey = encryptApiKey;
         }
     }
@@ -52,7 +55,7 @@ class Modal {
         // Save the API key
         const apiForm = document.getElementById("apiForm");
         if (apiForm) {
-            apiForm.addEventListener("submit", async (event: Event) => {
+            apiForm.addEventListener("submit", (event: Event) => {
                 event.preventDefault();
                 const apiKey = apiInput.value.trim();
 
@@ -61,31 +64,37 @@ class Modal {
                     return;
                 }
 
-                const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
-                chrome.storage.local.set({ geminiApiKey: encrypted });
-
-                if (!apiKey) {
-                    apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-                    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-                    sendButton.disabled = true;
-                    return;
-                }
-
-                chrome.runtime.sendMessage(
-                { action: "verifyApiKey", apiKey: apiKey },
-                ({ valid, error }: { valid?: boolean; error?: string } = {}) => {
-                    if (error || !valid) {
-                        geminiEmptyMessage.classList.remove("d-none");
-                        apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-                        geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
-                        sendButton.disabled = true;
-                    } else {
-                        apiInput.placeholder = "............" + apiKey.slice(-4);
-                        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-                        sendButton.disabled = false;
+                // Handle async operation properly
+                void (async () => {
+                    if (!this.encryptApiKey) {
+                        return;
                     }
-                }
-            );
+                    const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
+                    chrome.storage.local.set({ geminiApiKey: encrypted });
+
+                    if (!apiKey) {
+                        apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+                        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+                        sendButton.disabled = true;
+                        return;
+                    }
+
+                    chrome.runtime.sendMessage(
+                        { action: "verifyApiKey", apiKey: apiKey },
+                        ({ valid, error }: { valid?: boolean; error?: string } = {}) => {
+                            if (error || !valid) {
+                                geminiEmptyMessage.classList.remove("d-none");
+                                apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+                                geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
+                                sendButton.disabled = true;
+                            } else {
+                                apiInput.placeholder = "............" + apiKey.slice(-4);
+                                geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+                                sendButton.disabled = false;
+                            }
+                        }
+                    );
+                })();
             });
         }
 
@@ -182,40 +191,52 @@ class Modal {
     text2Link(dataLocale: string, linkText: string, linkHref: string): void {
         const pElement = document.querySelector<HTMLParagraphElement>(`p[data-locale="${dataLocale}"]`);
         if (pElement) {
-            const originalText = pElement.textContent || "";
-            // Create a safe anchor element
-            const anchor = document.createElement('a');
-            anchor.href = linkHref;
-            anchor.target = "_blank";
-            anchor.rel = "noopener noreferrer";
-            anchor.textContent = linkText;
+            // Use safe DOM manipulation instead of innerHTML
+            const textContent = pElement.textContent || "";
+            const textParts = textContent.split(linkText);
             
-            // Replace the text with the new content containing the anchor
-            const newText = originalText.replace(linkText, anchor.outerHTML);
-            // Configure DOMPurify to allow target attribute
-            pElement.innerHTML = DOMPurify.sanitize(newText, { 
-                ALLOWED_ATTR: ['href', 'target', 'rel', 'data-bs-toggle', 'data-bs-target']
-            });
+            // Clear and rebuild the element safely
+            pElement.textContent = '';
+            
+            for (let i = 0; i < textParts.length; i++) {
+                pElement.appendChild(document.createTextNode(textParts[i]));
+                
+                if (i < textParts.length - 1) {
+                    // Create a safe anchor element
+                    const anchor = document.createElement('a');
+                    anchor.href = linkHref;
+                    anchor.target = "_blank";
+                    anchor.rel = "noopener noreferrer";
+                    anchor.textContent = linkText;
+                    pElement.appendChild(anchor);
+                }
+            }
         }
     }
 
     text2Modal(dataLocale: string, linkText: string, modalId: string): void {
         const pElement = document.querySelector<HTMLParagraphElement>(`p[data-locale="${dataLocale}"]`);
         if (pElement) {
-            const originalText = pElement.textContent || "";
-            // Create a safe anchor element
-            const anchor = document.createElement('a');
-            anchor.href = "#";
-            anchor.setAttribute('data-bs-toggle', 'modal');
-            anchor.setAttribute('data-bs-target', `#${modalId}`);
-            anchor.textContent = linkText;
+            // Use safe DOM manipulation instead of innerHTML
+            const textContent = pElement.textContent || "";
+            const textParts = textContent.split(linkText);
             
-            // Replace the text with the new content containing the anchor
-            const newText = originalText.replace(linkText, anchor.outerHTML);
-            // Configure DOMPurify to allow Bootstrap modal attributes
-            pElement.innerHTML = DOMPurify.sanitize(newText, {
-                ALLOWED_ATTR: ['href', 'target', 'rel', 'data-bs-toggle', 'data-bs-target']
-            });
+            // Clear and rebuild the element safely
+            pElement.textContent = '';
+            
+            for (let i = 0; i < textParts.length; i++) {
+                pElement.appendChild(document.createTextNode(textParts[i]));
+                
+                if (i < textParts.length - 1) {
+                    // Create a safe anchor element
+                    const anchor = document.createElement('a');
+                    anchor.href = "#";
+                    anchor.setAttribute('data-bs-toggle', 'modal');
+                    anchor.setAttribute('data-bs-target', `#${modalId}`);
+                    anchor.textContent = linkText;
+                    pElement.appendChild(anchor);
+                }
+            }
         }
     }
 
