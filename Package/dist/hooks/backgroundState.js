@@ -45,7 +45,7 @@ export async function ensureWarm() {
             try {
                 v.geminiApiKey = await decryptApiKey(String(v.geminiApiKey));
             }
-            catch (_e) {
+            catch {
                 v.geminiApiKey = "";
             }
         }
@@ -76,7 +76,7 @@ export async function applyStorageChanges(changes, area) {
             try {
                 cache[k] = await decryptApiKey(String(newValue));
             }
-            catch (_e) {
+            catch {
                 cache[k] = "";
             }
         }

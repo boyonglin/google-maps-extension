@@ -10,7 +10,7 @@ interface AttachMapLinkRequest {
       return;
     }
 
-    let candidates = request.content.split("\n").map(item => item.trim()).filter(item => item !== "");
+    const candidates = request.content.split("\n").map(item => item.trim()).filter(item => item !== "");
 
     function attachMapLink(element: Element): void {
       // Skip if the element already contains a map link or a YouTube-formatted string
@@ -20,13 +20,13 @@ interface AttachMapLinkRequest {
         return;
       }
 
-      let processedCandidates = new Set<string>();
+      const processedCandidates = new Set<string>();
 
       candidates.forEach(candidate => {
         const searchUrl = `${request.queryUrl}q=${encodeURIComponent(candidate)}`;
 
         const parts = candidate.split(/\s{4,}/);
-        let candidateName = parts[0];
+        const candidateName = parts[0];
 
         // Skip if already processed this candidate name for this element
         if (processedCandidates.has(candidateName)) {
@@ -43,7 +43,7 @@ interface AttachMapLinkRequest {
           );
 
           let textNode: Node | null;
-          while (textNode = walker.nextNode()) {
+          while ((textNode = walker.nextNode())) {
             if (textNode.textContent && textNode.textContent.includes(candidateName)) {
               // Escape special regex characters to match literal strings
               const escapedCandidate = candidateName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -61,12 +61,14 @@ interface AttachMapLinkRequest {
 
                 // Create and insert the pin
                 const pin = makePin(searchUrl);
-                textNode.parentNode!.insertBefore(pin, textNode.nextSibling);
+                if (textNode.parentNode) {
+                  textNode.parentNode.insertBefore(pin, textNode.nextSibling);
 
-                // Add the remaining text if any
-                if (afterText) {
-                  const afterTextNode = document.createTextNode(afterText);
-                  textNode.parentNode!.insertBefore(afterTextNode, pin.nextSibling);
+                  // Add the remaining text if any
+                  if (afterText) {
+                    const afterTextNode = document.createTextNode(afterText);
+                    textNode.parentNode.insertBefore(afterTextNode, pin.nextSibling);
+                  }
                 }
 
                 break; // Only process the first occurrence in this element
@@ -105,5 +107,8 @@ interface AttachMapLinkRequest {
   }
 
   // Make the function available globally
-  (globalThis as any).attachMapLinkToPage = attachMapLinkToPage;
+  interface GlobalWithAttachMapLink {
+    attachMapLinkToPage?: (request: AttachMapLinkRequest) => void;
+  }
+  (globalThis as GlobalWithAttachMapLink).attachMapLinkToPage = attachMapLinkToPage;
 })();

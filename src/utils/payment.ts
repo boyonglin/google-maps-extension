@@ -6,10 +6,6 @@ interface PaymentStage {
   trialEnd?: number;
 }
 
-interface State {
-  paymentStage: PaymentStage | null;
-}
-
 class Payment {
   checkPay(): void {
     chrome.runtime.sendMessage({ action: "checkPay" }, (response) => {
@@ -38,7 +34,9 @@ class Payment {
     if (state.paymentStage.isFirst) {
       premiumNoteElement.innerHTML = chrome.i18n.getMessage("firstNote");
     } else if (state.paymentStage.isTrial) {
-      const trialEndOn = this.calcTrialEndDate(state.paymentStage.trialEnd!);
+      const trialEndOn = state.paymentStage.trialEnd 
+        ? this.calcTrialEndDate(state.paymentStage.trialEnd)
+        : "";
       paymentSpan.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
       premiumNoteElement.innerHTML = chrome.i18n.getMessage("remindNote");
       modal.text2Modal("premiumNote", "Gemini AI", "apiModal");

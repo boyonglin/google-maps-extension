@@ -35,7 +35,7 @@ class Modal {
             const element = configureElements[i] as HTMLElement;
             element.onclick = function (event: MouseEvent): void {
                 // Detect user browser
-                let userAgent = navigator.userAgent;
+                const userAgent = navigator.userAgent;
 
                 if (/Chrome/i.test(userAgent)) {
                     chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
@@ -48,21 +48,28 @@ class Modal {
         }
 
         // Save the API key
-        document.getElementById("apiForm")!.addEventListener("submit", async (event: Event) => {
-            event.preventDefault();
-            const apiKey = apiInput.value.trim();
+        const apiForm = document.getElementById("apiForm");
+        if (apiForm) {
+            apiForm.addEventListener("submit", async (event: Event) => {
+                event.preventDefault();
+                const apiKey = apiInput.value.trim();
 
-            const encrypted = apiKey ? await this.encryptApiKey!(apiKey) : "";
-            chrome.storage.local.set({ geminiApiKey: encrypted });
+                if (!this.encryptApiKey) {
+                    console.error("Encryption function not loaded");
+                    return;
+                }
 
-            if (!apiKey) {
-                apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-                geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-                sendButton.disabled = true;
-                return;
-            }
+                const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
+                chrome.storage.local.set({ geminiApiKey: encrypted });
 
-            chrome.runtime.sendMessage(
+                if (!apiKey) {
+                    apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+                    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+                    sendButton.disabled = true;
+                    return;
+                }
+
+                chrome.runtime.sendMessage(
                 { action: "verifyApiKey", apiKey: apiKey },
                 ({ valid, error }: { valid?: boolean; error?: string } = {}) => {
                     if (error || !valid) {
@@ -77,7 +84,8 @@ class Modal {
                     }
                 }
             );
-        });
+            });
+        }
 
         this.text2Link(
             "apiNote",
@@ -86,46 +94,56 @@ class Modal {
         );
 
         // Modal close event
-        const apiModal = document.getElementById("apiModal")!;
-        apiModal.addEventListener("hidden.bs.modal", () => {
-            apiInput.value = "";
-        });
+        const apiModal = document.getElementById("apiModal");
+        if (apiModal) {
+            apiModal.addEventListener("hidden.bs.modal", () => {
+                apiInput.value = "";
+            });
+        }
 
-        const optionalModal = document.getElementById("optionalModal")!;
-        optionalModal.addEventListener("hidden.bs.modal", () => {
-            dirInput.value = "";
-            authUserInput.value = "";
-        });
+        const optionalModal = document.getElementById("optionalModal");
+        if (optionalModal) {
+            optionalModal.addEventListener("hidden.bs.modal", () => {
+                dirInput.value = "";
+                authUserInput.value = "";
+            });
+        }
 
         // Save the starting address
-        document.getElementById("dirForm")!.addEventListener("submit", (event: Event) => {
-            event.preventDefault();
+        const dirForm = document.getElementById("dirForm");
+        if (dirForm) {
+            dirForm.addEventListener("submit", (event: Event) => {
+                event.preventDefault();
 
-            const startAddr = dirInput.value.trim();
+                const startAddr = dirInput.value.trim();
 
-            if (startAddr === "") {
-                chrome.storage.local.remove("startAddr");
-                dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
-            } else {
-                chrome.storage.local.set({ startAddr: startAddr });
-                dirInput.placeholder = startAddr;
-            }
-        });
+                if (startAddr === "") {
+                    chrome.storage.local.remove("startAddr");
+                    dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
+                } else {
+                    chrome.storage.local.set({ startAddr: startAddr });
+                    dirInput.placeholder = startAddr;
+                }
+            });
+        }
 
         // Save the authentication user
-        document.getElementById("authUserForm")!.addEventListener("submit", (event: Event) => {
-            event.preventDefault();
+        const authUserForm = document.getElementById("authUserForm");
+        if (authUserForm) {
+            authUserForm.addEventListener("submit", (event: Event) => {
+                event.preventDefault();
 
-            const authUser = parseInt(authUserInput.value.trim());
+                const authUser = parseInt(authUserInput.value.trim());
 
-            if (authUserInput.value.trim() === "" || authUser === 0 || isNaN(authUser)) {
-                chrome.storage.local.set({ authUser: 0 });
-                authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
-            } else if (/^\d+$/.test(String(authUser)) && authUser > 0) {
-                chrome.storage.local.set({ authUser: authUser });
-                authUserInput.placeholder = `authuser=${authUser}`;
-            }
-        });
+                if (authUserInput.value.trim() === "" || authUser === 0 || isNaN(authUser)) {
+                    chrome.storage.local.set({ authUser: 0 });
+                    authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
+                } else if (/^\d+$/.test(String(authUser)) && authUser > 0) {
+                    chrome.storage.local.set({ authUser: authUser });
+                    authUserInput.placeholder = `authuser=${authUser}`;
+                }
+            });
+        }
 
         // Incognito toggle
         incognitoToggle.addEventListener("click", () => {
@@ -150,10 +168,12 @@ class Modal {
             chrome.runtime.sendMessage({ action: "restorePay" });
         });
 
-        const closeButton = document.querySelector(".btn-close")!;
-        closeButton.addEventListener("click", () => {
-            payment.checkPay();
-        });
+        const closeButton = document.querySelector(".btn-close");
+        if (closeButton) {
+            closeButton.addEventListener("click", () => {
+                payment.checkPay();
+            });
+        }
     }
 
     // Replace text from note with a link
@@ -195,19 +215,21 @@ class Modal {
     }
 
     updateIncognitoModal(isIncognito: boolean): void {
-        const incognitoText = document.querySelector<HTMLElement>(".incognito-text")!;
-        const incognitoIcon = document.querySelector<HTMLElement>(".incognito-icon")!;
+        const incognitoText = document.querySelector<HTMLElement>(".incognito-text");
+        const incognitoIcon = document.querySelector<HTMLElement>(".incognito-icon");
 
-        if (isIncognito) {
-            incognitoText.classList.add("d-none");
-            incognitoIcon.classList.remove("d-none");
-            incognitoToggle.classList.add("incognito-active");
-            incognitoToggle.classList.remove("incognito-just-off");
-        } else {
-            incognitoText.classList.remove("d-none");
-            incognitoIcon.classList.add("d-none");
-            incognitoToggle.classList.remove("incognito-active");
-            incognitoToggle.classList.add("incognito-just-off");
+        if (incognitoText && incognitoIcon) {
+            if (isIncognito) {
+                incognitoText.classList.add("d-none");
+                incognitoIcon.classList.remove("d-none");
+                incognitoToggle.classList.add("incognito-active");
+                incognitoToggle.classList.remove("incognito-just-off");
+            } else {
+                incognitoText.classList.remove("d-none");
+                incognitoIcon.classList.add("d-none");
+                incognitoToggle.classList.remove("incognito-active");
+                incognitoToggle.classList.add("incognito-just-off");
+            }
         }
     }
 }

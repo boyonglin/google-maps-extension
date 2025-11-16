@@ -18,7 +18,7 @@ class Modal {
             const element = configureElements[i];
             element.onclick = function (event) {
                 // Detect user browser
-                let userAgent = navigator.userAgent;
+                const userAgent = navigator.userAgent;
                 if (/Chrome/i.test(userAgent)) {
                     chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
                 }
@@ -29,68 +29,85 @@ class Modal {
             };
         }
         // Save the API key
-        document.getElementById("apiForm").addEventListener("submit", async (event) => {
-            event.preventDefault();
-            const apiKey = apiInput.value.trim();
-            const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
-            chrome.storage.local.set({ geminiApiKey: encrypted });
-            if (!apiKey) {
-                apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-                geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-                sendButton.disabled = true;
-                return;
-            }
-            chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, ({ valid, error } = {}) => {
-                if (error || !valid) {
-                    geminiEmptyMessage.classList.remove("d-none");
+        const apiForm = document.getElementById("apiForm");
+        if (apiForm) {
+            apiForm.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                const apiKey = apiInput.value.trim();
+                if (!this.encryptApiKey) {
+                    console.error("Encryption function not loaded");
+                    return;
+                }
+                const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
+                chrome.storage.local.set({ geminiApiKey: encrypted });
+                if (!apiKey) {
                     apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-                    geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
+                    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
                     sendButton.disabled = true;
+                    return;
                 }
-                else {
-                    apiInput.placeholder = "............" + apiKey.slice(-4);
-                    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-                    sendButton.disabled = false;
-                }
+                chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey: apiKey }, ({ valid, error } = {}) => {
+                    if (error || !valid) {
+                        geminiEmptyMessage.classList.remove("d-none");
+                        apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+                        geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
+                        sendButton.disabled = true;
+                    }
+                    else {
+                        apiInput.placeholder = "............" + apiKey.slice(-4);
+                        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+                        sendButton.disabled = false;
+                    }
+                });
             });
-        });
+        }
         this.text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
         // Modal close event
         const apiModal = document.getElementById("apiModal");
-        apiModal.addEventListener("hidden.bs.modal", () => {
-            apiInput.value = "";
-        });
+        if (apiModal) {
+            apiModal.addEventListener("hidden.bs.modal", () => {
+                apiInput.value = "";
+            });
+        }
         const optionalModal = document.getElementById("optionalModal");
-        optionalModal.addEventListener("hidden.bs.modal", () => {
-            dirInput.value = "";
-            authUserInput.value = "";
-        });
+        if (optionalModal) {
+            optionalModal.addEventListener("hidden.bs.modal", () => {
+                dirInput.value = "";
+                authUserInput.value = "";
+            });
+        }
         // Save the starting address
-        document.getElementById("dirForm").addEventListener("submit", (event) => {
-            event.preventDefault();
-            const startAddr = dirInput.value.trim();
-            if (startAddr === "") {
-                chrome.storage.local.remove("startAddr");
-                dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
-            }
-            else {
-                chrome.storage.local.set({ startAddr: startAddr });
-                dirInput.placeholder = startAddr;
-            }
-        });
+        const dirForm = document.getElementById("dirForm");
+        if (dirForm) {
+            dirForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const startAddr = dirInput.value.trim();
+                if (startAddr === "") {
+                    chrome.storage.local.remove("startAddr");
+                    dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
+                }
+                else {
+                    chrome.storage.local.set({ startAddr: startAddr });
+                    dirInput.placeholder = startAddr;
+                }
+            });
+        }
         // Save the authentication user
-        document.getElementById("authUserForm").addEventListener("submit", (event) => {
-            event.preventDefault();
-            const authUser = parseInt(authUserInput.value.trim());
-            if (authUserInput.value.trim() === "" || authUser === 0 || isNaN(authUser)) {
-                chrome.storage.local.set({ authUser: 0 });
-                authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
-            }
-            else if (/^\d+$/.test(String(authUser)) && authUser > 0) {
-                chrome.storage.local.set({ authUser: authUser });
-                authUserInput.placeholder = `authuser=${authUser}`;
-            }
-        });
+        const authUserForm = document.getElementById("authUserForm");
+        if (authUserForm) {
+            authUserForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const authUser = parseInt(authUserInput.value.trim());
+                if (authUserInput.value.trim() === "" || authUser === 0 || isNaN(authUser)) {
+                    chrome.storage.local.set({ authUser: 0 });
+                    authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
+                }
+                else if (/^\d+$/.test(String(authUser)) && authUser > 0) {
+                    chrome.storage.local.set({ authUser: authUser });
+                    authUserInput.placeholder = `authuser=${authUser}`;
+                }
+            });
+        }
         // Incognito toggle
         incognitoToggle.addEventListener("click", () => {
             chrome.storage.local.get("isIncognito", ({ isIncognito = false }) => {
@@ -111,9 +128,11 @@ class Modal {
             chrome.runtime.sendMessage({ action: "restorePay" });
         });
         const closeButton = document.querySelector(".btn-close");
-        closeButton.addEventListener("click", () => {
-            payment.checkPay();
-        });
+        if (closeButton) {
+            closeButton.addEventListener("click", () => {
+                payment.checkPay();
+            });
+        }
     }
     // Replace text from note with a link
     text2Link(dataLocale, linkText, linkHref) {
@@ -145,17 +164,19 @@ class Modal {
     updateIncognitoModal(isIncognito) {
         const incognitoText = document.querySelector(".incognito-text");
         const incognitoIcon = document.querySelector(".incognito-icon");
-        if (isIncognito) {
-            incognitoText.classList.add("d-none");
-            incognitoIcon.classList.remove("d-none");
-            incognitoToggle.classList.add("incognito-active");
-            incognitoToggle.classList.remove("incognito-just-off");
-        }
-        else {
-            incognitoText.classList.remove("d-none");
-            incognitoIcon.classList.add("d-none");
-            incognitoToggle.classList.remove("incognito-active");
-            incognitoToggle.classList.add("incognito-just-off");
+        if (incognitoText && incognitoIcon) {
+            if (isIncognito) {
+                incognitoText.classList.add("d-none");
+                incognitoIcon.classList.remove("d-none");
+                incognitoToggle.classList.add("incognito-active");
+                incognitoToggle.classList.remove("incognito-just-off");
+            }
+            else {
+                incognitoText.classList.remove("d-none");
+                incognitoIcon.classList.add("d-none");
+                incognitoToggle.classList.remove("incognito-active");
+                incognitoToggle.classList.add("incognito-just-off");
+            }
         }
     }
 }

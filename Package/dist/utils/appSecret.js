@@ -5,7 +5,7 @@
         if (!request || !request.content) {
             return;
         }
-        let candidates = request.content.split("\n").map(item => item.trim()).filter(item => item !== "");
+        const candidates = request.content.split("\n").map(item => item.trim()).filter(item => item !== "");
         function attachMapLink(element) {
             // Skip if the element already contains a map link or a YouTube-formatted string
             if (element.querySelector('a[href*="https://www.google.com/maps"]') ||
@@ -13,11 +13,11 @@
                 element.classList.contains("ytd-compact-video-renderer")) {
                 return;
             }
-            let processedCandidates = new Set();
+            const processedCandidates = new Set();
             candidates.forEach(candidate => {
                 const searchUrl = `${request.queryUrl}q=${encodeURIComponent(candidate)}`;
                 const parts = candidate.split(/\s{4,}/);
-                let candidateName = parts[0];
+                const candidateName = parts[0];
                 // Skip if already processed this candidate name for this element
                 if (processedCandidates.has(candidateName)) {
                     return;
@@ -27,7 +27,7 @@
                     // Find text nodes containing the candidate name
                     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
                     let textNode;
-                    while (textNode = walker.nextNode()) {
+                    while ((textNode = walker.nextNode())) {
                         if (textNode.textContent && textNode.textContent.includes(candidateName)) {
                             // Escape special regex characters to match literal strings
                             const escapedCandidate = candidateName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -42,11 +42,13 @@
                                 textNode.textContent = beforeText;
                                 // Create and insert the pin
                                 const pin = makePin(searchUrl);
-                                textNode.parentNode.insertBefore(pin, textNode.nextSibling);
-                                // Add the remaining text if any
-                                if (afterText) {
-                                    const afterTextNode = document.createTextNode(afterText);
-                                    textNode.parentNode.insertBefore(afterTextNode, pin.nextSibling);
+                                if (textNode.parentNode) {
+                                    textNode.parentNode.insertBefore(pin, textNode.nextSibling);
+                                    // Add the remaining text if any
+                                    if (afterText) {
+                                        const afterTextNode = document.createTextNode(afterText);
+                                        textNode.parentNode.insertBefore(afterTextNode, pin.nextSibling);
+                                    }
                                 }
                                 break; // Only process the first occurrence in this element
                             }
@@ -79,6 +81,5 @@
         a.style.border = "0px";
         return a;
     }
-    // Make the function available globally
     globalThis.attachMapLinkToPage = attachMapLinkToPage;
 })();

@@ -12,14 +12,14 @@ interface StorageDefaults {
 }
 
 interface StorageCache extends StorageDefaults {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // URLs
 export let queryUrl = "https://www.google.com/maps?authuser=0&";
 export let routeUrl = "https://www.google.com/maps/dir/?authuser=0&";
 
-export function updateUserUrls(authUser: any): void {
+export function updateUserUrls(authUser: unknown): void {
   // Arrays should default to 0 instead of being coerced to numbers
   if (Array.isArray(authUser) || (typeof authUser === 'object' && authUser !== null)) {
     authUser = 0;
@@ -62,11 +62,11 @@ export async function ensureWarm(): Promise<StorageCache> {
   if (cache) return cache;
   if (loading) return loading;
   loading = chrome.storage.local.get(DEFAULTS)
-    .then(async (v: any) => {
+    .then(async (v: Record<string, unknown>) => {
       if (v.geminiApiKey) {
         try {
           v.geminiApiKey = await decryptApiKey(String(v.geminiApiKey));
-        } catch (_e) {
+        } catch {
           v.geminiApiKey = "";
         }
       }
@@ -99,7 +99,7 @@ export async function applyStorageChanges(
     if (k === "geminiApiKey") {
       try {
         cache[k] = await decryptApiKey(String(newValue));
-      } catch (_e) {
+      } catch {
         cache[k] = "";
       }
     } else {

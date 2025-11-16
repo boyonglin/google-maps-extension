@@ -24,7 +24,9 @@ class Payment {
             premiumNoteElement.innerHTML = chrome.i18n.getMessage("firstNote");
         }
         else if (state.paymentStage.isTrial) {
-            const trialEndOn = this.calcTrialEndDate(state.paymentStage.trialEnd);
+            const trialEndOn = state.paymentStage.trialEnd
+                ? this.calcTrialEndDate(state.paymentStage.trialEnd)
+                : "";
             paymentSpan.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
             premiumNoteElement.innerHTML = chrome.i18n.getMessage("remindNote");
             modal.text2Modal("premiumNote", "Gemini AI", "apiModal");
