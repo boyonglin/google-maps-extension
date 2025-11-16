@@ -6,7 +6,7 @@ interface AttachMapLinkRequest {
 (() => {
   function attachMapLinkToPage(request: AttachMapLinkRequest): void {
     // Handle null, undefined, or empty content
-    if (!request || !request.content) {
+    if (!request?.content) {
       return;
     }
 
@@ -48,7 +48,7 @@ interface AttachMapLinkRequest {
               // Use literal string matching to avoid security warnings
               const textContentStr = textNode.textContent;
               const matchIndex = textContentStr.indexOf(candidateName);
-              
+
               if (matchIndex !== -1) {
                 processedCandidates.add(candidateName);
 

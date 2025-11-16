@@ -15,7 +15,15 @@ async function ensureAesKey() {
     const result = await chrome.storage.local.get("aesKey");
     const aesKey = result?.aesKey;
     if (aesKey) {
-        return await crypto.subtle.importKey("jwk", aesKey, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
+        // Basic validation of JWK structure to mitigate injection of unexpected object
+        if (typeof aesKey !== "object" || !aesKey) {
+            throw new Error("Invalid AES key format");
+        }
+        const jwk = aesKey;
+        if (jwk.kty !== "oct" || !jwk.k) {
+            throw new Error("Malformed AES key");
+        }
+        return await crypto.subtle.importKey("jwk", jwk, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
     }
     const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
     const jwk = await crypto.subtle.exportKey("jwk", key);

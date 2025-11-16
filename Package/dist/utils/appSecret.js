@@ -2,9 +2,9 @@
 (() => {
     function attachMapLinkToPage(request) {
         // Handle null, undefined, or empty content
-        if (!request || !request.content) {
+        // request is always passed; only need to check content
+        if (!request.content)
             return;
-        }
         const candidates = request.content.split("\n").map(item => item.trim()).filter(item => item !== "");
         function attachMapLink(element) {
             // Skip if the element already contains a map link or a YouTube-formatted string

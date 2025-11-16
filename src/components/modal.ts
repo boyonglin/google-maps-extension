@@ -23,10 +23,19 @@ class Modal {
     async loadCrypto(): Promise<void> {
         if (!this.encryptApiKey) {
             const url = chrome.runtime.getURL("dist/utils/crypto.js");
-            // Validate URL is from our extension
-            if (!url.startsWith(chrome.runtime.getURL(""))) {
+            const extensionBaseUrl = chrome.runtime.getURL("");
+
+            // Validate URL is from our extension and uses extension protocol
+            if (!url.startsWith(extensionBaseUrl) || !url.startsWith("chrome-extension://")) {
                 throw new Error("Invalid module URL");
             }
+
+            // Additional validation: ensure it's the expected path
+            const expectedPath = "dist/utils/crypto.js";
+            if (!url.endsWith(expectedPath)) {
+                throw new Error("Unexpected module path");
+            }
+
             const { encryptApiKey } = await import(url);
             this.encryptApiKey = encryptApiKey;
         }
@@ -194,13 +203,13 @@ class Modal {
             // Use safe DOM manipulation instead of innerHTML
             const textContent = pElement.textContent || "";
             const textParts = textContent.split(linkText);
-            
+
             // Clear and rebuild the element safely
             pElement.textContent = '';
-            
+
             for (let i = 0; i < textParts.length; i++) {
                 pElement.appendChild(document.createTextNode(textParts[i]));
-                
+
                 if (i < textParts.length - 1) {
                     // Create a safe anchor element
                     const anchor = document.createElement('a');
@@ -220,13 +229,13 @@ class Modal {
             // Use safe DOM manipulation instead of innerHTML
             const textContent = pElement.textContent || "";
             const textParts = textContent.split(linkText);
-            
+
             // Clear and rebuild the element safely
             pElement.textContent = '';
-            
+
             for (let i = 0; i < textParts.length; i++) {
                 pElement.appendChild(document.createTextNode(textParts[i]));
-                
+
                 if (i < textParts.length - 1) {
                     // Create a safe anchor element
                     const anchor = document.createElement('a');

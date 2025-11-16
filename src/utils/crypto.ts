@@ -16,10 +16,12 @@ function b64ToBuf(b64: string): ArrayBuffer {
 async function ensureAesKey(): Promise<CryptoKey> {
   const result = await chrome.storage.local.get("aesKey");
   const aesKey = result?.aesKey;
-  if (aesKey) {
+
+  // Validate aesKey structure before using it
+  if (aesKey && typeof aesKey === 'object' && aesKey !== null && 'kty' in aesKey) {
     return await crypto.subtle.importKey(
       "jwk",
-      aesKey,
+      aesKey as JsonWebKey,
       { name: "AES-GCM" },
       true,
       ["encrypt", "decrypt"]

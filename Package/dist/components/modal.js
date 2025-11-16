@@ -20,8 +20,8 @@ class Modal {
         await this.loadCrypto();
         // Shortcuts configuration link
         for (const elem of Array.from(configureElements)) {
-            const element = elem;
-            element.onclick = function (event) {
+            const configureElement = elem;
+            configureElement.onclick = function (event) {
                 // Detect user browser
                 const userAgent = navigator.userAgent;
                 if (/Chrome/i.test(userAgent)) {
@@ -219,7 +219,7 @@ class Modal {
         }
     }
 }
-// CommonJS export for tests
-if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
+// CommonJS export for tests (hardened check)
+if (typeof module === "object" && module && typeof module.exports === "object") {
     module.exports = Modal;
 }

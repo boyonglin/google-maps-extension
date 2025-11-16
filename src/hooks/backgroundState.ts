@@ -24,7 +24,7 @@ export function updateUserUrls(authUser: unknown): void {
   if (Array.isArray(authUser) || (typeof authUser === 'object' && authUser !== null)) {
     authUser = 0;
   }
-  
+
   const n = Number(authUser);
   const au = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
   queryUrl = `https://www.google.com/maps?authuser=${au}&`;
@@ -98,27 +98,41 @@ export async function applyStorageChanges(
   for (const [k, { newValue }] of Object.entries(changes)) {
     // Validate key exists in DEFAULTS to prevent object injection
     if (!(k in DEFAULTS)) continue;
-    
+
     // Use type-safe access
     const key = k as keyof typeof DEFAULTS;
-    
+
     if (key === "geminiApiKey") {
       try {
-        cache.geminiApiKey = await decryptApiKey(String(newValue));
+        cache.geminiApiKey = await decryptApiKey(String(newValue ?? ""));
       } catch {
         cache.geminiApiKey = "";
       }
     } else if (key === "searchHistoryList" || key === "favoriteList") {
-      cache[key] = newValue as string[];
+      // Validate array type
+      if (Array.isArray(newValue)) {
+        cache[key] = newValue.filter(item => typeof item === 'string');
+      } else {
+        cache[key] = [];
+      }
     } else if (key === "aesKey") {
-      cache[key] = newValue as JsonWebKey | null;
+      // Validate JsonWebKey structure
+      if (newValue === null || (typeof newValue === 'object' && newValue !== null && 'kty' in newValue)) {
+        cache[key] = newValue as JsonWebKey | null;
+      } else {
+        cache[key] = null;
+      }
     } else if (key === "authUser") {
-      cache[key] = newValue as number;
-      updateUserUrls(newValue);
+      // Validate number type
+      const numValue = Number(newValue);
+      cache[key] = Number.isFinite(numValue) && numValue >= 0 ? Math.floor(numValue) : 0;
+      updateUserUrls(cache[key]);
     } else if (key === "startAddr") {
-      cache[key] = newValue as string;
+      // Validate string type
+      cache[key] = typeof newValue === 'string' ? newValue : "";
     } else if (key === "isIncognito" || key === "videoSummaryToggle") {
-      cache[key] = newValue as boolean;
+      // Validate boolean type
+      cache[key] = Boolean(newValue);
     }
   }
 }

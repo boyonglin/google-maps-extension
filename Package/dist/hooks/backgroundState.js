@@ -75,6 +75,9 @@ export async function applyStorageChanges(changes, area) {
         // Validate key exists in DEFAULTS to prevent object injection
         if (!(k in DEFAULTS))
             continue;
+        // Guard against prototype pollution keys
+        if (k === "__proto__" || k === "constructor" || k === "prototype")
+            continue;
         // Use type-safe access
         const key = k;
         if (key === "geminiApiKey") {
