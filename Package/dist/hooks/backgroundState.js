@@ -13,10 +13,10 @@ export function updateUserUrls(authUser) {
     routeUrl = `https://www.google.com/maps/dir/?authuser=${au}&`;
 }
 export function buildSearchUrl(q) {
-    return `${queryUrl}q=${encodeURIComponent(q ?? "")}`;
+    return `${queryUrl}q=${encodeURIComponent(q || "")}`;
 }
 export function buildDirectionsUrl(origin, destination) {
-    return `${routeUrl}api=1&origin=${encodeURIComponent(origin ?? "")}&destination=${encodeURIComponent(destination ?? "")}`;
+    return `${routeUrl}api=1&origin=${encodeURIComponent(origin || "")}&destination=${encodeURIComponent(destination || "")}`;
 }
 export function buildMapsUrl() {
     return queryUrl.slice(0, -1);
@@ -72,6 +72,9 @@ export async function applyStorageChanges(changes, area) {
     if (!cache)
         cache = { ...DEFAULTS };
     for (const [k, { newValue }] of Object.entries(changes)) {
+        // Validate key exists in DEFAULTS to prevent object injection
+        if (!(k in DEFAULTS))
+            continue;
         if (k === "geminiApiKey") {
             try {
                 cache[k] = await decryptApiKey(String(newValue));

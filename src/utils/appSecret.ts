@@ -6,7 +6,7 @@ interface AttachMapLinkRequest {
 (() => {
   function attachMapLinkToPage(request: AttachMapLinkRequest): void {
     // Handle null, undefined, or empty content
-    if (!request || !request.content) {
+    if (!request?.content) {
       return;
     }
 

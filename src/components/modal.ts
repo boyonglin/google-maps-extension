@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+
 type EncryptApiKeyFn = (apiKey: string) => Promise<string>;
 
 declare const configureElements: HTMLCollectionOf<Element>;
@@ -31,8 +33,8 @@ class Modal {
         await this.loadCrypto();
 
         // Shortcuts configuration link
-        for (let i = 0; i < configureElements.length; i++) {
-            const element = configureElements[i] as HTMLElement;
+        for (const elem of Array.from(configureElements)) {
+            const element = elem as HTMLElement;
             element.onclick = function (event: MouseEvent): void {
                 // Detect user browser
                 const userAgent = navigator.userAgent;
@@ -180,24 +182,40 @@ class Modal {
     text2Link(dataLocale: string, linkText: string, linkHref: string): void {
         const pElement = document.querySelector<HTMLParagraphElement>(`p[data-locale="${dataLocale}"]`);
         if (pElement) {
-            const originalText = pElement.innerHTML;
-            const newText = originalText.replace(
-                linkText,
-                `<a href="${linkHref}" target="_blank">${linkText}</a>`
-            );
-            pElement.innerHTML = newText;
+            const originalText = pElement.textContent || "";
+            // Create a safe anchor element
+            const anchor = document.createElement('a');
+            anchor.href = linkHref;
+            anchor.target = "_blank";
+            anchor.rel = "noopener noreferrer";
+            anchor.textContent = linkText;
+            
+            // Replace the text with the new content containing the anchor
+            const newText = originalText.replace(linkText, anchor.outerHTML);
+            // Configure DOMPurify to allow target attribute
+            pElement.innerHTML = DOMPurify.sanitize(newText, { 
+                ALLOWED_ATTR: ['href', 'target', 'rel', 'data-bs-toggle', 'data-bs-target']
+            });
         }
     }
 
     text2Modal(dataLocale: string, linkText: string, modalId: string): void {
         const pElement = document.querySelector<HTMLParagraphElement>(`p[data-locale="${dataLocale}"]`);
         if (pElement) {
-            const originalText = pElement.innerHTML;
-            const newText = originalText.replace(
-                linkText,
-                `<a href="#" data-bs-toggle="modal" data-bs-target="#${modalId}">${linkText}</a>`
-            );
-            pElement.innerHTML = newText;
+            const originalText = pElement.textContent || "";
+            // Create a safe anchor element
+            const anchor = document.createElement('a');
+            anchor.href = "#";
+            anchor.setAttribute('data-bs-toggle', 'modal');
+            anchor.setAttribute('data-bs-target', `#${modalId}`);
+            anchor.textContent = linkText;
+            
+            // Replace the text with the new content containing the anchor
+            const newText = originalText.replace(linkText, anchor.outerHTML);
+            // Configure DOMPurify to allow Bootstrap modal attributes
+            pElement.innerHTML = DOMPurify.sanitize(newText, {
+                ALLOWED_ATTR: ['href', 'target', 'rel', 'data-bs-toggle', 'data-bs-target']
+            });
         }
     }
 

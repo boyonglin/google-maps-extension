@@ -26,7 +26,9 @@ class State {
      */
     buildSearchUrl(q) {
         return new Promise((resolve) => {
-            chrome.runtime.sendMessage({ action: "buildSearchUrl", query: q }, (response) => resolve(response?.url));
+            chrome.runtime.sendMessage({ action: "buildSearchUrl", query: q }, (response) => {
+                resolve(response?.url);
+            });
         });
     }
     /**

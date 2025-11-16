@@ -521,7 +521,7 @@ describe('Modal Component - Full Coverage', () => {
                 'https://aistudio.google.com/app/apikey'
             );
 
-            expect(pElement.innerHTML).toContain('<a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>');
+            expect(pElement.innerHTML).toContain('<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>');
         });
 
         test('BUG: only replaces first occurrence', () => {

@@ -21,26 +21,26 @@ class Payment {
         if (!state.paymentStage)
             return;
         if (state.paymentStage.isFirst) {
-            premiumNoteElement.innerHTML = chrome.i18n.getMessage("firstNote");
+            premiumNoteElement.textContent = chrome.i18n.getMessage("firstNote");
         }
         else if (state.paymentStage.isTrial) {
             const trialEndOn = state.paymentStage.trialEnd
                 ? this.calcTrialEndDate(state.paymentStage.trialEnd)
                 : "";
-            paymentSpan.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);
-            premiumNoteElement.innerHTML = chrome.i18n.getMessage("remindNote");
+            paymentSpan.textContent = chrome.i18n.getMessage("trialNote", trialEndOn);
+            premiumNoteElement.textContent = chrome.i18n.getMessage("remindNote");
             modal.text2Modal("premiumNote", "Gemini AI", "apiModal");
             modal.text2Modal("premiumNote", "Alt+S / ⌥+S", "tipsModal");
         }
         else if (state.paymentStage.isPremium) {
             const feedbackUrl = "https://forms.fillout.com/t/dFSEkAwKYKus";
-            premiumNoteElement.innerHTML = chrome.i18n.getMessage("premiumNote");
+            premiumNoteElement.textContent = chrome.i18n.getMessage("premiumNote");
             modal.text2Link("premiumNote", "回饋", feedbackUrl);
             modal.text2Link("premiumNote", "feedback", feedbackUrl);
             modal.text2Link("premiumNote", "フィードバック", feedbackUrl);
         }
         else if (state.paymentStage.isFree) {
-            premiumNoteElement.innerHTML = chrome.i18n.getMessage("freeNote");
+            premiumNoteElement.textContent = chrome.i18n.getMessage("freeNote");
             modal.text2Link("premiumNote", "ExtensionPay", "https://extensionpay.com/");
         }
     }

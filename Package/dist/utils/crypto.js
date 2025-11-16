@@ -11,7 +11,7 @@ function b64ToBuf(b64) {
 }
 async function ensureAesKey() {
     const result = await chrome.storage.local.get("aesKey");
-    const aesKey = result ? result.aesKey : null;
+    const aesKey = result?.aesKey;
     if (aesKey) {
         return await crypto.subtle.importKey("jwk", aesKey, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
     }

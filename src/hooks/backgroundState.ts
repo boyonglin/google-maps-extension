@@ -32,11 +32,11 @@ export function updateUserUrls(authUser: unknown): void {
 }
 
 export function buildSearchUrl(q: string): string {
-  return `${queryUrl}q=${encodeURIComponent(q ?? "")}`;
+  return `${queryUrl}q=${encodeURIComponent(q || "")}`;
 }
 
 export function buildDirectionsUrl(origin: string, destination: string): string {
-  return `${routeUrl}api=1&origin=${encodeURIComponent(origin ?? "")}&destination=${encodeURIComponent(destination ?? "")}`;
+  return `${routeUrl}api=1&origin=${encodeURIComponent(origin || "")}&destination=${encodeURIComponent(destination || "")}`;
 }
 
 export function buildMapsUrl(): string {
@@ -96,6 +96,9 @@ export async function applyStorageChanges(
   if (area !== "local") return;
   if (!cache) cache = { ...DEFAULTS } as StorageCache;
   for (const [k, { newValue }] of Object.entries(changes)) {
+    // Validate key exists in DEFAULTS to prevent object injection
+    if (!(k in DEFAULTS)) continue;
+    
     if (k === "geminiApiKey") {
       try {
         cache[k] = await decryptApiKey(String(newValue));

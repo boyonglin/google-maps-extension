@@ -2,7 +2,7 @@
 (() => {
     function attachMapLinkToPage(request) {
         // Handle null, undefined, or empty content
-        if (!request || !request.content) {
+        if (!request?.content) {
             return;
         }
         const candidates = request.content.split("\n").map(item => item.trim()).filter(item => item !== "");
