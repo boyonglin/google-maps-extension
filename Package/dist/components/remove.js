@@ -1,60 +1,51 @@
 class Remove {
     addRemoveListener() {
         cancelButton.addEventListener("click", () => this.backToNormal());
-
         deleteButton.addEventListener("click", () => {
             if (searchHistoryButton.classList.contains("active-button")) {
                 this.deleteFromHistoryList();
-            } else {
+            }
+            else {
                 this.deleteFromFavoriteList();
             }
             this.backToNormal();
             measureContentSize();
         });
-
         deleteListButton.addEventListener("click", () => {
             const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
             const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
-
             if (deleteListButton.classList.contains("active-button")) {
                 this.backToNormal();
-            } else {
+            }
+            else {
                 deleteListButton.classList.add("active-button");
                 deleteListButton.style.pointerEvents = "auto";
-
                 searchButtonGroup.classList.add("d-none");
                 exportButtonGroup.classList.add("d-none");
                 deleteButtonGroup.classList.remove("d-none");
-
                 checkTextOverflow();
-
                 historyLiElements.forEach((li) => {
                     const checkbox = li.querySelector("input");
                     const favoriteIcon = li.querySelector("i");
-
                     checkbox.classList.remove("d-none");
                     favoriteIcon.classList.add("d-none");
-
                     li.classList.add("delete-list");
                     li.classList.remove("history-list");
                 });
-
                 favoriteLiElements.forEach((li) => {
                     const checkbox = li.querySelector("input");
                     const favoriteIcon = li.querySelector("i");
-
                     checkbox.classList.remove("d-none");
                     favoriteIcon.classList.add("d-none");
-
                     li.classList.add("delete-list");
                     li.classList.remove("favorite-list");
                 });
-
                 if (searchHistoryButton.classList.contains("active-button")) {
                     favoriteListButton.disabled = true;
                     geminiSummaryButton.disabled = true;
                     this.updateDeleteCount();
-                } else {
+                }
+                else {
                     searchHistoryButton.disabled = true;
                     geminiSummaryButton.disabled = true;
                     this.updateDeleteCount();
@@ -62,31 +53,23 @@ class Remove {
             }
         });
     }
-
     deleteFromHistoryList() {
-        const checkedBoxes =
-            searchHistoryListContainer.querySelectorAll("input:checked");
+        const checkedBoxes = searchHistoryListContainer.querySelectorAll("input:checked");
         const selectedTexts = [];
-
         // Delete checked items from the lists
         checkedBoxes.forEach((checkbox) => {
             // Get the corresponding list item (parent element of the checkbox)
             const listItem = checkbox.closest("li");
             const selectedText = listItem.querySelector("span").textContent;
             selectedTexts.push(selectedText);
-
             listItem.remove();
         });
-
         chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
-            if (!searchHistoryList) return;
-            
+            if (!searchHistoryList)
+                return;
             // Filter out the selected texts from the search history list
-            const updatedList = searchHistoryList.filter(
-                (item) => !selectedTexts.includes(item)
-            );
+            const updatedList = searchHistoryList.filter((item) => !selectedTexts.includes(item));
             chrome.storage.local.set({ searchHistoryList: updatedList });
-
             if (updatedList.length === 0) {
                 state.hasHistory = false;
                 clearButton.disabled = true;
@@ -98,11 +81,9 @@ class Remove {
             }
         });
     }
-
     deleteFromFavoriteList() {
         const checkedBoxes = favoriteListContainer.querySelectorAll("input:checked");
         const selectedTexts = [];
-
         checkedBoxes.forEach((checkbox) => {
             const listItem = checkbox.closest("li");
             const spanItem = listItem.querySelectorAll("span");
@@ -110,14 +91,12 @@ class Remove {
             if (spanItem.length > 1) {
                 const clueText = spanItem[1].textContent;
                 selectedTexts.push(selectedText + " @" + clueText);
-            } else {
+            }
+            else {
                 selectedTexts.push(selectedText);
             }
-
             listItem.remove();
-
             const historyIElements = searchHistoryListContainer.querySelectorAll("i");
-
             historyIElements.forEach((icon) => {
                 const parentSpan = icon.parentElement?.querySelector("span");
                 if (parentSpan && selectedText === parentSpan.textContent) {
@@ -125,15 +104,11 @@ class Remove {
                 }
             });
         });
-
         chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-            if (!favoriteList) return;
-            
-            const updatedList = favoriteList.filter(
-                (item) => !selectedTexts.includes(item)
-            );
+            if (!favoriteList)
+                return;
+            const updatedList = favoriteList.filter((item) => !selectedTexts.includes(item));
             chrome.storage.local.set({ favoriteList: updatedList });
-
             if (updatedList.length === 0) {
                 state.hasFavorite = false;
                 exportButton.disabled = true;
@@ -145,94 +120,76 @@ class Remove {
             }
         });
     }
-
     attachCheckboxEventListener(container) {
         const checkboxes = container.querySelectorAll("input");
         const liElements = container.querySelectorAll("li");
-
         checkboxes.forEach((checkbox, index) => {
             checkbox.addEventListener("click", () => {
                 const li = liElements[index];
-
                 if (checkbox.checked) {
                     li.classList.add("checked-list");
-                } else {
+                }
+                else {
                     li.classList.remove("checked-list");
                 }
-
                 this.updateDeleteCount();
             });
         });
     }
-
     // Update the delete count based on checked checkboxes
     updateDeleteCount() {
-        const historyCheckedCount =
-            searchHistoryListContainer.querySelectorAll("input:checked").length;
-        const favoriteCheckedCount =
-            favoriteListContainer.querySelectorAll("input:checked").length;
-
+        const historyCheckedCount = searchHistoryListContainer.querySelectorAll("input:checked").length;
+        const favoriteCheckedCount = favoriteListContainer.querySelectorAll("input:checked").length;
         const checkedCount = searchHistoryButton.classList.contains("active-button")
             ? historyCheckedCount
             : favoriteCheckedCount;
-
         if (checkedCount > 0) {
             // turn const to string
-            deleteButtonSpan.textContent = chrome.i18n.getMessage(
-                "deleteBtnText",
-                checkedCount + ""
-            );
+            deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnText", checkedCount + "");
             deleteButton.classList.remove("disabled");
-        } else {
+        }
+        else {
             deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnTextEmpty");
             deleteButton.classList.add("disabled");
         }
     }
-
     backToNormal() {
         deleteListButton.style.pointerEvents = "";
         deleteListButton.classList.remove("active-button");
         deleteButtonGroup.classList.add("d-none");
-
         if (searchHistoryButton.classList.contains("active-button")) {
             searchButtonGroup.classList.remove("d-none");
             favoriteListButton.disabled = false;
             geminiSummaryButton.disabled = false;
-        } else {
+        }
+        else {
             exportButtonGroup.classList.remove("d-none");
             searchHistoryButton.disabled = false;
             geminiSummaryButton.disabled = false;
         }
-
         this.updateInput();
     }
-
     // Toggle checkbox display
     updateInput() {
         const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
         const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
-
         this.updateListElements(historyLiElements, "history");
         this.updateListElements(favoriteLiElements, "favorite");
     }
-
     updateListElements(liElements, listType) {
         liElements.forEach((li) => {
             const checkbox = li.querySelector("input");
             const favoriteIcon = li.querySelector("i");
-
             checkbox.classList.add("d-none");
             favoriteIcon.classList.remove("d-none");
-
             li.classList.remove("checked-list");
             checkbox.checked = false;
-
             li.classList.remove("delete-list");
             li.classList.add(listType + "-list");
         });
     }
 }
-
 if (typeof module !== "undefined" && module.exports) {
     module.exports = Remove;
 }
+//# sourceMappingURL=remove.js.map

@@ -5,3 +5,9 @@ node_modules/
 coverage/
 
 .vscode/
+
+# TypeScript build artifacts
+*.d.ts
+*.d.ts.map
+*.js.map
+!Package/vendor/**/*.js

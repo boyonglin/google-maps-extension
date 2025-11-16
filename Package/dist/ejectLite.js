@@ -1,7 +1,8 @@
 (function () {
-  if (typeof window.TME == "object") {
-    if (typeof window.TME.eject == "function") {
-      window.TME.eject();
+    if (typeof window.TME == "object") {
+        if (typeof window.TME.eject == "function") {
+            window.TME.eject();
+        }
     }
-  }
 })();
+//# sourceMappingURL=ejectLite.js.map

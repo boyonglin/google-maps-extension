@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM"],
+    "outDir": "./Package/dist",
+    "rootDir": "./",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "allowJs": true,
+    "checkJs": true,
+    "maxNodeModuleJsDepth": 1,
+    "types": ["chrome", "node"]
+  },
+  "include": [
+    "Package/dist/**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "Package/vendor",
+    "Package/dist/utils/ExtPay.module.js",
+    "Package/dist/utils/browser-polyfill.js",
+    "tests",
+    "coverage"
+  ]
+}
