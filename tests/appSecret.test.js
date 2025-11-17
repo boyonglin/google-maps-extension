@@ -1,7 +1,7 @@
 /**
  * Unit Tests for appSecret.js
  * Tests the map link attachment functionality for web pages
- * 
+ *
  * This module is responsible for:
  * 1. Parsing candidate location names from text content
  * 2. Finding those names in the DOM
@@ -16,7 +16,7 @@ const DOMPurify = createDOMPurify(window);
 // Configure DOMPurify to allow custom YouTube elements and preserve all attributes
 DOMPurify.addHook('uponSanitizeElement', (node, data) => {
   // Allow custom YouTube elements
-  if (data.tagName === 'yt-formatted-string' || 
+  if (data.tagName === 'yt-formatted-string' ||
       data.tagName === 'ytd-text-inline-expander' ||
       data.tagName === 'yt-attributed-string') {
     data.allowedTags[data.tagName] = true;
@@ -24,7 +24,7 @@ DOMPurify.addHook('uponSanitizeElement', (node, data) => {
 });
 
 describe('appSecret.js - Map Link Attachment', () => {
-  
+
   let attachMapLinkToPage;
 
   // Constants for testing
@@ -44,14 +44,14 @@ describe('appSecret.js - Map Link Attachment', () => {
     while (document.body.firstChild) {
       document.body.removeChild(document.body.firstChild);
     }
-    
+
     // Use DOMPurify to sanitize HTML and create a safe DOM structure
     const sanitized = DOMPurify.sanitize(html);
-    
+
     // Use DOMParser API (completely avoids innerHTML)
     const parser = new DOMParser();
     const doc = parser.parseFromString(sanitized, 'text/html');
-    
+
     // Append all children from parsed document body
     Array.from(doc.body.childNodes).forEach(node => {
       document.body.appendChild(node.cloneNode(true));
@@ -100,7 +100,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Basic Functionality', () => {
-    
+
     test('should be defined and accessible globally', () => {
       expect(attachMapLinkToPage).toBeDefined();
       expect(typeof attachMapLinkToPage).toBe('function');
@@ -134,7 +134,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Multiple Candidates', () => {
-    
+
     test('should handle multiple candidates separated by newlines', () => {
       setupAndAttach(
         '<h1>Central Park</h1><h2>Times Square</h2><p>Empire State Building</p>',
@@ -169,7 +169,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Pin Link Properties', () => {
-    
+
     beforeEach(() => {
       setupAndAttach('<h1>Central Park</h1>', 'Central Park');
     });
@@ -202,34 +202,22 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Skip Conditions', () => {
-    
+
     test.each([
       ['existing map link', '<h1>Central Park<a href="https://www.google.com/maps">📌</a></h1>'],
       ['yt-formatted-string', '<h1><yt-formatted-string>Central Park</yt-formatted-string></h1>'],
-      ['ytd-compact-video-renderer class', '<h1 class="ytd-compact-video-renderer">Central Park</h1>']
+      ['yt-lockup-metadata-view-model__title class', '<h1 class="yt-lockup-metadata-view-model__title">Central Park</h1>']
     ])('should skip element with %s', (condition, html) => {
       setupAndAttach(html, 'Central Park');
-      
+
       // For existing map link case, there's already 1 link that should not be duplicated
       const expectedCount = condition === 'existing map link' ? 1 : 0;
       expect(getMapLinks().length).toBe(expectedCount);
     });
-
-    test('should not skip if ytd-compact-video-renderer is on parent element', () => {
-      // BUG IDENTIFIED: The code only checks if the element itself has the class,
-      // not if a parent has it. This might allow unwanted pins in YouTube compact renderers.
-      setupAndAttach(
-        '<div class="ytd-compact-video-renderer"><h1>Central Park</h1></div>',
-        'Central Park'
-      );
-
-      // Current behavior: adds link (potentially unintended behavior)
-      expect(getMapLinks().length).toBe(1);
-    });
   });
 
   describe('Text Positioning', () => {
-    
+
     test('should insert pin immediately after candidate name', () => {
       setupAndAttach('<h1>Visit Central Park today</h1>', 'Central Park');
 
@@ -267,7 +255,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Duplicate Prevention', () => {
-    
+
     test('should process same candidate only once per element', () => {
       setupAndAttach('<h1>Central Park and Central Park again</h1>', 'Central Park');
 
@@ -292,7 +280,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('YouTube Special Case', () => {
-    
+
     const youtubeHTML = (spans) => `
       <div id="description">
         <ytd-text-inline-expander>
@@ -331,7 +319,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Edge Cases', () => {
-    
+
     test.each([
       ['empty', ''],
       ['null', null],
@@ -339,7 +327,7 @@ describe('appSecret.js - Map Link Attachment', () => {
       ['whitespace-only', '   \n\n\t\t  \n  ']
     ])('should handle %s content gracefully', (type, content) => {
       setBodyHTML('<h1>Central Park</h1>');
-      
+
       expect(() => attachMapLinkToPage(createRequest(content))).not.toThrow();
       expect(getMapLinks().length).toBe(0);
     });
@@ -390,7 +378,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Query URL Formation', () => {
-    
+
     test('should use provided queryUrl', () => {
       // Arrange
       setBodyHTML('<h1>Central Park</h1>');
@@ -441,7 +429,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Regex Matching', () => {
-    
+
     test('should use regex for matching candidate names', () => {
       // Arrange
       setBodyHTML('<h1>The Central Park is nice</h1>');
@@ -467,8 +455,6 @@ describe('appSecret.js - Map Link Attachment', () => {
       };
 
       // Act
-      // BUG FIX: The code now escapes special regex characters
-      // Previously failed for candidates containing [], (), +, *, etc.
       attachMapLinkToPage(request);
 
       // Assert - After fix, this should work correctly
@@ -609,7 +595,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('DOM Manipulation', () => {
-    
+
     test('should use TreeWalker for finding text nodes', () => {
       // Arrange
       setBodyHTML(`
@@ -671,7 +657,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Performance and Scale', () => {
-    
+
     test('should handle many elements efficiently', () => {
       // Arrange
       let html = '';
@@ -679,7 +665,7 @@ describe('appSecret.js - Map Link Attachment', () => {
         html += `<p>Location ${i}: Central Park</p>`;
       }
       setBodyHTML(html);
-      
+
       const request = {
         content: 'Central Park',
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -703,7 +689,7 @@ describe('appSecret.js - Map Link Attachment', () => {
         candidates.push(`Location ${i}`);
       }
       setBodyHTML('<h1>' + candidates.join(' and ') + '</h1>');
-      
+
       const request = {
         content: candidates.join('\n'),
         queryUrl: 'https://www.google.com/maps/search/?api=1&'
@@ -722,7 +708,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Integration with Content Script', () => {
-    
+
     test('should work with real-world HTML structure', () => {
       // Arrange - Simulate a blog post
       setBodyHTML(`
@@ -777,7 +763,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Case Sensitivity', () => {
-    
+
     test('should match candidate with exact case', () => {
       // Arrange
       setBodyHTML('<h1>Central Park is nice</h1>');
@@ -812,7 +798,7 @@ describe('appSecret.js - Map Link Attachment', () => {
   });
 
   describe('Boundary Conditions', () => {
-    
+
     test('should handle single character candidate', () => {
       // Arrange
       setBodyHTML('<h1>A is a letter</h1>');

@@ -137,7 +137,6 @@ You can copy and paste this to your manifest.json file to fix this error:
                 'Accept': 'application/json',
             }
         });
-        // TODO: think harder about error states and what users will want (bad connection, server error, id not found)
         if (!resp.ok) throw 'ExtPay error while fetching user: '+(await resp.text())
 
         const user_data = await resp.json();
@@ -309,9 +308,6 @@ You can copy and paste this to your manifest.json file to fix this error:
 
                 paid_callbacks.push(callback);
             },
-            // removeListener: function(callback) {
-            //     // TODO
-            // }
         },
         getPlans: get_plans,
         openPaymentPage: open_payment_page,

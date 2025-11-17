@@ -11,7 +11,7 @@
       // Skip if the element already contains a map link or a YouTube-formatted string
       if (element.querySelector('a[href*="https://www.google.com/maps"]') ||
         element.querySelector("yt-formatted-string") ||
-        element.classList.contains("ytd-compact-video-renderer")) {
+        element.classList.contains("yt-lockup-metadata-view-model__title")) {
         return;
       }
 
