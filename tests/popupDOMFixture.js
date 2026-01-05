@@ -203,9 +203,13 @@ function createPopupDOM() {
                 </button>
               </div>
             </form>
-            <button id="incognitoToggle" class="btn btn-outline-secondary modalFormInput w-100 incognito-btn" type="button">
+            <button id="incognitoToggle" class="btn btn-outline-secondary modalFormInput w-100 toggle-btn" type="button">
               <span class="incognito-text" data-locale="incognitoToggleText">Incognito Mode</span>
               <span class="incognito-icon d-none"><i class="bi bi-incognito"></i></span>
+            </button>
+            <button id="darkModeToggle" class="btn btn-outline-secondary modalFormInput w-100 toggle-btn mt-3" type="button">
+              <span class="darkmode-text" data-locale="darkModeToggleText">Dark Mode</span>
+              <span class="darkmode-icon d-none"><i class="bi bi-circle-half"></i></span>
             </button>
           </div>
         </div>

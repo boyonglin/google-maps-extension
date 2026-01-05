@@ -7,16 +7,7 @@
 // Chrome API Mocking Utilities
 // ============================================================================
 
-/**
- * Mock chrome.runtime.sendMessage with a simple response
- * @param {Object} response - The response object to return
- * @deprecated Use mockChromeRuntimeMessage for more control
- */
-const mockRuntimeMessage = (response) => {
-    global.chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback(response);
-    });
-};
+
 
 /**
  * Mock chrome.runtime.sendMessage with action-based routing
@@ -35,28 +26,9 @@ const mockChromeRuntimeMessage = (actionResponses = {}) => {
     });
 };
 
-/**
- * Mock chrome.storage.local.get with data
- * @param {Object} data - The data to return
- * @deprecated Use mockChromeStorage for batch operations
- */
-const mockStorageGet = (data = {}) => {
-    global.chrome.storage.local.get.mockImplementation((key, callback) => {
-        callback(data);
-    });
-};
 
-/**
- * Mock chrome.storage.local.set
- * @param {Function} callback - Optional callback to execute
- * @deprecated Use mockChromeStorage for batch operations
- */
-const mockStorageSet = (callback) => {
-    global.chrome.storage.local.set.mockImplementation((data, cb) => {
-        if (cb) cb();
-        if (callback) callback(data);
-    });
-};
+
+
 
 /**
  * Mock both chrome.storage.local.get and set in one call
@@ -80,16 +52,7 @@ const mockChromeStorage = (getResponse = {}, setCallback = null) => {
     }
 };
 
-/**
- * Setup chrome.runtime.sendMessage mock with response
- * @param {Object} response - Response object
- * @deprecated Use mockChromeRuntimeMessage instead
- */
-const setupMockResponse = (response) => {
-    chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        callback(response);
-    });
-};
+
 
 /**
  * Setup mock storage data with default values
@@ -192,7 +155,6 @@ const captureEventListeners = (eventPaths) => {
  * Create a promise that resolves after a delay
  * @param {number} ms - Milliseconds to wait
  * @returns {Promise}
- * @deprecated Use flushPromises() instead for deterministic async testing
  */
 const wait = (ms = 50) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -459,27 +421,23 @@ const TEST_CONSTANTS = {
 
 module.exports = {
     // Chrome API Mocking
-    mockRuntimeMessage,              // @deprecated - Use mockChromeRuntimeMessage
-    mockChromeRuntimeMessage,        // NEW: Action-based message routing
-    mockStorageGet,                  // @deprecated - Use mockChromeStorage
-    mockStorageSet,                  // @deprecated - Use mockChromeStorage
-    mockChromeStorage,               // NEW: Batch storage mocking
-    setupMockResponse,               // @deprecated - Use mockChromeRuntimeMessage
+    mockChromeRuntimeMessage,
+    mockChromeStorage,
     mockTabsQuery,
     mockTabsSendMessage,
     
     // Fetch Mocking
-    setupMockFetch,                  // NEW: Mock global fetch API
+    setupMockFetch,
     
     // Event Listener Capture
-    captureEventListeners,           // NEW: Capture Chrome event listeners
+    captureEventListeners,
     
     // Storage Setup
     setupMockStorage,
     
     // Async Utilities
-    wait,                            // @deprecated - Use flushPromises
-    flushPromises,                   // NEW: Deterministic promise flushing
+    wait,
+    flushPromises,
     
     // DOM Utilities
     createMockListItems,
