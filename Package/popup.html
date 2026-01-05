@@ -119,7 +119,7 @@
         <footer>
             <ul class="nav justify-content-center border-top">
                 <li class="nav-item footer-li">
-                    <a href="https://bento.me/the-maps-express" target="_blank" class="nav-link text-muted" data-locale="aboutBtnText"></a>
+                    <a href="https://bento-we-clancy.figma.site/the-maps-express" target="_blank" class="nav-link text-muted" data-locale="aboutBtnText"></a>
                 </li>
                 <li class="nav-item footer-li" data-bs-toggle="modal" data-bs-target="#tipsModal">
                     <span class="nav-link text-muted" data-locale="tipsBtnText"></span>
@@ -154,15 +154,15 @@
                             </p>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <h2 class="fs-6 fw-normal premium-only" data-locale="autoAttachKeyLabel"></h2>
-                            <p type="button" class="text-muted premium-only" title="Keyboard shortcuts">
-                                Alt+S / &#8997;+S
-                            </p>
-                        </div>
-                        <div class="d-flex justify-content-between">
                             <h2 class="fs-6 fw-normal" data-locale="directionsKeyLabel"></h2>
                             <p type="button" class="text-muted" title="Keyboard shortcuts">
                                 Alt+R / &#8997;+R
+                            </p>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <h2 class="fs-6 fw-normal premium-only" data-locale="autoAttachKeyLabel"></h2>
+                            <p type="button" class="text-muted premium-only" title="Keyboard shortcuts">
+                                Alt+S / &#8997;+S
                             </p>
                         </div>
                     </div>
@@ -211,9 +211,9 @@
                         <h1 class="modal-title fs-6" id="optionalModalLabel" data-locale="optionalTitle"></h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body my-3">
                         <!-- First form for directory input -->
-                        <form id="dirForm" class="my-3">
+                        <form id="dirForm" class="mb-3">
                             <div class="d-flex mb-3 position-relative">
                                 <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off"
                                     id="dirInput" />
@@ -225,7 +225,7 @@
                         </form>
 
                         <!-- Second form for authUser input -->
-                        <form id="authUserForm" class="my-3">
+                        <form id="authUserForm" class="mb-3">
                             <div class="d-flex position-relative">
                                 <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off"
                                     id="authUserInput" />
@@ -238,13 +238,20 @@
 
                         <!-- Incognito Mode Button -->
                         <button id="incognitoToggle"
-                            class="btn btn-outline-secondary modalFormInput w-100 incognito-btn" type="button">
+                            class="btn btn-outline-secondary modalFormInput w-100 toggle-btn mb-3" type="button">
                             <span class="incognito-text" data-locale="incognitoToggleText"></span>
                             <span class="incognito-icon d-none"><i class="bi bi-incognito"></i></span>
                         </button>
+
+                        <!-- Dark Mode Toggle Button -->
+                        <button id="darkModeToggle"
+                            class="btn btn-outline-secondary modalFormInput w-100 toggle-btn" type="button">
+                            <span class="darkmode-text" data-locale="darkModeToggleText"></span>
+                            <span class="darkmode-icon d-none"><i class="bi bi-circle-half"></i></span>
+                        </button>
                     </div>
                     <div class="modal-footer d-flex justify-content-start">
-                        <p class="text-muted" data-locale="optionalNote"></p>
+                        <p class="text-muted" data-locale="optionalFooterNote"></p>
                     </div>
                 </div>
             </div>
@@ -273,6 +280,7 @@
         </div>
     </div>
     <script defer src="dist/hooks/popupState.js"></script>
+    <script defer src="dist/utils/theme.js"></script>
     <script defer src="dist/components/menu.js"></script>
     <script defer src="dist/components/remove.js"></script>
     <script defer src="dist/components/favorite.js"></script>

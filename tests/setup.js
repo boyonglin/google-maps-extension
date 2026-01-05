@@ -148,8 +148,12 @@ global.chrome = {
         optionalTitle: 'Optional Settings',
         apiTitle: 'API Settings',
         dirPlaceholder: 'Enter starting address',
+        dirTooltip: 'Use right-click or shortcut to get directions from this starting point',
         authUserPlaceholder: 'Enter authuser value',
+        authUserTooltip: 'Switch Google account: 0 / 1 / 2 ...',
         incognitoToggleText: 'Incognito Mode',
+        darkModeToggleText: 'Enable Dark Mode',
+        darkModeNote: 'Toggle dark mode for the extension popup',
         importErrorMsg: 'Import failed',
         openAll: 'Open All',
         tidyLocations: 'Tidy Locations',
@@ -160,7 +164,8 @@ global.chrome = {
         directionsKeyLabel: 'Directions',
         shortcutsNote: 'Configure shortcuts in browser settings',
         premiumNote: 'Premium features note',
-        optionalNote: 'Optional settings note',
+        incognitoNote: "Summary and search history won't be kept",
+        optionalFooterNote: 'Hover over each setting to view its description.',
         apiNote: 'Get your API key from Google AI Studio',
         autoAttachLabel: 'Auto Attach',
         tidyLabel: 'Tidy',
@@ -180,6 +185,25 @@ global.chrome = {
 // Mock DOM elements that might be referenced in the code
 global.mapsButton = {
   href: ''
+};
+
+// Mock ThemeUtils
+global.ThemeUtils = {
+  STORAGE_KEY: "isDarkMode",
+  THEME_ATTRIBUTE: "data-theme",
+  BS_THEME_ATTRIBUTE: "data-bs-theme",
+  DARK: "dark",
+  LIGHT: "light",
+  getSystemPreference: jest.fn(() => false),
+  getStoredPreference: jest.fn(() => Promise.resolve(false)),
+  savePreference: jest.fn(() => Promise.resolve()),
+  applyToElement: jest.fn(),
+  initialize: jest.fn((element, includeBootstrap, callback) => {
+    if (callback) callback(false);
+    return Promise.resolve(false);
+  }),
+  toggle: jest.fn(() => Promise.resolve(true)),
+  notifyContentScript: jest.fn()
 };
 
 // Mock requestAnimationFrame and requestIdleCallback

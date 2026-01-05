@@ -1,4 +1,19 @@
 window.TME = {
+    /**
+     * Theme utilities for iframe context
+     */
+    applyTheme: function (element, isDarkMode) {
+        if (isDarkMode) {
+            element.setAttribute("data-theme", "dark");
+        } else {
+            element.removeAttribute("data-theme");
+        }
+    },
+    
+    getSystemPreference: function () {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    },
+
     setup: function () {
         const defaultX = window.innerWidth - 480;
         const defaultY = 50;
@@ -7,6 +22,17 @@ window.TME = {
         iframeContainer.id = "TMEiframe";
         iframeContainer.style.left = defaultX + "px";
         iframeContainer.style.top = defaultY + "px";
+        
+        // Apply dark mode theme if enabled
+        chrome.storage.local.get("isDarkMode", ({ isDarkMode }) => {
+            if (isDarkMode === undefined) {
+                // Check system preference if no stored preference
+                const prefersDark = TME.getSystemPreference();
+                TME.applyTheme(iframeContainer, prefersDark);
+            } else {
+                TME.applyTheme(iframeContainer, isDarkMode);
+            }
+        });
         // iframeContainer.style.resize = "vertical";
 
         const draggableBar = document.createElement("div");

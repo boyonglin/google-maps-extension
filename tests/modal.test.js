@@ -32,6 +32,9 @@ global.payment = {
     checkPay: jest.fn()
 };
 
+// Mock applyTheme function (defined in popup.js)
+global.applyTheme = jest.fn();
+
 // Create global DOM elements that modal.js expects from popup.js
 const setupGlobalDOMElements = () => {
     document.body.innerHTML = `
@@ -55,6 +58,10 @@ const setupGlobalDOMElements = () => {
         <form id="apiForm"></form>
         <form id="dirForm"></form>
         <form id="authUserForm"></form>
+        <button id="darkModeToggle">
+            <span class="darkmode-text">Light</span>
+            <span class="darkmode-icon d-none"><i class="bi bi-circle-half"></i></span>
+        </button>
     `;
     
     // Assign global references
@@ -65,6 +72,7 @@ const setupGlobalDOMElements = () => {
     global.geminiEmptyMessage = document.getElementById('geminiEmptyMessage');
     global.sendButton = document.getElementById('sendButton');
     global.incognitoToggle = document.getElementById('incognitoToggle');
+    global.darkModeToggle = document.getElementById('darkModeToggle');
     global.paymentButton = document.getElementById('paymentButton');
     global.restoreButton = document.getElementById('restoreButton');
     global.closeButton = document.querySelector('.btn-close');
@@ -72,7 +80,7 @@ const setupGlobalDOMElements = () => {
 
 const cleanupGlobalDOMElements = () => {
     ['configureElements', 'apiInput', 'dirInput', 'authUserInput', 
-     'geminiEmptyMessage', 'sendButton', 'incognitoToggle', 
+     'geminiEmptyMessage', 'sendButton', 'incognitoToggle', 'darkModeToggle',
      'paymentButton', 'restoreButton', 'closeButton'].forEach(name => {
         if (global[name]) {
             if (Array.isArray(global[name])) {
@@ -453,19 +461,90 @@ describe('Modal Component - Full Coverage', () => {
             expect(updateSpy).toHaveBeenCalledWith(true);
         });
 
-        test('should remove incognito-just-off class on mouseleave', async () => {
+        test('should remove toggle-just-off class on mouseleave', async () => {
             await modalInstance.addModalListener();
 
             // Add the class first
-            incognitoToggle.classList.add('incognito-just-off');
-            expect(incognitoToggle.classList.contains('incognito-just-off')).toBe(true);
+            incognitoToggle.classList.add('toggle-just-off');
+            expect(incognitoToggle.classList.contains('toggle-just-off')).toBe(true);
 
             // Trigger mouseleave event
             const mouseleaveEvent = new MouseEvent('mouseleave');
             incognitoToggle.dispatchEvent(mouseleaveEvent);
 
             // Class should be removed (covers line 127)
-            expect(incognitoToggle.classList.contains('incognito-just-off')).toBe(false);
+            expect(incognitoToggle.classList.contains('toggle-just-off')).toBe(false);
+        });
+    });
+
+    // ============================================================================
+    // Test: addModalListener - Dark Mode Toggle
+    // ============================================================================
+
+    describe('addModalListener - Dark Mode Toggle', () => {
+        test('should toggle dark mode from false to true', async () => {
+            chrome.storage.local.get.mockImplementation((key, callback) => {
+                callback({ isDarkMode: false });
+            });
+
+            await modalInstance.addModalListener();
+
+            darkModeToggle.click();
+
+            await wait(50);
+
+            expect(chrome.storage.local.set).toHaveBeenCalledWith(
+                { isDarkMode: true },
+                expect.any(Function)
+            );
+            expect(global.applyTheme).toHaveBeenCalledWith(true);
+        });
+
+        test('should toggle dark mode from true to false', async () => {
+            chrome.storage.local.get.mockImplementation((key, callback) => {
+                callback({ isDarkMode: true });
+            });
+
+            await modalInstance.addModalListener();
+
+            darkModeToggle.click();
+
+            await wait(50);
+
+            expect(chrome.storage.local.set).toHaveBeenCalledWith(
+                { isDarkMode: false },
+                expect.any(Function)
+            );
+            expect(global.applyTheme).toHaveBeenCalledWith(false);
+        });
+
+        test('should default to false when isDarkMode is undefined', async () => {
+            chrome.storage.local.get.mockImplementation((key, callback) => {
+                callback({});
+            });
+
+            await modalInstance.addModalListener();
+
+            darkModeToggle.click();
+
+            await wait(50);
+
+            expect(chrome.storage.local.set).toHaveBeenCalledWith(
+                { isDarkMode: true },
+                expect.any(Function)
+            );
+        });
+
+        test('should remove toggle-just-off class on mouseleave', async () => {
+            await modalInstance.addModalListener();
+
+            darkModeToggle.classList.add('toggle-just-off');
+            expect(darkModeToggle.classList.contains('toggle-just-off')).toBe(true);
+
+            const mouseleaveEvent = new MouseEvent('mouseleave');
+            darkModeToggle.dispatchEvent(mouseleaveEvent);
+
+            expect(darkModeToggle.classList.contains('toggle-just-off')).toBe(false);
         });
     });
 
@@ -524,7 +603,7 @@ describe('Modal Component - Full Coverage', () => {
             expect(pElement.innerHTML).toContain('<a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>');
         });
 
-        test('BUG: only replaces first occurrence', () => {
+        test('only replaces first occurrence of text', () => {
             const pElement = document.createElement('p');
             pElement.setAttribute('data-locale', 'multi');
             pElement.innerHTML = 'Link here and Link there';
@@ -533,7 +612,7 @@ describe('Modal Component - Full Coverage', () => {
             modalInstance.text2Link('multi', 'Link', 'https://example.com');
 
             const count = (pElement.innerHTML.match(/href="https:\/\/example.com"/g) || []).length;
-            expect(count).toBe(1); // Bug: should be 2
+            expect(count).toBe(1);
         });
     });
 
@@ -568,10 +647,24 @@ describe('Modal Component - Full Coverage', () => {
     describe('updateIncognitoModal', () => {
         test('should toggle incognito UI state', () => {
             modalInstance.updateIncognitoModal(true);
-            expect(incognitoToggle.classList.contains('incognito-active')).toBe(true);
+            expect(incognitoToggle.classList.contains('toggle-active')).toBe(true);
 
             modalInstance.updateIncognitoModal(false);
-            expect(incognitoToggle.classList.contains('incognito-active')).toBe(false);
+            expect(incognitoToggle.classList.contains('toggle-active')).toBe(false);
+        });
+    });
+
+    describe('updateDarkModeModal', () => {
+        test('should toggle dark mode UI state', () => {
+            modalInstance.updateDarkModeModal(true);
+            expect(darkModeToggle.classList.contains('toggle-active')).toBe(true);
+            expect(document.querySelector('.darkmode-text').classList.contains('d-none')).toBe(true);
+            expect(document.querySelector('.darkmode-icon').classList.contains('d-none')).toBe(false);
+
+            modalInstance.updateDarkModeModal(false);
+            expect(darkModeToggle.classList.contains('toggle-active')).toBe(false);
+            expect(document.querySelector('.darkmode-text').classList.contains('d-none')).toBe(false);
+            expect(document.querySelector('.darkmode-icon').classList.contains('d-none')).toBe(true);
         });
     });
 
