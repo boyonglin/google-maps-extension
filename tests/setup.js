@@ -187,6 +187,25 @@ global.mapsButton = {
   href: ''
 };
 
+// Mock ThemeUtils
+global.ThemeUtils = {
+  STORAGE_KEY: "isDarkMode",
+  THEME_ATTRIBUTE: "data-theme",
+  BS_THEME_ATTRIBUTE: "data-bs-theme",
+  DARK: "dark",
+  LIGHT: "light",
+  getSystemPreference: jest.fn(() => false),
+  getStoredPreference: jest.fn(() => Promise.resolve(false)),
+  savePreference: jest.fn(() => Promise.resolve()),
+  applyToElement: jest.fn(),
+  initialize: jest.fn((element, includeBootstrap, callback) => {
+    if (callback) callback(false);
+    return Promise.resolve(false);
+  }),
+  toggle: jest.fn(() => Promise.resolve(true)),
+  notifyContentScript: jest.fn()
+};
+
 // Mock requestAnimationFrame and requestIdleCallback
 global.requestAnimationFrame = jest.fn((cb) => {
   cb();
