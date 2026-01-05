@@ -74,6 +74,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   }
 
+  if (request.action === "updateTheme") {
+    let iframeContainer = document.getElementById("TMEiframe");
+    
+    if (iframeContainer) {
+      if (request.isDarkMode) {
+        iframeContainer.setAttribute("data-theme", "dark");
+      } else {
+        iframeContainer.removeAttribute("data-theme");
+      }
+    }
+  }
+
   if (request.action === "consoleQuote" && request.stage) {
     const quotes = {
       first: '"Er — hello," — Harry Potter',

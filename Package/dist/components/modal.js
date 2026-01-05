@@ -111,18 +111,13 @@ class Modal {
             }
         });
 
-        // Incognito toggle
-        incognitoToggle.addEventListener("click", () => {
-            chrome.storage.local.get("isIncognito", ({ isIncognito = false }) => {
-                const newState = !isIncognito;
-                chrome.storage.local.set({ isIncognito: newState }, () => {
-                    this.updateIncognitoModal(newState);
-                });
-            });
+        // Toggle handlers using shared pattern
+        this._setupToggle(incognitoToggle, "isIncognito", (newState) => {
+            this.updateIncognitoModal(newState);
         });
 
-        incognitoToggle.addEventListener("mouseleave", () => {
-            incognitoToggle.classList.remove("incognito-just-off");
+        this._setupToggle(darkModeToggle, "isDarkMode", (newState) => {
+            applyTheme(newState);
         });
 
         // Premium panel
@@ -177,21 +172,40 @@ class Modal {
         }
     }
 
-    updateIncognitoModal(isIncognito) {
-        const incognitoText = document.querySelector(".incognito-text");
-        const incognitoIcon = document.querySelector(".incognito-icon");
+    // Update toggle button UI state
+    updateToggleUI(isActive, textSelector, iconSelector, toggleElement) {
+        const textEl = document.querySelector(textSelector);
+        const iconEl = document.querySelector(iconSelector);
 
-        if (isIncognito) {
-            incognitoText.classList.add("d-none");
-            incognitoIcon.classList.remove("d-none");
-            incognitoToggle.classList.add("incognito-active");
-            incognitoToggle.classList.remove("incognito-just-off");
-        } else {
-            incognitoText.classList.remove("d-none");
-            incognitoIcon.classList.add("d-none");
-            incognitoToggle.classList.remove("incognito-active");
-            incognitoToggle.classList.add("incognito-just-off");
-        }
+        textEl.classList.toggle("d-none", isActive);
+        iconEl.classList.toggle("d-none", !isActive);
+        toggleElement.classList.toggle("toggle-active", isActive);
+        toggleElement.classList.toggle("toggle-just-off", !isActive);
+    }
+
+    // Setup a toggle button with click and mouseleave handlers
+    _setupToggle(toggleElement, storageKey, onToggle) {
+        toggleElement.addEventListener("click", () => {
+            chrome.storage.local.get(storageKey, (result) => {
+                const currentState = result[storageKey] || false;
+                const newState = !currentState;
+                chrome.storage.local.set({ [storageKey]: newState }, () => {
+                    onToggle(newState);
+                });
+            });
+        });
+
+        toggleElement.addEventListener("mouseleave", () => {
+            toggleElement.classList.remove("toggle-just-off");
+        });
+    }
+
+    updateIncognitoModal(isIncognito) {
+        this.updateToggleUI(isIncognito, ".incognito-text", ".incognito-icon", incognitoToggle);
+    }
+
+    updateDarkModeModal(isDarkMode) {
+        this.updateToggleUI(isDarkMode, ".darkmode-text", ".darkmode-icon", darkModeToggle);
     }
 }
 

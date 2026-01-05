@@ -14,6 +14,7 @@ const geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
 const dirInput = document.getElementById("dirInput");
 const authUserInput = document.getElementById("authUserInput");
 const incognitoToggle = document.getElementById("incognitoToggle");
+const darkModeToggle = document.getElementById("darkModeToggle");
 const responseField = document.getElementById("response");
 
 // Lists
@@ -81,10 +82,35 @@ function initializeDependencies(deps = {}) {
   return { state, remove, favorite, history, gemini, modal, payment };
 }
 
+// Initialize theme based on stored preference or system preference
+function initializeTheme() {
+  ThemeUtils.initialize(document.documentElement, true, (isDark) => {
+    updateDarkModeToggle(isDark);
+    ThemeUtils.notifyContentScript(isDark);
+  });
+}
+
+// Apply theme to document (used by modal toggle)
+function applyTheme(isDark) {
+  ThemeUtils.applyToElement(document.documentElement, isDark, true);
+  updateDarkModeToggle(isDark);
+  ThemeUtils.notifyContentScript(isDark);
+}
+
+// Update dark mode toggle button UI (delegates to modal for consistency)
+function updateDarkModeToggle(isDark) {
+  if (modal && typeof modal.updateDarkModeModal === "function") {
+    modal.updateDarkModeModal(isDark);
+  }
+}
+
 function initializePopup() {
   if (!state) {
     initializeDependencies();
   }
+  
+  // Initialize theme first to prevent flash
+  initializeTheme();
   
   searchInput.focus();
 
@@ -414,6 +440,10 @@ configureElements[2].title = chrome.i18n.getMessage("shortcutsLabel");
 const apiSaveButton = document.querySelectorAll(".modal-body #apiForm button");
 apiSaveButton[0].title = chrome.i18n.getMessage("saveLabel");
 clearButtonSummary.title = chrome.i18n.getMessage("clearSummaryLabel");
+dirInput.title = chrome.i18n.getMessage("dirTooltip");
+authUserInput.title = chrome.i18n.getMessage("authUserTooltip");
+incognitoToggle.title = chrome.i18n.getMessage("incognitoNote");
+darkModeToggle.title = chrome.i18n.getMessage("darkModeNote");
 
 // Resize utils
 const body = document.body;
