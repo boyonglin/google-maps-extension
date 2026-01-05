@@ -1,3 +1,7 @@
+/**
+ * Shared Theme Variables
+ * Light and Dark mode CSS custom properties
+ */
 :root {
   --primary-color: #4285f4;
   --border-color: #dee2e6;
@@ -5,6 +9,7 @@
   --danger-color-500: #eda19b;
   --danger-color-bg: #fff8f7;
   --background-color: #ffffff;
+  --text-on-color: #ffffff;
   --gray-800: #202833;
   --gray-600: #70757a;
   --gray-500: #a5a9ad;
@@ -22,11 +27,111 @@
   --google-purple-500: #c3bce6;
   --google-purple-100: #f1effa;
   --google-purple-bg: #fafafd;
+  --shadow-color: rgba(112, 144, 176, 0.15);
+  --shadow-iframe: 0 8px 24px rgba(112, 144, 176, 0.25);
+}
+
+[data-theme=dark] {
+  --primary-color: #5a9cf5;
+  --border-color: #3d3d55;
+  --danger-color: #e57373;
+  --danger-color-500: #9e5555;
+  --danger-color-bg: #2d1a1a;
+  --background-color: #1a1a2e;
+  --text-on-color: #ffffff;
+  --gray-800: #e8e8ed;
+  --gray-600: #a8a8b3;
+  --gray-500: #7a7a88;
+  --gray-400: #4a4a5e;
+  --gray-300: #2d2d44;
+  --gray-200: #252538;
+  --google-green: #4caf7a;
+  --google-green-500: #2d5a42;
+  --google-green-bg: #1a2d22;
+  --google-yellow: #f5c842;
+  --google-yellow-500: #5a4d2d;
+  --google-yellow-bg: #2d2810;
+  --google-purple-hover: #9589d4;
+  --google-purple: #a599e0;
+  --google-purple-500: #4a4470;
+  --google-purple-100: #2d2944;
+  --google-purple-bg: #1f1d2d;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-iframe: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+:root {
   /* TC + Emoji safe */
   --ui-font: "Satoshi-Variable",
     "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC",
     system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+}
+
+/* Dark mode component overrides */
+[data-theme=dark] .modal-content {
+  background-color: var(--gray-300);
+  border-color: var(--border-color);
+}
+[data-theme=dark] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+[data-theme=dark] .form-control {
+  background-color: transparent;
+  border-color: var(--border-color);
+  color: var(--gray-800);
+}
+[data-theme=dark] .form-control:focus {
+  background-color: transparent;
+}
+[data-theme=dark] .form-control::-moz-placeholder {
+  color: var(--gray-500);
+}
+[data-theme=dark] .form-control::placeholder {
+  color: var(--gray-500);
+}
+[data-theme=dark] .input-group-text {
+  background-color: transparent;
+  border-color: var(--border-color);
+  border-right: none;
+}
+[data-theme=dark] #searchInput {
+  border-left: none;
+}
+[data-theme=dark] #searchInput:focus {
+  background-color: transparent;
+}
+[data-theme=dark] .list-group-item {
+  background-color: transparent;
+  border-color: var(--border-color);
+}
+[data-theme=dark] .preview-video video {
+  border-color: var(--gray-300);
+  box-shadow: 0 4px 8px 0 var(--shadow-color);
+}
+[data-theme=dark] .context-menu {
+  box-shadow: 0 2px 8px 0 var(--shadow-color);
+}
+[data-theme=dark] ::-webkit-scrollbar-thumb {
+  background: var(--gray-500);
+}
+[data-theme=dark] .btn-outline-secondary {
+  border-color: var(--gray-400);
+  color: var(--gray-600);
+}
+[data-theme=dark] .btn-outline-secondary:hover {
+  background-color: var(--gray-300);
+  border-color: var(--gray-400);
+}
+[data-theme=dark] .btn-light {
+  background-color: var(--gray-400);
+  border-color: var(--gray-400);
+  color: var(--gray-800);
+}
+[data-theme=dark] .btn-light:hover {
+  background-color: var(--gray-500);
+  border-color: var(--gray-500);
+  color: var(--gray-800);
 }
 
 html,
@@ -36,6 +141,7 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   color: var(--gray-800);
+  background-color: var(--background-color);
   font-family: var(--ui-font);
   font-weight: 400;
 }
@@ -193,34 +299,34 @@ body {
   padding-top: 1px;
 }
 
-.incognito-btn {
+.toggle-btn {
   border-radius: 2rem;
   border-style: dashed;
   border-color: var(--gray-500);
 }
-.incognito-btn:hover {
+.toggle-btn:hover {
   color: var(--gray-600);
   border-color: var(--gray-500);
   background-color: var(--gray-300);
 }
-.incognito-btn:focus {
+.toggle-btn:focus {
   border-color: var(--gray-500);
 }
-.incognito-btn:active {
+.toggle-btn:active {
   color: var(--gray-600) !important;
   border-color: var(--gray-500) !important;
   background-color: var(--gray-300) !important;
 }
 
-.incognito-active {
+.toggle-active {
   background-color: var(--gray-300);
 }
-.incognito-active:focus {
+.toggle-active:focus {
   border-color: var(--gray-500);
   background-color: var(--gray-300);
 }
 
-.incognito-just-off:hover {
+.toggle-just-off:hover {
   background-color: transparent;
 }
 
@@ -372,33 +478,37 @@ li:hover .form-check-input {
 #clearButtonSummary:hover {
   background-color: var(--danger-color);
   border: 1px solid var(--danger-color);
-  color: var(--background-color);
+  color: var(--text-on-color);
+}
+
+#exportButton:disabled {
+  color: var(--gray-600);
 }
 
 .btn-send {
   background-color: var(--google-purple);
   border: 1px solid var(--google-purple);
-  color: var(--background-color);
+  color: var(--text-on-color);
 }
 .btn-send:hover {
   background-color: var(--google-purple-hover);
   border: 1px solid var(--google-purple-hover);
-  color: var(--background-color);
+  color: var(--text-on-color);
 }
 .btn-send:active {
   background-color: var(--google-purple-hover) !important;
   border: 1px solid var(--google-purple-hover) !important;
-  color: var(--background-color) !important;
+  color: var(--text-on-color) !important;
 }
 .btn-send:focus-visible {
   background-color: var(--google-purple);
   box-shadow: 0 0 0 4px var(--google-purple-500);
-  color: var(--background-color);
+  color: var(--text-on-color);
 }
 .btn-send:disabled {
   background-color: var(--google-purple);
   border: 1px solid var(--google-purple);
-  color: var(--background-color);
+  color: var(--text-on-color);
   opacity: 0.65;
 }
 
