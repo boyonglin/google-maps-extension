@@ -115,17 +115,32 @@
   "optionalTitle": {
     "message": "個人設定"
   },
-  "optionalNote": {
-    "message": "\u0031\ufe0f\u20e3 規劃從起點開始路線：滑鼠右鍵 / 快捷鍵\n\u0032\ufe0f\u20e3 切換 Google 使用者帳號：0 / 1 / …\n\u0033\ufe0f\u20e3 摘要與搜尋紀錄不會被儲存"
+  "incognitoNote": {
+    "message": "摘要與搜尋紀錄不會被儲存"
+  },
+  "optionalFooterNote": {
+    "message": "將滑鼠移至設定上方可查看說明"
   },
   "dirPlaceholder": {
     "message": "路線起點"
   },
+  "dirTooltip": {
+    "message": "使用滑鼠右鍵或快捷鍵從起點規劃路線"
+  },
   "authUserPlaceholder": {
     "message": "Google 使用者（預設）= 0"
   },
+  "authUserTooltip": {
+    "message": "切換 Google 使用者帳號：0 / 1 / 2 ..."
+  },
   "incognitoToggleText": {
     "message": "啟用無痕模式"
+  },
+  "darkModeToggleText": {
+    "message": "啟用深色模式"
+  },
+  "darkModeNote": {
+    "message": "切換擴充功能的深色模式"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udccc自動附加 Google 地圖連結"

@@ -157,17 +157,37 @@
     "message": "Direction Starting Point",
     "description": "modal starting address input placeholder"
   },
+  "dirTooltip": {
+    "message": "Use right-click or shortcut to get directions from this starting point",
+    "description": "modal starting address input tooltip"
+  },
   "authUserPlaceholder": {
     "message": "Google User (default) = 0",
     "description": "modal auth user input placeholder"
+  },
+  "authUserTooltip": {
+    "message": "Switch Google account: 0 / 1 / 2 ...",
+    "description": "modal auth user input tooltip"
   },
   "incognitoToggleText": {
     "message": "Enable Incognito Mode",
     "description": "popup incognito toggle button text"
   },
-  "optionalNote": {
-    "message": "\u0031\ufe0f\u20e3 Get directions from starting point: right-click / shortcut\n\u0032\ufe0f\u20e3 Switch Google account: 0 / 1 / …\n\u0033\ufe0f\u20e3 Summary and search history won’t be kept",
-    "description": "modal direction note"
+  "darkModeToggleText": {
+    "message": "Enable Dark Mode",
+    "description": "popup dark mode toggle button text"
+  },
+  "darkModeNote": {
+    "message": "Toggle dark mode for the extension popup",
+    "description": "dark mode toggle tooltip"
+  },
+  "incognitoNote": {
+    "message": "Summary and search history won't be kept",
+    "description": "incognito mode tooltip"
+  },
+  "optionalFooterNote": {
+    "message": "Hover over each setting to view its description.",
+    "description": "modal optional footer hint note"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccAuto-attach Google Maps link",

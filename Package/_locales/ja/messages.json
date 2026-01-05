@@ -115,17 +115,32 @@
   "optionalTitle": {
     "message": "個人設定"
   },
-  "optionalNote": {
-    "message": "\u0031\ufe0f\u20e3 出発地からルート検索：右クリック / ショートカット\n\u0032\ufe0f\u20e3 Google アカウントを切替える：0 / 1 / …\n\u0033\ufe0f\u20e3 要約と検索履歴は保存されません"
+  "incognitoNote": {
+    "message": "要約と検索履歴は保存されません"
+  },
+  "optionalFooterNote": {
+    "message": "各設定にカーソルを合わせると説明が表示されます"
   },
   "dirPlaceholder": {
     "message": "ルートの出発地"
   },
+  "dirTooltip": {
+    "message": "右クリックまたはショートカットで出発地からルート検索"
+  },
   "authUserPlaceholder": {
     "message": "Google ユーザー（既定）= 0"
   },
+  "authUserTooltip": {
+    "message": "Google アカウントを切替える：0 / 1 / 2 ..."
+  },
   "incognitoToggleText": {
     "message": "プライベートモードを有効にする"
+  },
+  "darkModeToggleText": {
+    "message": "ダークモードを有効にする"
+  },
+  "darkModeNote": {
+    "message": "拡張機能のダークモードを切り替える"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"
