@@ -299,6 +299,7 @@ describe('backgroundState.js - Edge Cases and Performance', () => {
         authUser: 0,
         isIncognito: false,
         videoSummaryToggle: false,
+        historyMax: 10,
       });
     });
 

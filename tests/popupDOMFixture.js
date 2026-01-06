@@ -194,8 +194,12 @@ function createPopupDOM() {
                 </button>
               </div>
             </form>
-            <form id="authUserForm" class="my-3">
-              <div class="d-flex position-relative">
+            <form id="authUserForm" class="settings-item">
+              <div class="settings-item-info">
+                <label for="authUserInput" class="settings-item-label">Google Account</label>
+                <span class="settings-item-desc">Account index to use</span>
+              </div>
+              <div class="d-flex position-relative mt-2">
                 <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="authUserInput" />
                 <button type="submit" data-bs-dismiss="modal" title="Save Authuser"
                         class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
@@ -203,14 +207,41 @@ function createPopupDOM() {
                 </button>
               </div>
             </form>
-            <button id="incognitoToggle" class="btn btn-outline-secondary modalFormInput w-100 toggle-btn" type="button">
-              <span class="incognito-text" data-locale="incognitoToggleText">Incognito Mode</span>
-              <span class="incognito-icon d-none"><i class="bi bi-incognito"></i></span>
-            </button>
-            <button id="darkModeToggle" class="btn btn-outline-secondary modalFormInput w-100 toggle-btn mt-3" type="button">
-              <span class="darkmode-text" data-locale="darkModeToggleText">Dark Mode</span>
-              <span class="darkmode-icon d-none"><i class="bi bi-circle-half"></i></span>
-            </button>
+            <form id="historyMaxForm" class="settings-item">
+              <div class="settings-item-info">
+                <label for="historyMaxInput" class="settings-item-label">History Limit</label>
+                <span class="settings-item-desc">Maximum number of history items (1-100)</span>
+              </div>
+              <div class="d-flex position-relative mt-2">
+                <input type="number" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="historyMaxInput" min="1" max="100" />
+                <button type="submit" data-bs-dismiss="modal" title="Save History Max"
+                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+              </div>
+            </form>
+            <div class="settings-item settings-toggle-item" id="incognitoToggle">
+              <div class="settings-item-info">
+                <span class="settings-item-label">Incognito Mode</span>
+                <span class="settings-item-desc">History won't be saved</span>
+              </div>
+              <div class="settings-toggle">
+                <div class="toggle-switch">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+            </div>
+            <div class="settings-item settings-toggle-item" id="darkModeToggle">
+              <div class="settings-item-info">
+                <span class="settings-item-label">Dark Mode</span>
+                <span class="settings-item-desc">Apply dark theme</span>
+              </div>
+              <div class="settings-toggle">
+                <div class="toggle-switch">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
