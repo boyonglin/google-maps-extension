@@ -113,6 +113,9 @@ function initializePopup() {
   // Initialize theme first to prevent flash
   initializeTheme();
   
+  // Track extension opened (anonymous)
+  if (window.Analytics) window.Analytics.trackExtensionOpened();
+  
   searchInput.focus();
 
   // Optimize by running heavy operations asynchronously
@@ -256,6 +259,7 @@ searchInput.addEventListener("keydown", (event) => {
     if (searchInput.value.trim() === "") {
       event.preventDefault();
     } else {
+      if (window.Analytics) window.Analytics.trackSearch();
       chrome.runtime.sendMessage({
         searchTerm: searchInput.value,
         action: "searchInput",
@@ -278,6 +282,7 @@ enterButton.addEventListener("click", () => {
   if (searchInput.value.trim() === "") {
     return;
   } else {
+    if (window.Analytics) window.Analytics.trackSearch();
     chrome.runtime.sendMessage({
       searchTerm: searchInput.value,
       action: "searchInput",
@@ -325,6 +330,7 @@ function showPage(tabName) {
 }
 
 searchHistoryButton.addEventListener("click", () => {
+  if (window.Analytics) window.Analytics.trackPageView("history");
   showPage("history");
 
   if (!state.hasHistory) {
@@ -342,6 +348,7 @@ searchHistoryButton.addEventListener("click", () => {
 });
 
 favoriteListButton.addEventListener("click", () => {
+  if (window.Analytics) window.Analytics.trackPageView("favorite");
   getWarmState().then(({ favoriteList = [] }) => {
     favorite.updateFavorite(favoriteList);
   });
@@ -361,6 +368,7 @@ favoriteListButton.addEventListener("click", () => {
 });
 
 geminiSummaryButton.addEventListener("click", () => {
+  if (window.Analytics) window.Analytics.trackPageView("gemini");
   showPage("gemini");
   deleteListButton.disabled = true;
 

@@ -26,6 +26,7 @@ class History {
                 state.buildSearchUrl(selectedText).then(searchUrl => {
                     // Check if the clicked element has the "bi" class (favorite icon)
                     if (event.target.classList.contains("bi")) {
+                        if (window.Analytics) window.Analytics.trackFeatureClick("add_to_favorite_from_history", "searchHistoryListContainer");
                         // Add the selected text to the favorite list
                         favorite.addToFavoriteList(selectedText);
                         event.target.className =
@@ -40,6 +41,7 @@ class History {
                     } else if (event.target.classList.contains("form-check-input")) {
                         return;
                     } else {
+                        if (window.Analytics) window.Analytics.trackFeatureClick("click_history_item", "searchHistoryListContainer");
                         if (event.button === 1) {
                             // Middle click
                             event.preventDefault();
@@ -61,6 +63,7 @@ class History {
         });
 
         clearButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
             chrome.storage.local.set({ searchHistoryList: [] });
 
             clearButton.disabled = true;

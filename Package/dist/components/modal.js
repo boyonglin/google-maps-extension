@@ -34,6 +34,7 @@ class Modal {
         // Save the API key
         document.getElementById("apiForm").addEventListener("submit", async (event) => {
             event.preventDefault();
+            if (window.Analytics) window.Analytics.trackFeatureClick("save_api_key", "apiForm");
             const apiKey = apiInput.value.trim();
 
             const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
@@ -85,6 +86,7 @@ class Modal {
         // Save the starting address
         document.getElementById("dirForm").addEventListener("submit", (event) => {
             event.preventDefault();
+            if (window.Analytics) window.Analytics.trackFeatureClick("save_start_address", "dirForm");
 
             const startAddr = dirInput.value.trim();
 
@@ -100,6 +102,7 @@ class Modal {
         // Save the authentication user
         document.getElementById("authUserForm").addEventListener("submit", (event) => {
             event.preventDefault();
+            if (window.Analytics) window.Analytics.trackFeatureClick("save_auth_user", "authUserForm");
 
             const authUser = parseInt(authUserInput.value.trim());
 
@@ -115,6 +118,7 @@ class Modal {
         // Save the history max limit
         document.getElementById("historyMaxForm").addEventListener("submit", (event) => {
             event.preventDefault();
+            if (window.Analytics) window.Analytics.trackFeatureClick("save_history_max", "historyMaxForm");
 
             const historyMax = parseInt(historyMaxInput.value.trim());
 
@@ -147,10 +151,12 @@ class Modal {
 
         // Premium panel
         paymentButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("payment", "paymentButton");
             chrome.runtime.sendMessage({ action: "extPay" });
         });
 
         restoreButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("restore_payment", "restoreButton");
             chrome.runtime.sendMessage({ action: "restorePay" });
         });
 

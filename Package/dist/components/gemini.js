@@ -15,6 +15,7 @@ class Gemini {
             
             state.buildSearchUrl(selectedText).then(searchUrl => {
                 if (event.target.classList.contains("bi")) {
+                    if (window.Analytics) window.Analytics.trackFeatureClick("add_to_favorite_from_summary", "summaryListContainer");
                     const nameSpan = spans[0].textContent;
                     if (spans.length >= 2) {
                         const clueSpan = spans[1].textContent;
@@ -31,6 +32,7 @@ class Gemini {
                         favorite.updateFavorite(favoriteList);
                     });
                 } else {
+                    if (window.Analytics) window.Analytics.trackFeatureClick("click_summary_item", "summaryListContainer");
                     chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
                 }
             });
@@ -41,6 +43,7 @@ class Gemini {
         });
 
         clearButtonSummary.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("clear_summary", "clearButtonSummary");
             chrome.storage.local.remove(["summaryList", "timestamp"]);
 
             state.hasSummary = false;
@@ -55,6 +58,7 @@ class Gemini {
 
         // Video Summary Button toggle functionality
         videoSummaryButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("video_summary_toggle", "videoSummaryButton");
             state.localVideoToggle = !state.localVideoToggle;
 
             // Save new state to localStorage
@@ -78,6 +82,7 @@ class Gemini {
         });
 
         sendButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("send_gemini", "sendButton");
             sendButton.disabled = true;
             clearButtonSummary.disabled = true;
             this.RecordSummaryTab();
