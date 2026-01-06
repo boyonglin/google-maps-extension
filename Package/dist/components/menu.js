@@ -28,6 +28,7 @@ class ContextMenuUtil {
 
         // Create "Open all URL" option
         const openAllOption = this.createOption(contextMenu, `${chrome.i18n.getMessage("openAll")} (${listItems.length})`, () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("context_menu_open_all", "contextMenu");
             this.openAllUrls(listItems);
         });
         contextMenu.appendChild(openAllOption);
@@ -35,6 +36,7 @@ class ContextMenuUtil {
         // Create "Tidy Locations" option with premium check
         const canTidy = state.paymentStage.isTrial || state.paymentStage.isPremium;
         const tidyLocationsOption = this.createOption(contextMenu, chrome.i18n.getMessage("tidyLocations"), () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("context_menu_tidy_locations", "contextMenu");
             if (!canTidy) {
                 document.querySelector('[data-bs-target="#premiumModal"]').click();
             } else {
@@ -50,6 +52,7 @@ class ContextMenuUtil {
         chrome.storage.local.get("startAddr", ({ startAddr }) => {
             if (clickedItem && startAddr) {
                 const getDirectionsOption = this.createOption(contextMenu, chrome.i18n.getMessage("getDirections"), () => {
+                    if (window.Analytics) window.Analytics.trackFeatureClick("context_menu_get_directions", "contextMenu");
                     this.getDirections(clickedItem, startAddr);
                 });
                 contextMenu.appendChild(getDirectionsOption);

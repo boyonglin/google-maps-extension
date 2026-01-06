@@ -18,6 +18,7 @@ class Modal {
         // Shortcuts configuration link
         for (let i = 0; i < configureElements.length; i++) {
             configureElements[i].onclick = function (event) {
+                if (window.Analytics) window.Analytics.trackFeatureClick("configure_shortcuts", "configureLink");
                 // Detect user browser
                 let userAgent = navigator.userAgent;
 
@@ -34,6 +35,7 @@ class Modal {
         // Save the API key
         document.getElementById("apiForm").addEventListener("submit", async (event) => {
             event.preventDefault();
+            if (window.Analytics) window.Analytics.trackFeatureClick("save_api_key", "apiForm");
             const apiKey = apiInput.value.trim();
 
             const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
@@ -85,6 +87,7 @@ class Modal {
         // Save the starting address
         document.getElementById("dirForm").addEventListener("submit", (event) => {
             event.preventDefault();
+            if (window.Analytics) window.Analytics.trackFeatureClick("save_start_address", "dirForm");
 
             const startAddr = dirInput.value.trim();
 
@@ -100,6 +103,7 @@ class Modal {
         // Save the authentication user
         document.getElementById("authUserForm").addEventListener("submit", (event) => {
             event.preventDefault();
+            if (window.Analytics) window.Analytics.trackFeatureClick("save_auth_user", "authUserForm");
 
             const authUser = parseInt(authUserInput.value.trim());
 
@@ -115,6 +119,7 @@ class Modal {
         // Save the history max limit
         document.getElementById("historyMaxForm").addEventListener("submit", (event) => {
             event.preventDefault();
+            if (window.Analytics) window.Analytics.trackFeatureClick("save_history_max", "historyMaxForm");
 
             const historyMax = parseInt(historyMaxInput.value.trim());
 
@@ -138,19 +143,23 @@ class Modal {
 
         // Toggle handlers using shared pattern
         this._setupToggle(incognitoToggle, "isIncognito", (newState) => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("incognito_toggle", "incognitoToggle");
             this.updateIncognitoModal(newState);
         });
 
         this._setupToggle(darkModeToggle, "isDarkMode", (newState) => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("dark_mode_toggle", "darkModeToggle");
             applyTheme(newState);
         });
 
         // Premium panel
         paymentButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("payment", "paymentButton");
             chrome.runtime.sendMessage({ action: "extPay" });
         });
 
         restoreButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("restore_payment", "restoreButton");
             chrome.runtime.sendMessage({ action: "restorePay" });
         });
 

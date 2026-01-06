@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "The Maps Express",
-  "version": "1.13.0",
+  "version": "1.13.1",
   "description": "A Shortcut to Google Maps, but Rich and Beautiful.",
   "icons": {
     "16": "images/icon-16.png",
@@ -73,7 +73,8 @@
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*",
     "https://extensionpay.com/*",
-    "https://www.youtube.com/*"
+    "https://www.youtube.com/*",
+    "https://www.google-analytics.com/*"
   ],
   "web_accessible_resources": [
     {
@@ -90,6 +91,7 @@
         "dist/utils/crypto.js",
         "dist/utils/prompt.js",
         "dist/utils/theme.js",
+        "dist/utils/analytics.js",
         "dist/hooks/backgroundState.js",
         "dist/hooks/popupState.js"
       ]

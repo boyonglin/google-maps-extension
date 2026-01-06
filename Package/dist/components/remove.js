@@ -1,8 +1,12 @@
 class Remove {
     addRemoveListener() {
-        cancelButton.addEventListener("click", () => this.backToNormal());
+        cancelButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("cancel_delete", "cancelButton");
+            this.backToNormal();
+        });
 
         deleteButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("delete_items", "deleteButton");
             if (searchHistoryButton.classList.contains("active-button")) {
                 this.deleteFromHistoryList();
             } else {
@@ -13,6 +17,7 @@ class Remove {
         });
 
         deleteListButton.addEventListener("click", () => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("delete_mode", "deleteListButton");
             const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
             const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
 
