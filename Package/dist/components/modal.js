@@ -18,6 +18,7 @@ class Modal {
         // Shortcuts configuration link
         for (let i = 0; i < configureElements.length; i++) {
             configureElements[i].onclick = function (event) {
+                if (window.Analytics) window.Analytics.trackFeatureClick("configure_shortcuts", "configureLink");
                 // Detect user browser
                 let userAgent = navigator.userAgent;
 
@@ -142,10 +143,12 @@ class Modal {
 
         // Toggle handlers using shared pattern
         this._setupToggle(incognitoToggle, "isIncognito", (newState) => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("incognito_toggle", "incognitoToggle");
             this.updateIncognitoModal(newState);
         });
 
         this._setupToggle(darkModeToggle, "isDarkMode", (newState) => {
+            if (window.Analytics) window.Analytics.trackFeatureClick("dark_mode_toggle", "darkModeToggle");
             applyTheme(newState);
         });
 

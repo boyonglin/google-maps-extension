@@ -292,6 +292,10 @@ enterButton.addEventListener("click", () => {
   }
 });
 
+mapsButton.addEventListener("click", () => {
+  if (window.Analytics) window.Analytics.trackFeatureClick("open_maps", "mapsButton");
+});
+
 // Page layout
 function showPage(tabName) {
   const tabMap = {
@@ -328,6 +332,14 @@ function showPage(tabName) {
       break;
   }
 }
+
+apiButton.addEventListener("click", () => {
+  if (window.Analytics) window.Analytics.trackFeatureClick("open_api_modal", "apiButton");
+});
+
+optionalButton.addEventListener("click", () => {
+  if (window.Analytics) window.Analytics.trackFeatureClick("open_settings", "optionalButton");
+});
 
 searchHistoryButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("history");
