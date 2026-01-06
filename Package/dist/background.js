@@ -3,7 +3,13 @@ import { geminiPrompts } from "./utils/prompt.js";
 import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSearchUrl, buildDirectionsUrl, buildMapsUrl } from "./hooks/backgroundState.js";
 import ExtPay from "./utils/ExtPay.module.js";
 
-let maxListLength = 10;
+const DEFAULT_MAX_HISTORY = 10;
+
+function getMaxListLength() {
+  const cache = getCache();
+  const historyMax = cache.historyMax;
+  return (Number.isFinite(historyMax) && historyMax > 0) ? historyMax : DEFAULT_MAX_HISTORY;
+}
 
 // Utilities
 const RECEIVING_END_ERR = "Receiving end does not exist";
@@ -104,6 +110,19 @@ chrome.storage.onChanged.addListener((changes, area) => {
       });
     }
   }
+
+  // Trim history list immediately when historyMax is reduced
+  if (area === "local" && changes.historyMax) {
+    const newMax = changes.historyMax.newValue;
+    if (Number.isFinite(newMax) && newMax > 0) {
+      chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
+        if (searchHistoryList && searchHistoryList.length > newMax) {
+          const trimmedList = searchHistoryList.slice(-newMax);
+          chrome.storage.local.set({ searchHistoryList: trimmedList });
+        }
+      });
+    }
+  }
 });
 
 // Track the right-click event
@@ -146,6 +165,8 @@ chrome.commands.onCommand.addListener((command) => {
             // Free user
             else {
               chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "free" });
+              meow();
+              tryPremiumNotify().catch(() => {});
             }
           }
         });
@@ -160,7 +181,7 @@ chrome.commands.onCommand.addListener((command) => {
             });
           } else {
             meow();
-            await tryAddrNotify();
+            tryAddrNotify().catch(() => {});
             return;
           }
         });
@@ -177,7 +198,7 @@ async function tryAndCheckApi(tabId) {
   } catch (error) {
     chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "missing" });
     meow();
-    await tryAPINotify();
+    tryAPINotify().catch(() => {});
     return;
   }
   await trySuggest(tabId);
@@ -210,6 +231,13 @@ async function trySuggest(tabId, retries = 10) {
 async function tryAddrNotify(retries = 10) {
   return withRetry(
     () => sendChromeMessage({ message: { action: "addrNotify" } }),
+    { retries }
+  );
+}
+
+async function tryPremiumNotify(retries = 10) {
+  return withRetry(
+    () => sendChromeMessage({ message: { action: "premiumNotify" } }),
     { retries }
   );
 }
@@ -340,7 +368,7 @@ async function handleOrganizeLocations(locations, listType, sendResponse) {
 
   } catch (error) {
     if (error.message.includes("No API key found")) {
-      await tryAPINotify();
+      tryAPINotify().catch(() => {});
     } else {
       console.error("Failed to organize locations:", error);
     }
@@ -402,7 +430,8 @@ function updateHistoryList(selectedText) {
     searchHistoryList.push(selectedText);
 
     // Trim excess items
-    if (searchHistoryList.length > maxListLength) {
+    const maxListLength = getMaxListLength();
+    while (searchHistoryList.length > maxListLength) {
       searchHistoryList.shift();
     }
 

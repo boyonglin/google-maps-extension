@@ -38,6 +38,7 @@ export const DEFAULTS = Object.freeze({
   authUser: 0,
   isIncognito: false,
   videoSummaryToggle: false,
+  historyMax: 10,
 });
 
 let cache = null;

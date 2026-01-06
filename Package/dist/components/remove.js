@@ -177,10 +177,9 @@ class Remove {
             : favoriteCheckedCount;
 
         if (checkedCount > 0) {
-            // turn const to string
             deleteButtonSpan.textContent = chrome.i18n.getMessage(
                 "deleteBtnText",
-                checkedCount + ""
+                String(checkedCount)
             );
             deleteButton.classList.remove("disabled");
         } else {

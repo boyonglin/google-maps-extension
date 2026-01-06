@@ -79,6 +79,7 @@ class Modal {
         optionalModal.addEventListener("hidden.bs.modal", () => {
             dirInput.value = "";
             authUserInput.value = "";
+            historyMaxInput.value = "";
         });
 
         // Save the starting address
@@ -105,9 +106,33 @@ class Modal {
             if (authUserInput.value.trim() === "" || authUser === 0 || isNaN(authUser)) {
                 chrome.storage.local.set({ authUser: 0 });
                 authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
-            } else if (/^\d+$/.test(authUser) && authUser > 0) {
+            } else if (authUser > 0) {
                 chrome.storage.local.set({ authUser: authUser });
                 authUserInput.placeholder = `authuser=${authUser}`;
+            }
+        });
+
+        // Save the history max limit
+        document.getElementById("historyMaxForm").addEventListener("submit", (event) => {
+            event.preventDefault();
+
+            const historyMax = parseInt(historyMaxInput.value.trim());
+
+            if (historyMaxInput.value.trim() === "" || isNaN(historyMax) || historyMax <= 0) {
+                chrome.storage.local.set({ historyMax: 10 });
+                historyMaxInput.placeholder = "10";
+            } else {
+                const clampedValue = Math.min(Math.max(historyMax, 1), 100);
+                chrome.storage.local.set({ historyMax: clampedValue });
+                historyMaxInput.placeholder = String(clampedValue);
+            }
+        });
+
+        // Initialize number input from placeholder when arrows are clicked on empty input
+        historyMaxInput.addEventListener("focus", () => {
+            if (historyMaxInput.value === "") {
+                historyMaxInput.value = historyMaxInput.placeholder || "10";
+                historyMaxInput.select();
             }
         });
 
@@ -134,34 +159,34 @@ class Modal {
         });
     }
 
-    // Replace text from note with a link
-    text2Link(dataLocale, linkText, linkHref) {
+    // Replace text in a locale element with a link or modal trigger
+    _replaceTextWithElement(dataLocale, linkText, replacement) {
         const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
         if (pElement) {
-            const originalText = pElement.innerHTML;
-            const newText = originalText.replace(
-                linkText,
-                `<a href="${linkHref}" target="_blank">${linkText}</a>`
-            );
-            pElement.innerHTML = newText;
+            pElement.innerHTML = pElement.innerHTML.replace(linkText, replacement);
         }
+    }
+
+    text2Link(dataLocale, linkText, linkHref) {
+        this._replaceTextWithElement(
+            dataLocale,
+            linkText,
+            `<a href="${linkHref}" target="_blank">${linkText}</a>`
+        );
     }
 
     text2Modal(dataLocale, linkText, modalId) {
-        const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
-        if (pElement) {
-            const originalText = pElement.innerHTML;
-            const newText = originalText.replace(
-                linkText,
-                `<a href="#" data-bs-toggle="modal" data-bs-target="#${modalId}">${linkText}</a>`
-            );
-            pElement.innerHTML = newText;
-        }
+        this._replaceTextWithElement(
+            dataLocale,
+            linkText,
+            `<a href="#" data-bs-toggle="modal" data-bs-target="#${modalId}">${linkText}</a>`
+        );
     }
 
-    updateOptionalModal(startAddr, authUser) {
+    updateOptionalModal(startAddr, authUser, historyMax) {
         dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
         authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
+        historyMaxInput.placeholder = "10";
 
         if (startAddr) {
             dirInput.placeholder = startAddr;
@@ -170,20 +195,28 @@ class Modal {
         if (authUser) {
             authUserInput.placeholder = `authuser=${authUser}`;
         }
+
+        if (historyMax && historyMax > 0) {
+            historyMaxInput.placeholder = String(historyMax);
+        }
     }
 
-    // Update toggle button UI state
+    // Update toggle button UI state (modern toggle switch design)
     updateToggleUI(isActive, textSelector, iconSelector, toggleElement) {
+        // Support for legacy text/icon toggle (if elements exist)
         const textEl = document.querySelector(textSelector);
         const iconEl = document.querySelector(iconSelector);
 
-        textEl.classList.toggle("d-none", isActive);
-        iconEl.classList.toggle("d-none", !isActive);
+        if (textEl && iconEl) {
+            textEl.classList.toggle("d-none", isActive);
+            iconEl.classList.toggle("d-none", !isActive);
+        }
+        
+        // Modern toggle switch - just toggle the active class
         toggleElement.classList.toggle("toggle-active", isActive);
-        toggleElement.classList.toggle("toggle-just-off", !isActive);
     }
 
-    // Setup a toggle button with click and mouseleave handlers
+    // Setup a toggle button with click handler
     _setupToggle(toggleElement, storageKey, onToggle) {
         toggleElement.addEventListener("click", () => {
             chrome.storage.local.get(storageKey, (result) => {
@@ -193,10 +226,6 @@ class Modal {
                     onToggle(newState);
                 });
             });
-        });
-
-        toggleElement.addEventListener("mouseleave", () => {
-            toggleElement.classList.remove("toggle-just-off");
         });
     }
 

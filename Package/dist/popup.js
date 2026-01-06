@@ -13,6 +13,7 @@ const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
 const geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
 const dirInput = document.getElementById("dirInput");
 const authUserInput = document.getElementById("authUserInput");
+const historyMaxInput = document.getElementById("historyMaxInput");
 const incognitoToggle = document.getElementById("incognitoToggle");
 const darkModeToggle = document.getElementById("darkModeToggle");
 const responseField = document.getElementById("response");
@@ -207,6 +208,7 @@ async function fetchData() {
     authUser = 0,
     isIncognito = false,
     videoSummaryToggle = false,
+    historyMax = 10,
   } = await getWarmState();
 
   if (searchHistoryList.length) {
@@ -239,7 +241,7 @@ async function fetchData() {
   (state.hasInit ? measureContentSizeLast() : retryMeasureContentSize());
 
   gemini.fetchAPIKey(geminiApiKey);
-  modal.updateOptionalModal(startAddr, authUser);
+  modal.updateOptionalModal(startAddr, authUser, historyMax);
   modal.updateIncognitoModal(!!isIncognito);
   state.localVideoToggle = videoSummaryToggle;
   videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
@@ -252,7 +254,6 @@ async function fetchData() {
 searchInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     if (searchInput.value.trim() === "") {
-      // If it contains only blanks, prevent the default behavior of the event and do not allow submission
       event.preventDefault();
     } else {
       chrome.runtime.sendMessage({
@@ -405,7 +406,7 @@ document.querySelectorAll("[data-locale]").forEach((elem) => {
   elem.innerText = chrome.i18n.getMessage(elem.dataset.locale);
 });
 
-// Ignore pressing the Enter key which means confirmation (macOS)
+// Handle IME composition for CJK input
 searchInput.placeholder = chrome.i18n.getMessage("searchInputPlaceholder");
 let isComposing = false;
 
@@ -440,10 +441,6 @@ configureElements[2].title = chrome.i18n.getMessage("shortcutsLabel");
 const apiSaveButton = document.querySelectorAll(".modal-body #apiForm button");
 apiSaveButton[0].title = chrome.i18n.getMessage("saveLabel");
 clearButtonSummary.title = chrome.i18n.getMessage("clearSummaryLabel");
-dirInput.title = chrome.i18n.getMessage("dirTooltip");
-authUserInput.title = chrome.i18n.getMessage("authUserTooltip");
-incognitoToggle.title = chrome.i18n.getMessage("incognitoNote");
-darkModeToggle.title = chrome.i18n.getMessage("darkModeNote");
 
 // Resize utils
 const body = document.body;
@@ -554,6 +551,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === "addrNotify") {
     optionalButton.click();
+  }
+
+  if (message.action === "premiumNotify") {
+    document.querySelector('[data-bs-target="#premiumModal"]').click();
   }
 
   if (message.action === "checkYoutube") {
