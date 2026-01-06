@@ -44,12 +44,18 @@ const setupGlobalDOMElements = () => {
         <input id="apiInput">
         <input id="dirInput">
         <input id="authUserInput">
+        <input id="historyMaxInput" type="number" min="1" max="100">
         <p id="geminiEmptyMessage" class="d-none"></p>
         <button id="sendButton"></button>
-        <button id="incognitoToggle">
+        <div id="incognitoToggle" class="settings-toggle-item">
             <span class="incognito-text"></span>
             <span class="incognito-icon d-none"></span>
-        </button>
+            <div class="settings-toggle">
+                <div class="toggle-switch">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+        </div>
         <button id="paymentButton"></button>
         <button id="restoreButton"></button>
         <button class="btn-close"></button>
@@ -58,10 +64,16 @@ const setupGlobalDOMElements = () => {
         <form id="apiForm"></form>
         <form id="dirForm"></form>
         <form id="authUserForm"></form>
-        <button id="darkModeToggle">
+        <form id="historyMaxForm"></form>
+        <div id="darkModeToggle" class="settings-toggle-item">
             <span class="darkmode-text">Light</span>
             <span class="darkmode-icon d-none"><i class="bi bi-circle-half"></i></span>
-        </button>
+            <div class="settings-toggle">
+                <div class="toggle-switch">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+        </div>
     `;
     
     // Assign global references
@@ -69,6 +81,7 @@ const setupGlobalDOMElements = () => {
     global.apiInput = document.getElementById('apiInput');
     global.dirInput = document.getElementById('dirInput');
     global.authUserInput = document.getElementById('authUserInput');
+    global.historyMaxInput = document.getElementById('historyMaxInput');
     global.geminiEmptyMessage = document.getElementById('geminiEmptyMessage');
     global.sendButton = document.getElementById('sendButton');
     global.incognitoToggle = document.getElementById('incognitoToggle');
@@ -79,7 +92,7 @@ const setupGlobalDOMElements = () => {
 };
 
 const cleanupGlobalDOMElements = () => {
-    ['configureElements', 'apiInput', 'dirInput', 'authUserInput', 
+    ['configureElements', 'apiInput', 'dirInput', 'authUserInput', 'historyMaxInput',
      'geminiEmptyMessage', 'sendButton', 'incognitoToggle', 'darkModeToggle',
      'paymentButton', 'restoreButton', 'closeButton'].forEach(name => {
         if (global[name]) {
@@ -460,21 +473,6 @@ describe('Modal Component - Full Coverage', () => {
             );
             expect(updateSpy).toHaveBeenCalledWith(true);
         });
-
-        test('should remove toggle-just-off class on mouseleave', async () => {
-            await modalInstance.addModalListener();
-
-            // Add the class first
-            incognitoToggle.classList.add('toggle-just-off');
-            expect(incognitoToggle.classList.contains('toggle-just-off')).toBe(true);
-
-            // Trigger mouseleave event
-            const mouseleaveEvent = new MouseEvent('mouseleave');
-            incognitoToggle.dispatchEvent(mouseleaveEvent);
-
-            // Class should be removed (covers line 127)
-            expect(incognitoToggle.classList.contains('toggle-just-off')).toBe(false);
-        });
     });
 
     // ============================================================================
@@ -533,18 +531,6 @@ describe('Modal Component - Full Coverage', () => {
                 { isDarkMode: true },
                 expect.any(Function)
             );
-        });
-
-        test('should remove toggle-just-off class on mouseleave', async () => {
-            await modalInstance.addModalListener();
-
-            darkModeToggle.classList.add('toggle-just-off');
-            expect(darkModeToggle.classList.contains('toggle-just-off')).toBe(true);
-
-            const mouseleaveEvent = new MouseEvent('mouseleave');
-            darkModeToggle.dispatchEvent(mouseleaveEvent);
-
-            expect(darkModeToggle.classList.contains('toggle-just-off')).toBe(false);
         });
     });
 

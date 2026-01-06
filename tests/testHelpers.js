@@ -70,6 +70,7 @@ const setupMockStorage = (overrides = {}) => {
         authUser: 0,
         isIncognito: false,
         videoSummaryToggle: false,
+        historyMax: 10,
         ...overrides
     };
     chrome.storage.local.get.mockResolvedValue(mockStorageData);

@@ -116,31 +116,34 @@
     "message": "個人設定"
   },
   "incognitoNote": {
-    "message": "要約と検索履歴は保存されません"
-  },
-  "optionalFooterNote": {
-    "message": "各設定にカーソルを合わせると説明が表示されます"
+    "message": "履歴と要約は保存されません"
   },
   "dirPlaceholder": {
-    "message": "ルートの出発地"
+    "message": "出発地"
   },
   "dirTooltip": {
-    "message": "右クリックまたはショートカットで出発地からルート検索"
+    "message": "場所名または住所を出発地として入力"
   },
   "authUserPlaceholder": {
-    "message": "Google ユーザー（既定）= 0"
+    "message": "Googleアカウント"
   },
   "authUserTooltip": {
-    "message": "Google アカウントを切替える：0 / 1 / 2 ..."
+    "message": "アカウント番号 (0 = メイン、1, 2... = その他)"
+  },
+  "historyMaxPlaceholder": {
+    "message": "履歴の上限"
+  },
+  "historyMaxTooltip": {
+    "message": "保持する履歴の最大数 (1-100)"
   },
   "incognitoToggleText": {
-    "message": "プライベートモードを有効にする"
+    "message": "シークレットモード"
   },
   "darkModeToggleText": {
-    "message": "ダークモードを有効にする"
+    "message": "ダークモード"
   },
   "darkModeNote": {
-    "message": "拡張機能のダークモードを切り替える"
+    "message": "ポップアップにダークテーマを適用"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"

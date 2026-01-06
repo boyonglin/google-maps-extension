@@ -452,6 +452,7 @@ describe('popup.js', () => {
       
       const testStartAddr = '123 Main St';
       const testAuthUser = 2;
+      const testHistoryMax = 10;
       
       chrome.runtime.sendMessage.mockImplementation((message, callback) => {
         if (message.action === 'getWarmState') {
@@ -462,7 +463,8 @@ describe('popup.js', () => {
             startAddr: testStartAddr,
             authUser: testAuthUser,
             isIncognito: false,
-            videoSummaryToggle: false
+            videoSummaryToggle: false,
+            historyMax: testHistoryMax
           });
         }
         return true;
@@ -470,7 +472,7 @@ describe('popup.js', () => {
       
       await popup.fetchData();
       
-      expect(mockModal.updateOptionalModal).toHaveBeenCalledWith(testStartAddr, testAuthUser);
+      expect(mockModal.updateOptionalModal).toHaveBeenCalledWith(testStartAddr, testAuthUser, testHistoryMax);
     });
     
     test('fetchData updates video summary button state', async () => {

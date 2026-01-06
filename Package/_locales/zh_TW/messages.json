@@ -116,31 +116,34 @@
     "message": "個人設定"
   },
   "incognitoNote": {
-    "message": "摘要與搜尋紀錄不會被儲存"
-  },
-  "optionalFooterNote": {
-    "message": "將滑鼠移至設定上方可查看說明"
+    "message": "歷史記錄與摘要不會被儲存"
   },
   "dirPlaceholder": {
-    "message": "路線起點"
+    "message": "起點位置"
   },
   "dirTooltip": {
-    "message": "使用滑鼠右鍵或快捷鍵從起點規劃路線"
+    "message": "輸入地點名稱或地址作為路線起點"
   },
   "authUserPlaceholder": {
-    "message": "Google 使用者（預設）= 0"
+    "message": "Google 帳戶"
   },
   "authUserTooltip": {
-    "message": "切換 Google 使用者帳號：0 / 1 / 2 ..."
+    "message": "帳戶編號（0 = 主要，1, 2... = 其他）"
+  },
+  "historyMaxPlaceholder": {
+    "message": "歷史記錄上限"
+  },
+  "historyMaxTooltip": {
+    "message": "保留的歷史記錄最大數量 (1-100)"
   },
   "incognitoToggleText": {
-    "message": "啟用無痕模式"
+    "message": "無痕模式"
   },
   "darkModeToggleText": {
-    "message": "啟用深色模式"
+    "message": "深色模式"
   },
   "darkModeNote": {
-    "message": "切換擴充功能的深色模式"
+    "message": "套用深色主題至此彈出視窗"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udccc自動附加 Google 地圖連結"

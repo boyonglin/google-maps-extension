@@ -154,40 +154,44 @@
     "description": "modal optional title"
   },
   "dirPlaceholder": {
-    "message": "Direction Starting Point",
+    "message": "Starting Location",
     "description": "modal starting address input placeholder"
   },
   "dirTooltip": {
-    "message": "Use right-click or shortcut to get directions from this starting point",
+    "message": "Enter a location name or address as route origin",
     "description": "modal starting address input tooltip"
   },
   "authUserPlaceholder": {
-    "message": "Google User (default) = 0",
+    "message": "Google Account",
     "description": "modal auth user input placeholder"
   },
   "authUserTooltip": {
-    "message": "Switch Google account: 0 / 1 / 2 ...",
+    "message": "Account index to use (0 = primary, 1, 2... for others)",
     "description": "modal auth user input tooltip"
   },
+  "historyMaxPlaceholder": {
+    "message": "History Limit",
+    "description": "modal history max input placeholder"
+  },
+  "historyMaxTooltip": {
+    "message": "Maximum number of history items to keep (1-100)",
+    "description": "modal history max input tooltip"
+  },
   "incognitoToggleText": {
-    "message": "Enable Incognito Mode",
+    "message": "Incognito Mode",
     "description": "popup incognito toggle button text"
   },
   "darkModeToggleText": {
-    "message": "Enable Dark Mode",
+    "message": "Dark Mode",
     "description": "popup dark mode toggle button text"
   },
   "darkModeNote": {
-    "message": "Toggle dark mode for the extension popup",
+    "message": "Apply dark theme to this popup",
     "description": "dark mode toggle tooltip"
   },
   "incognitoNote": {
-    "message": "Summary and search history won't be kept",
+    "message": "History and summaries won't be saved",
     "description": "incognito mode tooltip"
-  },
-  "optionalFooterNote": {
-    "message": "Hover over each setting to view its description.",
-    "description": "modal optional footer hint note"
   },
   "autoAttachLabel": {
     "message": "\ud83d\udcccAuto-attach Google Maps link",
