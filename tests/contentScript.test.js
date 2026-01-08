@@ -535,7 +535,7 @@ describe("contentScript.js - updateIframeSize Action", () => {
 
     messageListener(request, {}, sendResponse);
 
-    expect(iframe.style.width).toBe("402px"); // width + 2
+    expect(iframe.style.width).toBe("400px");
     expect(iframe.style.height).toBe("335px"); // height + 32 + 3
   });
 
@@ -553,7 +553,7 @@ describe("contentScript.js - updateIframeSize Action", () => {
 
     messageListener(request, {}, sendResponse);
 
-    expect(iframe.style.width).toBe("2px");
+    expect(iframe.style.width).toBe("0px");
     expect(iframe.style.height).toBe("35px");
   });
 
@@ -571,7 +571,7 @@ describe("contentScript.js - updateIframeSize Action", () => {
 
     messageListener(request, {}, sendResponse);
 
-    expect(iframe.style.width).toBe("1922px");
+    expect(iframe.style.width).toBe("1920px");
     expect(iframe.style.height).toBe("1115px");
   });
 
@@ -602,7 +602,7 @@ describe("contentScript.js - updateIframeSize Action", () => {
 
     messageListener(request, {}, sendResponse);
 
-    expect(iframe.style.width).toBe("-98px");
+    expect(iframe.style.width).toBe("-100px");
     expect(iframe.style.height).toBe("-15px");
   });
 
@@ -620,7 +620,7 @@ describe("contentScript.js - updateIframeSize Action", () => {
 
     messageListener(request, {}, sendResponse);
 
-    expect(iframe.style.width).toBe("402.5px");
+    expect(iframe.style.width).toBe("400.5px");
     expect(iframe.style.height).toBe("335.7px");
   });
 });

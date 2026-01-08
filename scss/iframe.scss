@@ -1,11 +1,16 @@
-// Import shared theme variables
 @use "theme-variables";
+
+// Explicit light mode for iframe (doesn't inherit from :root on host page)
+#TMEiframe[data-theme="light"] {
+  @include theme-variables.light-theme-vars;
+}
 
 #TMEiframe {
   position: fixed;
   width: 400px;
-  height: 480px;
+  height: 500px;
   border: 1px solid var(--border-color);
+  box-sizing: border-box;
   z-index: 10000;
   box-shadow: var(--shadow-iframe);
   border-radius: 8px;

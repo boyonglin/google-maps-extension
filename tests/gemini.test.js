@@ -605,11 +605,17 @@ describe("Gemini Component", () => {
     });
 
     test("should handle fetch errors gracefully and return null", async () => {
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
       global.fetch.mockRejectedValue(new Error("Network error"));
 
       const length = await geminiInstance.scrapeLen("test12345");
 
       expect(length).toBeNull();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Failed to scrape video length:",
+        expect.any(Error)
+      );
+      consoleErrorSpy.mockRestore();
     });
   });
 
