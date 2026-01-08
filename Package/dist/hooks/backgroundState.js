@@ -6,10 +6,10 @@ export let routeUrl = "https://www.google.com/maps/dir/?authuser=0&";
 
 export function updateUserUrls(authUser) {
   // Arrays should default to 0 instead of being coerced to numbers
-  if (Array.isArray(authUser) || (typeof authUser === 'object' && authUser !== null)) {
+  if (Array.isArray(authUser) || (typeof authUser === "object" && authUser !== null)) {
     authUser = 0;
   }
-  
+
   const n = Number(authUser);
   const au = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
   queryUrl = `https://www.google.com/maps?authuser=${au}&`;
@@ -47,7 +47,8 @@ let loading = null;
 export async function ensureWarm() {
   if (cache) return cache;
   if (loading) return loading;
-  loading = chrome.storage.local.get(DEFAULTS)
+  loading = chrome.storage.local
+    .get(DEFAULTS)
     .then(async (v) => {
       if (v.geminiApiKey) {
         try {
@@ -60,7 +61,9 @@ export async function ensureWarm() {
       updateUserUrls(v.authUser);
       return cache;
     })
-    .finally(() => { loading = null; });
+    .finally(() => {
+      loading = null;
+    });
   return loading;
 }
 

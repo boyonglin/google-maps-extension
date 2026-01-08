@@ -7,8 +7,6 @@
 // Chrome API Mocking Utilities
 // ============================================================================
 
-
-
 /**
  * Mock chrome.runtime.sendMessage with action-based routing
  * @param {Object} actionResponses - Map of action names to response objects
@@ -19,16 +17,12 @@
  * });
  */
 const mockChromeRuntimeMessage = (actionResponses = {}) => {
-    chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        const response = actionResponses[message.action] || {};
-        if (callback) callback(response);
-        return true;
-    });
+  chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+    const response = actionResponses[message.action] || {};
+    if (callback) callback(response);
+    return true;
+  });
 };
-
-
-
-
 
 /**
  * Mock both chrome.storage.local.get and set in one call
@@ -40,19 +34,17 @@ const mockChromeRuntimeMessage = (actionResponses = {}) => {
  * });
  */
 const mockChromeStorage = (getResponse = {}, setCallback = null) => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
-        callback(getResponse);
+  chrome.storage.local.get.mockImplementation((keys, callback) => {
+    callback(getResponse);
+  });
+
+  if (setCallback) {
+    chrome.storage.local.set.mockImplementation((data, callback) => {
+      setCallback(data);
+      if (callback) callback();
     });
-    
-    if (setCallback) {
-        chrome.storage.local.set.mockImplementation((data, callback) => {
-            setCallback(data);
-            if (callback) callback();
-        });
-    }
+  }
 };
-
-
 
 /**
  * Setup mock storage data with default values
@@ -61,20 +53,20 @@ const mockChromeStorage = (getResponse = {}, setCallback = null) => {
  * @returns {Object} The complete mock storage data
  */
 const setupMockStorage = (overrides = {}) => {
-    const mockStorageData = {
-        searchHistoryList: [],
-        favoriteList: [],
-        geminiApiKey: "",
-        aesKey: null,
-        startAddr: "",
-        authUser: 0,
-        isIncognito: false,
-        videoSummaryToggle: false,
-        historyMax: 10,
-        ...overrides
-    };
-    chrome.storage.local.get.mockResolvedValue(mockStorageData);
-    return mockStorageData;
+  const mockStorageData = {
+    searchHistoryList: [],
+    favoriteList: [],
+    geminiApiKey: "",
+    aesKey: null,
+    startAddr: "",
+    authUser: 0,
+    isIncognito: false,
+    videoSummaryToggle: false,
+    historyMax: 10,
+    ...overrides,
+  };
+  chrome.storage.local.get.mockResolvedValue(mockStorageData);
+  return mockStorageData;
 };
 
 /**
@@ -84,7 +76,7 @@ const setupMockStorage = (overrides = {}) => {
  * @example
  * // Single response for all calls
  * setupMockFetch({ json: () => Promise.resolve({ data: 'test' }) });
- * 
+ *
  * // Different responses for consecutive calls
  * setupMockFetch([
  *   { json: () => Promise.resolve({ data: 'first' }) },
@@ -92,14 +84,14 @@ const setupMockStorage = (overrides = {}) => {
  * ]);
  */
 const setupMockFetch = (responses = []) => {
-    const mockFetch = jest.fn();
-    if (Array.isArray(responses)) {
-        responses.forEach(r => mockFetch.mockResolvedValueOnce(r));
-    } else {
-        mockFetch.mockResolvedValue(responses);
-    }
-    global.fetch = mockFetch;
-    return mockFetch;
+  const mockFetch = jest.fn();
+  if (Array.isArray(responses)) {
+    responses.forEach((r) => mockFetch.mockResolvedValueOnce(r));
+  } else {
+    mockFetch.mockResolvedValue(responses);
+  }
+  global.fetch = mockFetch;
+  return mockFetch;
 };
 
 /**
@@ -117,35 +109,35 @@ const setupMockFetch = (responses = []) => {
  * listeners.runtime_onMessage[0]({ action: 'test' }, {}, jest.fn());
  */
 const captureEventListeners = (eventPaths) => {
-    const captured = {};
-    
-    eventPaths.forEach(path => {
-        const parts = path.split('.');
-        let target = chrome;
-        
-        // Navigate to the parent object (e.g., chrome.runtime)
-        for (let i = 0; i < parts.length - 1; i++) {
-            const part = parts[i];
-            const descriptor = Object.getOwnPropertyDescriptor(target, part);
-            if (descriptor && typeof descriptor.value === 'object' && descriptor.value !== null) {
-                target = descriptor.value;
-            }
-        }
-        
-        const eventName = parts[parts.length - 1];
-        const key = path.replace(/\./g, '_'); // runtime.onMessage -> runtime_onMessage
-        
-        // Mock addListener to capture the callback
-        const eventDescriptor = Object.getOwnPropertyDescriptor(target, eventName);
-        if (eventDescriptor && eventDescriptor.value) {
-            eventDescriptor.value.addListener.mockImplementation((fn) => {
-                if (!captured[key]) captured[key] = [];
-                captured[key].push(fn);
-            });
-        }
-    });
-    
-    return captured;
+  const captured = {};
+
+  eventPaths.forEach((path) => {
+    const parts = path.split(".");
+    let target = chrome;
+
+    // Navigate to the parent object (e.g., chrome.runtime)
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      const descriptor = Object.getOwnPropertyDescriptor(target, part);
+      if (descriptor && typeof descriptor.value === "object" && descriptor.value !== null) {
+        target = descriptor.value;
+      }
+    }
+
+    const eventName = parts[parts.length - 1];
+    const key = path.replace(/\./g, "_"); // runtime.onMessage -> runtime_onMessage
+
+    // Mock addListener to capture the callback
+    const eventDescriptor = Object.getOwnPropertyDescriptor(target, eventName);
+    if (eventDescriptor && eventDescriptor.value) {
+      eventDescriptor.value.addListener.mockImplementation((fn) => {
+        if (!captured[key]) captured[key] = [];
+        captured[key].push(fn);
+      });
+    }
+  });
+
+  return captured;
 };
 
 // ============================================================================
@@ -157,7 +149,7 @@ const captureEventListeners = (eventPaths) => {
  * @param {number} ms - Milliseconds to wait
  * @returns {Promise}
  */
-const wait = (ms = 50) => new Promise(resolve => setTimeout(resolve, ms));
+const wait = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Flush all pending promises in the microtask queue
@@ -170,10 +162,10 @@ const wait = (ms = 50) => new Promise(resolve => setTimeout(resolve, ms));
  * // Use: await flushPromises();
  */
 const flushPromises = () => {
-    if (typeof process !== 'undefined' && process.nextTick) {
-        return new Promise(resolve => process.nextTick(resolve));
-    }
-    return new Promise(resolve => setTimeout(resolve, 0));
+  if (typeof process !== "undefined" && process.nextTick) {
+    return new Promise((resolve) => process.nextTick(resolve));
+  }
+  return new Promise((resolve) => setTimeout(resolve, 0));
 };
 
 // ============================================================================
@@ -187,17 +179,21 @@ const flushPromises = () => {
  * @param {Function} textGenerator - Function to generate text (index) => text
  * @returns {Array} Array of mock DOM elements
  */
-const createMockListItems = (count = 3, className = 'summary-list', textGenerator = (i) => `Location ${i + 1}`) => {
-    const items = [];
-    for (let i = 0; i < count; i++) {
-        const item = document.createElement('div');
-        item.className = `${className} list-group-item`;
-        const span = document.createElement('span');
-        span.textContent = textGenerator(i);
-        item.appendChild(span);
-        items.push(item);
-    }
-    return items;
+const createMockListItems = (
+  count = 3,
+  className = "summary-list",
+  textGenerator = (i) => `Location ${i + 1}`
+) => {
+  const items = [];
+  for (let i = 0; i < count; i++) {
+    const item = document.createElement("div");
+    item.className = `${className} list-group-item`;
+    const span = document.createElement("span");
+    span.textContent = textGenerator(i);
+    item.appendChild(span);
+    items.push(item);
+  }
+  return items;
 };
 
 /**
@@ -207,30 +203,30 @@ const createMockListItems = (count = 3, className = 'summary-list', textGenerato
  * mockI18n({ customKey: 'Custom Value' });
  */
 const mockI18n = (messages = {}) => {
-    const defaultMessages = {
-        openAll: 'Open All',
-        getDirections: 'Get Directions',
-        tidyLocations: 'Tidy Locations',
-        deleteBtnText: 'Delete ($1)',
-        deleteBtnTextEmpty: 'Delete',
-        clearedUpMsg: 'All cleared up!\nNothing to see here.',
-        ...messages
-    };
-    
-    global.chrome.i18n.getMessage.mockImplementation((key, substitutions) => {
-        const message = defaultMessages[key] || key;
-        if (substitutions) {
-            return message.replace('$1', substitutions);
-        }
-        return message;
-    });
+  const defaultMessages = {
+    openAll: "Open All",
+    getDirections: "Get Directions",
+    tidyLocations: "Tidy Locations",
+    deleteBtnText: "Delete ($1)",
+    deleteBtnTextEmpty: "Delete",
+    clearedUpMsg: "All cleared up!\nNothing to see here.",
+    ...messages,
+  };
+
+  global.chrome.i18n.getMessage.mockImplementation((key, substitutions) => {
+    const message = defaultMessages[key] || key;
+    if (substitutions) {
+      return message.replace("$1", substitutions);
+    }
+    return message;
+  });
 };
 
 /**
  * Clean up DOM between tests
  */
 const cleanupDOM = () => {
-    document.body.innerHTML = '';
+  document.body.innerHTML = "";
 };
 
 // ============================================================================
@@ -245,10 +241,10 @@ const cleanupDOM = () => {
  * expectCalledWithPartial(chrome.storage.local.set, { favoriteList: ['Tokyo'] });
  */
 const expectCalledWithPartial = (mockFn, expectedPartial) => {
-    expect(mockFn).toHaveBeenCalledWith(
-        expect.objectContaining(expectedPartial),
-        expect.any(Function)
-    );
+  expect(mockFn).toHaveBeenCalledWith(
+    expect.objectContaining(expectedPartial),
+    expect.any(Function)
+  );
 };
 
 /**
@@ -261,12 +257,12 @@ const expectCalledWithPartial = (mockFn, expectedPartial) => {
  * });
  */
 const withWindowOpenSpy = async (testFn) => {
-    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
-    try {
-        await testFn(openSpy);
-    } finally {
-        openSpy.mockRestore();
-    }
+  const openSpy = jest.spyOn(window, "open").mockImplementation(() => {});
+  try {
+    await testFn(openSpy);
+  } finally {
+    openSpy.mockRestore();
+  }
 };
 
 // ============================================================================
@@ -280,16 +276,16 @@ const withWindowOpenSpy = async (testFn) => {
  * @param {Object} props - Additional event properties
  */
 const createMouseEvent = (target, button = 0, props = {}) => {
-    const event = new MouseEvent('mousedown', {
-        bubbles: true,
-        button,
-        ...props
-    });
-    Object.defineProperty(event, 'target', {
-        value: target,
-        enumerable: true
-    });
-    return event;
+  const event = new MouseEvent("mousedown", {
+    bubbles: true,
+    button,
+    ...props,
+  });
+  Object.defineProperty(event, "target", {
+    value: target,
+    enumerable: true,
+  });
+  return event;
 };
 
 /**
@@ -298,11 +294,11 @@ const createMouseEvent = (target, button = 0, props = {}) => {
  * @param {string} content - File content
  */
 const mockFileUpload = (fileInput, content) => {
-    const mockFile = { mockContent: content };
-    Object.defineProperty(fileInput, 'files', {
-        value: [mockFile],
-        writable: true
-    });
+  const mockFile = { mockContent: content };
+  Object.defineProperty(fileInput, "files", {
+    value: [mockFile],
+    writable: true,
+  });
 };
 
 /**
@@ -318,50 +314,50 @@ const mockFileUpload = (fileInput, content) => {
  * @returns {HTMLLIElement}
  */
 const createMockListItem = (text, options = {}) => {
-    const {
-        favoriteList = [],
-        isChecked = false,
-        className = 'history-list',
-        clueText = null,
-        includeCheckbox = true
-    } = options;
-    
-    const li = document.createElement('li');
-    li.className = `list-group-item ${className}`;
-    
-    const span = document.createElement('span');
-    span.textContent = text;
-    li.appendChild(span);
-    
-    // Add clue text for favorites/summaries
-    if (clueText) {
-        const clueSpan = document.createElement('span');
-        clueSpan.className = 'd-none';
-        clueSpan.textContent = clueText;
-        li.appendChild(clueSpan);
-    }
-    
-    // Add icon
-    const icon = document.createElement('i');
-    icon.className = favoriteList.includes(text) 
-        ? 'bi bi-patch-check-fill matched' 
-        : 'bi bi-patch-plus-fill';
-    li.appendChild(icon);
-    
-    // Add checkbox (optional for summary lists)
-    if (includeCheckbox) {
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = isChecked;
-        checkbox.classList.add('form-check-input', 'd-none');
-        checkbox.name = 'checkDelete';
-        checkbox.value = 'delete';
-        checkbox.ariaLabel = 'Delete';
-        checkbox.style.cursor = 'pointer';
-        li.appendChild(checkbox);
-    }
-    
-    return li;
+  const {
+    favoriteList = [],
+    isChecked = false,
+    className = "history-list",
+    clueText = null,
+    includeCheckbox = true,
+  } = options;
+
+  const li = document.createElement("li");
+  li.className = `list-group-item ${className}`;
+
+  const span = document.createElement("span");
+  span.textContent = text;
+  li.appendChild(span);
+
+  // Add clue text for favorites/summaries
+  if (clueText) {
+    const clueSpan = document.createElement("span");
+    clueSpan.className = "d-none";
+    clueSpan.textContent = clueText;
+    li.appendChild(clueSpan);
+  }
+
+  // Add icon
+  const icon = document.createElement("i");
+  icon.className = favoriteList.includes(text)
+    ? "bi bi-patch-check-fill matched"
+    : "bi bi-patch-plus-fill";
+  li.appendChild(icon);
+
+  // Add checkbox (optional for summary lists)
+  if (includeCheckbox) {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = isChecked;
+    checkbox.classList.add("form-check-input", "d-none");
+    checkbox.name = "checkDelete";
+    checkbox.value = "delete";
+    checkbox.ariaLabel = "Delete";
+    checkbox.style.cursor = "pointer";
+    li.appendChild(checkbox);
+  }
+
+  return li;
 };
 
 /**
@@ -371,13 +367,13 @@ const createMockListItem = (text, options = {}) => {
  * mockTabsQuery([{ id: 1, url: 'https://example.com' }]);
  */
 const mockTabsQuery = (tabs) => {
-    chrome.tabs.query.mockImplementation((query, callback) => {
-        const promise = Promise.resolve(tabs);
-        if (callback) {
-            promise.then(callback);
-        }
-        return promise;
-    });
+  chrome.tabs.query.mockImplementation((query, callback) => {
+    const promise = Promise.resolve(tabs);
+    if (callback) {
+      promise.then(callback);
+    }
+    return promise;
+  });
 };
 
 /**
@@ -389,15 +385,15 @@ const mockTabsQuery = (tabs) => {
  * mockTabsSendMessage(null, true); // Simulate error
  */
 const mockTabsSendMessage = (response, hasError = false) => {
-    chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
-        if (hasError) {
-            chrome.runtime.lastError = { message: 'error' };
-        }
-        if (callback) callback(response);
-        if (hasError) {
-            chrome.runtime.lastError = null;
-        }
-    });
+  chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+    if (hasError) {
+      chrome.runtime.lastError = { message: "error" };
+    }
+    if (callback) callback(response);
+    if (hasError) {
+      chrome.runtime.lastError = null;
+    }
+  });
 };
 
 // ============================================================================
@@ -408,12 +404,12 @@ const mockTabsSendMessage = (response, hasError = false) => {
  * Test constants for common test data
  */
 const TEST_CONSTANTS = {
-    LOCATION: 'Test Location',
-    LONG_TEXT: 'A'.repeat(1000),
-    SPECIAL_CHARS: '<script>alert("xss")</script>',
-    UNICODE: '北京 東京 Москва 🗺️',
-    WHITESPACE: '   ',
-    URL: 'http://maps.test/search'
+  LOCATION: "Test Location",
+  LONG_TEXT: "A".repeat(1000),
+  SPECIAL_CHARS: '<script>alert("xss")</script>',
+  UNICODE: "北京 東京 Москва 🗺️",
+  WHITESPACE: "   ",
+  URL: "http://maps.test/search",
 };
 
 // ============================================================================
@@ -421,41 +417,41 @@ const TEST_CONSTANTS = {
 // ============================================================================
 
 module.exports = {
-    // Chrome API Mocking
-    mockChromeRuntimeMessage,
-    mockChromeStorage,
-    mockTabsQuery,
-    mockTabsSendMessage,
-    
-    // Fetch Mocking
-    setupMockFetch,
-    
-    // Event Listener Capture
-    captureEventListeners,
-    
-    // Storage Setup
-    setupMockStorage,
-    
-    // Async Utilities
-    wait,
-    flushPromises,
-    
-    // DOM Utilities
-    createMockListItems,
-    createMockListItem,
-    cleanupDOM,
-    mockI18n,
-    
-    // Jest Assertions
-    expectCalledWithPartial,
-    
-    // Spy Helpers
-    withWindowOpenSpy,
-    
-    // Event Utilities
-    createMouseEvent,
-    mockFileUpload,
-    
-    // Constants
-    TEST_CONSTANTS
+  // Chrome API Mocking
+  mockChromeRuntimeMessage,
+  mockChromeStorage,
+  mockTabsQuery,
+  mockTabsSendMessage,
+
+  // Fetch Mocking
+  setupMockFetch,
+
+  // Event Listener Capture
+  captureEventListeners,
+
+  // Storage Setup
+  setupMockStorage,
+
+  // Async Utilities
+  wait,
+  flushPromises,
+
+  // DOM Utilities
+  createMockListItems,
+  createMockListItem,
+  cleanupDOM,
+  mockI18n,
+
+  // Jest Assertions
+  expectCalledWithPartial,
+
+  // Spy Helpers
+  withWindowOpenSpy,
+
+  // Event Utilities
+  createMouseEvent,
+  mockFileUpload,
+
+  // Constants
+  TEST_CONSTANTS,
 };

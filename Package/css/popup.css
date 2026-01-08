@@ -101,6 +101,8 @@
 }
 [data-theme=dark] #searchInput:focus {
   background-color: transparent;
+  border-color: var(--gray-500);
+  box-shadow: none;
 }
 [data-theme=dark] .list-group-item {
   background-color: transparent;
@@ -123,6 +125,14 @@
 [data-theme=dark] .btn-outline-secondary:hover {
   background-color: var(--gray-300);
   border-color: var(--gray-400);
+}
+[data-theme=dark] .history-max-stepper .btn-stepper {
+  border-color: var(--gray-500);
+  background-color: var(--gray-300);
+}
+[data-theme=dark] .history-max-stepper .btn-stepper:hover {
+  background-color: var(--gray-300);
+  border-color: var(--gray-500);
 }
 [data-theme=dark] .btn-light {
   background-color: var(--gray-400);
@@ -180,6 +190,7 @@ body {
 #searchInput:focus {
   color: var(--gray-600);
   background-color: var(--background-color);
+  border-color: var(--border-color);
   outline: none;
   box-shadow: none;
 }
@@ -210,48 +221,6 @@ body {
   padding-top: 1px;
 }
 
-/* api bar */
-#apiInput {
-  border-radius: 2rem;
-  padding-left: 1rem;
-}
-#apiInput::-moz-placeholder {
-  color: var(--gray-600);
-  font-weight: 300;
-}
-#apiInput::placeholder {
-  color: var(--gray-600);
-  font-weight: 300;
-}
-#apiInput:focus {
-  color: var(--gray-600);
-  background-color: var(--background-color);
-  border-color: var(--border-color);
-  outline: none;
-  box-shadow: none;
-}
-#apiInput:focus::-moz-placeholder {
-  opacity: 0;
-}
-#apiInput:focus::placeholder {
-  opacity: 0;
-}
-
-.btn-setAPI {
-  position: absolute;
-  right: 1.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: var(--google-purple);
-  color: white;
-  width: 2rem;
-  height: 2rem;
-  cursor: pointer;
-}
-.btn-setAPI i {
-  padding-top: 1px;
-}
-
 .modal-footer p a {
   color: var(--google-purple);
   font-weight: 700;
@@ -268,6 +237,13 @@ body {
   padding-bottom: 1rem;
   max-height: 75vh;
   overflow-y: auto;
+}
+
+.settings-divider {
+  border: none;
+  border-top: 1px solid var(--gray-400);
+  margin: 0.5rem 0 1.5rem 0;
+  opacity: 0.5;
 }
 
 .settings-item {
@@ -373,19 +349,57 @@ body {
   opacity: 0;
 }
 
-.btn-set {
+.btn-set,
+.btn-reset {
   position: absolute;
   right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
-  background-color: var(--gray-500);
-  color: white;
+  background-color: transparent;
+  color: var(--gray-600);
   width: 2rem;
   height: 2rem;
   cursor: pointer;
 }
-.btn-set i {
+.btn-set i,
+.btn-reset i {
   padding-top: 1px;
+}
+.btn-set:hover,
+.btn-reset:hover {
+  color: var(--gray-800);
+}
+
+.btn-reset i {
+  font-size: 1rem;
+}
+
+/* History Max Stepper */
+.history-max-stepper .modalFormInput {
+  border-radius: 2rem 0 0 2rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border-right-width: 0;
+}
+.history-max-stepper .btn-stepper {
+  border-color: var(--gray-400);
+  background-color: var(--background-color);
+  color: var(--gray-600);
+  padding: 0.5rem 0.75rem;
+  border-right-width: 0;
+  border-left-width: 0;
+}
+.history-max-stepper .btn-stepper i {
+  font-size: 20px;
+}
+.history-max-stepper .btn-stepper:hover {
+  background-color: var(--background-color);
+  border-color: var(--gray-400);
+  color: var(--gray-800);
+}
+.history-max-stepper .btn-stepper:last-child {
+  border-radius: 0 2rem 2rem 0;
+  border-right-width: 1px;
 }
 
 /* list-group-item */

@@ -62,9 +62,7 @@ const clearButtonSpan = document.querySelector("#clearButton > i + span");
 const cancelButtonSpan = document.querySelector("#cancelButton > span");
 const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
 const mapsButtonSpan = document.getElementById("mapsButtonSpan");
-const clearButtonSummarySpan = document.querySelector(
-  "#clearButtonSummary > i + span"
-);
+const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
 
@@ -79,7 +77,7 @@ function initializeDependencies(deps = {}) {
   gemini = deps.gemini || new Gemini();
   modal = deps.modal || new Modal();
   payment = deps.payment || new Payment();
-  
+
   return { state, remove, favorite, history, gemini, modal, payment };
 }
 
@@ -109,13 +107,13 @@ function initializePopup() {
   if (!state) {
     initializeDependencies();
   }
-  
+
   // Initialize theme first to prevent flash
   initializeTheme();
-  
+
   // Track extension opened (anonymous)
   if (window.Analytics) window.Analytics.trackExtensionOpened();
-  
+
   searchInput.focus();
 
   // Optimize by running heavy operations asynchronously
@@ -241,7 +239,7 @@ async function fetchData() {
 
   remove.attachCheckboxEventListener(searchHistoryListContainer);
 
-  (state.hasInit ? measureContentSizeLast() : retryMeasureContentSize());
+  state.hasInit ? measureContentSizeLast() : retryMeasureContentSize();
 
   gemini.fetchAPIKey(geminiApiKey);
   modal.updateOptionalModal(startAddr, authUser, historyMax);
@@ -396,7 +394,7 @@ chrome.storage.onChanged.addListener((changes) => {
   state.historyListChanged = changes.searchHistoryList;
   state.favoriteListChanged = changes.favoriteList;
   state.summaryListChanged = changes.summaryList;
-  
+
   const incognitoChange = changes.isIncognito;
 
   if (state.favoriteListChanged && state.favoriteListChanged.newValue) {
@@ -474,7 +472,9 @@ function currentDimensions() {
 
 function sendUpdateIframeSize(id, width, height) {
   chrome.tabs.sendMessage(id, {
-    action: "updateIframeSize", width, height
+    action: "updateIframeSize",
+    width,
+    height,
   });
 }
 
@@ -607,6 +607,6 @@ if (typeof module !== "undefined" && module.exports) {
     delayMeasurement,
     retryMeasureContentSize,
     measureContentSize,
-    measureContentSizeLast
+    measureContentSizeLast,
   };
 }

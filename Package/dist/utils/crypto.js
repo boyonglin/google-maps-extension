@@ -14,19 +14,15 @@ async function ensureAesKey() {
   const result = await chrome.storage.local.get("aesKey");
   const aesKey = result ? result.aesKey : null;
   if (aesKey) {
-    return await crypto.subtle.importKey(
-      "jwk",
-      aesKey,
-      { name: "AES-GCM" },
-      true,
-      ["encrypt", "decrypt"]
-    );
+    return await crypto.subtle.importKey("jwk", aesKey, { name: "AES-GCM" }, true, [
+      "encrypt",
+      "decrypt",
+    ]);
   }
-  const key = await crypto.subtle.generateKey(
-    { name: "AES-GCM", length: 256 },
-    true,
-    ["encrypt", "decrypt"]
-  );
+  const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, [
+    "encrypt",
+    "decrypt",
+  ]);
   const jwk = await crypto.subtle.exportKey("jwk", key);
   await chrome.storage.local.set({ aesKey: jwk });
   return key;

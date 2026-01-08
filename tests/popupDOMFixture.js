@@ -5,12 +5,12 @@
 
 function createPopupDOM() {
   // Create main container
-  const container = document.createElement('div');
-  container.className = 'mx-4 mt-4 mb-3 w-100';
-  
+  const container = document.createElement("div");
+  container.className = "mx-4 mt-4 mb-3 w-100";
+
   // Create header with search input
-  const header = document.createElement('header');
-  header.className = 'd-flex align-items-center border-bottom pb-4';
+  const header = document.createElement("header");
+  header.className = "d-flex align-items-center border-bottom pb-4";
   header.innerHTML = `
     <div class="input-group">
       <div class="input-group-prepend">
@@ -25,10 +25,10 @@ function createPopupDOM() {
       </button>
     </div>
   `;
-  
+
   // Create main section
-  const section = document.createElement('section');
-  section.className = 'pt-3 pb-4';
+  const section = document.createElement("section");
+  section.className = "pt-3 pb-4";
   section.innerHTML = `
     <div class="container mb-3">
       <div class="row justify-content-between">
@@ -118,9 +118,9 @@ function createPopupDOM() {
       </button>
     </div>
   `;
-  
+
   // Create footer
-  const footer = document.createElement('footer');
+  const footer = document.createElement("footer");
   footer.innerHTML = `
     <ul class="nav justify-content-center border-top">
       <li class="nav-item footer-li">
@@ -137,9 +137,9 @@ function createPopupDOM() {
       </li>
     </ul>
   `;
-  
+
   // Create modals
-  const modals = document.createElement('div');
+  const modals = document.createElement("div");
   modals.innerHTML = `
     <div class="modal fade" id="tipsModal" tabindex="-1" aria-label="Tips Modal">
       <div class="modal-dialog modal-dialog-centered modal-xs">
@@ -185,15 +185,7 @@ function createPopupDOM() {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="dirForm" class="my-3">
-              <div class="d-flex mb-3 position-relative">
-                <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="dirInput" />
-                <button type="submit" data-bs-dismiss="modal" title="Save Directory"
-                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
-                  <i class="bi bi-arrow-right"></i>
-                </button>
-              </div>
-            </form>
+            <hr class="settings-divider">
             <form id="authUserForm" class="settings-item">
               <div class="settings-item-info">
                 <label for="authUserInput" class="settings-item-label">Google Account</label>
@@ -202,24 +194,47 @@ function createPopupDOM() {
               <div class="d-flex position-relative mt-2">
                 <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="authUserInput" />
                 <button type="submit" data-bs-dismiss="modal" title="Save Authuser"
-                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
+                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
                   <i class="bi bi-arrow-right"></i>
+                </button>
+                <button type="button" title="Reset to default"
+                        class="btn btn-reset d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
+                  <i class="bi bi-eraser"></i>
                 </button>
               </div>
             </form>
-            <form id="historyMaxForm" class="settings-item">
+            <form id="dirForm" class="settings-item">
+              <div class="settings-item-info">
+                <label for="dirInput" class="settings-item-label">Starting Address</label>
+                <span class="settings-item-desc">Default origin for directions</span>
+              </div>
+              <div class="d-flex position-relative mt-2">
+                <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="dirInput" />
+                <button type="submit" data-bs-dismiss="modal" title="Save Directory"
+                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+                <button type="button" title="Reset to default"
+                        class="btn btn-reset d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
+                  <i class="bi bi-eraser"></i>
+                </button>
+              </div>
+            </form>
+            <div class="settings-item">
               <div class="settings-item-info">
                 <label for="historyMaxInput" class="settings-item-label">History Limit</label>
                 <span class="settings-item-desc">Maximum number of history items (1-100)</span>
               </div>
-              <div class="d-flex position-relative mt-2">
-                <input type="number" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="historyMaxInput" min="1" max="100" />
-                <button type="submit" data-bs-dismiss="modal" title="Save History Max"
-                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
-                  <i class="bi bi-arrow-right"></i>
+              <div class="input-group mt-2 history-max-stepper">
+                <input type="text" class="form-control modalFormInput" autocomplete="off" id="historyMaxInput" />
+                <button class="btn btn-outline-secondary btn-stepper" type="button" id="historyMaxDecrement" title="Decrease">
+                  <i class="bi bi-dash"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-stepper" type="button" id="historyMaxIncrement" title="Increase">
+                  <i class="bi bi-plus"></i>
                 </button>
               </div>
-            </form>
+            </div>
             <div class="settings-item settings-toggle-item" id="incognitoToggle">
               <div class="settings-item-info">
                 <span class="settings-item-label">Incognito Mode</span>
@@ -254,11 +269,15 @@ function createPopupDOM() {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="apiForm" class="d-flex my-3">
-              <input type="text" class="form-control py-2 pe-5" autocomplete="off" id="apiInput" />
+            <form id="apiForm" class="d-flex my-3 position-relative">
+              <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="apiInput" />
               <button type="submit" data-bs-dismiss="modal" title="Save"
-                      class="btn btn-setAPI d-flex align-items-center justify-content-center rounded-circle border-0">
+                      class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
                 <i class="bi bi-arrow-right"></i>
+              </button>
+              <button type="button" title="Reset to default"
+                      class="btn btn-reset d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
+                <i class="bi bi-eraser"></i>
               </button>
             </form>
           </div>
@@ -269,13 +288,13 @@ function createPopupDOM() {
       </div>
     </div>
   `;
-  
+
   // Assemble everything
   container.appendChild(header);
   container.appendChild(section);
   container.appendChild(footer);
   container.appendChild(modals);
-  
+
   return container;
 }
 
@@ -284,21 +303,21 @@ function createPopupDOM() {
  */
 function setupPopupDOM() {
   // Clear existing body content
-  document.body.innerHTML = '';
-  
+  document.body.innerHTML = "";
+
   // Add popup DOM to body
   const popupDOM = createPopupDOM();
   document.body.appendChild(popupDOM);
-  
+
   // Set body dimensions for measurement tests
-  Object.defineProperty(document.body, 'offsetWidth', {
+  Object.defineProperty(document.body, "offsetWidth", {
     configurable: true,
-    value: 400
+    value: 400,
   });
-  
-  Object.defineProperty(document.body, 'offsetHeight', {
+
+  Object.defineProperty(document.body, "offsetHeight", {
     configurable: true,
-    value: 600
+    value: 600,
   });
 }
 
@@ -306,11 +325,11 @@ function setupPopupDOM() {
  * Clean up DOM after test
  */
 function teardownPopupDOM() {
-  document.body.innerHTML = '';
+  document.body.innerHTML = "";
 }
 
 module.exports = {
   createPopupDOM,
   setupPopupDOM,
-  teardownPopupDOM
+  teardownPopupDOM,
 };

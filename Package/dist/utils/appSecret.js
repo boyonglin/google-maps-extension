@@ -5,19 +5,24 @@
       return;
     }
 
-    let candidates = request.content.split("\n").map(item => item.trim()).filter(item => item !== "");
+    let candidates = request.content
+      .split("\n")
+      .map((item) => item.trim())
+      .filter((item) => item !== "");
 
     function attachMapLink(element) {
       // Skip if the element already contains a map link or a YouTube-formatted string
-      if (element.querySelector('a[href*="https://www.google.com/maps"]') ||
+      if (
+        element.querySelector('a[href*="https://www.google.com/maps"]') ||
         element.querySelector("yt-formatted-string") ||
-        element.classList.contains("yt-lockup-metadata-view-model__title")) {
+        element.classList.contains("yt-lockup-metadata-view-model__title")
+      ) {
         return;
       }
 
       let processedCandidates = new Set();
 
-      candidates.forEach(candidate => {
+      candidates.forEach((candidate) => {
         const searchUrl = `${request.queryUrl}q=${encodeURIComponent(candidate)}`;
 
         const parts = candidate.split(/\s{4,}/);
@@ -31,18 +36,13 @@
         // Check if this candidate name exists in the element text
         if (element.textContent.includes(candidateName)) {
           // Find text nodes containing the candidate name
-          const walker = document.createTreeWalker(
-            element,
-            NodeFilter.SHOW_TEXT,
-            null,
-            false
-          );
+          const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
 
           let textNode;
-          while (textNode = walker.nextNode()) {
+          while ((textNode = walker.nextNode())) {
             if (textNode.textContent.includes(candidateName)) {
               // Escape special regex characters to match literal strings
-              const escapedCandidate = candidateName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const escapedCandidate = candidateName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
               const regex = new RegExp(escapedCandidate);
               const match = textNode.textContent.match(regex);
               if (match) {
@@ -73,17 +73,19 @@
       });
     }
 
-    ["h1", "h2", "h3", "strong", "p", "td"].forEach(tag => {
-      document.querySelectorAll(tag).forEach(element => {
+    ["h1", "h2", "h3", "strong", "p", "td"].forEach((tag) => {
+      document.querySelectorAll(tag).forEach((element) => {
         attachMapLink(element);
       });
     });
 
     // Special case for YouTube video descriptions
-    const inlineExpander = document.querySelector("div#description ytd-text-inline-expander yt-attributed-string");
+    const inlineExpander = document.querySelector(
+      "div#description ytd-text-inline-expander yt-attributed-string"
+    );
     if (inlineExpander) {
       const spanElements = inlineExpander.querySelectorAll("span");
-      spanElements.forEach(element => {
+      spanElements.forEach((element) => {
         attachMapLink(element);
       });
     }

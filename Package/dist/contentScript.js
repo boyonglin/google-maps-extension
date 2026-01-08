@@ -3,7 +3,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (!request) {
     return;
   }
-  
+
   // Get the selected text from the webpage
   if (request.action === "getSelectedText") {
     const selectedText = window.getSelection().toString();
@@ -30,7 +30,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "expandYouTubeDescription") {
     try {
       // Look for the expand button with the specific selector
-      const expandButton = document.querySelector("tp-yt-paper-button#expand.button.style-scope.ytd-text-inline-expander");
+      const expandButton = document.querySelector(
+        "tp-yt-paper-button#expand.button.style-scope.ytd-text-inline-expander"
+      );
 
       if (expandButton && expandButton.getAttribute("aria-disabled") !== "true") {
         // Click the expand button
@@ -38,8 +40,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ expanded: true });
       } else {
         // Try alternative selectors for different YouTube layouts
-        const altExpandButton = document.querySelector('ytd-text-inline-expander tp-yt-paper-button[id="expand"]') ||
-          document.querySelector('#expand.ytd-text-inline-expander') ||
+        const altExpandButton =
+          document.querySelector('ytd-text-inline-expander tp-yt-paper-button[id="expand"]') ||
+          document.querySelector("#expand.ytd-text-inline-expander") ||
           document.querySelector('button[aria-label*="more"]') ||
           document.querySelector('button[aria-label*="Show more"]');
 
@@ -60,14 +63,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     let iframeContainer = document.getElementById("TMEiframe");
 
     if (iframeContainer) {
-      iframeContainer.style.width = (request.width + 2) + "px";
-      iframeContainer.style.height = (request.height + 32 + 3) + "px"; // 32px for the draggable bar, 3px for the border
+      iframeContainer.style.width = request.width + 2 + "px";
+      iframeContainer.style.height = request.height + 32 + 3 + "px"; // 32px for the draggable bar, 3px for the border
     }
   }
 
   if (request.action === "finishIframe") {
     let iframeContainer = document.getElementById("TMEiframe");
-    
+
     if (iframeContainer) {
       iframeContainer.style.opacity = "1";
       iframeContainer.style.transition = "width 0.3s ease-in-out, height 0.3s ease-in-out";
@@ -76,7 +79,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "updateTheme") {
     let iframeContainer = document.getElementById("TMEiframe");
-    
+
     if (iframeContainer) {
       if (request.isDarkMode) {
         iframeContainer.setAttribute("data-theme", "dark");
@@ -91,9 +94,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       first: '"Er — hello," — Harry Potter',
       trial: '"Do enjoy yourself, won’t you? While you can." — Lucius Malfoy',
       payment: '"Useful little treasure detectors," — Rubeus Hagrid',
-      premium: '"Where your treasure is, there will your heart be also." — upon the frozen, lichen-spotted granite',
+      premium:
+        '"Where your treasure is, there will your heart be also." — upon the frozen, lichen-spotted granite',
       free: '"Well, their main job is to keep it from the Muggles that there’s still witches an’ wizards up an’ down the country." — Ministry of Magic',
-      missing: '"Is there anything missing?" “Riddle’s API’s gone,” — Harry Potter'
+      missing: '"Is there anything missing?" “Riddle’s API’s gone,” — Harry Potter',
     };
 
     const quote = quotes[request.stage];
@@ -141,14 +145,14 @@ function getContent() {
   // Preserved <h1>, <h2>, <h3>, and <strong> tags
   function wrapTag(tag) {
     const elements = document.querySelectorAll(tag);
-    elements.forEach(element => {
+    elements.forEach((element) => {
       const elementText = getTextContent(element);
       const text = `<${tag}>${elementText}</${tag}>`;
       bodyElement = bodyElement.replace(elementText, text);
     });
   }
 
-  ["h1", "h2", "h3", "strong"].forEach(tag => wrapTag(tag));
+  ["h1", "h2", "h3", "strong"].forEach((tag) => wrapTag(tag));
 
   return summaryTopic + `\n\nPage body content: ` + bodyElement;
 }
