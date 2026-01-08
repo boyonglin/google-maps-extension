@@ -175,12 +175,12 @@ describe("ThemeUtils Module", () => {
       expect(element.getAttribute("data-theme")).toBe("dark");
     });
 
-    test("should remove data-theme attribute when isDarkMode is false", () => {
+    test("should set data-theme attribute to light when isDarkMode is false", () => {
       element.setAttribute("data-theme", "dark");
 
       ThemeUtils.applyToElement(element, false);
 
-      expect(element.hasAttribute("data-theme")).toBe(false);
+      expect(element.getAttribute("data-theme")).toBe("light");
     });
 
     test("should set data-bs-theme when includeBootstrap is true and dark mode", () => {
@@ -193,7 +193,7 @@ describe("ThemeUtils Module", () => {
     test("should set data-bs-theme to light when includeBootstrap is true and light mode", () => {
       ThemeUtils.applyToElement(element, false, true);
 
-      expect(element.hasAttribute("data-theme")).toBe(false);
+      expect(element.getAttribute("data-theme")).toBe("light");
       expect(element.getAttribute("data-bs-theme")).toBe("light");
     });
 
@@ -243,7 +243,7 @@ describe("ThemeUtils Module", () => {
       const result = await ThemeUtils.initialize(element);
 
       expect(result).toBe(false);
-      expect(element.hasAttribute("data-theme")).toBe(false);
+      expect(element.getAttribute("data-theme")).toBe("light");
     });
 
     test("should use system preference when no stored preference", async () => {
@@ -330,7 +330,7 @@ describe("ThemeUtils Module", () => {
         { isDarkMode: false },
         expect.any(Function)
       );
-      expect(element.hasAttribute("data-theme")).toBe(false);
+      expect(element.getAttribute("data-theme")).toBe("light");
     });
 
     test("should toggle from undefined to true", async () => {
@@ -464,7 +464,7 @@ describe("contentScript.js - updateTheme Action", () => {
     expect(iframe.getAttribute("data-theme")).toBe("dark");
   });
 
-  test("should remove dark theme from iframe when isDarkMode is false", () => {
+  test("should set light theme on iframe when isDarkMode is false", () => {
     const iframe = document.createElement("div");
     iframe.id = "TMEiframe";
     iframe.setAttribute("data-theme", "dark");
@@ -475,7 +475,7 @@ describe("contentScript.js - updateTheme Action", () => {
 
     messageListener(request, {}, sendResponse);
 
-    expect(iframe.hasAttribute("data-theme")).toBe(false);
+    expect(iframe.getAttribute("data-theme")).toBe("light");
   });
 
   test("should handle missing iframe gracefully", () => {
@@ -500,7 +500,7 @@ describe("contentScript.js - updateTheme Action", () => {
 
     // Apply light
     messageListener({ action: "updateTheme", isDarkMode: false }, {}, sendResponse);
-    expect(iframe.hasAttribute("data-theme")).toBe(false);
+    expect(iframe.getAttribute("data-theme")).toBe("light");
 
     // Apply dark again
     messageListener({ action: "updateTheme", isDarkMode: true }, {}, sendResponse);
@@ -547,13 +547,13 @@ describe("inject.js - Theme Functions", () => {
       expect(element.getAttribute("data-theme")).toBe("dark");
     });
 
-    test("should remove data-theme when isDarkMode is false", () => {
+    test("should set data-theme to light when isDarkMode is false", () => {
       const element = document.createElement("div");
       element.setAttribute("data-theme", "dark");
 
       TME.applyTheme(element, false);
 
-      expect(element.hasAttribute("data-theme")).toBe(false);
+      expect(element.getAttribute("data-theme")).toBe("light");
     });
   });
 

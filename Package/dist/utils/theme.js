@@ -36,12 +36,7 @@ const ThemeUtils = {
     if (!element) return;
 
     const theme = isDarkMode ? this.DARK : this.LIGHT;
-
-    if (isDarkMode) {
-      element.setAttribute(this.THEME_ATTRIBUTE, theme);
-    } else {
-      element.removeAttribute(this.THEME_ATTRIBUTE);
-    }
+    element.setAttribute(this.THEME_ATTRIBUTE, theme);
 
     if (includeBootstrap) {
       element.setAttribute(this.BS_THEME_ATTRIBUTE, theme);

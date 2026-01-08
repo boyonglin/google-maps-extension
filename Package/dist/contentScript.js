@@ -63,7 +63,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     let iframeContainer = document.getElementById("TMEiframe");
 
     if (iframeContainer) {
-      iframeContainer.style.width = request.width + 2 + "px";
+      iframeContainer.style.width = request.width + "px";
       iframeContainer.style.height = request.height + 32 + 3 + "px"; // 32px for the draggable bar, 3px for the border
     }
   }
@@ -81,11 +81,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     let iframeContainer = document.getElementById("TMEiframe");
 
     if (iframeContainer) {
-      if (request.isDarkMode) {
-        iframeContainer.setAttribute("data-theme", "dark");
-      } else {
-        iframeContainer.removeAttribute("data-theme");
-      }
+      iframeContainer.setAttribute("data-theme", request.isDarkMode ? "dark" : "light");
     }
   }
 

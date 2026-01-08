@@ -1,13 +1,6 @@
 window.TME = {
-  /**
-   * Theme utilities for iframe context
-   */
   applyTheme: function (element, isDarkMode) {
-    if (isDarkMode) {
-      element.setAttribute("data-theme", "dark");
-    } else {
-      element.removeAttribute("data-theme");
-    }
+    element.setAttribute("data-theme", isDarkMode ? "dark" : "light");
   },
 
   getSystemPreference: function () {

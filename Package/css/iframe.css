@@ -60,11 +60,41 @@
   --shadow-iframe: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
+#TMEiframe[data-theme=light] {
+  --primary-color: #4285f4;
+  --border-color: #dee2e6;
+  --danger-color: #db4437;
+  --danger-color-500: #eda19b;
+  --danger-color-bg: #fff8f7;
+  --background-color: #ffffff;
+  --text-on-color: #ffffff;
+  --gray-800: #202833;
+  --gray-600: #70757a;
+  --gray-500: #a5a9ad;
+  --gray-400: #dadce0;
+  --gray-300: #eff1f3;
+  --gray-200: #f6fafe;
+  --google-green: #0f9d58;
+  --google-green-500: #87cdab;
+  --google-green-bg: #f7fffb;
+  --google-yellow: #f4b400;
+  --google-yellow-500: #f9d980;
+  --google-yellow-bg: #fffdf7;
+  --google-purple-hover: #6c61a4;
+  --google-purple: #8779cd;
+  --google-purple-500: #c3bce6;
+  --google-purple-100: #f1effa;
+  --google-purple-bg: #fafafd;
+  --shadow-color: rgba(112, 144, 176, 0.15);
+  --shadow-iframe: 0 8px 24px rgba(112, 144, 176, 0.25);
+}
+
 #TMEiframe {
   position: fixed;
   width: 400px;
-  height: 480px;
+  height: 500px;
   border: 1px solid var(--border-color);
+  box-sizing: border-box;
   z-index: 10000;
   box-shadow: var(--shadow-iframe);
   border-radius: 8px;

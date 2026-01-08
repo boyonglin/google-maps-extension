@@ -99,13 +99,13 @@ describe("inject.js - TME Module", () => {
       expect(element.getAttribute("data-theme")).toBe("dark");
     });
 
-    test("should remove data-theme attribute when isDarkMode is false", () => {
+    test("should set data-theme to light when isDarkMode is false", () => {
       const element = document.createElement("div");
       element.setAttribute("data-theme", "dark");
 
       TME.applyTheme(element, false);
 
-      expect(element.hasAttribute("data-theme")).toBe(false);
+      expect(element.getAttribute("data-theme")).toBe("light");
     });
 
     test("should handle null element gracefully", () => {
@@ -219,7 +219,7 @@ describe("inject.js - TME Module", () => {
 
       await flushPromises();
 
-      expect(container.hasAttribute("data-theme")).toBe(false);
+      expect(container.getAttribute("data-theme")).toBe("light");
     });
 
     test("should use system preference when isDarkMode is undefined", async () => {

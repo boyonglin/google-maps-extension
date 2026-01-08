@@ -62,10 +62,9 @@
 
 :root {
   /* TC + Emoji safe */
-  --ui-font: "Satoshi-Variable",
-    "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC",
-    system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+  --ui-font:
+    "Satoshi-Variable", "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC", system-ui,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
 }
 
 /* Dark mode component overrides */
