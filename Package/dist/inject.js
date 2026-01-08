@@ -26,8 +26,8 @@ window.TME = {
         // Apply dark mode theme if enabled
         chrome.storage.local.get("isDarkMode", ({ isDarkMode }) => {
             if (isDarkMode === undefined) {
-                // Check system preference if no stored preference
                 const prefersDark = TME.getSystemPreference();
+                chrome.storage.local.set({ isDarkMode: prefersDark });
                 TME.applyTheme(iframeContainer, prefersDark);
             } else {
                 TME.applyTheme(iframeContainer, isDarkMode);

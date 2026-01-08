@@ -1,14 +1,8 @@
 class Gemini {
     addGeminiPageListener() {
         summaryListContainer.addEventListener("click", (event) => {
-            let liElement;
-            if (event.target.tagName === "LI") {
-                liElement = event.target;
-            } else if (event.target.parentElement.tagName === "LI") {
-                liElement = event.target.parentElement;
-            } else {
-                return;
-            }
+            const liElement = DOMUtils.findClosestListItem(event);
+            if (!liElement) return;
 
             const spans = liElement.querySelectorAll("span");
             const selectedText = Array.from(spans).map(span => span.textContent).join(" ").trim();
@@ -23,14 +17,8 @@ class Gemini {
                     } else {
                         favorite.addToFavoriteList(nameSpan);
                     }
-                    event.target.className = "bi bi-patch-check-fill matched spring-animation";
-                    setTimeout(function () {
-                        event.target.classList.remove("spring-animation");
-                    }, 500);
-
-                    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-                        favorite.updateFavorite(favoriteList);
-                    });
+                    DOMUtils.animateFavoriteIcon(event.target);
+                    DOMUtils.refreshFavoriteList();
                 } else {
                     if (window.Analytics) window.Analytics.trackFeatureClick("click_summary_item", "summaryListContainer");
                     chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
@@ -163,11 +151,16 @@ class Gemini {
     }
 
     async scrapeLen(id) {
-        const html = await fetch(`https://www.youtube.com/watch?v=${id}`, {
-            credentials: "omit",
-        }).then((r) => r.text());
-        const m = html.match(/"lengthSeconds":"(\d+)"/);
-        return m ? Number(m[1]) : null;
+        try {
+            const html = await fetch(`https://www.youtube.com/watch?v=${id}`, {
+                credentials: "omit",
+            }).then((r) => r.text());
+            const m = html.match(/"lengthSeconds":"(\d+)"/);
+            return m ? Number(m[1]) : null;
+        } catch (error) {
+            console.error("Failed to scrape video length:", error);
+            return null;
+        }
     }
 
     // Clear summary data if it's older than 1 hour
@@ -175,7 +168,7 @@ class Gemini {
         chrome.storage.local.get(
             ["summaryList", "timestamp", "favoriteList"],
             (result) => {
-                if (result.timestamp && result.summaryList.length > 0) {
+                if (result.timestamp && result.summaryList && result.summaryList.length > 0) {
                     const currentTime = Date.now();
                     const elapsedTime = (currentTime - result.timestamp) / 1000;
                     if (elapsedTime > 86400) {
@@ -471,7 +464,8 @@ class Gemini {
     }
 
     ResponseErrorMsg(response) {
-        if (response.error.includes("overloaded")) {
+        const errorMsg = response?.error || '';
+        if (errorMsg.includes("overloaded")) {
             geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiOverloadMsg");
         } else {
             geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");

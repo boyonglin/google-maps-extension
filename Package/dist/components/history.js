@@ -2,14 +2,8 @@ class History {
     addHistoryPageListener() {
         // Track the click event on li elements
         searchHistoryListContainer.addEventListener("mousedown", (event) => {
-            let liElement;
-            if (event.target.tagName === "LI") {
-                liElement = event.target;
-            } else if (event.target.parentElement.tagName === "LI") {
-                liElement = event.target.parentElement;
-            } else {
-                return;
-            }
+            const liElement = DOMUtils.findClosestListItem(event);
+            if (!liElement) return;
 
             if (liElement.classList.contains("delete-list")) {
                 if (event.target.classList.contains("form-check-input")) {
@@ -27,17 +21,9 @@ class History {
                     // Check if the clicked element has the "bi" class (favorite icon)
                     if (event.target.classList.contains("bi")) {
                         if (window.Analytics) window.Analytics.trackFeatureClick("add_to_favorite_from_history", "searchHistoryListContainer");
-                        // Add the selected text to the favorite list
                         favorite.addToFavoriteList(selectedText);
-                        event.target.className =
-                            "bi bi-patch-check-fill matched spring-animation";
-                        setTimeout(function () {
-                            event.target.classList.remove("spring-animation");
-                        }, 500);
-
-                        chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-                            favorite.updateFavorite(favoriteList);
-                        });
+                        DOMUtils.animateFavoriteIcon(event.target);
+                        DOMUtils.refreshFavoriteList();
                     } else if (event.target.classList.contains("form-check-input")) {
                         return;
                     } else {

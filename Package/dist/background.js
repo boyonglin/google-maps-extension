@@ -535,7 +535,7 @@ function callApi(prompt, content, apiKey, sendResponse) {
       if (generatedText.includes("<ul")) {
         const regex = /<ul class="list-group d-flex">[\s\S]*?<\/ul>/;
         const match = generatedText.match(regex);
-        sendResponse(match[0]);
+        sendResponse(match ? match[0] : generatedText);
       } else {
         sendResponse(generatedText);
       }

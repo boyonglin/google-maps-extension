@@ -7,8 +7,14 @@ class Favorite {
                     return;
                 }
                 
+                const escapeCSV = (str) => {
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                };
                 const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
-                const csv = "name\n" + trimmedFavorite.map((item) => `${item},`).join("\n");
+                const csv = "name\n" + trimmedFavorite.map((item) => `${escapeCSV(item)}`).join("\n");
 
                 const blob = new Blob([csv], {
                     type: "text/csv; charset=utf-8;",
@@ -67,14 +73,8 @@ class Favorite {
         });
 
         favoriteListContainer.addEventListener("mousedown", (event) => {
-            let liElement;
-            if (event.target.tagName === "LI") {
-                liElement = event.target;
-            } else if (event.target.parentElement.tagName === "LI") {
-                liElement = event.target.parentElement;
-            } else {
-                return;
-            }
+            const liElement = DOMUtils.findClosestListItem(event);
+            if (!liElement) return;
 
             if (liElement.classList.contains("delete-list")) {
                 if (event.target.classList.contains("form-check-input")) {

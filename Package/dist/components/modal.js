@@ -73,15 +73,42 @@ class Modal {
 
         // Modal close event
         const apiModal = document.getElementById("apiModal");
+        
+        // Update reset button when API modal opens
+        apiModal.addEventListener("shown.bs.modal", () => {
+            this._updateApiResetButtonVisibility();
+        });
+        
         apiModal.addEventListener("hidden.bs.modal", () => {
             apiInput.value = "";
+            this._hideInputButtons(apiInput);
+        });
+
+        // Show/hide API submit button based on input content
+        this._setupInputButtonToggle(apiInput);
+        
+        // Setup reset button for API input
+        this._setupResetButton(apiInput, "geminiApiKey", () => {
+            apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
+            sendButton.disabled = true;
         });
 
         const optionalModal = document.getElementById("optionalModal");
+        
+        // Update reset buttons when modal opens
+        optionalModal.addEventListener("shown.bs.modal", () => {
+            this._updateResetButtonsVisibility();
+        });
+        
         optionalModal.addEventListener("hidden.bs.modal", () => {
             dirInput.value = "";
             authUserInput.value = "";
-            historyMaxInput.value = "";
+            this._hideInputButtons(dirInput);
+            this._hideInputButtons(authUserInput);
+            
+            // Save historyMax value on modal close
+            this._saveHistoryMax();
         });
 
         // Save the starting address
@@ -94,10 +121,16 @@ class Modal {
             if (startAddr === "") {
                 chrome.storage.local.remove("startAddr");
                 dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
+
             } else {
                 chrome.storage.local.set({ startAddr: startAddr });
                 dirInput.placeholder = startAddr;
             }
+        });
+        
+        // Setup reset button for direction input
+        this._setupResetButton(dirInput, "startAddr", () => {
+            dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
         });
 
         // Save the authentication user
@@ -105,7 +138,7 @@ class Modal {
             event.preventDefault();
             if (window.Analytics) window.Analytics.trackFeatureClick("save_auth_user", "authUserForm");
 
-            const authUser = parseInt(authUserInput.value.trim());
+            const authUser = parseInt(authUserInput.value.trim(), 10);
 
             if (authUserInput.value.trim() === "" || authUser === 0 || isNaN(authUser)) {
                 chrome.storage.local.set({ authUser: 0 });
@@ -115,31 +148,35 @@ class Modal {
                 authUserInput.placeholder = `authuser=${authUser}`;
             }
         });
+        
+        // Setup reset button for authUser input
+        this._setupResetButton(authUserInput, "authUser", () => {
+            authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
+        }, true);
 
-        // Save the history max limit
-        document.getElementById("historyMaxForm").addEventListener("submit", (event) => {
-            event.preventDefault();
-            if (window.Analytics) window.Analytics.trackFeatureClick("save_history_max", "historyMaxForm");
+        // History Max stepper buttons
+        const historyMaxDecrement = document.getElementById("historyMaxDecrement");
+        const historyMaxIncrement = document.getElementById("historyMaxIncrement");
 
-            const historyMax = parseInt(historyMaxInput.value.trim());
-
-            if (historyMaxInput.value.trim() === "" || isNaN(historyMax) || historyMax <= 0) {
-                chrome.storage.local.set({ historyMax: 10 });
-                historyMaxInput.placeholder = "10";
-            } else {
-                const clampedValue = Math.min(Math.max(historyMax, 1), 100);
-                chrome.storage.local.set({ historyMax: clampedValue });
-                historyMaxInput.placeholder = String(clampedValue);
-            }
+        historyMaxDecrement.addEventListener("click", () => {
+            const currentValue = parseInt(historyMaxInput.value || historyMaxInput.placeholder, 10) || 10;
+            // Clamp to valid range first, then decrement
+            const clampedValue = Math.min(100, Math.max(1, currentValue));
+            const newValue = Math.max(1, clampedValue - 1);
+            historyMaxInput.value = newValue;
         });
 
-        // Initialize number input from placeholder when arrows are clicked on empty input
-        historyMaxInput.addEventListener("focus", () => {
-            if (historyMaxInput.value === "") {
-                historyMaxInput.value = historyMaxInput.placeholder || "10";
-                historyMaxInput.select();
-            }
+        historyMaxIncrement.addEventListener("click", () => {
+            const currentValue = parseInt(historyMaxInput.value || historyMaxInput.placeholder, 10) || 10;
+            // Clamp to valid range first, then increment
+            const clampedValue = Math.min(100, Math.max(1, currentValue));
+            const newValue = Math.min(100, clampedValue + 1);
+            historyMaxInput.value = newValue;
         });
+
+        // Show/hide submit buttons based on input content (search bar behavior)
+        this._setupInputButtonToggle(authUserInput);
+        this._setupInputButtonToggle(dirInput);
 
         // Toggle handlers using shared pattern
         this._setupToggle(incognitoToggle, "isIncognito", (newState) => {
@@ -193,21 +230,28 @@ class Modal {
     }
 
     updateOptionalModal(startAddr, authUser, historyMax) {
-        dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
-        authUserInput.placeholder = chrome.i18n.getMessage("authUserPlaceholder");
-        historyMaxInput.placeholder = "10";
+        dirInput.placeholder = startAddr || chrome.i18n.getMessage("dirPlaceholder");
+        authUserInput.placeholder = authUser ? `authuser=${authUser}` : chrome.i18n.getMessage("authUserPlaceholder");
+        historyMaxInput.placeholder = (historyMax && historyMax > 0) ? String(historyMax) : "10";
+        historyMaxInput.value = "";
+    }
 
-        if (startAddr) {
-            dirInput.placeholder = startAddr;
+    // Save history max value to storage
+    _saveHistoryMax() {
+        const inputValue = historyMaxInput.value || historyMaxInput.placeholder;
+        const historyMax = parseInt(inputValue, 10);
+        
+        if (isNaN(historyMax) || historyMax <= 0) {
+            chrome.storage.local.set({ historyMax: 10 });
+            historyMaxInput.placeholder = "10";
+        } else {
+            const clampedValue = Math.min(Math.max(historyMax, 1), 100);
+            chrome.storage.local.set({ historyMax: clampedValue });
+            historyMaxInput.placeholder = String(clampedValue);
+            if (window.Analytics) window.Analytics.trackFeatureClick("save_history_max", "historyMaxStepper");
         }
-
-        if (authUser) {
-            authUserInput.placeholder = `authuser=${authUser}`;
-        }
-
-        if (historyMax && historyMax > 0) {
-            historyMaxInput.placeholder = String(historyMax);
-        }
+        // Clear value after save, show as placeholder
+        historyMaxInput.value = "";
     }
 
     // Update toggle button UI state (modern toggle switch design)
@@ -225,6 +269,14 @@ class Modal {
         toggleElement.classList.toggle("toggle-active", isActive);
     }
 
+    // Hide submit and reset buttons for an input field
+    _hideInputButtons(inputElement) {
+        const submitButton = inputElement.parentElement.querySelector("button[type='submit']");
+        const resetButton = inputElement.parentElement.querySelector(".btn-reset");
+        if (submitButton) submitButton.classList.add("d-none");
+        if (resetButton) resetButton.classList.add("d-none");
+    }
+
     // Setup a toggle button with click handler
     _setupToggle(toggleElement, storageKey, onToggle) {
         toggleElement.addEventListener("click", () => {
@@ -235,6 +287,92 @@ class Modal {
                     onToggle(newState);
                 });
             });
+        });
+    }
+
+    // Setup input field to show/hide submit button based on content (like search bar)
+    _setupInputButtonToggle(inputElement) {
+        const submitButton = inputElement.parentElement.querySelector("button[type='submit']");
+        const resetButton = inputElement.parentElement.querySelector(".btn-reset");
+        if (!submitButton) return;
+
+        inputElement.addEventListener("input", () => {
+            if (inputElement.value.trim() === "") {
+                submitButton.classList.add("d-none");
+                // Show reset button if there's a custom placeholder (user setting exists)
+                if (resetButton) {
+                    const defaultPlaceholder = inputElement.dataset.defaultPlaceholder;
+                    const hasCustomValue = defaultPlaceholder && inputElement.placeholder !== defaultPlaceholder;
+                    resetButton.classList.toggle("d-none", !hasCustomValue);
+                }
+            } else {
+                submitButton.classList.remove("d-none");
+                // Hide reset button when typing
+                if (resetButton) resetButton.classList.add("d-none");
+            }
+        });
+    }
+
+    // Setup reset button for an input field
+    _setupResetButton(inputElement, storageKey, onReset, isNumeric = false) {
+        const resetButton = inputElement.parentElement.querySelector(".btn-reset");
+        if (!resetButton) return;
+
+        // Store default placeholder for comparison
+        const defaultPlaceholder = chrome.i18n.getMessage(inputElement.id.replace("Input", "Placeholder")) || inputElement.placeholder;
+        inputElement.dataset.defaultPlaceholder = defaultPlaceholder;
+
+        resetButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            if (window.Analytics) window.Analytics.trackFeatureClick("reset_" + storageKey, "resetButton");
+            
+            // Remove or reset the storage value
+            if (isNumeric) {
+                chrome.storage.local.set({ [storageKey]: 0 });
+            } else {
+                chrome.storage.local.remove(storageKey);
+            }
+            
+            // Clear input and reset placeholder
+            inputElement.value = "";
+            onReset();
+            
+            // Hide reset button after reset
+            resetButton.classList.add("d-none");
+        });
+    }
+
+    // Update reset buttons visibility based on current stored values
+    _updateResetButtonsVisibility() {
+        chrome.storage.local.get(["startAddr", "authUser"], (result) => {
+            const dirResetButton = dirInput.parentElement.querySelector(".btn-reset");
+            const authResetButton = authUserInput.parentElement.querySelector(".btn-reset");
+            
+            // Show/hide based on whether custom values exist
+            if (dirResetButton) {
+                const hasCustomDir = result.startAddr && result.startAddr.trim() !== "";
+                dirResetButton.classList.toggle("d-none", !hasCustomDir);
+            }
+            
+            if (authResetButton) {
+                const hasCustomAuth = result.authUser && result.authUser > 0;
+                authResetButton.classList.toggle("d-none", !hasCustomAuth);
+            }
+        });
+    }
+
+    // Update API reset button visibility based on stored API key
+    _updateApiResetButtonVisibility() {
+        chrome.storage.local.get(["geminiApiKey"], (result) => {
+            const apiResetButton = apiInput.parentElement.querySelector(".btn-reset");
+            
+            if (apiResetButton) {
+                // Check if API key exists (placeholder shows masked key)
+                const hasApiKey = result.geminiApiKey && result.geminiApiKey.trim() !== "";
+                apiResetButton.classList.toggle("d-none", !hasApiKey);
+            }
         });
     }
 
