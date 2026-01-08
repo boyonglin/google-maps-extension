@@ -47,6 +47,8 @@
 
     &:focus {
       background-color: transparent;
+      border-color: var(--gray-500);
+      box-shadow: none;
     }
   }
 
@@ -75,6 +77,16 @@
     &:hover {
       background-color: var(--gray-300);
       border-color: var(--gray-400);
+    }
+  }
+
+  .history-max-stepper .btn-stepper {
+    border-color: var(--gray-500);
+    background-color: var(--gray-300);
+
+    &:hover {
+      background-color: var(--gray-300);
+      border-color: var(--gray-500);
     }
   }
 
@@ -136,6 +148,7 @@ body {
   &:focus {
     color: var(--gray-600);
     background-color: var(--background-color);
+    border-color: var(--border-color);
     outline: none;
     box-shadow: none;
 
@@ -166,46 +179,6 @@ body {
   }
 }
 
-/* api bar */
-
-#apiInput {
-  border-radius: 2rem;
-  padding-left: 1rem;
-
-  &::placeholder {
-    color: var(--gray-600);
-    font-weight: 300;
-  }
-
-  &:focus {
-    color: var(--gray-600);
-    background-color: var(--background-color);
-    border-color: var(--border-color);
-    outline: none;
-    box-shadow: none;
-
-    &::placeholder {
-      opacity: 0;
-    }
-  }
-}
-
-.btn-setAPI {
-  position: absolute;
-  right: 1.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: var(--google-purple);
-  color: white;
-  width: 2rem;
-  height: 2rem;
-  cursor: pointer;
-
-  i {
-    padding-top: 1px;
-  }
-}
-
 .modal-footer p a {
   color: var(--google-purple);
   font-weight: 700;
@@ -223,6 +196,13 @@ body {
   padding-bottom: 1rem;
   max-height: 75vh;
   overflow-y: auto;
+}
+
+.settings-divider {
+  border: none;
+  border-top: 1px solid var(--gray-400);
+  margin: 0.5rem 0 1.5rem 0;
+  opacity: 0.5;
 }
 
 .settings-item {
@@ -329,19 +309,63 @@ body {
   }
 }
 
-.btn-set {
+.btn-set,
+.btn-reset {
   position: absolute;
   right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
-  background-color: var(--gray-500);
-  color: white;
+  background-color: transparent;
+  color: var(--gray-600);
   width: 2rem;
   height: 2rem;
   cursor: pointer;
 
   i {
     padding-top: 1px;
+  }
+  
+  &:hover {
+    color: var(--gray-800);
+  }
+}
+
+.btn-reset i {
+  font-size: 1rem;
+}
+
+/* History Max Stepper */
+
+.history-max-stepper {
+  .modalFormInput {
+    border-radius: 2rem 0 0 2rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border-right-width: 0;
+  }
+  
+  .btn-stepper {
+    border-color: var(--gray-400);
+    background-color: var(--background-color);
+    color: var(--gray-600);
+    padding: 0.5rem 0.75rem;
+    border-right-width: 0;
+    border-left-width: 0;
+    
+    i {
+      font-size: 20px;
+    }
+    
+    &:hover {
+      background-color: var(--background-color);
+      border-color: var(--gray-400);
+      color: var(--gray-800);
+    }
+    
+    &:last-child {
+      border-radius: 0 2rem 2rem 0;
+      border-right-width: 1px;
+    }
   }
 }
 
