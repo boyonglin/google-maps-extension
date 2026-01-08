@@ -185,15 +185,7 @@ function createPopupDOM() {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="dirForm" class="my-3">
-              <div class="d-flex mb-3 position-relative">
-                <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="dirInput" />
-                <button type="submit" data-bs-dismiss="modal" title="Save Directory"
-                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
-                  <i class="bi bi-arrow-right"></i>
-                </button>
-              </div>
-            </form>
+            <hr class="settings-divider">
             <form id="authUserForm" class="settings-item">
               <div class="settings-item-info">
                 <label for="authUserInput" class="settings-item-label">Google Account</label>
@@ -202,24 +194,47 @@ function createPopupDOM() {
               <div class="d-flex position-relative mt-2">
                 <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="authUserInput" />
                 <button type="submit" data-bs-dismiss="modal" title="Save Authuser"
-                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
+                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
                   <i class="bi bi-arrow-right"></i>
+                </button>
+                <button type="button" title="Reset to default"
+                        class="btn btn-reset d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
+                  <i class="bi bi-eraser"></i>
                 </button>
               </div>
             </form>
-            <form id="historyMaxForm" class="settings-item">
+            <form id="dirForm" class="settings-item">
+              <div class="settings-item-info">
+                <label for="dirInput" class="settings-item-label">Starting Address</label>
+                <span class="settings-item-desc">Default origin for directions</span>
+              </div>
+              <div class="d-flex position-relative mt-2">
+                <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="dirInput" />
+                <button type="submit" data-bs-dismiss="modal" title="Save Directory"
+                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+                <button type="button" title="Reset to default"
+                        class="btn btn-reset d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
+                  <i class="bi bi-eraser"></i>
+                </button>
+              </div>
+            </form>
+            <div class="settings-item">
               <div class="settings-item-info">
                 <label for="historyMaxInput" class="settings-item-label">History Limit</label>
                 <span class="settings-item-desc">Maximum number of history items (1-100)</span>
               </div>
-              <div class="d-flex position-relative mt-2">
-                <input type="number" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="historyMaxInput" min="1" max="100" />
-                <button type="submit" data-bs-dismiss="modal" title="Save History Max"
-                        class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0">
-                  <i class="bi bi-arrow-right"></i>
+              <div class="input-group mt-2 history-max-stepper">
+                <input type="text" class="form-control modalFormInput" autocomplete="off" id="historyMaxInput" />
+                <button class="btn btn-outline-secondary btn-stepper" type="button" id="historyMaxDecrement" title="Decrease">
+                  <i class="bi bi-dash"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-stepper" type="button" id="historyMaxIncrement" title="Increase">
+                  <i class="bi bi-plus"></i>
                 </button>
               </div>
-            </form>
+            </div>
             <div class="settings-item settings-toggle-item" id="incognitoToggle">
               <div class="settings-item-info">
                 <span class="settings-item-label">Incognito Mode</span>
@@ -254,11 +269,15 @@ function createPopupDOM() {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="apiForm" class="d-flex my-3">
-              <input type="text" class="form-control py-2 pe-5" autocomplete="off" id="apiInput" />
+            <form id="apiForm" class="d-flex my-3 position-relative">
+              <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="apiInput" />
               <button type="submit" data-bs-dismiss="modal" title="Save"
-                      class="btn btn-setAPI d-flex align-items-center justify-content-center rounded-circle border-0">
+                      class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
                 <i class="bi bi-arrow-right"></i>
+              </button>
+              <button type="button" title="Reset to default"
+                      class="btn btn-reset d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
+                <i class="bi bi-eraser"></i>
               </button>
             </form>
           </div>

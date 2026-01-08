@@ -41,10 +41,6 @@ const setupGlobalDOMElements = () => {
         <p class="modal-body-configure"></p>
         <p class="modal-body-configure"></p>
         <p class="modal-body-configure"></p>
-        <input id="apiInput">
-        <input id="dirInput">
-        <input id="authUserInput">
-        <input id="historyMaxInput" type="number" min="1" max="100">
         <p id="geminiEmptyMessage" class="d-none"></p>
         <button id="sendButton"></button>
         <div id="incognitoToggle" class="settings-toggle-item">
@@ -61,13 +57,30 @@ const setupGlobalDOMElements = () => {
         <button class="btn-close"></button>
         <div id="apiModal"></div>
         <div id="optionalModal"></div>
-        <form id="apiForm"></form>
-        <form id="dirForm"></form>
-        <form id="authUserForm"></form>
-        <form id="historyMaxForm"></form>
+        <form id="apiForm" class="d-flex position-relative">
+            <input id="apiInput">
+            <button type="submit" class="btn btn-set d-none"></button>
+        </form>
+        <form id="dirForm">
+            <div class="d-flex position-relative">
+                <input id="dirInput">
+                <button type="submit" class="btn btn-set d-none"></button>
+            </div>
+        </form>
+        <form id="authUserForm">
+            <div class="d-flex position-relative">
+                <input id="authUserInput">
+                <button type="submit" class="btn btn-set d-none"></button>
+            </div>
+        </form>
+        <div class="input-group history-max-stepper">
+            <input id="historyMaxInput" type="text" class="form-control modalFormInput">
+            <button class="btn btn-stepper" type="button" id="historyMaxDecrement">-</button>
+            <button class="btn btn-stepper" type="button" id="historyMaxIncrement">+</button>
+        </div>
         <div id="darkModeToggle" class="settings-toggle-item">
             <span class="darkmode-text">Light</span>
-            <span class="darkmode-icon d-none"><i class="bi bi-circle-half"></i></span>
+            <span class="darkmode-icon d-none"><i class="bi-circle-half"></i></span>
             <div class="settings-toggle">
                 <div class="toggle-switch">
                     <div class="toggle-knob"></div>
@@ -788,6 +801,218 @@ describe('Modal Component - Full Coverage', () => {
             // 2. encryptApiKey is set to a function
             // 3. That function can be called to encrypt data
             // The only difference is HOW the function is obtained (injection vs import)
+        });
+    });
+
+    // ============================================================================
+    // Input Button Toggle Tests (Search Bar Behavior)
+    // ============================================================================
+    describe('_setupInputButtonToggle', () => {
+        test('should show submit button when input has value', async () => {
+            await modalInstance.addModalListener();
+            
+            const submitButton = dirInput.parentElement.querySelector("button[type='submit']");
+            expect(submitButton.classList.contains('d-none')).toBe(true);
+            
+            dirInput.value = 'test value';
+            dirInput.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            expect(submitButton.classList.contains('d-none')).toBe(false);
+        });
+
+        test('should hide submit button when input is empty', async () => {
+            await modalInstance.addModalListener();
+            
+            const submitButton = dirInput.parentElement.querySelector("button[type='submit']");
+            
+            // First add value
+            dirInput.value = 'test value';
+            dirInput.dispatchEvent(new Event('input', { bubbles: true }));
+            expect(submitButton.classList.contains('d-none')).toBe(false);
+            
+            // Then clear it
+            dirInput.value = '';
+            dirInput.dispatchEvent(new Event('input', { bubbles: true }));
+            expect(submitButton.classList.contains('d-none')).toBe(true);
+        });
+
+        test('should hide submit button when input has only whitespace', async () => {
+            await modalInstance.addModalListener();
+            
+            const submitButton = authUserInput.parentElement.querySelector("button[type='submit']");
+            
+            authUserInput.value = '   ';
+            authUserInput.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            expect(submitButton.classList.contains('d-none')).toBe(true);
+        });
+
+        test('should work for all setting input fields', async () => {
+            await modalInstance.addModalListener();
+            
+            // Test dirInput and authUserInput (text inputs)
+            const textInputs = [dirInput, authUserInput];
+            
+            for (const input of textInputs) {
+                const submitButton = input.parentElement.querySelector("button[type='submit']");
+                expect(submitButton).not.toBeNull();
+                
+                input.value = 'test';
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                expect(submitButton.classList.contains('d-none')).toBe(false);
+                
+                input.value = '';
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                expect(submitButton.classList.contains('d-none')).toBe(true);
+            }
+            
+            // Note: historyMaxInput now uses stepper buttons instead of submit button
+        });
+
+        test('should not throw error when submit button is missing', () => {
+            // Create an input without a submit button sibling
+            const standaloneInput = document.createElement('input');
+            standaloneInput.id = 'standaloneInput';
+            const wrapper = document.createElement('div');
+            wrapper.appendChild(standaloneInput);
+            document.body.appendChild(wrapper);
+            
+            expect(() => {
+                modalInstance._setupInputButtonToggle(standaloneInput);
+            }).not.toThrow();
+        });
+
+        test('should work for apiInput field', async () => {
+            await modalInstance.addModalListener();
+            
+            const apiSubmitButton = apiInput.parentElement.querySelector("button[type='submit']");
+            expect(apiSubmitButton).not.toBeNull();
+            expect(apiSubmitButton.classList.contains('d-none')).toBe(true);
+            
+            apiInput.value = 'test-api-key';
+            apiInput.dispatchEvent(new Event('input', { bubbles: true }));
+            expect(apiSubmitButton.classList.contains('d-none')).toBe(false);
+            
+            apiInput.value = '';
+            apiInput.dispatchEvent(new Event('input', { bubbles: true }));
+            expect(apiSubmitButton.classList.contains('d-none')).toBe(true);
+        });
+
+        test('should hide apiInput submit button when modal closes', async () => {
+            await modalInstance.addModalListener();
+            
+            const apiSubmitButton = apiInput.parentElement.querySelector("button[type='submit']");
+            const apiModal = document.getElementById('apiModal');
+            
+            // Show the button first
+            apiInput.value = 'test-api-key';
+            apiInput.dispatchEvent(new Event('input', { bubbles: true }));
+            expect(apiSubmitButton.classList.contains('d-none')).toBe(false);
+            
+            // Simulate modal close
+            apiModal.dispatchEvent(new Event('hidden.bs.modal'));
+            
+            expect(apiInput.value).toBe('');
+            expect(apiSubmitButton.classList.contains('d-none')).toBe(true);
+        });
+    });
+
+    // ============================================================================
+    // History Max Stepper Tests
+    // ============================================================================
+    describe('History Max Stepper', () => {
+        test('should increment value when + button is clicked using placeholder', async () => {
+            await modalInstance.addModalListener();
+            
+            historyMaxInput.placeholder = '10';
+            historyMaxInput.value = '';
+            const incrementBtn = document.getElementById('historyMaxIncrement');
+            
+            incrementBtn.click();
+            
+            expect(historyMaxInput.value).toBe('11');
+        });
+
+        test('should increment value when + button is clicked using existing value', async () => {
+            await modalInstance.addModalListener();
+            
+            historyMaxInput.value = '15';
+            const incrementBtn = document.getElementById('historyMaxIncrement');
+            
+            incrementBtn.click();
+            
+            expect(historyMaxInput.value).toBe('16');
+        });
+
+        test('should decrement value when - button is clicked using placeholder', async () => {
+            await modalInstance.addModalListener();
+            
+            historyMaxInput.placeholder = '10';
+            historyMaxInput.value = '';
+            const decrementBtn = document.getElementById('historyMaxDecrement');
+            
+            decrementBtn.click();
+            
+            expect(historyMaxInput.value).toBe('9');
+        });
+
+        test('should not go below 1 when decrementing', async () => {
+            await modalInstance.addModalListener();
+            
+            historyMaxInput.value = '1';
+            const decrementBtn = document.getElementById('historyMaxDecrement');
+            
+            decrementBtn.click();
+            
+            expect(historyMaxInput.value).toBe('1');
+        });
+
+        test('should not go above 100 when incrementing', async () => {
+            await modalInstance.addModalListener();
+            
+            historyMaxInput.value = '100';
+            const incrementBtn = document.getElementById('historyMaxIncrement');
+            
+            incrementBtn.click();
+            
+            expect(historyMaxInput.value).toBe('100');
+        });
+
+        test('should save historyMax on modal close and clear value', async () => {
+            await modalInstance.addModalListener();
+            
+            const optionalModal = document.getElementById('optionalModal');
+            historyMaxInput.value = '25';
+            
+            optionalModal.dispatchEvent(new Event('hidden.bs.modal'));
+            
+            expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 25 });
+            expect(historyMaxInput.value).toBe('');
+            expect(historyMaxInput.placeholder).toBe('25');
+        });
+
+        test('should use placeholder value when input value is empty on save', async () => {
+            await modalInstance.addModalListener();
+            
+            const optionalModal = document.getElementById('optionalModal');
+            historyMaxInput.placeholder = '15';
+            historyMaxInput.value = '';
+            
+            optionalModal.dispatchEvent(new Event('hidden.bs.modal'));
+            
+            expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 15 });
+        });
+
+        test('should use default value 10 when both value and placeholder are invalid on save', async () => {
+            await modalInstance.addModalListener();
+            
+            const optionalModal = document.getElementById('optionalModal');
+            historyMaxInput.placeholder = '';
+            historyMaxInput.value = '';
+            
+            optionalModal.dispatchEvent(new Event('hidden.bs.modal'));
+            
+            expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 10 });
         });
     });
 });

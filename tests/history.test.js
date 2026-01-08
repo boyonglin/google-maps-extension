@@ -160,7 +160,7 @@ describe('History Component', () => {
                 const li = createMockHistoryItem('Test Location');
                 searchHistoryListContainer.appendChild(li);
                 
-                global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
+                global.state.buildSearchUrl.mockResolvedValue(TEST_CONSTANTS.URL);
                 
                 await withWindowOpenSpy(async (openSpy) => {
                     const span = li.querySelector('span');
@@ -205,7 +205,7 @@ describe('History Component', () => {
                 const li = createMockHistoryItem('Test Location');
                 searchHistoryListContainer.appendChild(li);
                 
-                global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
+                global.state.buildSearchUrl.mockResolvedValue(TEST_CONSTANTS.URL);
                 
                 const mouseEvent = createMouseEvent(li, 1); // Middle click
                 const preventDefaultSpy = jest.spyOn(mouseEvent, 'preventDefault');
@@ -225,7 +225,7 @@ describe('History Component', () => {
                 const li = createMockHistoryItem('Test Location');
                 searchHistoryListContainer.appendChild(li);
                 
-                global.state.buildSearchUrl.mockResolvedValue('http://maps.test/search');
+                global.state.buildSearchUrl.mockResolvedValue(TEST_CONSTANTS.URL);
                 
                 await withWindowOpenSpy(async (openSpy) => {
                     const mouseEvent = createMouseEvent(li, 1); // Middle click
@@ -342,8 +342,7 @@ describe('History Component', () => {
                 
                 await wait();
                 
-                expect(chrome.storage.local.get).toHaveBeenCalledWith('favoriteList', expect.any(Function));
-                expect(global.favorite.updateFavorite).toHaveBeenCalledWith(favoriteList);
+                expect(DOMUtils.refreshFavoriteList).toHaveBeenCalled();
             });
 
             test('should not open URL when clicking favorite icon', async () => {

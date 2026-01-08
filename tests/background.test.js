@@ -1663,6 +1663,36 @@ describe('background.js', () => {
       // YouTube URI should use file_data format
       expect(body.contents[0].parts.some(part => part.file_data)).toBe(true);
     });
+
+    test('should return original text when ul tag exists but regex does not match', async () => {
+      const sendResponse = jest.fn();
+      const request = {
+        action: 'summarizeApi',
+        text: 'Content',
+        apiKey: 'test-key',
+        url: 'https://example.com'
+      };
+
+      // Contains <ul but not the specific class pattern
+      mockFetch.mockResolvedValue({
+        json: () => Promise.resolve({
+          candidates: [{
+            content: {
+              parts: [{
+                text: '<ul class="other-class"><li>Item 1</li></ul>'
+              }]
+            }
+          }]
+        })
+      });
+
+      listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
+
+      await flushPromises();
+
+      // Should return the original text since regex doesn't match
+      expect(sendResponse).toHaveBeenCalledWith('<ul class="other-class"><li>Item 1</li></ul>');
+    });
   });
 
   describe('Favorite list management', () => {

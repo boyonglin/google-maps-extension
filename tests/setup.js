@@ -17,7 +17,8 @@ global.crypto = {
       array[i] = (i * 37 + 127) % 256;
     }
     return array;
-  })
+  }),
+  randomUUID: jest.fn(() => 'mock-uuid-1234-5678-9abc-def012345678')
 };
 
 // Mock btoa and atob for Node.js environment
@@ -206,6 +207,25 @@ global.ThemeUtils = {
   notifyContentScript: jest.fn()
 };
 
+// Mock DOMUtils
+global.DOMUtils = {
+  findClosestListItem: jest.fn((event) => {
+    if (event.target.tagName === "LI") {
+      return event.target;
+    } else if (event.target.parentElement?.tagName === "LI") {
+      return event.target.parentElement;
+    }
+    return null;
+  }),
+  animateFavoriteIcon: jest.fn((iconElement) => {
+    iconElement.className = "bi bi-patch-check-fill matched spring-animation";
+    setTimeout(() => {
+      iconElement.classList.remove("spring-animation");
+    }, 500);
+  }),
+  refreshFavoriteList: jest.fn()
+};
+
 // Mock requestAnimationFrame and requestIdleCallback
 global.requestAnimationFrame = jest.fn((cb) => {
   cb();
@@ -241,6 +261,8 @@ beforeEach(() => {
     }
     return array;
   });
+  
+  global.crypto.randomUUID = jest.fn(() => 'mock-uuid-1234-5678-9abc-def012345678');
   
   // Reset animation frame and idle callback
   global.requestAnimationFrame = jest.fn((cb) => {

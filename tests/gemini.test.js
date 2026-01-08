@@ -253,11 +253,7 @@ describe('Gemini Component', () => {
 
             await wait(50);
 
-            expect(chrome.storage.local.get).toHaveBeenCalledWith(
-                'favoriteList',
-                expect.any(Function)
-            );
-            expect(favorite.updateFavorite).toHaveBeenCalledWith(mockFavorites);
+            expect(DOMUtils.refreshFavoriteList).toHaveBeenCalled();
         });
 
         test('should ignore click on non-LI, non-span elements', () => {
@@ -596,10 +592,12 @@ describe('Gemini Component', () => {
             expect(length).toBeNull();
         });
 
-        test('should handle fetch errors', async () => {
+        test('should handle fetch errors gracefully and return null', async () => {
             global.fetch.mockRejectedValue(new Error('Network error'));
 
-            await expect(geminiInstance.scrapeLen('test12345')).rejects.toThrow('Network error');
+            const length = await geminiInstance.scrapeLen('test12345');
+
+            expect(length).toBeNull();
         });
     });
 
@@ -667,6 +665,30 @@ describe('Gemini Component', () => {
 
             expect(checkTextOverflow).toHaveBeenCalled();
             expect(delayMeasurement).toHaveBeenCalled();
+        });
+
+        test('should handle undefined summaryList gracefully', () => {
+            mockChromeStorage({
+                summaryList: undefined,
+                timestamp: Date.now(),
+                favoriteList: []
+            });
+
+            expect(() => {
+                geminiInstance.clearExpiredSummary();
+            }).not.toThrow();
+        });
+
+        test('should handle null summaryList gracefully', () => {
+            mockChromeStorage({
+                summaryList: null,
+                timestamp: Date.now(),
+                favoriteList: []
+            });
+
+            expect(() => {
+                geminiInstance.clearExpiredSummary();
+            }).not.toThrow();
         });
 
         test('should reconstruct HTML when summaryListChanged is true', () => {
@@ -1291,6 +1313,31 @@ describe('Gemini Component', () => {
             geminiInstance.ResponseErrorMsg({ error: 'The service is currently overloaded' });
 
             expect(geminiEmptyMessage.innerText).toBe('Server overloaded');
+        });
+
+        test('should handle undefined response gracefully', () => {
+            expect(() => {
+                geminiInstance.ResponseErrorMsg(undefined);
+            }).not.toThrow();
+
+            expect(geminiEmptyMessage.innerText).toBe('Error occurred');
+            expect(state.hasSummary).toBe(false);
+        });
+
+        test('should handle null response gracefully', () => {
+            expect(() => {
+                geminiInstance.ResponseErrorMsg(null);
+            }).not.toThrow();
+
+            expect(geminiEmptyMessage.innerText).toBe('Error occurred');
+        });
+
+        test('should handle response with no error property gracefully', () => {
+            expect(() => {
+                geminiInstance.ResponseErrorMsg({});
+            }).not.toThrow();
+
+            expect(geminiEmptyMessage.innerText).toBe('Error occurred');
         });
     });
 
