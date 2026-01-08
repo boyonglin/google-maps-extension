@@ -5,12 +5,12 @@
 
 function createPopupDOM() {
   // Create main container
-  const container = document.createElement('div');
-  container.className = 'mx-4 mt-4 mb-3 w-100';
-  
+  const container = document.createElement("div");
+  container.className = "mx-4 mt-4 mb-3 w-100";
+
   // Create header with search input
-  const header = document.createElement('header');
-  header.className = 'd-flex align-items-center border-bottom pb-4';
+  const header = document.createElement("header");
+  header.className = "d-flex align-items-center border-bottom pb-4";
   header.innerHTML = `
     <div class="input-group">
       <div class="input-group-prepend">
@@ -25,10 +25,10 @@ function createPopupDOM() {
       </button>
     </div>
   `;
-  
+
   // Create main section
-  const section = document.createElement('section');
-  section.className = 'pt-3 pb-4';
+  const section = document.createElement("section");
+  section.className = "pt-3 pb-4";
   section.innerHTML = `
     <div class="container mb-3">
       <div class="row justify-content-between">
@@ -118,9 +118,9 @@ function createPopupDOM() {
       </button>
     </div>
   `;
-  
+
   // Create footer
-  const footer = document.createElement('footer');
+  const footer = document.createElement("footer");
   footer.innerHTML = `
     <ul class="nav justify-content-center border-top">
       <li class="nav-item footer-li">
@@ -137,9 +137,9 @@ function createPopupDOM() {
       </li>
     </ul>
   `;
-  
+
   // Create modals
-  const modals = document.createElement('div');
+  const modals = document.createElement("div");
   modals.innerHTML = `
     <div class="modal fade" id="tipsModal" tabindex="-1" aria-label="Tips Modal">
       <div class="modal-dialog modal-dialog-centered modal-xs">
@@ -288,13 +288,13 @@ function createPopupDOM() {
       </div>
     </div>
   `;
-  
+
   // Assemble everything
   container.appendChild(header);
   container.appendChild(section);
   container.appendChild(footer);
   container.appendChild(modals);
-  
+
   return container;
 }
 
@@ -303,21 +303,21 @@ function createPopupDOM() {
  */
 function setupPopupDOM() {
   // Clear existing body content
-  document.body.innerHTML = '';
-  
+  document.body.innerHTML = "";
+
   // Add popup DOM to body
   const popupDOM = createPopupDOM();
   document.body.appendChild(popupDOM);
-  
+
   // Set body dimensions for measurement tests
-  Object.defineProperty(document.body, 'offsetWidth', {
+  Object.defineProperty(document.body, "offsetWidth", {
     configurable: true,
-    value: 400
+    value: 400,
   });
-  
-  Object.defineProperty(document.body, 'offsetHeight', {
+
+  Object.defineProperty(document.body, "offsetHeight", {
     configurable: true,
-    value: 600
+    value: 600,
   });
 }
 
@@ -325,11 +325,11 @@ function setupPopupDOM() {
  * Clean up DOM after test
  */
 function teardownPopupDOM() {
-  document.body.innerHTML = '';
+  document.body.innerHTML = "";
 }
 
 module.exports = {
   createPopupDOM,
   setupPopupDOM,
-  teardownPopupDOM
+  teardownPopupDOM,
 };

@@ -30,9 +30,8 @@ class State {
    */
   buildSearchUrl(q) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage(
-        { action: "buildSearchUrl", query: q },
-        (response) => resolve(response?.url)
+      chrome.runtime.sendMessage({ action: "buildSearchUrl", query: q }, (response) =>
+        resolve(response?.url)
       );
     });
   }
@@ -55,14 +54,11 @@ class State {
    * Update maps button URL
    */
   buildMapsButtonUrl() {
-    chrome.runtime.sendMessage(
-      { action: "buildMapsUrl" },
-      (response) => {
-        if (response && response.url) {
-          mapsButton.href = response.url;
-        }
+    chrome.runtime.sendMessage({ action: "buildMapsUrl" }, (response) => {
+      if (response && response.url) {
+        mapsButton.href = response.url;
       }
-    );
+    });
   }
 
   /**

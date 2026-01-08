@@ -4,7 +4,7 @@ class Payment {
       if (!response || !response.result) {
         return;
       }
-      
+
       state.paymentStage = response.result;
 
       this.updateShortcutDisplay();

@@ -1,35 +1,35 @@
 /**
  * Comprehensive Jest Unit Tests for Modal Component (modal.js)
- * 
+ *
  * This version properly mocks the dynamic import() by intercepting it at the global level.
  * The key insight: we need to mock before the module loads and handle the dynamic import.
  */
 
 // Mock crypto module FIRST, before anything else
-const mockEncryptApiKey = jest.fn().mockResolvedValue('encrypted_key_data');
-const mockDecryptApiKey = jest.fn().mockResolvedValue('decrypted_key');
+const mockEncryptApiKey = jest.fn().mockResolvedValue("encrypted_key_data");
+const mockDecryptApiKey = jest.fn().mockResolvedValue("decrypted_key");
 
 // Mock the module path that will be dynamically imported
-jest.mock('../Package/dist/utils/crypto.js', () => ({
-    encryptApiKey: mockEncryptApiKey,
-    decryptApiKey: mockDecryptApiKey
+jest.mock("../Package/dist/utils/crypto.js", () => ({
+  encryptApiKey: mockEncryptApiKey,
+  decryptApiKey: mockDecryptApiKey,
 }));
 
 // Mock global objects and functions
 global.state = {
-    paymentStage: {
-        isTrial: false,
-        isPremium: false,
-        isFirst: false,
-        isFree: false
-    }
+  paymentStage: {
+    isTrial: false,
+    isPremium: false,
+    isFirst: false,
+    isFree: false,
+  },
 };
 
 global.modal = null;
 
 // Mock payment object
 global.payment = {
-    checkPay: jest.fn()
+  checkPay: jest.fn(),
 };
 
 // Mock applyTheme function (defined in popup.js)
@@ -37,7 +37,7 @@ global.applyTheme = jest.fn();
 
 // Create global DOM elements that modal.js expects from popup.js
 const setupGlobalDOMElements = () => {
-    document.body.innerHTML = `
+  document.body.innerHTML = `
         <p class="modal-body-configure"></p>
         <p class="modal-body-configure"></p>
         <p class="modal-body-configure"></p>
@@ -88,52 +88,61 @@ const setupGlobalDOMElements = () => {
             </div>
         </div>
     `;
-    
-    // Assign global references
-    global.configureElements = document.querySelectorAll('.modal-body-configure');
-    global.apiInput = document.getElementById('apiInput');
-    global.dirInput = document.getElementById('dirInput');
-    global.authUserInput = document.getElementById('authUserInput');
-    global.historyMaxInput = document.getElementById('historyMaxInput');
-    global.geminiEmptyMessage = document.getElementById('geminiEmptyMessage');
-    global.sendButton = document.getElementById('sendButton');
-    global.incognitoToggle = document.getElementById('incognitoToggle');
-    global.darkModeToggle = document.getElementById('darkModeToggle');
-    global.paymentButton = document.getElementById('paymentButton');
-    global.restoreButton = document.getElementById('restoreButton');
-    global.closeButton = document.querySelector('.btn-close');
+
+  // Assign global references
+  global.configureElements = document.querySelectorAll(".modal-body-configure");
+  global.apiInput = document.getElementById("apiInput");
+  global.dirInput = document.getElementById("dirInput");
+  global.authUserInput = document.getElementById("authUserInput");
+  global.historyMaxInput = document.getElementById("historyMaxInput");
+  global.geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
+  global.sendButton = document.getElementById("sendButton");
+  global.incognitoToggle = document.getElementById("incognitoToggle");
+  global.darkModeToggle = document.getElementById("darkModeToggle");
+  global.paymentButton = document.getElementById("paymentButton");
+  global.restoreButton = document.getElementById("restoreButton");
+  global.closeButton = document.querySelector(".btn-close");
 };
 
 const cleanupGlobalDOMElements = () => {
-    ['configureElements', 'apiInput', 'dirInput', 'authUserInput', 'historyMaxInput',
-     'geminiEmptyMessage', 'sendButton', 'incognitoToggle', 'darkModeToggle',
-     'paymentButton', 'restoreButton', 'closeButton'].forEach(name => {
-        if (global[name]) {
-            if (Array.isArray(global[name])) {
-                global[name].forEach(elem => elem.remove?.());
-            } else {
-                global[name].remove?.();
-            }
-            delete global[name];
-        }
-    });
+  [
+    "configureElements",
+    "apiInput",
+    "dirInput",
+    "authUserInput",
+    "historyMaxInput",
+    "geminiEmptyMessage",
+    "sendButton",
+    "incognitoToggle",
+    "darkModeToggle",
+    "paymentButton",
+    "restoreButton",
+    "closeButton",
+  ].forEach((name) => {
+    if (global[name]) {
+      if (Array.isArray(global[name])) {
+        global[name].forEach((elem) => elem.remove?.());
+      } else {
+        global[name].remove?.();
+      }
+      delete global[name];
+    }
+  });
 };
 
 // ============================================================================
 // Test-Specific Helper Functions
 // ============================================================================
 
-
-
 /**
  * Helper: Create and dispatch form submit event
  * Standardizes form testing across multiple test cases
  */
 const submitForm = (form, inputElement, value) => {
-    inputElement.value = value;
-    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-    form.dispatchEvent(submitEvent);
-    return submitEvent;
+  inputElement.value = value;
+  const submitEvent = new Event("submit", { bubbles: true, cancelable: true });
+  form.dispatchEvent(submitEvent);
+  return submitEvent;
 };
 
 /**
@@ -141,878 +150,882 @@ const submitForm = (form, inputElement, value) => {
  * Used in multiple incognito toggle tests
  */
 const setupIncognitoStorage = (isIncognito = false) => {
-    chrome.storage.local.get.mockImplementation((key, callback) => {
-        callback({ isIncognito });
-    });
-    return isIncognito;
+  chrome.storage.local.get.mockImplementation((key, callback) => {
+    callback({ isIncognito });
+  });
+  return isIncognito;
 };
 
 // Load helpers
-const { 
-    mockI18n, 
-    cleanupDOM,
-    wait,
-    mockChromeStorage
-} = require('./testHelpers');
+const { mockI18n, cleanupDOM, wait, mockChromeStorage } = require("./testHelpers");
 
 // Now require Modal after setting up all mocks
 let Modal;
 
-describe('Modal Component - Full Coverage', () => {
-    let modalInstance;
+describe("Modal Component - Full Coverage", () => {
+  let modalInstance;
 
-    beforeAll(() => {
-        setupGlobalDOMElements();
-        
-        // Mock chrome.runtime.getURL
-        chrome.runtime.getURL = jest.fn((path) => `mocked-path/${path}`);
-        
-        // Require Modal after globals are set
-        Modal = require('../Package/dist/components/modal.js');
+  beforeAll(() => {
+    setupGlobalDOMElements();
+
+    // Mock chrome.runtime.getURL
+    chrome.runtime.getURL = jest.fn((path) => `mocked-path/${path}`);
+
+    // Require Modal after globals are set
+    Modal = require("../Package/dist/components/modal.js");
+  });
+
+  afterAll(() => {
+    cleanupGlobalDOMElements();
+  });
+
+  beforeEach(() => {
+    // Reset DOM structure
+    document.body.innerHTML = "";
+    setupGlobalDOMElements();
+
+    // Mock i18n messages
+    mockI18n({
+      apiPlaceholder: "Enter your API key",
+      geminiFirstMsg: "Please enter API key",
+      apiInvalidMsg: "Invalid API key",
+      geminiEmptyMsg: "No summaries yet",
+      dirPlaceholder: "Enter starting address",
+      authUserPlaceholder: "authuser=0",
     });
 
-    afterAll(() => {
-        cleanupGlobalDOMElements();
+    // Reset state
+    global.state.paymentStage = {
+      isTrial: false,
+      isPremium: false,
+      isFirst: false,
+      isFree: false,
+    };
+
+    // Create fresh instance WITH DEPENDENCY INJECTION
+    // This allows us to test without the dynamic import!
+    modalInstance = new Modal(mockEncryptApiKey);
+
+    jest.clearAllMocks();
+    mockEncryptApiKey.mockResolvedValue("encrypted_key_data");
+  });
+
+  afterEach(() => {
+    cleanupDOM();
+  });
+
+  // ============================================================================
+  // Test: addModalListener - Configure Shortcuts
+  // ============================================================================
+
+  describe("addModalListener - Configure Shortcuts", () => {
+    test("should open Chrome shortcuts page when configure element clicked (Chrome browser)", async () => {
+      // Mock Chrome browser
+      Object.defineProperty(navigator, "userAgent", {
+        value:
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        configurable: true,
+      });
+
+      await modalInstance.addModalListener();
+
+      const clickEvent = new MouseEvent("click", { bubbles: true });
+      const preventDefaultSpy = jest.spyOn(clickEvent, "preventDefault");
+
+      configureElements[0].onclick(clickEvent);
+
+      expect(chrome.tabs.create).toHaveBeenCalledWith({
+        url: "chrome://extensions/shortcuts",
+      });
+      expect(preventDefaultSpy).toHaveBeenCalled();
     });
 
-    beforeEach(() => {
-        // Reset DOM structure
-        document.body.innerHTML = '';
-        setupGlobalDOMElements();
+    // Note: Opera browser detection test removed because navigator.userAgent
+    // is captured in closure when addModalListener() runs, making it hard to mock.
+    // Lines 28-29 (Opera URL) remain uncovered. This is acceptable as it's just
+    // browser detection logic that's better tested in E2E tests.
+  });
 
-        // Mock i18n messages
-        mockI18n({
-            apiPlaceholder: 'Enter your API key',
-            geminiFirstMsg: 'Please enter API key',
-            apiInvalidMsg: 'Invalid API key',
-            geminiEmptyMsg: 'No summaries yet',
-            dirPlaceholder: 'Enter starting address',
-            authUserPlaceholder: 'authuser=0'
-        });
+  // ============================================================================
+  // Test: addModalListener - API Form Submission (NOW WORKING!)
+  // ============================================================================
 
-        // Reset state
-        global.state.paymentStage = {
-            isTrial: false,
-            isPremium: false,
-            isFirst: false,
-            isFree: false
-        };
+  describe("addModalListener - API Form Submission", () => {
+    test("should encrypt and store valid API key", async () => {
+      await modalInstance.addModalListener();
 
-        // Create fresh instance WITH DEPENDENCY INJECTION
-        // This allows us to test without the dynamic import!
-        modalInstance = new Modal(mockEncryptApiKey);
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback({ valid: true });
+      });
 
-        jest.clearAllMocks();
-        mockEncryptApiKey.mockResolvedValue('encrypted_key_data');
+      const form = document.getElementById("apiForm");
+      submitForm(form, apiInput, "test-api-key-12345");
+
+      await wait(50);
+
+      // Should call encryption
+      expect(mockEncryptApiKey).toHaveBeenCalledWith("test-api-key-12345");
+
+      // Should store encrypted key
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        geminiApiKey: "encrypted_key_data",
+      });
+
+      // Should verify key
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        { action: "verifyApiKey", apiKey: "test-api-key-12345" },
+        expect.any(Function)
+      );
+
+      await wait(10);
+
+      // Should show last 4 chars in placeholder
+      expect(apiInput.placeholder).toBe("............2345");
+      expect(sendButton.disabled).toBe(false);
     });
 
-    afterEach(() => {
-        cleanupDOM();
+    test("should handle empty API key", async () => {
+      await modalInstance.addModalListener();
+
+      const form = document.getElementById("apiForm");
+      submitForm(form, apiInput, "");
+
+      await wait(50);
+
+      // Should not encrypt empty string
+      expect(mockEncryptApiKey).not.toHaveBeenCalled();
+
+      // Should store empty string
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ geminiApiKey: "" });
+
+      // Should not verify
+      expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
+
+      // Should update UI
+      expect(apiInput.placeholder).toBe("Enter your API key");
+      expect(geminiEmptyMessage.innerText).toBe("Please enter API key");
+      expect(sendButton.disabled).toBe(true);
     });
 
-    // ============================================================================
-    // Test: addModalListener - Configure Shortcuts
-    // ============================================================================
+    test("should handle invalid API key response", async () => {
+      await modalInstance.addModalListener();
 
-    describe('addModalListener - Configure Shortcuts', () => {
-        test('should open Chrome shortcuts page when configure element clicked (Chrome browser)', async () => {
-            // Mock Chrome browser
-            Object.defineProperty(navigator, 'userAgent', {
-                value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                configurable: true
-            });
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback({ valid: false });
+      });
 
-            await modalInstance.addModalListener();
+      const form = document.getElementById("apiForm");
+      submitForm(form, apiInput, "invalid-key");
 
-            const clickEvent = new MouseEvent('click', { bubbles: true });
-            const preventDefaultSpy = jest.spyOn(clickEvent, 'preventDefault');
+      await wait(50);
 
-            configureElements[0].onclick(clickEvent);
-
-            expect(chrome.tabs.create).toHaveBeenCalledWith({ 
-                url: 'chrome://extensions/shortcuts' 
-            });
-            expect(preventDefaultSpy).toHaveBeenCalled();
-        });
-
-        // Note: Opera browser detection test removed because navigator.userAgent
-        // is captured in closure when addModalListener() runs, making it hard to mock.
-        // Lines 28-29 (Opera URL) remain uncovered. This is acceptable as it's just
-        // browser detection logic that's better tested in E2E tests.
+      expect(geminiEmptyMessage.classList.contains("d-none")).toBe(false);
+      expect(apiInput.placeholder).toBe("Enter your API key");
+      expect(geminiEmptyMessage.innerText).toBe("Invalid API key");
+      expect(sendButton.disabled).toBe(true);
     });
 
-    // ============================================================================
-    // Test: addModalListener - API Form Submission (NOW WORKING!)
-    // ============================================================================
+    test("should handle API verification error", async () => {
+      await modalInstance.addModalListener();
 
-    describe('addModalListener - API Form Submission', () => {
-        test('should encrypt and store valid API key', async () => {
-            await modalInstance.addModalListener();
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback({ error: "Network error" });
+      });
 
-            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ valid: true }); });
+      const form = document.getElementById("apiForm");
+      submitForm(form, apiInput, "test-key");
 
-            const form = document.getElementById('apiForm');
-            submitForm(form, apiInput, 'test-api-key-12345');
+      await wait(50);
 
-            await wait(50);
+      expect(sendButton.disabled).toBe(true);
+    });
+  });
 
-            // Should call encryption
-            expect(mockEncryptApiKey).toHaveBeenCalledWith('test-api-key-12345');
-            
-            // Should store encrypted key
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ 
-                geminiApiKey: 'encrypted_key_data' 
-            });
+  // ============================================================================
+  // Test: addModalListener - Modal Close Events
+  // ============================================================================
 
-            // Should verify key
-            expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
-                { action: 'verifyApiKey', apiKey: 'test-api-key-12345' },
-                expect.any(Function)
-            );
+  describe("addModalListener - Modal Close Events", () => {
+    test("should clear apiInput when apiModal is hidden", async () => {
+      await modalInstance.addModalListener();
 
-            await wait(10);
+      apiInput.value = "some-api-key";
 
-            // Should show last 4 chars in placeholder
-            expect(apiInput.placeholder).toBe('............2345');
-            expect(sendButton.disabled).toBe(false);
-        });
+      const apiModal = document.getElementById("apiModal");
+      apiModal.dispatchEvent(new Event("hidden.bs.modal"));
 
-        test('should handle empty API key', async () => {
-            await modalInstance.addModalListener();
-
-            const form = document.getElementById('apiForm');
-            submitForm(form, apiInput, '');
-
-            await wait(50);
-
-            // Should not encrypt empty string
-            expect(mockEncryptApiKey).not.toHaveBeenCalled();
-            
-            // Should store empty string
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ geminiApiKey: '' });
-
-            // Should not verify
-            expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
-
-            // Should update UI
-            expect(apiInput.placeholder).toBe('Enter your API key');
-            expect(geminiEmptyMessage.innerText).toBe('Please enter API key');
-            expect(sendButton.disabled).toBe(true);
-        });
-
-        test('should handle invalid API key response', async () => {
-            await modalInstance.addModalListener();
-
-            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ valid: false }); });
-
-            const form = document.getElementById('apiForm');
-            submitForm(form, apiInput, 'invalid-key');
-
-            await wait(50);
-
-            expect(geminiEmptyMessage.classList.contains('d-none')).toBe(false);
-            expect(apiInput.placeholder).toBe('Enter your API key');
-            expect(geminiEmptyMessage.innerText).toBe('Invalid API key');
-            expect(sendButton.disabled).toBe(true);
-        });
-
-        test('should handle API verification error', async () => {
-            await modalInstance.addModalListener();
-
-            chrome.runtime.sendMessage.mockImplementation((msg, callback) => { if (callback) callback({ error: 'Network error' }); });
-
-            const form = document.getElementById('apiForm');
-            submitForm(form, apiInput, 'test-key');
-
-            await wait(50);
-
-            expect(sendButton.disabled).toBe(true);
-        });
+      expect(apiInput.value).toBe("");
     });
 
-    // ============================================================================
-    // Test: addModalListener - Modal Close Events
-    // ============================================================================
+    test("should clear both inputs when optionalModal is hidden", async () => {
+      await modalInstance.addModalListener();
 
-    describe('addModalListener - Modal Close Events', () => {
-        test('should clear apiInput when apiModal is hidden', async () => {
-            await modalInstance.addModalListener();
+      dirInput.value = "New York";
+      authUserInput.value = "5";
 
-            apiInput.value = 'some-api-key';
-            
-            const apiModal = document.getElementById('apiModal');
-            apiModal.dispatchEvent(new Event('hidden.bs.modal'));
+      const optionalModal = document.getElementById("optionalModal");
+      optionalModal.dispatchEvent(new Event("hidden.bs.modal"));
 
-            expect(apiInput.value).toBe('');
-        });
+      expect(dirInput.value).toBe("");
+      expect(authUserInput.value).toBe("");
+    });
+  });
 
-        test('should clear both inputs when optionalModal is hidden', async () => {
-            await modalInstance.addModalListener();
+  // ============================================================================
+  // Test: addModalListener - Starting Address Form
+  // ============================================================================
 
-            dirInput.value = 'New York';
-            authUserInput.value = '5';
-            
-            const optionalModal = document.getElementById('optionalModal');
-            optionalModal.dispatchEvent(new Event('hidden.bs.modal'));
+  describe("addModalListener - Starting Address Form", () => {
+    test("should save starting address", async () => {
+      await modalInstance.addModalListener();
 
-            expect(dirInput.value).toBe('');
-            expect(authUserInput.value).toBe('');
-        });
+      const form = document.getElementById("dirForm");
+      submitForm(form, dirInput, "Times Square, New York");
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        startAddr: "Times Square, New York",
+      });
+      expect(dirInput.placeholder).toBe("Times Square, New York");
     });
 
-    // ============================================================================
-    // Test: addModalListener - Starting Address Form
-    // ============================================================================
+    test("should remove startAddr when empty", async () => {
+      await modalInstance.addModalListener();
 
-    describe('addModalListener - Starting Address Form', () => {
-        test('should save starting address', async () => {
-            await modalInstance.addModalListener();
+      const form = document.getElementById("dirForm");
+      submitForm(form, dirInput, "");
 
-            const form = document.getElementById('dirForm');
-            submitForm(form, dirInput, 'Times Square, New York');
+      expect(chrome.storage.local.remove).toHaveBeenCalledWith("startAddr");
+    });
+  });
 
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ 
-                startAddr: 'Times Square, New York' 
-            });
-            expect(dirInput.placeholder).toBe('Times Square, New York');
-        });
+  // ============================================================================
+  // Test: addModalListener - Auth User Form
+  // ============================================================================
 
-        test('should remove startAddr when empty', async () => {
-            await modalInstance.addModalListener();
+  describe("addModalListener - Auth User Form", () => {
+    test("should save valid authUser number", async () => {
+      await modalInstance.addModalListener();
 
-            const form = document.getElementById('dirForm');
-            submitForm(form, dirInput, '');
+      const form = document.getElementById("authUserForm");
+      submitForm(form, authUserInput, "5");
 
-            expect(chrome.storage.local.remove).toHaveBeenCalledWith('startAddr');
-        });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        authUser: 5,
+      });
     });
 
-    // ============================================================================
-    // Test: addModalListener - Auth User Form
-    // ============================================================================
+    test("should reject negative numbers", async () => {
+      await modalInstance.addModalListener();
 
-    describe('addModalListener - Auth User Form', () => {
-        test('should save valid authUser number', async () => {
-            await modalInstance.addModalListener();
+      const form = document.getElementById("authUserForm");
+      submitForm(form, authUserInput, "-5");
 
-            const form = document.getElementById('authUserForm');
-            submitForm(form, authUserInput, '5');
-
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ 
-                authUser: 5 
-            });
-        });
-
-        test('should reject negative numbers', async () => {
-            await modalInstance.addModalListener();
-
-            const form = document.getElementById('authUserForm');
-            submitForm(form, authUserInput, '-5');
-
-            // The code doesn't have logic to reject negative numbers!
-            // It only checks > 0 in the else if, but negative parseInt fails /^\d+$/ test
-            // So it falls through and does nothing - this is a BUG
-            expect(chrome.storage.local.set).not.toHaveBeenCalled();
-        });
-
-        test('should handle empty authUser input', async () => {
-            await modalInstance.addModalListener();
-
-            const form = document.getElementById('authUserForm');
-            submitForm(form, authUserInput, '');
-
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ 
-                authUser: 0 
-            });
-            expect(authUserInput.placeholder).toBe('authuser=0');
-        });
-
-        test('should handle authUser value of 0', async () => {
-            await modalInstance.addModalListener();
-
-            const form = document.getElementById('authUserForm');
-            submitForm(form, authUserInput, '0');
-
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ 
-                authUser: 0 
-            });
-        });
-
-        test('should handle NaN authUser input', async () => {
-            await modalInstance.addModalListener();
-
-            const form = document.getElementById('authUserForm');
-            submitForm(form, authUserInput, 'not-a-number');
-
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ 
-                authUser: 0 
-            });
-        });
-
-        test('should validate and accept positive integer (covers regex branch)', async () => {
-            await modalInstance.addModalListener();
-
-            const form = document.getElementById('authUserForm');
-            submitForm(form, authUserInput, '10');
-
-            // This covers line 108-109: /^\d+$/.test(authUser) && authUser > 0
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ 
-                authUser: 10 
-            });
-            expect(authUserInput.placeholder).toBe('authuser=10');
-        });
+      // The code doesn't have logic to reject negative numbers!
+      // It only checks > 0 in the else if, but negative parseInt fails /^\d+$/ test
+      // So it falls through and does nothing - this is a BUG
+      expect(chrome.storage.local.set).not.toHaveBeenCalled();
     });
 
-    // ============================================================================
-    // Test: addModalListener - Incognito Toggle
-    // ============================================================================
+    test("should handle empty authUser input", async () => {
+      await modalInstance.addModalListener();
 
-    describe('addModalListener - Incognito Toggle', () => {
-        test('should toggle incognito from false to true', async () => {
-            setupIncognitoStorage(false);
-            mockChromeStorage({}, () => {}); // Setup storage.set mock
+      const form = document.getElementById("authUserForm");
+      submitForm(form, authUserInput, "");
 
-            const updateSpy = jest.spyOn(modalInstance, 'updateIncognitoModal');
-
-            await modalInstance.addModalListener();
-
-            incognitoToggle.click();
-
-            await wait(50);
-
-            expect(chrome.storage.local.set).toHaveBeenCalledWith(
-                { isIncognito: true },
-                expect.any(Function)
-            );
-            expect(updateSpy).toHaveBeenCalledWith(true);
-        });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        authUser: 0,
+      });
+      expect(authUserInput.placeholder).toBe("authuser=0");
     });
 
-    // ============================================================================
-    // Test: addModalListener - Dark Mode Toggle
-    // ============================================================================
+    test("should handle authUser value of 0", async () => {
+      await modalInstance.addModalListener();
 
-    describe('addModalListener - Dark Mode Toggle', () => {
-        test('should toggle dark mode from false to true', async () => {
-            chrome.storage.local.get.mockImplementation((key, callback) => {
-                callback({ isDarkMode: false });
-            });
+      const form = document.getElementById("authUserForm");
+      submitForm(form, authUserInput, "0");
 
-            await modalInstance.addModalListener();
-
-            darkModeToggle.click();
-
-            await wait(50);
-
-            expect(chrome.storage.local.set).toHaveBeenCalledWith(
-                { isDarkMode: true },
-                expect.any(Function)
-            );
-            expect(global.applyTheme).toHaveBeenCalledWith(true);
-        });
-
-        test('should toggle dark mode from true to false', async () => {
-            chrome.storage.local.get.mockImplementation((key, callback) => {
-                callback({ isDarkMode: true });
-            });
-
-            await modalInstance.addModalListener();
-
-            darkModeToggle.click();
-
-            await wait(50);
-
-            expect(chrome.storage.local.set).toHaveBeenCalledWith(
-                { isDarkMode: false },
-                expect.any(Function)
-            );
-            expect(global.applyTheme).toHaveBeenCalledWith(false);
-        });
-
-        test('should default to false when isDarkMode is undefined', async () => {
-            chrome.storage.local.get.mockImplementation((key, callback) => {
-                callback({});
-            });
-
-            await modalInstance.addModalListener();
-
-            darkModeToggle.click();
-
-            await wait(50);
-
-            expect(chrome.storage.local.set).toHaveBeenCalledWith(
-                { isDarkMode: true },
-                expect.any(Function)
-            );
-        });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        authUser: 0,
+      });
     });
 
-    // ============================================================================
-    // Test: addModalListener - Payment Buttons
-    // ============================================================================
+    test("should handle NaN authUser input", async () => {
+      await modalInstance.addModalListener();
 
-    describe('addModalListener - Payment Buttons', () => {
-        test('should send extPay message when payment button clicked', async () => {
-            await modalInstance.addModalListener();
+      const form = document.getElementById("authUserForm");
+      submitForm(form, authUserInput, "not-a-number");
 
-            paymentButton.click();
-
-            expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ 
-                action: 'extPay' 
-            });
-        });
-
-        test('should send restorePay message when restore button clicked', async () => {
-            await modalInstance.addModalListener();
-
-            restoreButton.click();
-
-            expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ 
-                action: 'restorePay' 
-            });
-        });
-
-        test('should call payment.checkPay when close button clicked', async () => {
-            await modalInstance.addModalListener();
-
-            closeButton.click();
-
-            expect(global.payment.checkPay).toHaveBeenCalled();
-        });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        authUser: 0,
+      });
     });
 
-    // ============================================================================
-    // Test: text2Link, text2Modal, updateOptionalModal, updateIncognitoModal
-    // (Same as before - these don't require addModalListener)
-    // ============================================================================
+    test("should validate and accept positive integer (covers regex branch)", async () => {
+      await modalInstance.addModalListener();
 
-    describe('text2Link', () => {
-        test('should replace text with link', () => {
-            const pElement = document.createElement('p');
-            pElement.setAttribute('data-locale', 'testLocale');
-            pElement.innerHTML = 'Click on Google AI Studio to continue';
-            document.body.appendChild(pElement);
+      const form = document.getElementById("authUserForm");
+      submitForm(form, authUserInput, "10");
 
-            modalInstance.text2Link(
-                'testLocale',
-                'Google AI Studio',
-                'https://aistudio.google.com/app/apikey'
-            );
+      // This covers line 108-109: /^\d+$/.test(authUser) && authUser > 0
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        authUser: 10,
+      });
+      expect(authUserInput.placeholder).toBe("authuser=10");
+    });
+  });
 
-            expect(pElement.innerHTML).toContain('<a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>');
-        });
+  // ============================================================================
+  // Test: addModalListener - Incognito Toggle
+  // ============================================================================
 
-        test('only replaces first occurrence of text', () => {
-            const pElement = document.createElement('p');
-            pElement.setAttribute('data-locale', 'multi');
-            pElement.innerHTML = 'Link here and Link there';
-            document.body.appendChild(pElement);
+  describe("addModalListener - Incognito Toggle", () => {
+    test("should toggle incognito from false to true", async () => {
+      setupIncognitoStorage(false);
+      mockChromeStorage({}, () => {}); // Setup storage.set mock
 
-            modalInstance.text2Link('multi', 'Link', 'https://example.com');
+      const updateSpy = jest.spyOn(modalInstance, "updateIncognitoModal");
 
-            const count = (pElement.innerHTML.match(/href="https:\/\/example.com"/g) || []).length;
-            expect(count).toBe(1);
-        });
+      await modalInstance.addModalListener();
+
+      incognitoToggle.click();
+
+      await wait(50);
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { isIncognito: true },
+        expect.any(Function)
+      );
+      expect(updateSpy).toHaveBeenCalledWith(true);
+    });
+  });
+
+  // ============================================================================
+  // Test: addModalListener - Dark Mode Toggle
+  // ============================================================================
+
+  describe("addModalListener - Dark Mode Toggle", () => {
+    test("should toggle dark mode from false to true", async () => {
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({ isDarkMode: false });
+      });
+
+      await modalInstance.addModalListener();
+
+      darkModeToggle.click();
+
+      await wait(50);
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { isDarkMode: true },
+        expect.any(Function)
+      );
+      expect(global.applyTheme).toHaveBeenCalledWith(true);
     });
 
-    describe('text2Modal', () => {
-        test('should replace text with modal link', () => {
-            const pElement = document.createElement('p');
-            pElement.setAttribute('data-locale', 'modalLocale');
-            pElement.innerHTML = 'Open Settings to configure';
-            document.body.appendChild(pElement);
+    test("should toggle dark mode from true to false", async () => {
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({ isDarkMode: true });
+      });
 
-            modalInstance.text2Modal('modalLocale', 'Settings', 'settingsModal');
+      await modalInstance.addModalListener();
 
-            expect(pElement.innerHTML).toContain('<a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">Settings</a>');
-        });
+      darkModeToggle.click();
 
-        test('should handle missing element', () => {
-            // This covers the else branch (line 158)
-            expect(() => {
-                modalInstance.text2Modal('nonexistent', 'Text', 'modalId');
-            }).not.toThrow();
-        });
+      await wait(50);
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { isDarkMode: false },
+        expect.any(Function)
+      );
+      expect(global.applyTheme).toHaveBeenCalledWith(false);
     });
 
-    describe('updateOptionalModal', () => {
-        test('should update placeholders', () => {
-            modalInstance.updateOptionalModal('New York', 5);
-            expect(dirInput.placeholder).toBe('New York');
-            expect(authUserInput.placeholder).toBe('authuser=5');
-        });
+    test("should default to false when isDarkMode is undefined", async () => {
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({});
+      });
+
+      await modalInstance.addModalListener();
+
+      darkModeToggle.click();
+
+      await wait(50);
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { isDarkMode: true },
+        expect.any(Function)
+      );
+    });
+  });
+
+  // ============================================================================
+  // Test: addModalListener - Payment Buttons
+  // ============================================================================
+
+  describe("addModalListener - Payment Buttons", () => {
+    test("should send extPay message when payment button clicked", async () => {
+      await modalInstance.addModalListener();
+
+      paymentButton.click();
+
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+        action: "extPay",
+      });
     });
 
-    describe('updateIncognitoModal', () => {
-        test('should toggle incognito UI state', () => {
-            modalInstance.updateIncognitoModal(true);
-            expect(incognitoToggle.classList.contains('toggle-active')).toBe(true);
+    test("should send restorePay message when restore button clicked", async () => {
+      await modalInstance.addModalListener();
 
-            modalInstance.updateIncognitoModal(false);
-            expect(incognitoToggle.classList.contains('toggle-active')).toBe(false);
-        });
+      restoreButton.click();
+
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+        action: "restorePay",
+      });
     });
 
-    describe('updateDarkModeModal', () => {
-        test('should toggle dark mode UI state', () => {
-            modalInstance.updateDarkModeModal(true);
-            expect(darkModeToggle.classList.contains('toggle-active')).toBe(true);
-            expect(document.querySelector('.darkmode-text').classList.contains('d-none')).toBe(true);
-            expect(document.querySelector('.darkmode-icon').classList.contains('d-none')).toBe(false);
+    test("should call payment.checkPay when close button clicked", async () => {
+      await modalInstance.addModalListener();
 
-            modalInstance.updateDarkModeModal(false);
-            expect(darkModeToggle.classList.contains('toggle-active')).toBe(false);
-            expect(document.querySelector('.darkmode-text').classList.contains('d-none')).toBe(false);
-            expect(document.querySelector('.darkmode-icon').classList.contains('d-none')).toBe(true);
-        });
+      closeButton.click();
+
+      expect(global.payment.checkPay).toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================================
+  // Test: text2Link, text2Modal, updateOptionalModal, updateIncognitoModal
+  // (Same as before - these don't require addModalListener)
+  // ============================================================================
+
+  describe("text2Link", () => {
+    test("should replace text with link", () => {
+      const pElement = document.createElement("p");
+      pElement.setAttribute("data-locale", "testLocale");
+      pElement.innerHTML = "Click on Google AI Studio to continue";
+      document.body.appendChild(pElement);
+
+      modalInstance.text2Link(
+        "testLocale",
+        "Google AI Studio",
+        "https://aistudio.google.com/app/apikey"
+      );
+
+      expect(pElement.innerHTML).toContain(
+        '<a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>'
+      );
     });
 
-    // ============================================================================
-    // Test: loadCrypto - Verifying Dynamic Import Logic
-    // ============================================================================
-    // 
-    // NOTE ON TESTING DYNAMIC IMPORTS:
-    // Testing the real dynamic import() path in Jest is inherently limited because:
-    // 1. Jest transforms import() to require() at compile time
-    // 2. Chrome extension URLs (chrome-extension://) aren't resolvable in Node.js
-    // 3. The jest.mock at the top of this file already ensures crypto.js loads correctly
-    //
-    // The tests below verify the loadCrypto logic and chrome.runtime.getURL usage.
-    // E2E tests in a real browser extension environment are needed to fully test
-    // the dynamic import path with actual chrome-extension:// URLs.
-    //
-    // What IS covered:
-    // - The conditional logic (skip import if already injected)
-    // - The chrome.runtime.getURL call with correct parameters
-    // - Integration with addModalListener
-    // - That the module loads and functions correctly (via jest.mock)
-    //
-    // What is NOT fully covered (requires E2E):
-    // - Actual dynamic import() in browser with chrome-extension:// URLs
-    // - Module loading failures in production environment
-    // ============================================================================
+    test("only replaces first occurrence of text", () => {
+      const pElement = document.createElement("p");
+      pElement.setAttribute("data-locale", "multi");
+      pElement.innerHTML = "Link here and Link there";
+      document.body.appendChild(pElement);
 
-    describe('loadCrypto - Dynamic Import Logic', () => {
-        test('should not reload crypto module if already loaded via dependency injection', async () => {
-            // Create instance with dependency injection
-            const injectedFn = jest.fn().mockResolvedValue('injected_key');
-            const modalWithInjection = new Modal(injectedFn);
+      modalInstance.text2Link("multi", "Link", "https://example.com");
 
-            // encryptApiKey should already be set
-            expect(modalWithInjection.encryptApiKey).toBe(injectedFn);
+      const count = (pElement.innerHTML.match(/href="https:\/\/example.com"/g) || []).length;
+      expect(count).toBe(1);
+    });
+  });
 
-            // Mock chrome.runtime.getURL to track if it's called
-            chrome.runtime.getURL.mockClear();
+  describe("text2Modal", () => {
+    test("should replace text with modal link", () => {
+      const pElement = document.createElement("p");
+      pElement.setAttribute("data-locale", "modalLocale");
+      pElement.innerHTML = "Open Settings to configure";
+      document.body.appendChild(pElement);
 
-            // Call loadCrypto
-            await modalWithInjection.loadCrypto();
+      modalInstance.text2Modal("modalLocale", "Settings", "settingsModal");
 
-            // chrome.runtime.getURL should NOT have been called since function already exists
-            expect(chrome.runtime.getURL).not.toHaveBeenCalled();
-
-            // encryptApiKey should still be the injected function
-            expect(modalWithInjection.encryptApiKey).toBe(injectedFn);
-        });
-
-        test('should verify constructor correctly accepts null for dynamic loading', () => {
-            // Create instance without dependency injection
-            const modalWithoutInjection = new Modal();
-            
-            // Verify encryptApiKey is null (will be loaded dynamically)
-            expect(modalWithoutInjection.encryptApiKey).toBeNull();
-            
-            // Create another instance explicitly with null
-            const modalExplicitNull = new Modal(null);
-            expect(modalExplicitNull.encryptApiKey).toBeNull();
-        });
-
-        test('should document expected chrome.runtime.getURL behavior', () => {
-            // In a real Chrome extension, chrome.runtime.getURL converts relative
-            // paths to absolute chrome-extension:// URLs
-            
-            // Example of expected production behavior:
-            chrome.runtime.getURL.mockReturnValue(
-                'chrome-extension://abcdef123456/dist/utils/crypto.js'
-            );
-            
-            const result = chrome.runtime.getURL('dist/utils/crypto.js');
-            
-            expect(result).toContain('chrome-extension://');
-            expect(result).toContain('dist/utils/crypto.js');
-            
-            // This URL would then be used by import() in the browser
-        });
-
-        test('should ensure jest.mock covers the crypto module', () => {
-            // The jest.mock at the top of this file ensures that when
-            // loadCrypto() tries to import crypto.js (either dynamically or via require),
-            // it gets our mocked version
-            
-            // Verify the mocked functions exist
-            expect(mockEncryptApiKey).toBeDefined();
-            expect(mockDecryptApiKey).toBeDefined();
-            
-            // Verify they're jest mocks
-            expect(jest.isMockFunction(mockEncryptApiKey)).toBe(true);
-            expect(jest.isMockFunction(mockDecryptApiKey)).toBe(true);
-        });
-
-        test('should work when instantiated without dependency injection in addModalListener', async () => {
-            // This simulates the real production usage: new Modal() with no parameters
-            // Note: We can't actually test the import() because Jest transforms it,
-            // but we can verify the overall flow works with our mocked module
-            
-            const modalWithoutInjection = new Modal();
-            
-            // Initial state
-            expect(modalWithoutInjection.encryptApiKey).toBeNull();
-            
-            // Note: We're NOT calling loadCrypto directly because the import would fail.
-            // Instead, we verify that with dependency injection (which is how we test),
-            // the same code paths work correctly. The jest.mock ensures the module
-            // is available when import() is called in production.
-            
-            // What we CAN test: that the constructor allows null and the structure is correct
-            expect(modalWithoutInjection).toBeInstanceOf(Modal);
-            expect(modalWithoutInjection).toHaveProperty('encryptApiKey');
-            expect(modalWithoutInjection).toHaveProperty('loadCrypto');
-            expect(modalWithoutInjection).toHaveProperty('addModalListener');
-        });
-
-        test('should demonstrate equivalent behavior between dependency injection and dynamic import', async () => {
-            // This test shows that dependency injection (used in tests) provides
-            // the same interface as dynamic import (used in production)
-            
-            // Test with dependency injection
-            const modalInjected = new Modal(mockEncryptApiKey);
-            await modalInjected.loadCrypto();
-            
-            // Should have encryptApiKey function
-            expect(modalInjected.encryptApiKey).toBe(mockEncryptApiKey);
-            expect(typeof modalInjected.encryptApiKey).toBe('function');
-            
-            // Call it
-            mockEncryptApiKey.mockResolvedValue('test_encrypted');
-            const result = await modalInjected.encryptApiKey('test_key');
-            expect(result).toBe('test_encrypted');
-            
-            // This is functionally equivalent to what would happen with dynamic import:
-            // 1. loadCrypto() runs
-            // 2. encryptApiKey is set to a function
-            // 3. That function can be called to encrypt data
-            // The only difference is HOW the function is obtained (injection vs import)
-        });
+      expect(pElement.innerHTML).toContain(
+        '<a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">Settings</a>'
+      );
     });
 
-    // ============================================================================
-    // Input Button Toggle Tests (Search Bar Behavior)
-    // ============================================================================
-    describe('_setupInputButtonToggle', () => {
-        test('should show submit button when input has value', async () => {
-            await modalInstance.addModalListener();
-            
-            const submitButton = dirInput.parentElement.querySelector("button[type='submit']");
-            expect(submitButton.classList.contains('d-none')).toBe(true);
-            
-            dirInput.value = 'test value';
-            dirInput.dispatchEvent(new Event('input', { bubbles: true }));
-            
-            expect(submitButton.classList.contains('d-none')).toBe(false);
-        });
+    test("should handle missing element", () => {
+      // This covers the else branch (line 158)
+      expect(() => {
+        modalInstance.text2Modal("nonexistent", "Text", "modalId");
+      }).not.toThrow();
+    });
+  });
 
-        test('should hide submit button when input is empty', async () => {
-            await modalInstance.addModalListener();
-            
-            const submitButton = dirInput.parentElement.querySelector("button[type='submit']");
-            
-            // First add value
-            dirInput.value = 'test value';
-            dirInput.dispatchEvent(new Event('input', { bubbles: true }));
-            expect(submitButton.classList.contains('d-none')).toBe(false);
-            
-            // Then clear it
-            dirInput.value = '';
-            dirInput.dispatchEvent(new Event('input', { bubbles: true }));
-            expect(submitButton.classList.contains('d-none')).toBe(true);
-        });
+  describe("updateOptionalModal", () => {
+    test("should update placeholders", () => {
+      modalInstance.updateOptionalModal("New York", 5);
+      expect(dirInput.placeholder).toBe("New York");
+      expect(authUserInput.placeholder).toBe("authuser=5");
+    });
+  });
 
-        test('should hide submit button when input has only whitespace', async () => {
-            await modalInstance.addModalListener();
-            
-            const submitButton = authUserInput.parentElement.querySelector("button[type='submit']");
-            
-            authUserInput.value = '   ';
-            authUserInput.dispatchEvent(new Event('input', { bubbles: true }));
-            
-            expect(submitButton.classList.contains('d-none')).toBe(true);
-        });
+  describe("updateIncognitoModal", () => {
+    test("should toggle incognito UI state", () => {
+      modalInstance.updateIncognitoModal(true);
+      expect(incognitoToggle.classList.contains("toggle-active")).toBe(true);
 
-        test('should work for all setting input fields', async () => {
-            await modalInstance.addModalListener();
-            
-            // Test dirInput and authUserInput (text inputs)
-            const textInputs = [dirInput, authUserInput];
-            
-            for (const input of textInputs) {
-                const submitButton = input.parentElement.querySelector("button[type='submit']");
-                expect(submitButton).not.toBeNull();
-                
-                input.value = 'test';
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                expect(submitButton.classList.contains('d-none')).toBe(false);
-                
-                input.value = '';
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                expect(submitButton.classList.contains('d-none')).toBe(true);
-            }
-            
-            // Note: historyMaxInput now uses stepper buttons instead of submit button
-        });
+      modalInstance.updateIncognitoModal(false);
+      expect(incognitoToggle.classList.contains("toggle-active")).toBe(false);
+    });
+  });
 
-        test('should not throw error when submit button is missing', () => {
-            // Create an input without a submit button sibling
-            const standaloneInput = document.createElement('input');
-            standaloneInput.id = 'standaloneInput';
-            const wrapper = document.createElement('div');
-            wrapper.appendChild(standaloneInput);
-            document.body.appendChild(wrapper);
-            
-            expect(() => {
-                modalInstance._setupInputButtonToggle(standaloneInput);
-            }).not.toThrow();
-        });
+  describe("updateDarkModeModal", () => {
+    test("should toggle dark mode UI state", () => {
+      modalInstance.updateDarkModeModal(true);
+      expect(darkModeToggle.classList.contains("toggle-active")).toBe(true);
+      expect(document.querySelector(".darkmode-text").classList.contains("d-none")).toBe(true);
+      expect(document.querySelector(".darkmode-icon").classList.contains("d-none")).toBe(false);
 
-        test('should work for apiInput field', async () => {
-            await modalInstance.addModalListener();
-            
-            const apiSubmitButton = apiInput.parentElement.querySelector("button[type='submit']");
-            expect(apiSubmitButton).not.toBeNull();
-            expect(apiSubmitButton.classList.contains('d-none')).toBe(true);
-            
-            apiInput.value = 'test-api-key';
-            apiInput.dispatchEvent(new Event('input', { bubbles: true }));
-            expect(apiSubmitButton.classList.contains('d-none')).toBe(false);
-            
-            apiInput.value = '';
-            apiInput.dispatchEvent(new Event('input', { bubbles: true }));
-            expect(apiSubmitButton.classList.contains('d-none')).toBe(true);
-        });
+      modalInstance.updateDarkModeModal(false);
+      expect(darkModeToggle.classList.contains("toggle-active")).toBe(false);
+      expect(document.querySelector(".darkmode-text").classList.contains("d-none")).toBe(false);
+      expect(document.querySelector(".darkmode-icon").classList.contains("d-none")).toBe(true);
+    });
+  });
 
-        test('should hide apiInput submit button when modal closes', async () => {
-            await modalInstance.addModalListener();
-            
-            const apiSubmitButton = apiInput.parentElement.querySelector("button[type='submit']");
-            const apiModal = document.getElementById('apiModal');
-            
-            // Show the button first
-            apiInput.value = 'test-api-key';
-            apiInput.dispatchEvent(new Event('input', { bubbles: true }));
-            expect(apiSubmitButton.classList.contains('d-none')).toBe(false);
-            
-            // Simulate modal close
-            apiModal.dispatchEvent(new Event('hidden.bs.modal'));
-            
-            expect(apiInput.value).toBe('');
-            expect(apiSubmitButton.classList.contains('d-none')).toBe(true);
-        });
+  // ============================================================================
+  // Test: loadCrypto - Verifying Dynamic Import Logic
+  // ============================================================================
+  //
+  // NOTE ON TESTING DYNAMIC IMPORTS:
+  // Testing the real dynamic import() path in Jest is inherently limited because:
+  // 1. Jest transforms import() to require() at compile time
+  // 2. Chrome extension URLs (chrome-extension://) aren't resolvable in Node.js
+  // 3. The jest.mock at the top of this file already ensures crypto.js loads correctly
+  //
+  // The tests below verify the loadCrypto logic and chrome.runtime.getURL usage.
+  // E2E tests in a real browser extension environment are needed to fully test
+  // the dynamic import path with actual chrome-extension:// URLs.
+  //
+  // What IS covered:
+  // - The conditional logic (skip import if already injected)
+  // - The chrome.runtime.getURL call with correct parameters
+  // - Integration with addModalListener
+  // - That the module loads and functions correctly (via jest.mock)
+  //
+  // What is NOT fully covered (requires E2E):
+  // - Actual dynamic import() in browser with chrome-extension:// URLs
+  // - Module loading failures in production environment
+  // ============================================================================
+
+  describe("loadCrypto - Dynamic Import Logic", () => {
+    test("should not reload crypto module if already loaded via dependency injection", async () => {
+      // Create instance with dependency injection
+      const injectedFn = jest.fn().mockResolvedValue("injected_key");
+      const modalWithInjection = new Modal(injectedFn);
+
+      // encryptApiKey should already be set
+      expect(modalWithInjection.encryptApiKey).toBe(injectedFn);
+
+      // Mock chrome.runtime.getURL to track if it's called
+      chrome.runtime.getURL.mockClear();
+
+      // Call loadCrypto
+      await modalWithInjection.loadCrypto();
+
+      // chrome.runtime.getURL should NOT have been called since function already exists
+      expect(chrome.runtime.getURL).not.toHaveBeenCalled();
+
+      // encryptApiKey should still be the injected function
+      expect(modalWithInjection.encryptApiKey).toBe(injectedFn);
     });
 
-    // ============================================================================
-    // History Max Stepper Tests
-    // ============================================================================
-    describe('History Max Stepper', () => {
-        test('should increment value when + button is clicked using placeholder', async () => {
-            await modalInstance.addModalListener();
-            
-            historyMaxInput.placeholder = '10';
-            historyMaxInput.value = '';
-            const incrementBtn = document.getElementById('historyMaxIncrement');
-            
-            incrementBtn.click();
-            
-            expect(historyMaxInput.value).toBe('11');
-        });
+    test("should verify constructor correctly accepts null for dynamic loading", () => {
+      // Create instance without dependency injection
+      const modalWithoutInjection = new Modal();
 
-        test('should increment value when + button is clicked using existing value', async () => {
-            await modalInstance.addModalListener();
-            
-            historyMaxInput.value = '15';
-            const incrementBtn = document.getElementById('historyMaxIncrement');
-            
-            incrementBtn.click();
-            
-            expect(historyMaxInput.value).toBe('16');
-        });
+      // Verify encryptApiKey is null (will be loaded dynamically)
+      expect(modalWithoutInjection.encryptApiKey).toBeNull();
 
-        test('should decrement value when - button is clicked using placeholder', async () => {
-            await modalInstance.addModalListener();
-            
-            historyMaxInput.placeholder = '10';
-            historyMaxInput.value = '';
-            const decrementBtn = document.getElementById('historyMaxDecrement');
-            
-            decrementBtn.click();
-            
-            expect(historyMaxInput.value).toBe('9');
-        });
-
-        test('should not go below 1 when decrementing', async () => {
-            await modalInstance.addModalListener();
-            
-            historyMaxInput.value = '1';
-            const decrementBtn = document.getElementById('historyMaxDecrement');
-            
-            decrementBtn.click();
-            
-            expect(historyMaxInput.value).toBe('1');
-        });
-
-        test('should not go above 100 when incrementing', async () => {
-            await modalInstance.addModalListener();
-            
-            historyMaxInput.value = '100';
-            const incrementBtn = document.getElementById('historyMaxIncrement');
-            
-            incrementBtn.click();
-            
-            expect(historyMaxInput.value).toBe('100');
-        });
-
-        test('should save historyMax on modal close and clear value', async () => {
-            await modalInstance.addModalListener();
-            
-            const optionalModal = document.getElementById('optionalModal');
-            historyMaxInput.value = '25';
-            
-            optionalModal.dispatchEvent(new Event('hidden.bs.modal'));
-            
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 25 });
-            expect(historyMaxInput.value).toBe('');
-            expect(historyMaxInput.placeholder).toBe('25');
-        });
-
-        test('should use placeholder value when input value is empty on save', async () => {
-            await modalInstance.addModalListener();
-            
-            const optionalModal = document.getElementById('optionalModal');
-            historyMaxInput.placeholder = '15';
-            historyMaxInput.value = '';
-            
-            optionalModal.dispatchEvent(new Event('hidden.bs.modal'));
-            
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 15 });
-        });
-
-        test('should use default value 10 when both value and placeholder are invalid on save', async () => {
-            await modalInstance.addModalListener();
-            
-            const optionalModal = document.getElementById('optionalModal');
-            historyMaxInput.placeholder = '';
-            historyMaxInput.value = '';
-            
-            optionalModal.dispatchEvent(new Event('hidden.bs.modal'));
-            
-            expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 10 });
-        });
+      // Create another instance explicitly with null
+      const modalExplicitNull = new Modal(null);
+      expect(modalExplicitNull.encryptApiKey).toBeNull();
     });
+
+    test("should document expected chrome.runtime.getURL behavior", () => {
+      // In a real Chrome extension, chrome.runtime.getURL converts relative
+      // paths to absolute chrome-extension:// URLs
+
+      // Example of expected production behavior:
+      chrome.runtime.getURL.mockReturnValue("chrome-extension://abcdef123456/dist/utils/crypto.js");
+
+      const result = chrome.runtime.getURL("dist/utils/crypto.js");
+
+      expect(result).toContain("chrome-extension://");
+      expect(result).toContain("dist/utils/crypto.js");
+
+      // This URL would then be used by import() in the browser
+    });
+
+    test("should ensure jest.mock covers the crypto module", () => {
+      // The jest.mock at the top of this file ensures that when
+      // loadCrypto() tries to import crypto.js (either dynamically or via require),
+      // it gets our mocked version
+
+      // Verify the mocked functions exist
+      expect(mockEncryptApiKey).toBeDefined();
+      expect(mockDecryptApiKey).toBeDefined();
+
+      // Verify they're jest mocks
+      expect(jest.isMockFunction(mockEncryptApiKey)).toBe(true);
+      expect(jest.isMockFunction(mockDecryptApiKey)).toBe(true);
+    });
+
+    test("should work when instantiated without dependency injection in addModalListener", async () => {
+      // This simulates the real production usage: new Modal() with no parameters
+      // Note: We can't actually test the import() because Jest transforms it,
+      // but we can verify the overall flow works with our mocked module
+
+      const modalWithoutInjection = new Modal();
+
+      // Initial state
+      expect(modalWithoutInjection.encryptApiKey).toBeNull();
+
+      // Note: We're NOT calling loadCrypto directly because the import would fail.
+      // Instead, we verify that with dependency injection (which is how we test),
+      // the same code paths work correctly. The jest.mock ensures the module
+      // is available when import() is called in production.
+
+      // What we CAN test: that the constructor allows null and the structure is correct
+      expect(modalWithoutInjection).toBeInstanceOf(Modal);
+      expect(modalWithoutInjection).toHaveProperty("encryptApiKey");
+      expect(modalWithoutInjection).toHaveProperty("loadCrypto");
+      expect(modalWithoutInjection).toHaveProperty("addModalListener");
+    });
+
+    test("should demonstrate equivalent behavior between dependency injection and dynamic import", async () => {
+      // This test shows that dependency injection (used in tests) provides
+      // the same interface as dynamic import (used in production)
+
+      // Test with dependency injection
+      const modalInjected = new Modal(mockEncryptApiKey);
+      await modalInjected.loadCrypto();
+
+      // Should have encryptApiKey function
+      expect(modalInjected.encryptApiKey).toBe(mockEncryptApiKey);
+      expect(typeof modalInjected.encryptApiKey).toBe("function");
+
+      // Call it
+      mockEncryptApiKey.mockResolvedValue("test_encrypted");
+      const result = await modalInjected.encryptApiKey("test_key");
+      expect(result).toBe("test_encrypted");
+
+      // This is functionally equivalent to what would happen with dynamic import:
+      // 1. loadCrypto() runs
+      // 2. encryptApiKey is set to a function
+      // 3. That function can be called to encrypt data
+      // The only difference is HOW the function is obtained (injection vs import)
+    });
+  });
+
+  // ============================================================================
+  // Input Button Toggle Tests (Search Bar Behavior)
+  // ============================================================================
+  describe("_setupInputButtonToggle", () => {
+    test("should show submit button when input has value", async () => {
+      await modalInstance.addModalListener();
+
+      const submitButton = dirInput.parentElement.querySelector("button[type='submit']");
+      expect(submitButton.classList.contains("d-none")).toBe(true);
+
+      dirInput.value = "test value";
+      dirInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+      expect(submitButton.classList.contains("d-none")).toBe(false);
+    });
+
+    test("should hide submit button when input is empty", async () => {
+      await modalInstance.addModalListener();
+
+      const submitButton = dirInput.parentElement.querySelector("button[type='submit']");
+
+      // First add value
+      dirInput.value = "test value";
+      dirInput.dispatchEvent(new Event("input", { bubbles: true }));
+      expect(submitButton.classList.contains("d-none")).toBe(false);
+
+      // Then clear it
+      dirInput.value = "";
+      dirInput.dispatchEvent(new Event("input", { bubbles: true }));
+      expect(submitButton.classList.contains("d-none")).toBe(true);
+    });
+
+    test("should hide submit button when input has only whitespace", async () => {
+      await modalInstance.addModalListener();
+
+      const submitButton = authUserInput.parentElement.querySelector("button[type='submit']");
+
+      authUserInput.value = "   ";
+      authUserInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+      expect(submitButton.classList.contains("d-none")).toBe(true);
+    });
+
+    test("should work for all setting input fields", async () => {
+      await modalInstance.addModalListener();
+
+      // Test dirInput and authUserInput (text inputs)
+      const textInputs = [dirInput, authUserInput];
+
+      for (const input of textInputs) {
+        const submitButton = input.parentElement.querySelector("button[type='submit']");
+        expect(submitButton).not.toBeNull();
+
+        input.value = "test";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        expect(submitButton.classList.contains("d-none")).toBe(false);
+
+        input.value = "";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        expect(submitButton.classList.contains("d-none")).toBe(true);
+      }
+
+      // Note: historyMaxInput now uses stepper buttons instead of submit button
+    });
+
+    test("should not throw error when submit button is missing", () => {
+      // Create an input without a submit button sibling
+      const standaloneInput = document.createElement("input");
+      standaloneInput.id = "standaloneInput";
+      const wrapper = document.createElement("div");
+      wrapper.appendChild(standaloneInput);
+      document.body.appendChild(wrapper);
+
+      expect(() => {
+        modalInstance._setupInputButtonToggle(standaloneInput);
+      }).not.toThrow();
+    });
+
+    test("should work for apiInput field", async () => {
+      await modalInstance.addModalListener();
+
+      const apiSubmitButton = apiInput.parentElement.querySelector("button[type='submit']");
+      expect(apiSubmitButton).not.toBeNull();
+      expect(apiSubmitButton.classList.contains("d-none")).toBe(true);
+
+      apiInput.value = "test-api-key";
+      apiInput.dispatchEvent(new Event("input", { bubbles: true }));
+      expect(apiSubmitButton.classList.contains("d-none")).toBe(false);
+
+      apiInput.value = "";
+      apiInput.dispatchEvent(new Event("input", { bubbles: true }));
+      expect(apiSubmitButton.classList.contains("d-none")).toBe(true);
+    });
+
+    test("should hide apiInput submit button when modal closes", async () => {
+      await modalInstance.addModalListener();
+
+      const apiSubmitButton = apiInput.parentElement.querySelector("button[type='submit']");
+      const apiModal = document.getElementById("apiModal");
+
+      // Show the button first
+      apiInput.value = "test-api-key";
+      apiInput.dispatchEvent(new Event("input", { bubbles: true }));
+      expect(apiSubmitButton.classList.contains("d-none")).toBe(false);
+
+      // Simulate modal close
+      apiModal.dispatchEvent(new Event("hidden.bs.modal"));
+
+      expect(apiInput.value).toBe("");
+      expect(apiSubmitButton.classList.contains("d-none")).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // History Max Stepper Tests
+  // ============================================================================
+  describe("History Max Stepper", () => {
+    test("should increment value when + button is clicked using placeholder", async () => {
+      await modalInstance.addModalListener();
+
+      historyMaxInput.placeholder = "10";
+      historyMaxInput.value = "";
+      const incrementBtn = document.getElementById("historyMaxIncrement");
+
+      incrementBtn.click();
+
+      expect(historyMaxInput.value).toBe("11");
+    });
+
+    test("should increment value when + button is clicked using existing value", async () => {
+      await modalInstance.addModalListener();
+
+      historyMaxInput.value = "15";
+      const incrementBtn = document.getElementById("historyMaxIncrement");
+
+      incrementBtn.click();
+
+      expect(historyMaxInput.value).toBe("16");
+    });
+
+    test("should decrement value when - button is clicked using placeholder", async () => {
+      await modalInstance.addModalListener();
+
+      historyMaxInput.placeholder = "10";
+      historyMaxInput.value = "";
+      const decrementBtn = document.getElementById("historyMaxDecrement");
+
+      decrementBtn.click();
+
+      expect(historyMaxInput.value).toBe("9");
+    });
+
+    test("should not go below 1 when decrementing", async () => {
+      await modalInstance.addModalListener();
+
+      historyMaxInput.value = "1";
+      const decrementBtn = document.getElementById("historyMaxDecrement");
+
+      decrementBtn.click();
+
+      expect(historyMaxInput.value).toBe("1");
+    });
+
+    test("should not go above 100 when incrementing", async () => {
+      await modalInstance.addModalListener();
+
+      historyMaxInput.value = "100";
+      const incrementBtn = document.getElementById("historyMaxIncrement");
+
+      incrementBtn.click();
+
+      expect(historyMaxInput.value).toBe("100");
+    });
+
+    test("should save historyMax on modal close and clear value", async () => {
+      await modalInstance.addModalListener();
+
+      const optionalModal = document.getElementById("optionalModal");
+      historyMaxInput.value = "25";
+
+      optionalModal.dispatchEvent(new Event("hidden.bs.modal"));
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 25 });
+      expect(historyMaxInput.value).toBe("");
+      expect(historyMaxInput.placeholder).toBe("25");
+    });
+
+    test("should use placeholder value when input value is empty on save", async () => {
+      await modalInstance.addModalListener();
+
+      const optionalModal = document.getElementById("optionalModal");
+      historyMaxInput.placeholder = "15";
+      historyMaxInput.value = "";
+
+      optionalModal.dispatchEvent(new Event("hidden.bs.modal"));
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 15 });
+    });
+
+    test("should use default value 10 when both value and placeholder are invalid on save", async () => {
+      await modalInstance.addModalListener();
+
+      const optionalModal = document.getElementById("optionalModal");
+      historyMaxInput.placeholder = "";
+      historyMaxInput.value = "";
+
+      optionalModal.dispatchEvent(new Event("hidden.bs.modal"));
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 10 });
+    });
+  });
 });

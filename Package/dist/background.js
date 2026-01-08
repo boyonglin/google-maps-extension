@@ -1,6 +1,15 @@
 import { encryptApiKey } from "./utils/crypto.js";
 import { geminiPrompts } from "./utils/prompt.js";
-import { ensureWarm, getApiKey, getCache, applyStorageChanges, queryUrl, buildSearchUrl, buildDirectionsUrl, buildMapsUrl } from "./hooks/backgroundState.js";
+import {
+  ensureWarm,
+  getApiKey,
+  getCache,
+  applyStorageChanges,
+  queryUrl,
+  buildSearchUrl,
+  buildDirectionsUrl,
+  buildMapsUrl,
+} from "./hooks/backgroundState.js";
 import ExtPay from "./utils/ExtPay.module.js";
 
 const DEFAULT_MAX_HISTORY = 10;
@@ -8,24 +17,26 @@ const DEFAULT_MAX_HISTORY = 10;
 function getMaxListLength() {
   const cache = getCache();
   const historyMax = cache.historyMax;
-  return (Number.isFinite(historyMax) && historyMax > 0) ? historyMax : DEFAULT_MAX_HISTORY;
+  return Number.isFinite(historyMax) && historyMax > 0 ? historyMax : DEFAULT_MAX_HISTORY;
 }
 
 // Utilities
 const RECEIVING_END_ERR = "Receiving end does not exist";
-const DEFAULT_CAN_RETRY = (err) =>
-  String(err?.message ?? err).includes(RECEIVING_END_ERR);
+const DEFAULT_CAN_RETRY = (err) => String(err?.message ?? err).includes(RECEIVING_END_ERR);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const MAX_RETRY_DELAY = 5000; // Cap exponential backoff at 5 seconds
 
-async function withRetry(attempt, { retries = 10, delay = 100, canRetry = DEFAULT_CAN_RETRY } = {}) {
+async function withRetry(
+  attempt,
+  { retries = 10, delay = 100, canRetry = DEFAULT_CAN_RETRY } = {}
+) {
   for (let retry_count = 0; retry_count <= retries; retry_count++) {
     try {
       return await attempt(retry_count);
     } catch (err) {
       const willRetry = retry_count < retries && canRetry(err);
       if (!willRetry) throw err;
-      const backoffDelay = Math.min(delay * (2 ** retry_count), MAX_RETRY_DELAY);
+      const backoffDelay = Math.min(delay * 2 ** retry_count, MAX_RETRY_DELAY);
       await sleep(backoffDelay);
     }
   }
@@ -51,11 +62,18 @@ chrome.runtime.onInstalled.addListener((details) => {
 
   // What's new page
   const userLocale = chrome.i18n.getUILanguage();
-  if (details.reason === "install" || (details.reason === "update" && isLessThan(details.previousVersion, "1.11.3"))) {
+  if (
+    details.reason === "install" ||
+    (details.reason === "update" && isLessThan(details.previousVersion, "1.11.3"))
+  ) {
     if (userLocale.startsWith("zh")) {
-      chrome.tabs.create({ url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d" });
+      chrome.tabs.create({
+        url: "https://the-maps-express.notion.site/73af672a330f4983a19ef1e18716545d",
+      });
     } else {
-      chrome.tabs.create({ url: "https://the-maps-express.notion.site/384675c4183b4799852e5b298f999645" });
+      chrome.tabs.create({
+        url: "https://the-maps-express.notion.site/384675c4183b4799852e5b298f999645",
+      });
     }
   }
 
@@ -83,7 +101,7 @@ function compareChromeVersions(a, b) {
   return 0;
 }
 
-const isLessThan = (v, t) => compareChromeVersions(v, t) <  0;
+const isLessThan = (v, t) => compareChromeVersions(v, t) < 0;
 
 // Storage changes
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -153,7 +171,7 @@ chrome.commands.onCommand.addListener((command) => {
           const now = new Date();
 
           // In trial period
-          if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
+          if (user.trialStartedAt && now - user.trialStartedAt < trialPeriod) {
             await tryAndCheckApi(tabId);
             chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
           } else {
@@ -229,24 +247,15 @@ async function trySuggest(tabId, retries = 10) {
 }
 
 async function tryAddrNotify(retries = 10) {
-  return withRetry(
-    () => sendChromeMessage({ message: { action: "addrNotify" } }),
-    { retries }
-  );
+  return withRetry(() => sendChromeMessage({ message: { action: "addrNotify" } }), { retries });
 }
 
 async function tryPremiumNotify(retries = 10) {
-  return withRetry(
-    () => sendChromeMessage({ message: { action: "premiumNotify" } }),
-    { retries }
-  );
+  return withRetry(() => sendChromeMessage({ message: { action: "premiumNotify" } }), { retries });
 }
 
 async function tryAPINotify(retries = 10) {
-  return withRetry(
-    () => sendChromeMessage({ message: { action: "apiNotify" } }),
-    { retries }
-  );
+  return withRetry(() => sendChromeMessage({ message: { action: "apiNotify" } }), { retries });
 }
 
 function getContent(tabId) {
@@ -316,18 +325,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     addToFavoriteList(selectedText);
   }
 
-  if (request.action === "openTab") {  // Opens the tab without focusing on it
+  if (request.action === "openTab") {
+    // Opens the tab without focusing on it
     chrome.tabs.create({
       url: request.url,
-      active: false
+      active: false,
     });
-  } else if (request.action === "canGroup") {  // Checks if the user can group tabs
+  } else if (request.action === "canGroup") {
+    // Checks if the user can group tabs
     sendResponse({ canGroup });
     return;
-  } else if (request.action === "openInGroup") {  // Create a new tab group (if supported)
-    openUrlsInNewGroup(
-      request.urls, request.groupTitle, request.groupColor, request.collapsed);
-  } else if (request.action === "organizeLocations") {  // Organize locations using Gemini
+  } else if (request.action === "openInGroup") {
+    // Create a new tab group (if supported)
+    openUrlsInNewGroup(request.urls, request.groupTitle, request.groupColor, request.collapsed);
+  } else if (request.action === "organizeLocations") {
+    // Organize locations using Gemini
     handleOrganizeLocations(request.locations, request.listType, sendResponse);
     return true;
   }
@@ -338,12 +350,14 @@ async function handleOrganizeLocations(locations, listType, sendResponse) {
     const apiKey = await getApiKey();
 
     // Format locations for the prompt with enhanced context
-    const locationsText = locations.map(loc => {
-      if (loc.clue && loc.clue.trim()) {
-        return `${loc.name} (${loc.clue})`;
-      }
-      return loc.name;
-    }).join("\n");
+    const locationsText = locations
+      .map((loc) => {
+        if (loc.clue && loc.clue.trim()) {
+          return `${loc.name} (${loc.clue})`;
+        }
+        return loc.name;
+      })
+      .join("\n");
 
     callApi(geminiPrompts.organize, locationsText, apiKey, (response) => {
       if (response.error) {
@@ -365,7 +379,6 @@ async function handleOrganizeLocations(locations, listType, sendResponse) {
         sendResponse({ success: true, organizedData: { rawText: response } });
       }
     });
-
   } catch (error) {
     if (error.message.includes("No API key found")) {
       tryAPINotify().catch(() => {});
@@ -408,7 +421,6 @@ function openUrlsInNewGroup(urls, title, color, collapsed) {
     });
   });
 }
-
 
 // Add the selected text to history list
 function updateHistoryList(selectedText) {
@@ -460,10 +472,12 @@ function addToFavoriteList(selectedText) {
 // Gemini API
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "summarizeApi" && request.text) {
-
     // Special case for YouTube video descriptions
     if (request.url.startsWith("https://www.youtube")) {
-      const ytSummaryPrompt = geminiPrompts.summary.replace("(marked by <h1>, <h2>, <h3>, or <strong>) ", "");
+      const ytSummaryPrompt = geminiPrompts.summary.replace(
+        "(marked by <h1>, <h2>, <h3>, or <strong>) ",
+        ""
+      );
       callApi(ytSummaryPrompt, request.text, request.apiKey, sendResponse);
     } else {
       callApi(geminiPrompts.summary, request.text, request.apiKey, sendResponse);
@@ -472,7 +486,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.action === "summarizeVideo" && request.text) {
-    getApiKey().then(apiKey => {
+    getApiKey().then((apiKey) => {
       callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
     });
     return true; // Will respond asynchronously
@@ -484,7 +498,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "verifyApiKey") {
     verifyApiKey(request.apiKey)
       .then(sendResponse)
-      .catch(err => sendResponse({ error: err.message }));
+      .catch((err) => sendResponse({ error: err.message }));
     return true;
   }
 });
@@ -493,40 +507,43 @@ const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini
 
 async function verifyApiKey(apiKey) {
   const res = await fetch(endpoint, {
-    headers: { "x-goog-api-key": apiKey }
+    headers: { "x-goog-api-key": apiKey },
   });
   return { valid: res.ok };
 }
 
 function callApi(prompt, content, apiKey, sendResponse) {
-  const url = prompt.includes("Organize") ? `${endpoint.replace("2.0", "2.5")}:generateContent` : `${endpoint}:generateContent`;
+  const url = prompt.includes("Organize")
+    ? `${endpoint.replace("2.0", "2.5")}:generateContent`
+    : `${endpoint}:generateContent`;
   const isYouTubeUri = content.includes("youtube.com") || content.includes("youtu.be");
 
   const data = isYouTubeUri
     ? {
-      contents: [{
-        parts: [
-          { text: prompt },
-          { file_data: { file_uri: content.trim() } }
-        ]
-      }]
-    }
+        contents: [
+          {
+            parts: [{ text: prompt }, { file_data: { file_uri: content.trim() } }],
+          },
+        ],
+      }
     : {
-      contents: [{
-        parts: [{ text: `${prompt}${content}` }]
-      }]
-    };
+        contents: [
+          {
+            parts: [{ text: `${prompt}${content}` }],
+          },
+        ],
+      };
 
   fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": apiKey
+      "x-goog-api-key": apiKey,
     },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   })
-    .then(response => response.json())
-    .then(data => {
+    .then((response) => response.json())
+    .then((data) => {
       if (data.error) {
         sendResponse({ error: data.error.message });
         return;
@@ -540,7 +557,7 @@ function callApi(prompt, content, apiKey, sendResponse) {
         sendResponse(generatedText);
       }
     })
-    .catch(error => {
+    .catch((error) => {
       console.error("API call failed:", error);
       sendResponse({ error: error.message || "Network error occurred" });
     });
@@ -595,7 +612,7 @@ function handleExtensionPayment(user, sender) {
 
   // Trial or Pay
   else {
-    if (user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod) {
+    if (user.trialStartedAt && now - user.trialStartedAt < trialPeriod) {
       extpay.openTrialPage();
     } else {
       extpay.openPaymentPage();
@@ -608,7 +625,7 @@ function checkPaymentStatus(user) {
   const now = new Date();
   const isPremium = user.paid;
   const isFirst = !user.trialStartedAt && !isPremium;
-  const isTrial = user.trialStartedAt && (now - user.trialStartedAt) < trialPeriod && !isPremium;
+  const isTrial = user.trialStartedAt && now - user.trialStartedAt < trialPeriod && !isPremium;
   const isFree = !isFirst && !isTrial && !isPremium;
   const trialEnd = new Date(user.trialStartedAt).getTime() + trialPeriod;
 
@@ -617,11 +634,11 @@ function checkPaymentStatus(user) {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "extPay") {
-    extpay.getUser().then(user => handleExtensionPayment(user, sender));
+    extpay.getUser().then((user) => handleExtensionPayment(user, sender));
   } else if (request.action === "restorePay") {
     extpay.openLoginPage();
   } else if (request.action === "checkPay") {
-    extpay.getUser().then(user => {
+    extpay.getUser().then((user) => {
       sendResponse({ result: checkPaymentStatus(user) });
     });
     return true;
@@ -629,7 +646,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // 1) Warm on first useful wake-ups
-chrome.tabs.onActivated.addListener(() => { ensureWarm(); });
+chrome.tabs.onActivated.addListener(() => {
+  ensureWarm();
+});
 
 // 2) Fast message responder for popup
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
@@ -637,7 +656,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     ensureWarm().then(() => sendResponse(getCache()));
     return true;
   } else if (request.action === "getApiKey") {
-    getApiKey().then(apiKey => sendResponse({ apiKey }));
+    getApiKey().then((apiKey) => sendResponse({ apiKey }));
     return true;
   } else if (request.action === "buildSearchUrl") {
     sendResponse({ url: buildSearchUrl(request.query) });
@@ -650,4 +669,3 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return true;
   }
 });
-

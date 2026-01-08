@@ -1,0 +1,7 @@
+Package/vendor
+Package/dist/utils/browser-polyfill.js
+Package/dist/utils/ExtPay.module.js
+node_modules
+package-lock.json
+*.min.js
+*.min.css

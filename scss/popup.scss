@@ -4,10 +4,9 @@
 // Popup-specific font variable
 :root {
   /* TC + Emoji safe */
-  --ui-font: "Satoshi-Variable",
-    "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC",
-    system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+  --ui-font:
+    "Satoshi-Variable", "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC", system-ui,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
 }
 
 /* Dark mode component overrides */
@@ -211,7 +210,7 @@ body {
   padding-bottom: 1.5rem;
   margin: 0;
   transition: all 0.2s ease;
-  
+
   &:last-child {
     padding-bottom: 1rem;
   }
@@ -223,11 +222,11 @@ body {
   justify-content: space-between;
   cursor: pointer;
   user-select: none;
-  
+
   &.toggle-active {
     .toggle-switch {
       background-color: var(--google-purple);
-      
+
       .toggle-knob {
         transform: translateX(1rem);
       }
@@ -324,7 +323,7 @@ body {
   i {
     padding-top: 1px;
   }
-  
+
   &:hover {
     color: var(--gray-800);
   }
@@ -343,7 +342,7 @@ body {
     padding-right: 1rem;
     border-right-width: 0;
   }
-  
+
   .btn-stepper {
     border-color: var(--gray-400);
     background-color: var(--background-color);
@@ -351,17 +350,17 @@ body {
     padding: 0.5rem 0.75rem;
     border-right-width: 0;
     border-left-width: 0;
-    
+
     i {
       font-size: 20px;
     }
-    
+
     &:hover {
       background-color: var(--background-color);
       border-color: var(--gray-400);
       color: var(--gray-800);
     }
-    
+
     &:last-child {
       border-radius: 0 2rem 2rem 0;
       border-right-width: 1px;
@@ -588,7 +587,6 @@ li:hover .form-check-input {
 }
 
 .btn-outline-secondary {
-
   &:hover::after,
   &.active-button::after {
     content: "";
@@ -603,7 +601,6 @@ li:hover .form-check-input {
 }
 
 #searchHistoryButton {
-
   &:hover,
   &.active-button {
     background-color: transparent;
@@ -627,7 +624,6 @@ li:hover .form-check-input {
 }
 
 #favoriteListButton {
-
   &:hover,
   &.active-button {
     background-color: transparent;
@@ -651,7 +647,6 @@ li:hover .form-check-input {
 }
 
 #deleteListButton {
-
   &:hover,
   &.active-button {
     background-color: transparent;
@@ -675,7 +670,6 @@ li:hover .form-check-input {
 }
 
 #geminiSummaryButton {
-
   &:hover,
   &.active-button {
     background-color: transparent;
@@ -699,7 +693,6 @@ li:hover .form-check-input {
 }
 
 #videoSummaryButton {
-
   &:hover,
   &.active-button {
     background-color: transparent;
@@ -782,7 +775,6 @@ li:hover .form-check-input {
 #tidyVideo {
   top: 6.5rem;
 }
-
 
 /* scrollbar */
 

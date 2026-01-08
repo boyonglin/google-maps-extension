@@ -42,7 +42,7 @@ const Analytics = {
         const sessionId = Math.floor(now / 1000).toString();
         chrome.storage.local.set({
           ga_session_id: sessionId,
-          ga_session_timestamp: now
+          ga_session_timestamp: now,
         });
         resolve(sessionId);
       });
@@ -57,21 +57,23 @@ const Analytics = {
 
       const payload = {
         client_id: clientId,
-        events: [{
-          name: eventName,
-          params: {
-            session_id: sessionId,
-            engagement_time_msec: 100,
-            ...eventParams
-          }
-        }]
+        events: [
+          {
+            name: eventName,
+            params: {
+              session_id: sessionId,
+              engagement_time_msec: 100,
+              ...eventParams,
+            },
+          },
+        ],
       };
 
       const endpoint = `https://www.google-analytics.com/mp/collect?measurement_id=${this.GA_MEASUREMENT_ID}&api_secret=${this.GA_API_SECRET}`;
 
       await fetch(endpoint, {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
     } catch (error) {
       // Silent fail, do not affect user experience
@@ -81,7 +83,7 @@ const Analytics = {
   // Track extension opened
   trackExtensionOpened() {
     this.trackEvent("extension_opened", {
-      source: "popup"
+      source: "popup",
     });
   },
 
@@ -89,23 +91,23 @@ const Analytics = {
   trackFeatureClick(featureName, buttonId) {
     this.trackEvent("feature_click", {
       feature_name: featureName,
-      button_id: buttonId
+      button_id: buttonId,
     });
   },
 
   // Track search action
   trackSearch() {
     this.trackEvent("search_performed", {
-      feature_name: "search"
+      feature_name: "search",
     });
   },
 
   // Track page view
   trackPageView(pageName) {
     this.trackEvent("page_view", {
-      page_name: pageName
+      page_name: pageName,
     });
-  }
+  },
 };
 
 // Export for global use

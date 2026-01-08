@@ -7,7 +7,7 @@ const mockUser = {
   paid: false,
   trialStartedAt: null,
   installedAt: null,
-  email: null
+  email: null,
 };
 
 const mockExtPay = {
@@ -18,8 +18,8 @@ const mockExtPay = {
   openTrialPage: jest.fn(),
   startBackground: jest.fn(),
   onPaid: {
-    addListener: jest.fn()
-  }
+    addListener: jest.fn(),
+  },
 };
 
 const ExtPay = jest.fn(() => mockExtPay);
