@@ -3,7 +3,7 @@
  * Tests for GA4 Analytics Module: client ID, session management, event tracking
  */
 
-const { setupMockFetch, flushPromises } = require("./testHelpers");
+const { flushPromises } = require("./testHelpers");
 
 describe("analytics.js - Analytics Module", () => {
   let Analytics;

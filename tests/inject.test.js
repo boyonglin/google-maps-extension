@@ -3,7 +3,7 @@
  * Tests for the floating iframe UI, drag functionality, theme handling, and cleanup
  */
 
-const { mockChromeStorage, mockI18n, wait, flushPromises } = require("./testHelpers");
+const { mockChromeStorage, mockI18n, flushPromises } = require("./testHelpers");
 
 describe("inject.js - TME Module", () => {
   let TME;
@@ -528,13 +528,6 @@ describe("inject.js - TME Module", () => {
     test("should enforce minimum height of 452px", async () => {
       const container = document.getElementById("TMEiframe");
 
-      // The resizer is added dynamically, need to check it exists
-      const children = Array.from(container.children);
-      const resizer = children.find(
-        (child) => child.style.cursor === "ns-resize" || child.style.cssText?.includes("ns-resize")
-      );
-
-      // If resizer doesn't exist or can't trigger events, skip the detailed test
       // Just verify the container has proper structure
       expect(container).not.toBeNull();
       expect(container.querySelector("#TMEdrag")).not.toBeNull();
