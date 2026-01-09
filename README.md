@@ -59,13 +59,13 @@ The easiest way to get started is to install The Maps Express directly from the 
 If you want to develop and test your own version locally, follow these steps:
 
 1.  **Open Browser Extensions**: Navigate to your browser's extensions page and click "Manage extensions".<br>
-    <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/117902e8-d4ac-4208-9f81-37f35489954f" style="border-radius: 8px" width="320" alt="Manage extensions">
+    <img src="https://github.com/user-attachments/assets/e311a046-bf94-42dc-9dc1-0bccfd65a5b0" width="300" alt="Manage extensions">
 
 2.  **Enable Developer Mode**: Toggle on "Developer mode".<br>
-    <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/56922b20-cae3-48c1-bb3e-810cf09e9df9" style="border-radius: 8px" width="320" alt="Developer mode">
+    <img src="https://github.com/user-attachments/assets/cb3b89a0-de1b-4eb9-9742-c30a81d0bf8d" width="300" alt="Developer mode">
 
 3.  **Load Unpacked Extension**: Click "Load unpacked" and select the cloned project folder to complete the installation.<br>
-    <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/358c9c2c-4698-402d-a141-451fabcc3913" style="border-radius: 8px" width="800" alt="Load unpacked">
+    <img src="https://github.com/user-attachments/assets/8aaa1b0e-caa1-41a2-b2c0-4ee3ccd35a53" width="600" alt="Load unpacked">
 
 ---
 
@@ -76,16 +76,16 @@ If you want to develop and test your own version locally, follow these steps:
 To customize the default shortcuts:
 
 1.  **Open Extensions Page**: Go to the browser extensions page and click "Manage extensions".<br>
-    <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/117902e8-d4ac-4208-9f81-37f35489954f" style="border-radius: 8px" width="300" alt="Manage extensions">
+    <img src="https://github.com/user-attachments/assets/15098f34-61ff-4572-9ccd-18e16145c07c" width="300" alt="Manage extensions">
 
 2.  **Select Keyboard Shortcuts**:<br>
-    <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/783c9cbc-4e9f-4818-b075-e0da69efacf0" style="border-radius: 8px" width="300" alt="Keyboard shortcuts">
+    <img src="https://github.com/user-attachments/assets/53fb340c-f558-408b-a720-63e133df0a80" width="300" alt="Keyboard shortcuts">
 
 3.  **Set Your Shortcut**: Click the input field and type your desired key combination.<br>
-    <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/248921af-ee7e-42af-ab2b-080bf03190b0" style="border-radius: 8px" width="600" alt="Type the shortcut">
+    <img src="https://github.com/user-attachments/assets/f43d74c4-00d3-4954-be29-10299a8aef5a" width="600" alt="Type the shortcut">
 
 4.  **Set to Global (Optional)**: Change the shortcut scope to "Global" if you want to use it outside of the browser window.<br>
-    <img src="https://github.com/boyonglin/google-maps-extension/assets/56038738/295e0d03-7a85-4851-8037-1ac574f1b99d" style="border-radius: 8px" width="600" alt="Shortcut level">
+    <img src="https://github.com/user-attachments/assets/9adf849e-a0d6-4a30-be01-048c6f3dae94" width="600" alt="Shortcut level">
 
 ### Gemini API for AI Features
 
@@ -96,13 +96,13 @@ To enable the Place Summary and Video Summary features, you'll need a Gemini API
     <img src="https://github.com/user-attachments/assets/1d11ecdb-80eb-474b-a317-57e367640b15" width="300">
 
 3.  **Create API Key**:<br>
-    <img src="https://github.com/user-attachments/assets/c429aad2-6402-49a6-aa8d-7775ec24da69" width="600">
+    <img src="https://github.com/user-attachments/assets/513df341-b13b-4c06-a4c4-a4cf2f9a68fb" width="600">
 
 4.  **Create API Key in a New Project**:<br>
-    <img src="https://github.com/user-attachments/assets/7041ef34-8968-40e8-9940-8b4ba87c0b00" width="300">
+    <img src="https://github.com/user-attachments/assets/d6e1c5a2-779e-4cd4-9991-37276ed36e5f" width="300">
 
 5.  **Copy Your Key**: Copy the generated API key and paste it into the extension's settings.<br>
-    <img src="https://github.com/user-attachments/assets/0d87e72b-5864-4076-b3a4-fea5e09c9dde" width="600">
+    <img src="https://github.com/user-attachments/assets/ab26eef7-4ff1-4a73-8eae-81cb2cbba6ae" width="600">
 
 ---
 
@@ -146,21 +146,20 @@ You can export your favorite places as a CSV file and import them into Google My
 
 ```
 .
-├── _locales/               # Localization files (en, zh_TW, ja)
-├── dist/
-│   ├── scripts/            # Functional scripts (popup.js)
-│   ├── components/         # Modular scripts (background.js)
-│   ├── popup.js            # Main script
-│   ├── background.js       # Event handling and browser interaction
-│   ├── contentScript.js    # Accessing webpage content
-│   ├── inject.js           # Injecting iframe into the webpage
-│   ├── ejectLite.js        # Ejecting iframe from the webpage
-│   └── checkStatus.js      # Checking the status of the iframe
+├── Package/
+│   ├── _locales/           # Localization (en, zh_TW, ja)
+│   ├── css/
+│   ├── dist/
+│   │   ├── components/     # Modular components
+│   │   ├── hooks/          # Custom hooks
+│   │   ├── utils/          # Utility functions
+│   │   └── *.js            # Main scripts
+│   ├── images/             # Icons and assets
+│   ├── vendor/             # 3rd-party libraries
+│   ├── manifest.json       # Extension configuration
+│   └── popup.html          # Popup interface
 ├── scss/                   # Style sources
-├── images/                 # Extension icons and demo assets
-├── vendor/                 # 3rd-party libraries
-├── popup.html              # HTML for the popup interface
-└── manifest.json           # Configuration file for the extension
+└── tests/                  # Unit tests
 ```
 
 ---
