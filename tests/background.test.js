@@ -246,45 +246,6 @@ describe("background.js", () => {
       });
     });
 
-    test("should encrypt unencrypted API key on update", async () => {
-      const { encryptApiKey } = require("../Package/dist/utils/crypto.js");
-
-      chrome.storage.local.get.mockImplementation((keys, callback) => {
-        if (keys === "geminiApiKey") {
-          callback({ geminiApiKey: "plain-api-key" });
-        } else {
-          callback({ startAddr: "" });
-        }
-      });
-
-      await listeners.onInstalled({ reason: "update", previousVersion: "1.0.0" });
-
-      // Wait for async operations
-      await flushPromises();
-
-      expect(encryptApiKey).toHaveBeenCalledWith("plain-api-key");
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        geminiApiKey: "encrypted_plain-api-key",
-      });
-    });
-
-    test("should not encrypt already encrypted API key", async () => {
-      const { encryptApiKey } = require("../Package/dist/utils/crypto.js");
-
-      chrome.storage.local.get.mockImplementation((keys, callback) => {
-        if (keys === "geminiApiKey") {
-          callback({ geminiApiKey: "key.with.dots" });
-        } else {
-          callback({ startAddr: "" });
-        }
-      });
-
-      await listeners.onInstalled({ reason: "update", previousVersion: "1.0.0" });
-
-      await flushPromises();
-
-      expect(encryptApiKey).not.toHaveBeenCalled();
-    });
   });
 
   describe("chrome.storage.onChanged listener", () => {

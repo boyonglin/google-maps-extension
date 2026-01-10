@@ -1,4 +1,3 @@
-import { encryptApiKey } from "./utils/crypto.js";
 import { geminiPrompts } from "./utils/prompt.js";
 import {
   ensureWarm,
@@ -75,15 +74,6 @@ chrome.runtime.onInstalled.addListener((details) => {
         url: "https://the-maps-express.notion.site/384675c4183b4799852e5b298f999645",
       });
     }
-  }
-
-  if (details.reason === "update") {
-    chrome.storage.local.get("geminiApiKey", async ({ geminiApiKey }) => {
-      if (geminiApiKey && !geminiApiKey.includes(".")) {
-        const encrypted = await encryptApiKey(geminiApiKey);
-        chrome.storage.local.set({ geminiApiKey: encrypted });
-      }
-    });
   }
 });
 
