@@ -82,6 +82,21 @@ jest.mock("../Package/dist/hooks/backgroundState.js", () => ({
   __resetCacheForTesting: jest.fn(),
 }));
 
+// Mock Analytics module
+jest.mock("../Package/dist/utils/analytics.module.js", () => ({
+  Analytics: {
+    trackShortcut: jest.fn(),
+    trackContextMenu: jest.fn(),
+    trackEvent: jest.fn(),
+    trackFeatureClick: jest.fn(),
+    trackSearch: jest.fn(),
+    trackPageView: jest.fn(),
+    trackExtensionOpened: jest.fn(),
+    getOrCreateClientId: jest.fn(() => Promise.resolve("test-client-id")),
+    getOrCreateSessionId: jest.fn(() => Promise.resolve("test-session-id")),
+  },
+}));
+
 describe("background.js", () => {
   let listeners = {};
   let mockFetch;
@@ -245,7 +260,6 @@ describe("background.js", () => {
         url: expect.stringContaining("notion.site"),
       });
     });
-
   });
 
   describe("chrome.storage.onChanged listener", () => {
@@ -329,6 +343,85 @@ describe("background.js", () => {
       // Should handle the error gracefully
       expect(chrome.tabs.sendMessage).toHaveBeenCalled();
     });
+
+    test("should trim history list when historyMax is reduced", () => {
+      const changes = {
+        historyMax: { newValue: 5 },
+      };
+
+      const existingHistory = ["item1", "item2", "item3", "item4", "item5", "item6", "item7"];
+      chrome.storage.local.get.mockImplementation((keys, callback) => {
+        callback({ searchHistoryList: existingHistory });
+      });
+
+      listeners.onStorageChanged(changes, "local");
+
+      expect(chrome.storage.local.get).toHaveBeenCalledWith(
+        "searchHistoryList",
+        expect.any(Function)
+      );
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        searchHistoryList: ["item3", "item4", "item5", "item6", "item7"], // Keep last 5
+      });
+    });
+
+    test("should not trim history list when it is within historyMax limit", () => {
+      const changes = {
+        historyMax: { newValue: 10 },
+      };
+
+      const existingHistory = ["item1", "item2", "item3"];
+      chrome.storage.local.get.mockImplementation((keys, callback) => {
+        callback({ searchHistoryList: existingHistory });
+      });
+
+      listeners.onStorageChanged(changes, "local");
+
+      expect(chrome.storage.local.get).toHaveBeenCalledWith(
+        "searchHistoryList",
+        expect.any(Function)
+      );
+      // Should not call set since list is already within limit
+      expect(chrome.storage.local.set).not.toHaveBeenCalledWith(
+        expect.objectContaining({ searchHistoryList: expect.any(Array) })
+      );
+    });
+
+    test("should not trim history list when historyMax is invalid", () => {
+      const invalidValues = [
+        { historyMax: { newValue: -5 } },
+        { historyMax: { newValue: 0 } },
+        { historyMax: { newValue: NaN } },
+        { historyMax: { newValue: Infinity } },
+      ];
+
+      invalidValues.forEach((changes) => {
+        chrome.storage.local.get.mockClear();
+        listeners.onStorageChanged(changes, "local");
+        // Should not attempt to get history list for invalid values
+        expect(chrome.storage.local.get).not.toHaveBeenCalledWith(
+          "searchHistoryList",
+          expect.any(Function)
+        );
+      });
+    });
+
+    test("should handle empty or null searchHistoryList when trimming", () => {
+      const changes = {
+        historyMax: { newValue: 5 },
+      };
+
+      chrome.storage.local.get.mockImplementation((keys, callback) => {
+        callback({ searchHistoryList: null });
+      });
+
+      listeners.onStorageChanged(changes, "local");
+
+      // Should not call set when list is null
+      expect(chrome.storage.local.set).not.toHaveBeenCalledWith(
+        expect.objectContaining({ searchHistoryList: expect.any(Array) })
+      );
+    });
   });
 
   describe("chrome.contextMenus.onClicked listener", () => {
@@ -343,6 +436,7 @@ describe("background.js", () => {
 
     test("should handle googleMapsSearch context menu click", () => {
       const { buildSearchUrl } = require("../Package/dist/hooks/backgroundState.js");
+      const { Analytics } = require("../Package/dist/utils/analytics.module.js");
       const info = {
         menuItemId: "googleMapsSearch",
         selectionText: "Tokyo Tower",
@@ -350,12 +444,14 @@ describe("background.js", () => {
 
       listeners.onContextMenuClicked(info);
 
+      expect(Analytics.trackContextMenu).toHaveBeenCalledWith("search");
       expect(buildSearchUrl).toHaveBeenCalledWith("Tokyo Tower");
       expect(chrome.tabs.create).toHaveBeenCalled();
     });
 
     test("should handle googleMapsDirections context menu click", () => {
       const { buildDirectionsUrl } = require("../Package/dist/hooks/backgroundState.js");
+      const { Analytics } = require("../Package/dist/utils/analytics.module.js");
       const info = {
         menuItemId: "googleMapsDirections",
         selectionText: "Tokyo Tower",
@@ -363,6 +459,7 @@ describe("background.js", () => {
 
       listeners.onContextMenuClicked(info);
 
+      expect(Analytics.trackContextMenu).toHaveBeenCalledWith("directions");
       expect(buildDirectionsUrl).toHaveBeenCalledWith("123 Main St", "Tokyo Tower");
       expect(chrome.tabs.create).toHaveBeenCalled();
     });
@@ -485,6 +582,27 @@ describe("background.js", () => {
       chrome.tabs.query.mockImplementation((query, callback) => {
         callback([{ id: 1, url: "https://example.com" }]);
       });
+    });
+
+    test("should track shortcut usage for all commands", () => {
+      const { Analytics } = require("../Package/dist/utils/analytics.module.js");
+
+      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        if (message.action === "getSelectedText") {
+          callback({ selectedText: "Search Term" });
+        }
+      });
+
+      listeners.onCommand("run-search");
+      expect(Analytics.trackShortcut).toHaveBeenCalledWith("run-search");
+
+      Analytics.trackShortcut.mockClear();
+      listeners.onCommand("auto-attach");
+      expect(Analytics.trackShortcut).toHaveBeenCalledWith("auto-attach");
+
+      Analytics.trackShortcut.mockClear();
+      listeners.onCommand("run-directions");
+      expect(Analytics.trackShortcut).toHaveBeenCalledWith("run-directions");
     });
 
     test("should handle run-search command", () => {

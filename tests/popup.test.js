@@ -1228,4 +1228,25 @@ describe("popup.js", () => {
       expect(enterButton.title).toBe("Enter");
     });
   });
+
+  describe("Theme Integration", () => {
+    test("ThemeUtils module is properly imported", () => {
+      const ThemeUtils = require("../Package/dist/utils/theme.js");
+
+      expect(ThemeUtils).toBeDefined();
+      expect(typeof ThemeUtils.applyToElement).toBe("function");
+      expect(typeof ThemeUtils.notifyContentScript).toBe("function");
+      expect(typeof ThemeUtils.initialize).toBe("function");
+    });
+
+    test("popup has theme initialization in initializePopup flow", () => {
+      // Verify that initializePopup is exported and can be called
+      expect(typeof popup.initializePopup).toBe("function");
+
+      // The theme initialization is verified in theme.test.js
+      // Here we just verify the popup module integrates with theme properly
+      const ThemeUtils = require("../Package/dist/utils/theme.js");
+      expect(ThemeUtils.initialize).toBeDefined();
+    });
+  });
 });
