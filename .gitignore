@@ -6,3 +6,6 @@ coverage/
 
 .vscode/
 .history/
+
+.claude/
+AGENTS.md
