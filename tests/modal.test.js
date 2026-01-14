@@ -1140,12 +1140,6 @@ describe("Modal Component - Full Coverage", () => {
       const dirResetButton = dirInput.parentElement.querySelector(".btn-reset");
       dirResetButton.classList.remove("d-none");
 
-      const stopPropagationSpy = jest.fn();
-      const mockEvent = {
-        preventDefault: jest.fn(),
-        stopPropagation: stopPropagationSpy,
-      };
-
       // Manually trigger the event handler
       dirResetButton.dispatchEvent(
         Object.assign(new Event("click", { bubbles: true, cancelable: true }))
@@ -2017,7 +2011,8 @@ describe("Modal Component - Full Coverage", () => {
       const xssAttempt = '<script>alert("xss")</script>123 Main St';
       submitForm(form, dirInput, xssAttempt);
 
-      // Assert: Should store exactly as entered (sanitization should happen at display)
+      // Assert: Should store exactly as entered
+      // Note: Placeholder attributes are text-only (no HTML rendering), making them inherently XSS-safe
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         startAddr: xssAttempt,
       });
