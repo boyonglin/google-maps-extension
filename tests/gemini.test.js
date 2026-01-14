@@ -38,6 +38,7 @@ const {
   mockI18n,
   cleanupDOM,
   wait,
+  flushPromises,
   createMockListItem,
   mockTabsQuery,
   mockTabsSendMessage,
@@ -933,6 +934,74 @@ describe("Gemini Component", () => {
         expect.any(Function)
       );
     });
+
+    test("should update loading message with estimated time from video info", async () => {
+      // Create a mock that returns video info when queried
+      let videoInfoCallback;
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        if (key === "currentVideoInfo") {
+          videoInfoCallback = callback;
+        }
+        callback({ currentVideoInfo: { videoId: "test123", length: 300 } });
+      });
+
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback("<ul></ul>");
+      });
+
+      // Set initial message with NaN (this is what geminiLoadMsg contains)
+      geminiEmptyMessage.innerHTML = "Loading... Estimated time: NaN seconds";
+
+      geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
+
+      await wait(100);
+
+      // The loading message should have been updated with estimated time
+      // 300 seconds / 10 = 30, rounded up = 30
+      expect(geminiEmptyMessage.innerHTML).toContain("30");
+    });
+
+    test("should not update loading message if no video info available", async () => {
+      // Setup storage mock to return no video info
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({ currentVideoInfo: null });
+      });
+
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback("<ul></ul>");
+      });
+
+      // Set initial message with NaN
+      geminiEmptyMessage.innerHTML = "Loading... ~NaN seconds";
+
+      geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
+
+      await wait(100);
+
+      // Message should still contain NaN since no video info
+      expect(geminiEmptyMessage.innerHTML).toContain("NaN");
+    });
+
+    test("should not update loading message if video info has no length", async () => {
+      // Setup storage mock to return video info without length
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({ currentVideoInfo: { videoId: "test123" } }); // No length property
+      });
+
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback("<ul></ul>");
+      });
+
+      // Set initial message with NaN
+      geminiEmptyMessage.innerHTML = "Loading... ~NaN seconds";
+
+      geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
+
+      await wait(100);
+
+      // Message should still contain NaN since no length
+      expect(geminiEmptyMessage.innerHTML).toContain("NaN");
+    });
   });
 
   // ============================================================================
@@ -1430,7 +1499,7 @@ describe("Gemini Component", () => {
       );
     });
 
-    test("should handle clearExpiredSummary with exactly 24 hours", () => {
+    test("should handle clearExpiredSummary with exactly 24 hours", async () => {
       const exactTimestamp = Date.now() - 86400 * 1000;
 
       mockChromeStorage({
@@ -1441,7 +1510,10 @@ describe("Gemini Component", () => {
 
       geminiInstance.clearExpiredSummary();
 
-      // Should not clear (exactly 24 hours is still valid)
+      // Wait for the async storage callback to complete
+      await flushPromises();
+
+      // Should not clear (exactly 24 hours is still valid - elapsedTime > 86400 is false)
       expect(state.hasSummary).toBe(true);
     });
 

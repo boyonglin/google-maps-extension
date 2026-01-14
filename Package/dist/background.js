@@ -10,6 +10,7 @@ import {
   buildMapsUrl,
 } from "./hooks/backgroundState.js";
 import ExtPay from "./utils/ExtPay.module.js";
+import { Analytics } from "./utils/analytics.module.js";
 
 const DEFAULT_MAX_HISTORY = 10;
 
@@ -137,14 +138,18 @@ chrome.storage.onChanged.addListener((changes, area) => {
 chrome.contextMenus.onClicked.addListener((info) => {
   const selectedText = info.selectionText;
   if (info.menuItemId === "googleMapsSearch") {
+    Analytics.trackContextMenu("search");
     handleSelectedText(selectedText);
   } else if (info.menuItemId === "googleMapsDirections") {
+    Analytics.trackContextMenu("directions");
     handleSelectedDir(selectedText);
   }
 });
 
 // Track the shortcuts event
 chrome.commands.onCommand.addListener((command) => {
+  Analytics.trackShortcut(command);
+
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const url = tabs[0].url;
     const tabId = tabs[0].id;

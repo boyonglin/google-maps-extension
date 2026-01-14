@@ -20,6 +20,14 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'clover'],
+  coverageThreshold: {
+    global: {
+      branches: 85,
+      functions: 95,
+      lines: 95,
+      statements: 95
+    }
+  },
   testMatch: ['**/tests/**/*.test.js'],
   verbose: false,
   testTimeout: 10000

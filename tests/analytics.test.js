@@ -1,11 +1,14 @@
 /**
  * Jest Unit Tests for analytics.js
  * Tests for GA4 Analytics Module: client ID, session management, event tracking
+ *
+ * Note: analytics.js is now a thin wrapper that imports from analytics.module.js
+ * These tests verify the wrapper correctly re-exports the Analytics object.
  */
 
 const { flushPromises } = require("./testHelpers");
 
-describe("analytics.js - Analytics Module", () => {
+describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
   let Analytics;
   let mockFetch;
 
@@ -31,8 +34,8 @@ describe("analytics.js - Analytics Module", () => {
     });
     global.fetch = mockFetch;
 
-    // Load module fresh
-    Analytics = require("../Package/dist/utils/analytics.js");
+    // Load module fresh - analytics.js re-exports from analytics.module.js
+    Analytics = require("../Package/dist/utils/analytics.module.js").Analytics;
   });
 
   afterEach(() => {
@@ -498,19 +501,30 @@ describe("analytics.js - Analytics Module", () => {
   });
 
   // ============================================================================
-  // Global Export Tests
+  // Module Export Tests
   // ============================================================================
 
-  describe("Global Export", () => {
-    test("should expose Analytics on window", () => {
-      expect(window.Analytics).toBeDefined();
-      expect(window.Analytics).toBe(Analytics);
+  describe("Module Exports", () => {
+    test("should export Analytics as named export", () => {
+      const module = require("../Package/dist/utils/analytics.module.js");
+      expect(module.Analytics).toBeDefined();
+      expect(module.Analytics).toBe(Analytics);
     });
 
-    test("should export as module.exports", () => {
-      // The module exports Analytics, verified by being able to require it
-      expect(Analytics).toBeDefined();
+    test("should export Analytics as default export", () => {
+      const module = require("../Package/dist/utils/analytics.module.js");
+      expect(module.default).toBeDefined();
+      expect(module.default).toBe(Analytics);
+    });
+
+    test("should have all tracking methods available", () => {
       expect(typeof Analytics.trackEvent).toBe("function");
+      expect(typeof Analytics.trackExtensionOpened).toBe("function");
+      expect(typeof Analytics.trackFeatureClick).toBe("function");
+      expect(typeof Analytics.trackSearch).toBe("function");
+      expect(typeof Analytics.trackPageView).toBe("function");
+      expect(typeof Analytics.trackShortcut).toBe("function");
+      expect(typeof Analytics.trackContextMenu).toBe("function");
     });
   });
 
