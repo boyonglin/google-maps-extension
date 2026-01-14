@@ -4,6 +4,7 @@
  */
 :root {
   --primary-color: #4285f4;
+  --primary-color-hover: #3367d6;
   --border-color: #dee2e6;
   --danger-color: #db4437;
   --danger-color-500: #eda19b;
@@ -33,9 +34,10 @@
 
 [data-theme=dark] {
   --primary-color: #5a9cf5;
+  --primary-color-hover: #4285f4;
   --border-color: #3d3d55;
-  --danger-color: #e57373;
-  --danger-color-500: #9e5555;
+  --danger-color: #db3e39;
+  --danger-color-500: #b05754;
   --danger-color-bg: #2d1a1a;
   --background-color: #1a1a2e;
   --text-on-color: #ffffff;
@@ -51,8 +53,8 @@
   --google-yellow: #f5c842;
   --google-yellow-500: #5a4d2d;
   --google-yellow-bg: #2d2810;
-  --google-purple-hover: #9589d4;
-  --google-purple: #a599e0;
+  --google-purple-hover: #7768be;
+  --google-purple: #8c81c9;
   --google-purple-500: #4a4470;
   --google-purple-100: #2d2944;
   --google-purple-bg: #1f1d2d;
@@ -532,6 +534,10 @@ li:hover .form-check-input {
 .btn-maps {
   background-color: var(--primary-color);
   border: 1px solid var(--primary-color);
+}
+.btn-maps:hover {
+  background-color: var(--primary-color-hover);
+  border-color: var(--primary-color-hover);
 }
 
 .btn-delete {

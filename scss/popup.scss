@@ -516,6 +516,11 @@ li:hover .form-check-input {
 .btn-maps {
   background-color: var(--primary-color);
   border: 1px solid var(--primary-color);
+
+  &:hover {
+    background-color: var(--primary-color-hover);
+    border-color: var(--primary-color-hover);
+  }
 }
 
 .btn-delete {
