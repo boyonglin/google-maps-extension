@@ -110,10 +110,11 @@ const Analytics = {
   trackPageView(pageName) {
     // Send dwell time for previous page before tracking new page
     if (this._currentPage && this._pageStartTime) {
-      const dwellTime = Date.now() - this._pageStartTime;
+      const dwellTimeMs = Date.now() - this._pageStartTime;
+      const dwellTimeMin = dwellTimeMs / 60000;
       this.trackEvent("page_dwell", {
         page_name: this._currentPage,
-        dwell_time_ms: dwellTime,
+        dwell_time_min: dwellTimeMin,
       });
     }
 
