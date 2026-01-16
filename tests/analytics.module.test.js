@@ -310,7 +310,7 @@ describe("analytics.module.js - Analytics ES Module", () => {
       const dwellCall = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(dwellCall.events[0].name).toBe("page_dwell");
       expect(dwellCall.events[0].params.page_name).toBe("history");
-      expect(dwellCall.events[0].params.dwell_time_min).toBeCloseTo(5 / 60, 1);
+      expect(dwellCall.events[0].params.dwell_time_min).toBeCloseTo(5 / 60, 2);
     });
 
     test("should store _lastPage when trackPageView(null) is called", () => {
