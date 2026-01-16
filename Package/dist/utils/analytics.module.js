@@ -118,6 +118,14 @@ const Analytics = {
       });
     }
 
+    // If pageName is null, just end tracking (user left the page)
+    if (pageName === null) {
+      this._lastPage = this._currentPage; // Store for potential resume
+      this._currentPage = null;
+      this._pageStartTime = null;
+      return;
+    }
+
     // Track new page view and start timer
     this._currentPage = pageName;
     this._pageStartTime = Date.now();
@@ -126,6 +134,21 @@ const Analytics = {
       page_name: pageName,
     });
   },
+
+  // Handle visibility change - called when tab becomes hidden/visible
+  handleVisibilityChange(isVisible) {
+    if (!isVisible) {
+      // Tab became hidden - end current tracking
+      this.trackPageView(null);
+    } else if (this._currentPage === null && this._lastPage) {
+      // Tab became visible again - restart tracking for the same page
+      this._currentPage = this._lastPage;
+      this._pageStartTime = Date.now();
+    }
+  },
+
+  // Store last page for resuming
+  _lastPage: null,
 
   // Track keyboard shortcut usage (service worker only)
   trackShortcut(shortcutName) {

@@ -253,6 +253,13 @@ describe("analytics.module.js - Analytics ES Module", () => {
   // ============================================================================
 
   describe("trackPageView", () => {
+    beforeEach(() => {
+      // Reset page tracking state before each test
+      Analytics._currentPage = null;
+      Analytics._pageStartTime = null;
+      Analytics._lastPage = null;
+    });
+
     test("should track page_view event", async () => {
       Analytics.trackPageView("history");
 
@@ -272,6 +279,180 @@ describe("analytics.module.js - Analytics ES Module", () => {
       const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
 
       expect(requestBody.events[0].params.page_name).toBe("favorites");
+    });
+
+    test("should set _currentPage and _pageStartTime when tracking a page", () => {
+      const beforeTime = Date.now();
+      Analytics.trackPageView("history");
+      const afterTime = Date.now();
+
+      expect(Analytics._currentPage).toBe("history");
+      expect(Analytics._pageStartTime).toBeGreaterThanOrEqual(beforeTime);
+      expect(Analytics._pageStartTime).toBeLessThanOrEqual(afterTime);
+    });
+
+    test("should send page_dwell event when switching pages", async () => {
+      // First page view
+      Analytics.trackPageView("history");
+      await flushPromises();
+      mockFetch.mockClear();
+
+      // Simulate time passing
+      Analytics._pageStartTime = Date.now() - 5000; // 5 seconds ago
+
+      // Switch to another page
+      Analytics.trackPageView("favorites");
+      await flushPromises();
+
+      // Should have sent page_dwell for "history" and page_view for "favorites"
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      const dwellCall = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(dwellCall.events[0].name).toBe("page_dwell");
+      expect(dwellCall.events[0].params.page_name).toBe("history");
+      expect(dwellCall.events[0].params.dwell_time_min).toBeCloseTo(5 / 60, 2);
+    });
+
+    test("should store _lastPage when trackPageView(null) is called", () => {
+      Analytics.trackPageView("history");
+      Analytics.trackPageView(null);
+
+      expect(Analytics._lastPage).toBe("history");
+      expect(Analytics._currentPage).toBeNull();
+      expect(Analytics._pageStartTime).toBeNull();
+    });
+
+    test("should send page_dwell when trackPageView(null) is called", async () => {
+      Analytics.trackPageView("gemini");
+      await flushPromises();
+      mockFetch.mockClear();
+
+      // Simulate time passing
+      Analytics._pageStartTime = Date.now() - 3000; // 3 seconds ago
+
+      Analytics.trackPageView(null);
+      await flushPromises();
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const dwellCall = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(dwellCall.events[0].name).toBe("page_dwell");
+      expect(dwellCall.events[0].params.page_name).toBe("gemini");
+    });
+
+    test("should not send page_view event when trackPageView(null) is called", async () => {
+      Analytics.trackPageView("history");
+      await flushPromises();
+      mockFetch.mockClear();
+
+      Analytics._pageStartTime = Date.now() - 1000;
+      Analytics.trackPageView(null);
+      await flushPromises();
+
+      // Only page_dwell should be sent, no page_view
+      const calls = mockFetch.mock.calls.map((call) => JSON.parse(call[1].body));
+      const pageViewCalls = calls.filter((c) => c.events[0].name === "page_view");
+      expect(pageViewCalls).toHaveLength(0);
+    });
+  });
+
+  // ============================================================================
+  // handleVisibilityChange Tests
+  // ============================================================================
+
+  describe("handleVisibilityChange", () => {
+    beforeEach(() => {
+      // Reset page tracking state before each test
+      Analytics._currentPage = null;
+      Analytics._pageStartTime = null;
+      Analytics._lastPage = null;
+    });
+
+    test("should expose handleVisibilityChange method", () => {
+      expect(typeof Analytics.handleVisibilityChange).toBe("function");
+    });
+
+    test("should call trackPageView(null) when visibility becomes hidden", async () => {
+      Analytics.trackPageView("history");
+      await flushPromises();
+      mockFetch.mockClear();
+
+      Analytics._pageStartTime = Date.now() - 2000;
+      Analytics.handleVisibilityChange(false);
+      await flushPromises();
+
+      expect(mockFetch).toHaveBeenCalled();
+      const dwellCall = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(dwellCall.events[0].name).toBe("page_dwell");
+    });
+
+    test("should store lastPage when tab becomes hidden", () => {
+      Analytics.trackPageView("favorites");
+      Analytics.handleVisibilityChange(false);
+
+      expect(Analytics._lastPage).toBe("favorites");
+      expect(Analytics._currentPage).toBeNull();
+    });
+
+    test("should resume tracking when tab becomes visible again", () => {
+      // Setup: page was being tracked, then hidden
+      Analytics._currentPage = null;
+      Analytics._lastPage = "history";
+      Analytics._pageStartTime = null;
+
+      const beforeTime = Date.now();
+      Analytics.handleVisibilityChange(true);
+      const afterTime = Date.now();
+
+      expect(Analytics._currentPage).toBe("history");
+      expect(Analytics._pageStartTime).toBeGreaterThanOrEqual(beforeTime);
+      expect(Analytics._pageStartTime).toBeLessThanOrEqual(afterTime);
+    });
+
+    test("should not resume if there is no lastPage", () => {
+      Analytics._currentPage = null;
+      Analytics._lastPage = null;
+      Analytics._pageStartTime = null;
+
+      Analytics.handleVisibilityChange(true);
+
+      expect(Analytics._currentPage).toBeNull();
+      expect(Analytics._pageStartTime).toBeNull();
+    });
+
+    test("should not affect tracking if already visible and tracking", () => {
+      Analytics.trackPageView("gemini");
+      const originalStartTime = Analytics._pageStartTime;
+
+      // Simulate visible event when already visible
+      Analytics.handleVisibilityChange(true);
+
+      // Should not change anything since _currentPage is not null
+      expect(Analytics._currentPage).toBe("gemini");
+      expect(Analytics._pageStartTime).toBe(originalStartTime);
+    });
+
+    test("should handle rapid visibility changes correctly", async () => {
+      Analytics.trackPageView("history");
+      await flushPromises();
+
+      // Hidden
+      Analytics._pageStartTime = Date.now() - 1000;
+      Analytics.handleVisibilityChange(false);
+
+      expect(Analytics._lastPage).toBe("history");
+      expect(Analytics._currentPage).toBeNull();
+
+      // Visible again
+      Analytics.handleVisibilityChange(true);
+
+      expect(Analytics._currentPage).toBe("history");
+      expect(Analytics._pageStartTime).not.toBeNull();
+
+      // Hidden again
+      Analytics.handleVisibilityChange(false);
+
+      expect(Analytics._lastPage).toBe("history");
+      expect(Analytics._currentPage).toBeNull();
     });
   });
 

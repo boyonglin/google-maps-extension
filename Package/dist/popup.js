@@ -150,6 +150,15 @@ document.addEventListener("DOMContentLoaded", () => {
   initializePopup();
 });
 
+// Track dwell time based on tab visibility
+// When user switches to another tab, end the current page tracking
+// When user comes back, restart tracking for the same page
+document.addEventListener("visibilitychange", () => {
+  if (window.Analytics) {
+    window.Analytics.handleVisibilityChange(document.visibilityState === "visible");
+  }
+});
+
 document.addEventListener("readystatechange", () => {
   if (document.readyState === "complete") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -164,6 +173,11 @@ document.addEventListener("readystatechange", () => {
 function popupLayout() {
   showPage("history");
   checkTextOverflow();
+
+  // Track initial page view when popup opens
+  if (window.Analytics) {
+    window.Analytics.trackPageView("history");
+  }
 }
 
 // Check if the text overflows the button since locale
