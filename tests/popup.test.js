@@ -394,7 +394,7 @@ describe("popup.js", () => {
         return true;
       });
 
-      const result = await popup.getWarmState(1); // Only 1 retry
+      const result = await popup.getWarmState(0); // 0 retries = single attempt only
 
       expect(result).toEqual({});
     });
