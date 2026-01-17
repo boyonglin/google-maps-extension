@@ -33,6 +33,7 @@ global.TextDecoder = TextDecoder;
 // Mock Chrome API
 global.chrome = {
   runtime: {
+    id: "mock-extension-id",
     sendMessage: jest.fn(),
     onMessage: {
       addListener: jest.fn(),
