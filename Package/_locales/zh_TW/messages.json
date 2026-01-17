@@ -18,22 +18,22 @@
     "message": "地點摘要"
   },
   "historyEmptyMsg": {
-    "message": "反白文字並快速搜尋！\n你的搜尋記錄會保存在這裡\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "反白文字並快速搜尋！\n你的搜尋記錄會保存在這裡\uD83D\uDC4C\uD83C\uDFFC"
   },
   "favoriteEmptyMsg": {
-    "message": "點擊搜尋記錄的加號圖標！\n將地點無限制地加入收藏清單\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "點擊搜尋記錄的加號圖標！\n將地點無限制地加入收藏清單\uD83D\uDC4C\uD83C\uDFFC"
   },
   "importErrorMsg": {
     "message": "出錯了！\n請確認 .json 文件是否正確後重試\ud83d\udea7"
   },
   "clearedUpMsg": {
-    "message": "\n清除完畢！\uD83D\uDC4D\uD83C\uDFFD"
+    "message": "\n清除完畢！\uD83D\uDC4D\uD83C\uDFFC"
   },
   "geminiFirstMsg": {
     "message": "試試用 AI 來摘要地點！\n你可以從下方設定你的 API 金鑰開始"
   },
   "geminiEmptyMsg": {
-    "message": "試試用 AI 來摘要地點！\n如果結果不符合預期你可以重新生成\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "試試用 AI 來摘要地點！\n如果結果不符合預期你可以重新生成\uD83D\uDC4C\uD83C\uDFFC"
   },
   "geminiLoadMsg": {
     "message": "把海當作零食配著，\n等待就變浪漫了...（約 NaN 秒）"

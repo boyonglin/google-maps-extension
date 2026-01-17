@@ -18,22 +18,22 @@
     "message": "場所要約"
   },
   "historyEmptyMsg": {
-    "message": "文字をハイライトしてクイック検索！\n検索記録はここに保存されます\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "文字をハイライトしてクイック検索！\n検索記録はここに保存されます\uD83D\uDC4C\uD83C\uDFFC"
   },
   "favoriteEmptyMsg": {
-    "message": "検索履歴のプラスアイコンをクリック！\n場所を無制限にお気に入りに追加できます\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "検索履歴のプラスアイコンをクリック！\n場所を無制限にお気に入りに追加できます\uD83D\uDC4C\uD83C\uDFFC"
   },
   "importErrorMsg": {
     "message": "エラーが発生しました！\n.json ファイルを確認して再試行してください\ud83d\udea7"
   },
   "clearedUpMsg": {
-    "message": "\nクリア完了！\uD83D\uDC4D\uD83C\uDFFD"
+    "message": "\nクリア完了！\uD83D\uDC4D\uD83C\uDFFC"
   },
   "geminiFirstMsg": {
     "message": "AI で場所の要約を試してみてください！\n下の設定から API キーを設定して始めます"
   },
   "geminiEmptyMsg": {
-    "message": "AI で場所の要約を試してみてください！\n結果が期待に合わない場合は再生成できます\uD83D\uDC4C\uD83C\uDFFD"
+    "message": "AI で場所の要約を試してみてください！\n結果が期待に合わない場合は再生成できます\uD83D\uDC4C\uD83C\uDFFC"
   },
   "geminiLoadMsg": {
     "message": "海をおやつのようにして、\n待つことがロマンチックになる...（約 NaN 秒）"

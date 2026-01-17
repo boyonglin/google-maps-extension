@@ -24,11 +24,11 @@
     "description": "popup gemini summary subtitle"
   },
   "historyEmptyMsg": {
-    "message": "Highlight the text and search!\nYour search history will be kept here.\uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Highlight the text and search!\nYour search history will be kept here.\uD83D\uDC4C\uD83C\uDFFC",
     "description": "popup no search history message"
   },
   "favoriteEmptyMsg": {
-    "message": "Click plus icon in the history to save!\nYour favorite spots can be saved without limits.\uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Click plus icon in the history to save!\nYour favorite spots can be saved without limits.\uD83D\uDC4C\uD83C\uDFFC",
     "description": "popup no favorite list message"
   },
   "importErrorMsg": {
@@ -36,7 +36,7 @@
     "description": "popup import error message"
   },
   "clearedUpMsg": {
-    "message": "\nCleared up! \uD83D\uDC4D\uD83C\uDFFD",
+    "message": "\nCleared up! \uD83D\uDC4D\uD83C\uDFFC",
     "description": "popup cleared up message"
   },
   "geminiFirstMsg": {
@@ -44,7 +44,7 @@
     "description": "popup first gemini summary message"
   },
   "geminiEmptyMsg": {
-    "message": "Try summarizing the page with AI!\nYou can regenerate if results are unexpected.\uD83D\uDC4C\uD83C\uDFFD",
+    "message": "Try summarizing the page with AI!\nYou can regenerate if results are unexpected.\uD83D\uDC4C\uD83C\uDFFC",
     "description": "popup no gemini summary message"
   },
   "geminiLoadMsg": {
