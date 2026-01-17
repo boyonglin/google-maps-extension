@@ -11,6 +11,7 @@ const Analytics = {
   // Page view tracking state
   _currentPage: null,
   _pageStartTime: null,
+  _lastPage: null,
 
   // Get or create anonymous Client ID
   getOrCreateClientId() {
@@ -146,9 +147,6 @@ const Analytics = {
       this._pageStartTime = Date.now();
     }
   },
-
-  // Store last page for resuming
-  _lastPage: null,
 
   // Track keyboard shortcut usage (service worker only)
   trackShortcut(shortcutName) {

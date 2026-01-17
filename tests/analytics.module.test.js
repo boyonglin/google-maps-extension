@@ -272,13 +272,13 @@ describe("analytics.module.js - Analytics ES Module", () => {
     });
 
     test("should include page_name in params", async () => {
-      Analytics.trackPageView("favorites");
+      Analytics.trackPageView("favorite");
 
       await flushPromises();
 
       const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
 
-      expect(requestBody.events[0].params.page_name).toBe("favorites");
+      expect(requestBody.events[0].params.page_name).toBe("favorite");
     });
 
     test("should set _currentPage and _pageStartTime when tracking a page", () => {
@@ -301,10 +301,10 @@ describe("analytics.module.js - Analytics ES Module", () => {
       Analytics._pageStartTime = Date.now() - 5000; // 5 seconds ago
 
       // Switch to another page
-      Analytics.trackPageView("favorites");
+      Analytics.trackPageView("favorite");
       await flushPromises();
 
-      // Should have sent page_dwell for "history" and page_view for "favorites"
+      // Should have sent page_dwell for "history" and page_view for "favorite"
       expect(mockFetch).toHaveBeenCalledTimes(2);
 
       const dwellCall = JSON.parse(mockFetch.mock.calls[0][1].body);
@@ -386,10 +386,10 @@ describe("analytics.module.js - Analytics ES Module", () => {
     });
 
     test("should store lastPage when tab becomes hidden", () => {
-      Analytics.trackPageView("favorites");
+      Analytics.trackPageView("favorite");
       Analytics.handleVisibilityChange(false);
 
-      expect(Analytics._lastPage).toBe("favorites");
+      expect(Analytics._lastPage).toBe("favorite");
       expect(Analytics._currentPage).toBeNull();
     });
 
