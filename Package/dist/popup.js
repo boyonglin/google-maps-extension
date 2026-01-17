@@ -150,9 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initializePopup();
 });
 
-// Track dwell time based on tab visibility
-// When user switches to another tab, end the current page tracking
-// When user comes back, restart tracking for the same page
 document.addEventListener("visibilitychange", () => {
   if (window.Analytics) {
     window.Analytics.handleVisibilityChange(document.visibilityState === "visible");
@@ -174,7 +171,6 @@ function popupLayout() {
   showPage("history");
   checkTextOverflow();
 
-  // Track initial page view when popup opens
   if (window.Analytics) {
     window.Analytics.trackPageView("history");
   }
@@ -203,11 +199,41 @@ function checkTextOverflow() {
   }
 }
 
-async function getWarmState() {
+async function getWarmState(retries = 3, delay = 200) {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ action: "getWarmState" }, (state) => {
-      resolve(state ?? {});
-    });
+    if (!chrome.runtime?.id) {
+      resolve({});
+      return;
+    }
+
+    const maxDelay = 3000;
+    const backoffDelay = Math.min(delay * 2, maxDelay);
+
+    const timeout = setTimeout(() => {
+      if (retries > 0) {
+        resolve(getWarmState(retries - 1, backoffDelay));
+      } else {
+        resolve({});
+      }
+    }, delay);
+
+    try {
+      chrome.runtime.sendMessage({ action: "getWarmState" }, (state) => {
+        clearTimeout(timeout);
+        if (chrome.runtime.lastError) {
+          if (retries > 0) {
+            resolve(getWarmState(retries - 1, backoffDelay));
+          } else {
+            resolve({});
+          }
+        } else {
+          resolve(state ?? {});
+        }
+      });
+    } catch (e) {
+      clearTimeout(timeout);
+      resolve({});
+    }
   });
 }
 

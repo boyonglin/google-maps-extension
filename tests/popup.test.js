@@ -332,6 +332,72 @@ describe("popup.js", () => {
 
       expect(result).toEqual({});
     });
+
+    test("getWarmState returns empty object when extension context is invalid", async () => {
+      const originalId = chrome.runtime.id;
+      delete chrome.runtime.id;
+
+      const result = await popup.getWarmState();
+
+      expect(result).toEqual({});
+      chrome.runtime.id = originalId;
+    });
+
+    test("getWarmState retries on chrome.runtime.lastError", async () => {
+      let callCount = 0;
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getWarmState") {
+          callCount++;
+          if (callCount < 3) {
+            // Simulate async behavior with setTimeout to allow retry to work
+            setTimeout(() => {
+              Object.defineProperty(chrome.runtime, "lastError", {
+                value: { message: "Service worker not responding" },
+                configurable: true,
+              });
+              callback(null);
+              Object.defineProperty(chrome.runtime, "lastError", {
+                value: null,
+                configurable: true,
+              });
+            }, 0);
+          } else {
+            setTimeout(() => {
+              callback({ searchHistoryList: ["success"] });
+            }, 0);
+          }
+        }
+        return true;
+      });
+
+      const result = await popup.getWarmState();
+
+      expect(result).toEqual({ searchHistoryList: ["success"] });
+      expect(callCount).toBe(3);
+    });
+
+    test("getWarmState returns empty object after all retries exhausted", async () => {
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getWarmState") {
+          setTimeout(() => {
+            Object.defineProperty(chrome.runtime, "lastError", {
+              value: { message: "Service worker not responding" },
+              configurable: true,
+            });
+            callback(null);
+            Object.defineProperty(chrome.runtime, "lastError", {
+              value: null,
+              configurable: true,
+            });
+          }, 0);
+        }
+        return true;
+      });
+
+      const result = await popup.getWarmState(1); // Only 1 retry
+
+      expect(result).toEqual({});
+    });
   });
 
   describe("fetchData", () => {
