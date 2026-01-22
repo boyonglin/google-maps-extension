@@ -280,6 +280,7 @@ beforeEach(() => {
 // Console warnings/errors configuration
 const originalError = console.error;
 const originalWarn = console.warn;
+const originalLog = console.log;
 
 beforeAll(() => {
   // Suppress expected warnings in tests
@@ -309,9 +310,25 @@ beforeAll(() => {
     }
     originalWarn.call(console, ...args);
   });
+
+  // Suppress specific console.log output during tests (e.g., inject.js ASCII art)
+  console.log = jest.fn((...args) => {
+    const firstArg = String(args[0] ?? "");
+    // Filter out inject.js ASCII art banner and activation messages
+    if (
+      firstArg.includes("_____  _     ____") ||
+      firstArg.includes("| |\/|  / /\\  | |_)") ||
+      firstArg.includes("Activated -") ||
+      firstArg.includes("Deactivated -")
+    ) {
+      return;
+    }
+    originalLog.call(console, ...args);
+  });
 });
 
 afterAll(() => {
   console.error = originalError;
   console.warn = originalWarn;
+  console.log = originalLog;
 });

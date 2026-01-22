@@ -703,7 +703,7 @@ describe("background.js", () => {
 
     test("should handle auto-attach command for free user", async () => {
       const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const oldTrialStart = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
+      const oldTrialStart = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000); // 15 days ago
 
       ExtPay.mockExtPay.getUser.mockResolvedValue({
         paid: false,
@@ -1190,7 +1190,7 @@ describe("background.js", () => {
 
       await flushPromises();
 
-      expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalledWith("7-day");
+      expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalledWith("14-day");
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
         action: "consoleQuote",
         stage: "first",
@@ -1218,7 +1218,7 @@ describe("background.js", () => {
 
     test("should handle extPay action for expired trial user", async () => {
       const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const trialStart = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+      const trialStart = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
 
       ExtPay.mockExtPay.getUser.mockResolvedValue({
         paid: false,

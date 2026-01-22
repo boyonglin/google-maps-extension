@@ -592,7 +592,7 @@ function meow() {
 }
 
 // Payment system
-const trialPeriod = 7 * 24 * 60 * 60 * 1000; // 7 days
+const trialPeriod = 14 * 24 * 60 * 60 * 1000; // 14 days
 const extpay = ExtPay("the-maps-express");
 extpay.startBackground();
 
@@ -601,7 +601,7 @@ function handleExtensionPayment(user, sender) {
 
   // First time user
   if (!user.trialStartedAt) {
-    extpay.openTrialPage("7-day");
+    extpay.openTrialPage("14-day");
     chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "first" });
   }
 
