@@ -41,7 +41,7 @@ class ContextMenuUtil {
     contextMenu.appendChild(openAllOption);
 
     // Create "Tidy Locations" option with premium check
-    const canTidy = state.paymentStage.isTrial || state.paymentStage.isPremium;
+    const canTidy = state.paymentStage?.isTrial || state.paymentStage?.isPremium;
     const tidyLocationsOption = this.createOption(
       contextMenu,
       chrome.i18n.getMessage("tidyLocations"),

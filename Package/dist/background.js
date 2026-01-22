@@ -508,26 +508,24 @@ async function verifyApiKey(apiKey) {
 }
 
 function callApi(prompt, content, apiKey, sendResponse) {
-  const url = prompt.includes("Organize")
-    ? `${endpoint.replace("2.0", "2.5")}:generateContent`
-    : `${endpoint}:generateContent`;
-  const isYouTubeUri = content.includes("youtube.com") || content.includes("youtu.be");
+  const url = `${endpoint}:generateContent`;
 
-  const data = isYouTubeUri
-    ? {
-        contents: [
-          {
-            parts: [{ text: prompt }, { file_data: { file_uri: content.trim() } }],
-          },
-        ],
-      }
-    : {
-        contents: [
-          {
-            parts: [{ text: `${prompt}${content}` }],
-          },
-        ],
-      };
+  // 1. Build contents based on content type (YouTube URI vs plain text)
+  const isYouTubeUri = content.includes("youtube.com") || content.includes("youtu.be");
+  const contents = isYouTubeUri
+    ? [{ parts: [{ text: prompt }, { file_data: { file_uri: content.trim() } }] }]
+    : [{ parts: [{ text: `${prompt}${content}` }] }];
+
+  // 2. Build generationConfig based on task type (organize needs thinking, others need speed)
+  const needsThinking = prompt.includes("Organize");
+  const generationConfig = {
+    thinkingConfig: {
+      thinkingBudget: needsThinking ? -1 : 0,
+    },
+  };
+
+  // 3. Combine into request data
+  const data = { contents, generationConfig };
 
   fetch(url, {
     method: "POST",

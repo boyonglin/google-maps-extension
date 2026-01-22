@@ -24,7 +24,7 @@ sub-landmark-2    clue-2
 Here is the provided page content:
 `;
 
-const organizePrompt = `Organize the provided locations into 2-5 logical categories (from the list below) and verify. Respond with a JSON object in this format:
+const organizePrompt = `Use your dynamic thinking budget to analyze each location deeply and find the most accurate category. Verify every classification. Organize the provided locations into 2-5 logical categories (from the list below). Respond with a JSON object in this format:
 
 {
   "categories": [

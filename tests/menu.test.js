@@ -1313,9 +1313,10 @@ describe("ContextMenuUtil", () => {
       global.state.paymentStage = null;
       mockEvent.target.closest = jest.fn(() => mockListItems[0]);
 
+      // Should not throw - null paymentStage should be handled gracefully
       expect(() => {
         ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
-      }).toThrow();
+      }).not.toThrow();
     });
 
     test("should handle very long location names", () => {
