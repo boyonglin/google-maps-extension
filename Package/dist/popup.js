@@ -168,12 +168,30 @@ document.addEventListener("readystatechange", () => {
 
 // Update the popup layout
 function popupLayout() {
-  showPage("history");
-  checkTextOverflow();
+  chrome.storage.local.get("lastActiveTab", (result) => {
+    const lastTab = ["history", "favorite", "gemini"].includes(result?.lastActiveTab)
+      ? result.lastActiveTab
+      : "history";
 
-  if (window.Analytics) {
-    window.Analytics.trackPageView("history");
-  }
+    showPage(lastTab);
+    checkTextOverflow();
+
+    if (window.Analytics) {
+      window.Analytics.trackPageView(lastTab);
+    }
+
+    // Apply tab-specific initialization for restored tab
+    if (lastTab === "favorite") {
+      getWarmState().then(({ favoriteList = [] }) => {
+        favorite.updateFavorite(favoriteList);
+        state.hasFavorite = favoriteList.length > 0;
+        favoriteEmptyMessage.style.display = favoriteList.length ? "none" : "block";
+      });
+    } else if (lastTab === "gemini") {
+      deleteListButton.disabled = true;
+      gemini.clearExpiredSummary();
+    }
+  });
 }
 
 // Check if the text overflows the button since locale
@@ -381,6 +399,7 @@ optionalButton.addEventListener("click", () => {
 
 searchHistoryButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("history");
+  chrome.storage.local.set({ lastActiveTab: "history" });
   showPage("history");
 
   if (!state.hasHistory) {
@@ -399,6 +418,7 @@ searchHistoryButton.addEventListener("click", () => {
 
 favoriteListButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("favorite");
+  chrome.storage.local.set({ lastActiveTab: "favorite" });
   getWarmState().then(({ favoriteList = [] }) => {
     favorite.updateFavorite(favoriteList);
   });
@@ -419,6 +439,7 @@ favoriteListButton.addEventListener("click", () => {
 
 geminiSummaryButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("gemini");
+  chrome.storage.local.set({ lastActiveTab: "gemini" });
   showPage("gemini");
   deleteListButton.disabled = true;
 

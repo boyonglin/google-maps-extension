@@ -155,8 +155,12 @@ describe("popup.js", () => {
   });
 
   describe("popupLayout", () => {
-    test("popupLayout shows history page", () => {
+    test("popupLayout defaults to history page when no lastActiveTab saved", () => {
       popup.initializeDependencies({ state: mockState });
+
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({});
+      });
 
       popup.popupLayout();
 
@@ -167,8 +171,79 @@ describe("popup.js", () => {
       expect(historyElements[0].classList.contains("d-none")).toBe(false);
     });
 
+    test("popupLayout restores favorite tab from lastActiveTab", async () => {
+      popup.initializeDependencies({
+        state: mockState,
+        favorite: mockFavorite,
+        gemini: mockGemini,
+      });
+
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({ lastActiveTab: "favorite" });
+      });
+
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getWarmState") {
+          callback?.({ favoriteList: ["place1"] });
+        }
+        return true;
+      });
+
+      popup.popupLayout();
+
+      await flushPromises();
+
+      const favoriteListButton = document.getElementById("favoriteListButton");
+      expect(favoriteListButton.classList.contains("active-button")).toBe(true);
+
+      const favoriteElements = document.getElementsByClassName("page-F");
+      Array.from(favoriteElements).forEach((el) => {
+        expect(el.classList.contains("d-none")).toBe(false);
+      });
+
+      expect(mockFavorite.updateFavorite).toHaveBeenCalledWith(["place1"]);
+      expect(mockState.hasFavorite).toBe(true);
+    });
+
+    test("popupLayout restores gemini tab from lastActiveTab", () => {
+      popup.initializeDependencies({
+        state: mockState,
+        gemini: mockGemini,
+      });
+
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({ lastActiveTab: "gemini" });
+      });
+
+      popup.popupLayout();
+
+      const geminiSummaryButton = document.getElementById("geminiSummaryButton");
+      expect(geminiSummaryButton.classList.contains("active-button")).toBe(true);
+
+      const deleteListButton = document.getElementById("deleteListButton");
+      expect(deleteListButton.disabled).toBe(true);
+      expect(mockGemini.clearExpiredSummary).toHaveBeenCalled();
+    });
+
+    test("popupLayout ignores invalid lastActiveTab value", () => {
+      popup.initializeDependencies({ state: mockState });
+
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({ lastActiveTab: "invalid" });
+      });
+
+      popup.popupLayout();
+
+      const searchHistoryButton = document.getElementById("searchHistoryButton");
+      expect(searchHistoryButton.classList.contains("active-button")).toBe(true);
+    });
+
     test("popupLayout is exported and callable", () => {
       popup.initializeDependencies({ state: mockState });
+
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({});
+      });
 
       // Should not throw
       expect(() => popup.popupLayout()).not.toThrow();
@@ -1195,6 +1270,7 @@ describe("popup.js", () => {
 
       expect(deleteListButton.disabled).toBe(false);
       expect(mockRemove.updateInput).toHaveBeenCalled();
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ lastActiveTab: "history" });
     });
 
     test("searchHistoryButton click handles no history case", () => {
@@ -1232,6 +1308,7 @@ describe("popup.js", () => {
       expect(deleteListButton.disabled).toBe(false);
       expect(mockRemove.updateInput).toHaveBeenCalled();
       expect(mockState.favoriteListChanged).toBe(false);
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ lastActiveTab: "favorite" });
     });
 
     test("favoriteListButton click handles no favorites case", () => {
@@ -1262,6 +1339,7 @@ describe("popup.js", () => {
       expect(mockGemini.checkCurrentTabForYoutube).toHaveBeenCalled();
       expect(mockGemini.clearExpiredSummary).toHaveBeenCalled();
       expect(mockState.summaryListChanged).toBe(false);
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ lastActiveTab: "gemini" });
     });
   });
 
