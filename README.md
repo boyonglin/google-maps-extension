@@ -1,192 +1,309 @@
 <div align="center">
-  <img src="Package/images/icon-48.png" alt="The Maps Express Logo" width="48" />
-  <h1>The Maps Express</h1>
-  <p>Speed up your search flow to Google Maps!</p>
-  <p><em>Navigate places effortlessly with The Maps Express, experiencing rapid AI-integrated summaries or a single search key combination for minimal workflow disruption.</em></p>
-  <p>
-    <a href="https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic">
-      <img src="https://img.shields.io/badge/Google_chrome-4285F4?style=for-the-badge&logo=Google-chrome&logoColor=white" alt="Chrome Web Store" />
-    </a>&nbsp;&nbsp;
-    <a href="https://clancylin.gumroad.com/l/place-summary">
-      <img src="https://img.shields.io/badge/GUMROAD-36a9ae?style=for-the-badge&logo=gumroad&logoColor=white" alt="Gumroad" />
-    </a>
-  </p>
+
+# The Maps Express: AI-First Extension for Google Maps
+
+**A Shortcut to Google Maps, but Rich and Beautiful.**
+
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/lfkhadednlnfhmhagkhapejkhpjibaic?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic)
+[![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/lfkhadednlnfhmhagkhapejkhpjibaic)](https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/)
+[![Gemini](https://img.shields.io/badge/Gemini_Flash_(latest)-supported-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](../../issues)
+
+🌐 [English](README.md) | [繁體中文](README-multi-lan/README.zh-TW.md) | [日本語](README-multi-lan/README.ja.md)
+
+<a href="https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic">
+  <img src="https://img.shields.io/badge/Google_chrome-4285F4?style=for-the-badge&logo=Google-chrome&logoColor=white" alt="Chrome Web Store" />
+</a>&nbsp;&nbsp;
+<a href="https://clancylin.gumroad.com/l/place-summary">
+  <img src="https://img.shields.io/badge/GUMROAD-36A9AE?style=for-the-badge&logo=gumroad&logoColor=white" alt="Gumroad" />
+</a>&nbsp;&nbsp;
+<a href="https://bento-we-clancy.figma.site/the-maps-express">
+  <img src="https://img.shields.io/badge/Portfolio-768CFF?style=for-the-badge&logo=bento&logoColor=white" alt="Portfolio" />
+</a>
+
 </div>
 
 ---
 
-## 🚀 Introduction
-
-The Maps Express is a browser extension designed to streamline your interaction with Google Maps. Whether you're browsing articles, watching videos, or planning a trip, this tool helps you quickly search for locations, get directions, and manage your favorite places with minimal interruption to your workflow. With features like quick search shortcuts, AI-powered summaries, and seamless integration with Google My Maps, The Maps Express is the perfect companion for any avid map user.
-
-## ✨ Features
-
-### Action Features
-
-- **Quick Search**: Use shortcuts (`Ctrl+Shift+S` / `⌘+⇧+S`) or right-click on highlighted text to perform a quick search.
-- **Search Bar**: Open the extension's search bar with a shortcut (`Alt+Shift+S` / `⌥+⇧+S`) or by clicking the extension icon.
-- **Quick Directions**: Get directions instantly by right-clicking on highlighted text (`Alt+R` / `⌥+R`).
-
-### Database Features
-
-- **Search History**: Automatically saves your last 10 searches for quick access.
-- **Favorites List**: Save your favorite locations and import or export them as a CSV file.
-- **Delete Mode**: Easily manage and delete items from your history and favorites.
-
-### AI-Powered Features
-
-- **Place Summary**: Use the Gemini API to get AI-powered summaries of locations on the current page.
-- **Video Summary**: Summarize locations mentioned in videos, using the same AI-powered summary feature.
-- **Auto-attach Map Links**: Automatically detect and attach Google Maps links to place names on web pages.
+> A Chrome extension that **streamlines your Google Maps workflow** — search locations, get directions, and manage favorites with a **single shortcut** or right-click, plus **AI-powered place summaries** via Gemini.
+>
+> **No workflow disruption. No context switching. Just fast maps.**
 
 ---
 
-## 🎬 Usage Demo
+## Demo
 
-Check out our video demonstration on YouTube to see The Maps Express in action:
-[https://youtu.be/xv0tVQAi3qo](https://youtu.be/xv0tVQAi3qo)
+https://youtu.be/xv0tVQAi3qo
 
----
-
-## 🛠️ Installation and Setup
-
-### From the Chrome Web Store (Recommended)
-
-The easiest way to get started is to install The Maps Express directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic).
-
-### Local Development Setup
-
-If you want to develop and test your own version locally, follow these steps:
-
-1.  **Open Browser Extensions**: Navigate to your browser's extensions page and click "Manage extensions".<br>
-    <img src="https://github.com/user-attachments/assets/e311a046-bf94-42dc-9dc1-0bccfd65a5b0" width="300" alt="Manage extensions">
-
-2.  **Enable Developer Mode**: Toggle on "Developer mode".<br>
-    <img src="https://github.com/user-attachments/assets/cb3b89a0-de1b-4eb9-9742-c30a81d0bf8d" width="300" alt="Developer mode">
-
-3.  **Load Unpacked Extension**: Click "Load unpacked" and select the cloned project folder to complete the installation.<br>
-    <img src="https://github.com/user-attachments/assets/8aaa1b0e-caa1-41a2-b2c0-4ee3ccd35a53" width="600" alt="Load unpacked">
+<!-- If you have a gif/video file, you can embed it like this: -->
+<!-- https://github.com/user-attachments/assets/YOUR_VIDEO_ID -->
 
 ---
 
-## ⚙️ Configuration
+## Features at a Glance
+
+| Feature | Details |
+|---------|---------|
+| **Quick Search** | Highlight text + `Ctrl+Shift+S` / `⌘+⇧+S` or right-click → instant Google Maps search |
+| **Search Bar** | Open via `Alt+Shift+S` / `⌥+⇧+S` or click icon — search without leaving the page |
+| **Quick Directions** | Right-click highlighted text or press `Alt+R` / `⌥+R` → get directions instantly |
+| **Search History** | Auto-saves your last 10 searches for quick re-access |
+| **Favorites List** | Save, import, and export favorite locations as CSV — works with Google My Maps |
+| **Place Summary** | AI-powered summaries of locations on any page via Gemini Flash |
+| **Video Summary** | Extract and summarize locations mentioned in YouTube videos |
+| **Auto-attach Links** | Automatically detect place names on web pages and attach Google Maps links |
+| **3 UI languages** | English · 繁體中文 · 日本語 — auto-detected |
+| **Dark / Light theme** | Theme toggle following your preference |
+
+---
+
+## How It Works
+
+```
+You're browsing an article / watching a YouTube video / planning a trip
+        │
+        ▼
+Highlight a place name (or press the shortcut)
+        │
+        ├─→ Quick Search    → opens Google Maps in a grouped tab
+        ├─→ Quick Directions → opens Google Maps directions
+        └─→ Place Summary   → Gemini AI summarizes the location
+        │
+        ▼
+Search history auto-saved · ⭐ Favorite to your list
+        │
+        ▼
+Export favorites as CSV → import into Google My Maps
+        → Your personal map, built from any website
+```
+
+---
+
+## Installation
+
+### For Users — Chrome Web Store (Recommended)
+
+Install directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic).
+
+### For Developers — Local Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/boyonglin/google-maps-extension.git
+   cd google-maps-extension
+   npm install
+   ```
+
+2. Open Chrome → `chrome://extensions/`
+
+3. Toggle **Developer mode** on (top-right)
+
+4. Click **Load unpacked** → select the `Package/` folder
+
+<details>
+<summary>📸 Step-by-step screenshots</summary>
+
+1. **Open Browser Extensions** → click "Manage extensions"<br>
+   <img src="https://github.com/user-attachments/assets/e311a046-bf94-42dc-9dc1-0bccfd65a5b0" width="300" alt="Manage extensions">
+
+2. **Enable Developer Mode**<br>
+   <img src="https://github.com/user-attachments/assets/cb3b89a0-de1b-4eb9-9742-c30a81d0bf8d" width="300" alt="Developer mode">
+
+3. **Load Unpacked** → select the project folder<br>
+   <img src="https://github.com/user-attachments/assets/8aaa1b0e-caa1-41a2-b2c0-4ee3ccd35a53" width="600" alt="Load unpacked">
+
+</details>
+
+> After any code change: click **Reload** on the extension card in `chrome://extensions/`, then refresh open tabs.
+
+---
+
+## Configuration
 
 ### Keyboard Shortcuts
 
-To customize the default shortcuts:
+| Action | Default Shortcut | Mac Shortcut |
+|--------|-----------------|--------------|
+| Quick Search | `Ctrl+Shift+S` | `⌘+⇧+S` |
+| Open Search Bar | `Alt+Shift+S` | `⌥+⇧+S` |
+| Auto-attach Links | `Alt+S` | `⌥+S` |
+| Quick Directions | `Alt+R` | `⌥+R` |
 
-1.  **Open Extensions Page**: Go to the browser extensions page and click "Manage extensions".<br>
-    <img src="https://github.com/user-attachments/assets/15098f34-61ff-4572-9ccd-18e16145c07c" width="300" alt="Manage extensions">
+To customize shortcuts:
 
-2.  **Select Keyboard Shortcuts**:<br>
-    <img src="https://github.com/user-attachments/assets/53fb340c-f558-408b-a720-63e133df0a80" width="300" alt="Keyboard shortcuts">
+<details>
+<summary>📸 How to change shortcuts</summary>
 
-3.  **Set Your Shortcut**: Click the input field and type your desired key combination.<br>
-    <img src="https://github.com/user-attachments/assets/f43d74c4-00d3-4954-be29-10299a8aef5a" width="600" alt="Type the shortcut">
+1. Go to extensions page → "Manage extensions"<br>
+   <img src="https://github.com/user-attachments/assets/15098f34-61ff-4572-9ccd-18e16145c07c" width="300" alt="Manage extensions">
 
-4.  **Set to Global (Optional)**: Change the shortcut scope to "Global" if you want to use it outside of the browser window.<br>
-    <img src="https://github.com/user-attachments/assets/9adf849e-a0d6-4a30-be01-048c6f3dae94" width="600" alt="Shortcut level">
+2. Select **Keyboard Shortcuts**<br>
+   <img src="https://github.com/user-attachments/assets/53fb340c-f558-408b-a720-63e133df0a80" width="300" alt="Keyboard shortcuts">
 
-### Gemini API for AI Features
+3. Click the input field and set your desired key<br>
+   <img src="https://github.com/user-attachments/assets/f43d74c4-00d3-4954-be29-10299a8aef5a" width="600" alt="Type the shortcut">
 
-To enable the Place Summary and Video Summary features, you'll need a Gemini API key:
+4. *(Optional)* Change scope to "Global" for use outside the browser<br>
+   <img src="https://github.com/user-attachments/assets/9adf849e-a0d6-4a30-be01-048c6f3dae94" width="600" alt="Shortcut level">
 
-1.  **Sign in to Google AI Studio**: Go to [Google AI Studio](https://aistudio.google.com/) and sign in.
-2.  **Consent to Terms**: Agree to the legal notice to continue.<br>
-    <img src="https://github.com/user-attachments/assets/1d11ecdb-80eb-474b-a317-57e367640b15" width="300">
+</details>
 
-3.  **Create API Key**:<br>
-    <img src="https://github.com/user-attachments/assets/513df341-b13b-4c06-a4c4-a4cf2f9a68fb" width="600">
+### Gemini API Key (for AI Features)
 
-4.  **Create API Key in a New Project**:<br>
-    <img src="https://github.com/user-attachments/assets/d6e1c5a2-779e-4cd4-9991-37276ed36e5f" width="300">
+To enable **Place Summary** and **Video Summary**, you need a free Gemini API key:
 
-5.  **Copy Your Key**: Copy the generated API key and paste it into the extension's settings.<br>
-    <img src="https://github.com/user-attachments/assets/ab26eef7-4ff1-4a73-8eae-81cb2cbba6ae" width="600">
+1. Go to [Google AI Studio](https://aistudio.google.com/) and sign in
+2. Agree to the terms of service
+3. Click **Create API Key** → select a project
+4. Copy the key and paste it into the extension's settings
 
----
+<details>
+<summary>📸 Step-by-step screenshots</summary>
 
-## 🗺️ How to Use with Google My Maps
+1. **Consent to Terms**<br>
+   <img src="https://github.com/user-attachments/assets/1d11ecdb-80eb-474b-a317-57e367640b15" width="300">
 
-You can export your favorite places as a CSV file and import them into Google My Maps:
+2. **Create API Key**<br>
+   <img src="https://github.com/user-attachments/assets/513df341-b13b-4c06-a4c4-a4cf2f9a68fb" width="600">
 
-1.  **Open My Maps**: In Google Maps, go to "Your places" > "Maps" and click "Create Map".<br>
-    <img src="https://github.com/user-attachments/assets/4eeed4e8-a8b7-4ce7-a5ec-8439305168d0" width="300">
+3. **Select a New Project**<br>
+   <img src="https://github.com/user-attachments/assets/d6e1c5a2-779e-4cd4-9991-37276ed36e5f" width="300">
 
-2.  **Create a New Map**:<br>
-    <img src="https://github.com/user-attachments/assets/08be46cb-b370-4c6f-add7-33f334fbb40d" width="300">
+4. **Copy Your Key**<br>
+   <img src="https://github.com/user-attachments/assets/ab26eef7-4ff1-4a73-8eae-81cb2cbba6ae" width="600">
 
-3.  **Import Data**: Click the "Import" button.<br>
-    <img src="https://github.com/user-attachments/assets/2b1b54c6-b5b2-4f73-bdc0-9750cdbe8a70" width="300">
-
-4.  **Choose CSV File**: Select the CSV file you exported from the extension.<br>
-    <img src="https://github.com/user-attachments/assets/c5f0f043-262f-4611-8b28-4a3247d202b3" width="300">
-
-5.  **Select Columns**: Choose the columns to position your placemarks (default is "name").<br>
-    <img src="https://github.com/user-attachments/assets/04450982-6066-4228-b6b4-f04dc1914ac9" width="300">
-
-6.  **Finish**: Complete the import process.<br>
-    <img src="https://github.com/user-attachments/assets/d3d1f2fb-360e-4239-b8de-2ebec557ed16" width="300">
+</details>
 
 ---
 
-## 🛠️ Tech Stack
+## Google My Maps Integration
 
--   **Manifest V3**
--   **Bootstrap 5.3.0**
--   **Gemini 2.0 Flash**
--   **ExtPay** (Payment Gateway)
--   **localStorage**
--   **HTML iframe**
--   **i18n** (Localization)
+Export your favorites as CSV and import them into Google My Maps to build a personal map:
+
+<details>
+<summary>📸 Step-by-step screenshots</summary>
+
+1. **Open My Maps**: Google Maps → "Your places" → "Maps" → "Create Map"<br>
+   <img src="https://github.com/user-attachments/assets/4eeed4e8-a8b7-4ce7-a5ec-8439305168d0" width="300">
+
+2. **Create a New Map**<br>
+   <img src="https://github.com/user-attachments/assets/08be46cb-b370-4c6f-add7-33f334fbb40d" width="300">
+
+3. **Import** → click "Import"<br>
+   <img src="https://github.com/user-attachments/assets/2b1b54c6-b5b2-4f73-bdc0-9750cdbe8a70" width="300">
+
+4. **Choose CSV File** exported from the extension<br>
+   <img src="https://github.com/user-attachments/assets/c5f0f043-262f-4611-8b28-4a3247d202b3" width="300">
+
+5. **Select Columns** to position placemarks (default: "name")<br>
+   <img src="https://github.com/user-attachments/assets/04450982-6066-4228-b6b4-f04dc1914ac9" width="300">
+
+6. **Done!**<br>
+   <img src="https://github.com/user-attachments/assets/d3d1f2fb-360e-4239-b8de-2ebec557ed16" width="300">
+
+</details>
 
 ---
 
-## 📂 Project Structure
+## Privacy & Security
+
+| Question | Answer |
+|----------|--------|
+| Where is data stored? | **Browser-local `localStorage` only** — never leaves your device |
+| Does it make network requests? | Only for Gemini API calls (when you use AI features) and ExtPay (payment). No tracking or telemetry on your search data. |
+| Can websites see my data? | No. Data is isolated in the extension's storage, inaccessible to page scripts. |
+| Can I delete my data? | Yes — delete individual items via the popup, or clear all via browser settings. |
+
+> **Your searches, favorites, and history stay on your device.** The extension only calls external APIs when you explicitly use AI summary features.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Extension framework | Chrome Manifest V3 |
+| UI | HTML + Bootstrap 5.3 + SCSS |
+| AI | Gemini Flash API (`gemini-flash-latest`) |
+| Payment | ExtPay |
+| Persistence | `localStorage` |
+| Localization | Chrome i18n (en · zh-TW · ja) |
+| Testing | Jest + jsdom |
+
+<details>
+<summary><strong>📂 Project Structure</strong></summary>
 
 ```
 .
 ├── Package/
-│   ├── _locales/           # Localization (en, zh_TW, ja)
-│   ├── css/
+│   ├── _locales/              # i18n (en, zh_TW, ja)
+│   ├── css/                   # Compiled CSS
 │   ├── dist/
-│   │   ├── components/     # Modular components
-│   │   ├── hooks/          # Custom hooks
-│   │   ├── utils/          # Utility functions
-│   │   └── *.js            # Main scripts
-│   ├── images/             # Icons and assets
-│   ├── vendor/             # 3rd-party libraries
-│   ├── manifest.json       # Extension configuration
-│   └── popup.html          # Popup interface
-├── scss/                   # Style sources
-└── tests/                  # Unit tests
+│   │   ├── components/        # Modular UI components
+│   │   ├── hooks/             # Custom hooks
+│   │   ├── utils/             # Utility functions
+│   │   ├── background.js      # Service worker
+│   │   ├── contentScript.js   # Content script
+│   │   └── popup.js           # Popup logic
+│   ├── images/                # Icons and assets
+│   ├── vendor/                # 3rd-party libraries (Bootstrap, etc.)
+│   ├── manifest.json          # Extension configuration
+│   └── popup.html             # Popup interface
+├── scss/                      # SCSS source files
+├── tests/                     # Unit tests (Jest)
+├── jest.config.js
+└── package.json
+```
+
+</details>
+
+---
+
+## Debugging & Testing
+
+| Target | How to reach it |
+|--------|----------------|
+| Background Service Worker | `chrome://extensions/` → The Maps Express → **Service worker** |
+| Popup | Right-click extension icon → **Inspect popup** |
+| Content scripts | DevTools → Sources → Content scripts |
+| localStorage | DevTools → Application → Local Storage |
+
+```bash
+npm test              # Run all unit tests
+npm run test:watch    # Watch mode
+npm run test:coverage # Coverage report
 ```
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! If you have ideas for new features, improvements, or bug fixes, please open an issue to discuss it first. If you'd like to contribute code, please fork the repository and submit a pull request.
+PRs and issues are welcome! Please open an issue to discuss significant changes before submitting a PR.
 
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
+- Bug reports: [open an issue](../../issues)
+- Feature requests: [open an issue](../../issues)
+- Code contributions: fork → branch → PR
 
 ---
 
-## 📚 References
+## License
 
--   [Extensions - Chrome for Developers](https://developer.chrome.com/docs/extensions/)
--   [Chrome Extension 開發與實作 - 羅拉拉](https://ithelp.ithome.com.tw/articles/10186017)
--   [Localizing Your Chrome Extension - Shahed Nasser](https://levelup.gitconnected.com/localizing-your-chrome-extension-an-easy-tutorial-b0892e225576)
--   [簡單用 Chrome Extension 接 Gemini API - Wolke](https://wolkesau.medium.com/簡單用-chrome-extension-接-gemini-api-下-prompt-就能實作文章摘要工具參加-google-百萬美金挑戰賽-ac2adda60c6f)
--   [Prism - Redline Tool](https://chromewebstore.google.com/detail/prism-redline-tool/hkbhjllliedcceblibllaodamehmbfgm)
+[MIT](LICENSE) © 2023–2026 Clancy Lin
 
 ---
 
-## ✨ Contributors
+## References
 
--   Chin-Hsuan Sun
--   Michael Wu
+- [Chrome Extensions Documentation](https://developer.chrome.com/docs/extensions/)
+- [Chrome Extension 開發與實作 — 羅拉拉](https://ithelp.ithome.com.tw/articles/10186017)
+- [Localizing Your Chrome Extension — Shahed Nasser](https://levelup.gitconnected.com/localizing-your-chrome-extension-an-easy-tutorial-b0892e225576)
+- [簡單用 Chrome Extension 接 Gemini API — Wolke](https://wolkesau.medium.com/簡單用-chrome-extension-接-gemini-api-下-prompt-就能實作文章摘要工具參加-google-百萬美金挑戰賽-ac2adda60c6f)
+
+---
+
+## Contributors
+
+- Chin-Hsuan Sun
+- Michael Wu
