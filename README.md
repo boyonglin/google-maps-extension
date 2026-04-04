@@ -226,7 +226,7 @@ Export your favorites as CSV and import them into Google My Maps to build a pers
 |-------|------------|
 | Extension framework | Chrome Manifest V3 |
 | UI | HTML + Bootstrap 5.3 + SCSS |
-| AI | Gemini Flash API (`gemini-flash-latest`) |
+| AI | Gemini Flash API (`gemini-3.1-flash-lite-preview`) |
 | Payment | ExtPay |
 | Persistence | `localStorage` |
 | Localization | Chrome i18n (en · zh-TW · ja) |

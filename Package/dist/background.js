@@ -498,7 +498,8 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 });
 
-const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest";
+const endpoint =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview";
 
 async function verifyApiKey(apiKey) {
   const res = await fetch(endpoint, {
