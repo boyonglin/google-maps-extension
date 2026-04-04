@@ -386,6 +386,9 @@ class Gemini {
   }
 
   createSummaryList(response) {
+    document.documentElement.classList.add("no-expand-scroll");
+    summaryListContainer.classList.add("no-expand-scroll");
+
     summaryListContainer.innerHTML = response;
     const lastListItem = summaryListContainer.querySelector(
       ".list-group .list-group-item:last-child"
@@ -402,6 +405,11 @@ class Gemini {
 
     checkTextOverflow();
     measureContentSize(true);
+
+    setTimeout(() => {
+      document.documentElement.classList.remove("no-expand-scroll");
+      summaryListContainer.classList.remove("no-expand-scroll");
+    }, 400);
 
     // store the response and current time
     const listItems = document.querySelectorAll(".summary-list");

@@ -759,6 +759,13 @@ li:hover .form-check-input {
   border-radius: 0.5rem;
 }
 
+html.no-expand-scroll, html.no-expand-scroll body {
+  scrollbar-width: none;
+}
+html.no-expand-scroll::-webkit-scrollbar, html.no-expand-scroll body::-webkit-scrollbar {
+  display: none;
+}
+
 /* context menu */
 .context-menu {
   background-color: var(--background-color);

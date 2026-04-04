@@ -795,6 +795,16 @@ li:hover .form-check-input {
   border-radius: 0.5rem;
 }
 
+html.no-expand-scroll {
+  &,
+  & body {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
 /* context menu */
 
 .context-menu {
