@@ -44,6 +44,7 @@ global.chrome = {
     },
     lastError: null,
     getURL: jest.fn((path) => `chrome-extension://mock-id/${path}`),
+    getManifest: jest.fn(() => ({ version: "1.0.0" })),
   },
   storage: {
     local: {

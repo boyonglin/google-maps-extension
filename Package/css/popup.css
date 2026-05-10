@@ -426,6 +426,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 300;
 }
 .language-dropdown .language-dropdown-caret {
   color: var(--gray-600);
@@ -907,11 +908,17 @@ li:hover .form-check-input {
 .onboarding-skip {
   color: var(--gray-500) !important;
   text-decoration: none;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0;
 }
 
 .onboarding-next {
   padding: 0.25rem 0.875rem;
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+.onboarding-next:hover {
+  background-color: var(--primary-color-hover) !important;
+  border-color: var(--primary-color-hover) !important;
 }
 
 .onboarding-demo-item.history-list {

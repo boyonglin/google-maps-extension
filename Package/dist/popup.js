@@ -134,7 +134,6 @@ function initializePopup() {
   gemini.addGeminiPageListener();
   modal.addModalListener();
 
-  // Show first-time onboarding (no-op if already completed)
   if (onboarding && typeof onboarding.maybeStart === "function") {
     onboarding.maybeStart();
   }
@@ -167,7 +166,6 @@ document.addEventListener("readystatechange", () => {
   }
 });
 
-// Update the popup layout
 function popupLayout() {
   chrome.storage.local.get("lastActiveTab", (result) => {
     const lastTab = ["history", "favorite", "gemini"].includes(result?.lastActiveTab)
@@ -510,9 +508,16 @@ window.addEventListener("i18n:changed", () => {
     const v = chrome.i18n.getMessage(key);
     if (v) subtitleElement.textContent = v;
   }
-  // Re-measure after the new strings paint — translated text can change
-  // popup height and would otherwise trigger an outer scrollbar.
-  requestAnimationFrame(() => measureContentSize());
+  // Reset buttons to their default width
+  [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {
+    btn.classList.remove("w-auto");
+    btn.classList.add("w-25");
+  });
+  // Re-measure after the new strings paint
+  requestAnimationFrame(() => {
+    checkTextOverflow();
+    measureContentSize();
+  });
 });
 
 // Handle IME composition for CJK input
@@ -590,7 +595,6 @@ function measureContentSize(summary = false) {
   }
 }
 
-// If the focus tab is changed
 function measureContentSizeLast() {
   const { width: currentWidth, height: currentHeight } = currentDimensions();
 

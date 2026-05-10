@@ -6,6 +6,7 @@
   const STORAGE_KEY = "userLanguage";
   const MESSAGES_CACHE_KEY = "userLanguageMessages";
   const SUPPORTED_LANGUAGES = ["auto", "en", "ja", "zh_TW"];
+  const EXT_VERSION = chrome.runtime.getManifest().version;
 
   // Captured before wrapping so re-wrapping on language change is never needed.
   const originalGetMessage = chrome.i18n.getMessage.bind(chrome.i18n);
@@ -35,7 +36,10 @@
       if (!lang || lang === "auto" || !messages) {
         localStorage.removeItem(MESSAGES_CACHE_KEY);
       } else {
-        localStorage.setItem(MESSAGES_CACHE_KEY, JSON.stringify({ lang, messages }));
+        localStorage.setItem(
+          MESSAGES_CACHE_KEY,
+          JSON.stringify({ lang, version: EXT_VERSION, messages })
+        );
       }
     } catch (e) {}
   }
@@ -81,7 +85,8 @@
       return;
     }
     const cache = readMessagesCacheSync();
-    let messages = cache && cache.lang === lang ? cache.messages : null;
+    let messages =
+      cache && cache.lang === lang && cache.version === EXT_VERSION ? cache.messages : null;
     if (!messages) {
       messages = loadMessagesSync(lang);
       if (messages) writeMessagesCache(lang, messages);

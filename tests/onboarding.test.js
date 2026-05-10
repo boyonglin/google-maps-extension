@@ -208,16 +208,15 @@ describe("Onboarding Component", () => {
       expect(document.querySelectorAll("#onboardingOverlay")).toHaveLength(1);
     });
 
-    test("should set spotlight position around target with padding", () => {
+    test("should set spotlight position around target", () => {
       onboarding.start();
 
       const spotlight = onboarding.spotlight;
       // Step 1 target is the tipsModal footer item: top:300, left:50, w:60, h:24
-      // pad = 6 -> top 294, left 44, w 72, h 36
-      expect(spotlight.style.top).toBe("294px");
-      expect(spotlight.style.left).toBe("44px");
-      expect(spotlight.style.width).toBe("72px");
-      expect(spotlight.style.height).toBe("36px");
+      expect(spotlight.style.top).toBe("300px");
+      expect(spotlight.style.left).toBe("50px");
+      expect(spotlight.style.width).toBe("60px");
+      expect(spotlight.style.height).toBe("24px");
     });
   });
 

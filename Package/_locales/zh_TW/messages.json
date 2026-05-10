@@ -170,40 +170,40 @@
     "message": "恢復購買"
   },
   "onboardingHintsTitle": {
-    "message": "鍵盤快捷鍵"
+    "message": "快捷鍵一覽"
   },
   "onboardingHintsDesc": {
-    "message": "點開「提示」查看快捷鍵，例如 Ctrl+Shift+S 可立即搜尋 Google 地圖。"
+    "message": "按 Ctrl+Shift+S 立刻搜尋 Google 地圖，更多快捷鍵可在「提示」查看。"
   },
   "onboardingFavoriteTitle": {
-    "message": "把地點加入最愛"
+    "message": "收藏常去的地方"
   },
   "onboardingFavoriteDesc": {
-    "message": "點擊搜尋紀錄旁的 + 圖示，就能把地點加入最愛，之後一鍵快速開啟。"
+    "message": "點一下 + 圖示，地點存入最愛，下次一秒開啟。"
   },
   "onboardingDemoPlace": {
-    "message": "艾菲爾鐵塔"
+    "message": "台北101"
   },
   "onboardingApiTitle": {
     "message": "AI 地點摘要"
   },
   "onboardingApiDesc": {
-    "message": "點此設定免費的 Gemini API 金鑰，啟用 AI 地點摘要功能。"
+    "message": "填入免費的 Gemini API 金鑰，即可查看任何地點的 AI 整理重點。"
   },
   "onboardingPremiumTitle": {
-    "message": "高級功能"
+    "message": "40 天免費體驗"
   },
   "onboardingPremiumDesc": {
-    "message": "啟用 40 天免費試用，體驗自動附加連結等高級功能。"
+    "message": "試用自動附加連結等進階功能，免信用卡，無附加條件。"
   },
   "onboardingNextBtn": {
-    "message": "下一步"
+    "message": "繼續"
   },
   "onboardingSkipBtn": {
     "message": "略過"
   },
   "onboardingDoneBtn": {
-    "message": "完成"
+    "message": "知道了"
   },
   "firstNote": {
     "message": "透過 40 天的免費試用，體驗我們如何串聯你的網頁與 Google 地圖"

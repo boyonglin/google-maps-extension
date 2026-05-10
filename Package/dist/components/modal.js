@@ -54,7 +54,6 @@ class Modal {
   }
 
   _setupApiForm() {
-    // Save the API key
     document.getElementById("apiForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       if (window.Analytics) window.Analytics.trackFeatureClick("save_api_key", "apiForm");
@@ -255,6 +254,13 @@ class Modal {
 
     syncDropdownState(window.I18nUtils.getCurrentLanguage());
 
+    const optionalModal = document.getElementById("optionalModal");
+    if (optionalModal) {
+      optionalModal.addEventListener("show.bs.modal", () => {
+        syncDropdownState(window.I18nUtils.getCurrentLanguage(), false);
+      });
+    }
+
     items.forEach((item) => {
       item.addEventListener("click", async () => {
         const newLang = item.dataset.value;
@@ -320,7 +326,6 @@ class Modal {
     historyMaxInput.value = "";
   }
 
-  // Save history max value to storage
   _saveHistoryMax() {
     const inputValue = historyMaxInput.value || historyMaxInput.placeholder;
     const historyMax = parseInt(inputValue, 10);
@@ -335,11 +340,9 @@ class Modal {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("save_history_max", "historyMaxStepper");
     }
-    // Clear value after save, show as placeholder
     historyMaxInput.value = "";
   }
 
-  // Update toggle button UI state (modern toggle switch design)
   updateToggleUI(isActive, textSelector, iconSelector, toggleElement) {
     // Support for legacy text/icon toggle (if elements exist)
     const textEl = document.querySelector(textSelector);
@@ -353,7 +356,6 @@ class Modal {
     toggleElement.classList.toggle("toggle-active", isActive);
   }
 
-  // Hide submit and reset buttons for an input field
   _hideInputButtons(inputElement) {
     const submitButton = inputElement.parentElement.querySelector("button[type='submit']");
     const resetButton = inputElement.parentElement.querySelector(".btn-reset");
@@ -361,7 +363,6 @@ class Modal {
     if (resetButton) resetButton.classList.add("d-none");
   }
 
-  // Setup a toggle button with click handler
   _setupToggle(toggleElement, storageKey, onToggle) {
     toggleElement.addEventListener("click", () => {
       chrome.storage.local.get(storageKey, (result) => {
@@ -374,7 +375,6 @@ class Modal {
     });
   }
 
-  // Setup input field to show/hide submit button based on content (like search bar)
   _setupInputButtonToggle(inputElement) {
     const submitButton = inputElement.parentElement.querySelector("button[type='submit']");
     const resetButton = inputElement.parentElement.querySelector(".btn-reset");
@@ -396,7 +396,6 @@ class Modal {
     });
   }
 
-  // Setup reset button for an input field
   _setupResetButton(inputElement, storageKey, onReset, isNumeric = false) {
     const resetButton = inputElement.parentElement.querySelector(".btn-reset");
     if (!resetButton) return;
@@ -426,7 +425,6 @@ class Modal {
     });
   }
 
-  // Update reset buttons visibility based on current stored values
   _updateResetButtonsVisibility() {
     chrome.storage.local.get(["startAddr", "authUser"], (result) => {
       const dirResetButton = dirInput.parentElement.querySelector(".btn-reset");
@@ -444,7 +442,6 @@ class Modal {
     });
   }
 
-  // Update API reset button visibility based on stored API key
   _updateApiResetButtonVisibility() {
     chrome.storage.local.get(["geminiApiKey"], (result) => {
       const apiResetButton = apiInput.parentElement.querySelector(".btn-reset");

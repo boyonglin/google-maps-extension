@@ -173,28 +173,28 @@
     "message": "キーボードショートカット"
   },
   "onboardingHintsDesc": {
-    "message": "「ヒント」を開いて、Ctrl+Shift+S などのショートカットを確認しましょう。"
+    "message": "Ctrl+Shift+S で Google マップを即検索。ヒントですべてのショートカットを確認できます。"
   },
   "onboardingFavoriteTitle": {
-    "message": "場所をお気に入りに保存"
+    "message": "お気に入りに保存"
   },
   "onboardingFavoriteDesc": {
-    "message": "検索履歴の横にある + アイコンをタップすると、お気に入りに保存してあとですぐに開けます。"
+    "message": "検索結果の + をタップして即登録。次回から一発で開けます。"
   },
   "onboardingDemoPlace": {
-    "message": "エッフェル塔"
+    "message": "東京タワー"
   },
   "onboardingApiTitle": {
-    "message": "AI 場所サマリー"
+    "message": "AI でスポットを要約"
   },
   "onboardingApiDesc": {
-    "message": "ここから無料の Gemini API キーを設定して、AI による場所のサマリーを利用できます。"
+    "message": "無料の Gemini API キーを追加すると、検索した場所の AI 要約をすぐに確認できます。"
   },
   "onboardingPremiumTitle": {
-    "message": "プレミアム機能"
+    "message": "40 日間無料でお試し"
   },
   "onboardingPremiumDesc": {
-    "message": "40 日間の無料体験で、リンク自動添付などのプレミアム機能をお試しください。"
+    "message": "リンク自動添付などのプレミアム機能を、クレジットカード不要でお試しいただけます。"
   },
   "onboardingNextBtn": {
     "message": "次へ"
@@ -203,7 +203,7 @@
     "message": "スキップ"
   },
   "onboardingDoneBtn": {
-    "message": "完了"
+    "message": "OK"
   },
   "firstNote": {
     "message": "40 日間の無料体験で、Google マップとページの接続方法をご確認ください。"

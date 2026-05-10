@@ -230,19 +230,19 @@
     "description": "onboarding step 1 title"
   },
   "onboardingHintsDesc": {
-    "message": "Open Tips to view shortcuts like Ctrl+Shift+S for instant Google Maps search.",
+    "message": "Press Ctrl+Shift+S to search Google Maps instantly. Open Tips to see all shortcuts.",
     "description": "onboarding step 1 description"
   },
   "onboardingFavoriteTitle": {
-    "message": "Save places to favorites",
+    "message": "Save places instantly",
     "description": "onboarding favorite step title"
   },
   "onboardingFavoriteDesc": {
-    "message": "Tap the + icon next to any search result to save it to your favorites for quick access later.",
+    "message": "Hit + on any result to pin it as a favorite — one tap to open next time.",
     "description": "onboarding favorite step description"
   },
   "onboardingDemoPlace": {
-    "message": "Eiffel Tower",
+    "message": "Statue of Liberty",
     "description": "onboarding demo search history item label"
   },
   "onboardingApiTitle": {
@@ -250,15 +250,15 @@
     "description": "onboarding step 2 title"
   },
   "onboardingApiDesc": {
-    "message": "Click here to add a free Gemini API key and unlock AI-powered place summaries.",
+    "message": "Add a free Gemini API key to get AI-powered insights on any place you search.",
     "description": "onboarding step 2 description"
   },
   "onboardingPremiumTitle": {
-    "message": "Premium features",
+    "message": "40 days free",
     "description": "onboarding step 3 title"
   },
   "onboardingPremiumDesc": {
-    "message": "Start your 40-day free trial to try Auto-attach Links and more.",
+    "message": "Try Auto-attach Links and all premium features — no credit card needed.",
     "description": "onboarding step 3 description"
   },
   "onboardingNextBtn": {

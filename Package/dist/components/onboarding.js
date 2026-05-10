@@ -94,7 +94,6 @@ class Onboarding {
 
     ul.appendChild(li);
 
-    // Hide the "no history" message while the demo is shown.
     const emptyMessage = document.getElementById("emptyMessage");
     if (emptyMessage && emptyMessage.style.display !== "none") {
       emptyMessage.dataset.onboardingHidden = "true";
@@ -163,7 +162,6 @@ class Onboarding {
       return;
     }
 
-    // Run per-step setup once (e.g. inject demo history item).
     if (step.setup && !step._setupDone) {
       try {
         step.setup();
@@ -225,7 +223,6 @@ class Onboarding {
   }
 
   positionTooltip(targetRect, placement) {
-    // Make tooltip measurable
     this.tooltip.style.visibility = "hidden";
     this.tooltip.style.top = "0px";
     this.tooltip.style.left = "0px";
