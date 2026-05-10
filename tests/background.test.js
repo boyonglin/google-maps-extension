@@ -701,24 +701,43 @@ describe("background.js", () => {
       });
     });
 
-    test("should handle auto-attach command for free user", async () => {
+    test("should handle auto-attach command for expired trial user (no restrictions enforced)", async () => {
       const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const oldTrialStart = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000); // 15 days ago
+      const oldTrialStart = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000); // 50 days ago (past 40-day trial)
 
       ExtPay.mockExtPay.getUser.mockResolvedValue({
         paid: false,
         trialStartedAt: oldTrialStart,
       });
 
-      chrome.tabs.sendMessage.mockImplementation(() => {});
+      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        if (message.action === "getContent" && callback) {
+          callback({ content: "test content" });
+        }
+      });
+
+      // Mock fetch for callApi
+      mockFetch.mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: "location1    clue1\nlocation2    clue2" }],
+                },
+              },
+            ],
+          }),
+      });
 
       await listeners.onCommand("auto-attach");
 
       await flushPromises();
 
+      // Expired trial users still get trial access - no restrictions enforced
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
         action: "consoleQuote",
-        stage: "free",
+        stage: "trial",
       });
     });
 
@@ -1190,7 +1209,7 @@ describe("background.js", () => {
 
       await flushPromises();
 
-      expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalledWith("14-day");
+      expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalledWith("40-day");
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
         action: "consoleQuote",
         stage: "first",
@@ -1216,9 +1235,9 @@ describe("background.js", () => {
       expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalled();
     });
 
-    test("should handle extPay action for expired trial user", async () => {
+    test("should handle extPay action for expired trial user (opens trial page, no payment forced)", async () => {
       const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const trialStart = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+      const trialStart = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000); // 50 days ago (past 40-day trial)
 
       ExtPay.mockExtPay.getUser.mockResolvedValue({
         paid: false,
@@ -1232,11 +1251,9 @@ describe("background.js", () => {
 
       await flushPromises();
 
-      expect(ExtPay.mockExtPay.openPaymentPage).toHaveBeenCalled();
-      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
-        action: "consoleQuote",
-        stage: "payment",
-      });
+      // Should open trial page, not payment page
+      expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalled();
+      expect(ExtPay.mockExtPay.openPaymentPage).not.toHaveBeenCalled();
     });
 
     test("should handle restorePay action", () => {
@@ -1269,9 +1286,36 @@ describe("background.js", () => {
         result: expect.objectContaining({
           isFirst: false,
           isTrial: true,
+          isExpiredTrial: false,
           isPremium: false,
           isFree: false,
           trialEnd: expect.any(Number),
+        }),
+      });
+    });
+
+    test("should return isExpiredTrial for users past the 40-day trial", async () => {
+      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
+      const sendResponse = jest.fn();
+      const oldTrialStart = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000); // 50 days ago
+
+      ExtPay.mockExtPay.getUser.mockResolvedValue({
+        paid: false,
+        trialStartedAt: oldTrialStart,
+      });
+
+      const request = { action: "checkPay" };
+      listeners.onMessage[PAYMENT_LISTENER](request, {}, sendResponse);
+
+      await flushPromises();
+
+      expect(sendResponse).toHaveBeenCalledWith({
+        result: expect.objectContaining({
+          isFirst: false,
+          isTrial: false,
+          isExpiredTrial: true,
+          isPremium: false,
+          isFree: false,
         }),
       });
     });

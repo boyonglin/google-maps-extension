@@ -13,7 +13,11 @@ class Payment {
   }
 
   updateShortcutDisplay() {
-    if (state.paymentStage.isTrial || state.paymentStage.isPremium) {
+    if (
+      state.paymentStage.isTrial ||
+      state.paymentStage.isExpiredTrial ||
+      state.paymentStage.isPremium
+    ) {
       Array.from(shortcutTip).forEach((element) => {
         element.classList.remove("premium-only");
       });
@@ -23,6 +27,9 @@ class Payment {
   updateNoteDisplay() {
     if (state.paymentStage.isFirst) {
       premiumNoteElement.innerHTML = chrome.i18n.getMessage("firstNote");
+    } else if (state.paymentStage.isExpiredTrial) {
+      premiumNoteElement.innerHTML = chrome.i18n.getMessage("expiredNote");
+      modal.text2Link("premiumNote", "ExtensionPay", "https://extensionpay.com/");
     } else if (state.paymentStage.isTrial) {
       const trialEndOn = this.calcTrialEndDate(state.paymentStage.trialEnd);
       paymentSpan.innerHTML = chrome.i18n.getMessage("trialNote", trialEndOn);

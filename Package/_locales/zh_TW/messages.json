@@ -161,7 +161,7 @@
     "message": "恢復購買"
   },
   "firstNote": {
-    "message": "透過 14 天的免費試用，體驗我們如何串聯你的網頁與 Google 地圖"
+    "message": "透過 40 天的免費試用，體驗我們如何串聯你的網頁與 Google 地圖"
   },
   "trialNote": {
     "message": "試用於 $date$ 結束",
@@ -173,6 +173,9 @@
   },
   "remindNote": {
     "message": "透過 Gemini AI 和 Alt+S / &#8997;+S 快捷鍵使用自動附加連結功能"
+  },
+  "expiredNote": {
+    "message": "40 天試用已結束，歡迎升級以支持我們！"
   },
   "premiumNote": {
     "message": "你好啊，巫師朋友\ud83e\uddd9歡迎隨時分享你的回饋，幫助我們做得更好"

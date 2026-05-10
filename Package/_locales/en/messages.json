@@ -214,7 +214,7 @@
     "description": "modal restore purchase label"
   },
   "firstNote": {
-    "message": "Test out our 14-day free trial to see how we keep your pages connected to Google Maps.",
+    "message": "Test out our 40-day free trial to see how we keep your pages connected to Google Maps.",
     "description": "modal first note"
   },
   "trialNote": {
@@ -230,6 +230,10 @@
   "remindNote": {
     "message": "Use Gemini AI and Alt+S / &#8997;+S shortcut to enable the auto-attach links feature.",
     "description": "modal remind note"
+  },
+  "expiredNote": {
+    "message": "Your 40-day trial has ended. Consider upgrading to support us!",
+    "description": "modal expired trial note"
   },
   "premiumNote": {
     "message": "Hello there, wizard friend\ud83e\uddd9Feel free to share your feedback to help us make things better.",

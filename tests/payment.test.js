@@ -216,6 +216,20 @@ describe("Payment Component - Full Coverage", () => {
       });
     });
 
+    test("should remove premium-only class for expired trial users", () => {
+      global.state.paymentStage = {
+        isTrial: false,
+        isExpiredTrial: true,
+        isPremium: false,
+      };
+
+      paymentInstance.updateShortcutDisplay();
+
+      Array.from(global.shortcutTip).forEach((element) => {
+        expect(element.classList.contains("premium-only")).toBe(false);
+      });
+    });
+
     test("should remove premium-only class when both trial and premium are true", () => {
       global.state.paymentStage = { isTrial: true, isPremium: true };
       paymentInstance.updateShortcutDisplay();
@@ -265,6 +279,31 @@ describe("Payment Component - Full Coverage", () => {
         "tipsModal"
       );
       expect(global.modal.text2Modal).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("updateNoteDisplay - isExpiredTrial", () => {
+    test("should display expired note with ExtensionPay link", () => {
+      global.state.paymentStage = { isExpiredTrial: true };
+
+      // Mock i18n for expiredNote
+      global.chrome.i18n.getMessage.mockImplementation((key) => {
+        const msgs = {
+          expiredNote:
+            "Your 40-day trial has ended — but all features remain yours to enjoy. Consider upgrading to support us via ExtensionPay!",
+        };
+        return msgs[key] || key;
+      });
+
+      paymentInstance.updateNoteDisplay();
+
+      expect(premiumNoteElement.innerHTML).toContain("40-day trial has ended");
+      expect(global.modal.text2Link).toHaveBeenCalledWith(
+        "premiumNote",
+        "ExtensionPay",
+        "https://extensionpay.com/"
+      );
+      expect(global.modal.text2Modal).not.toHaveBeenCalled();
     });
   });
 

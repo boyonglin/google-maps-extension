@@ -165,22 +165,26 @@ chrome.commands.onCommand.addListener((command) => {
         extpay.getUser().then(async (user) => {
           const now = new Date();
 
-          // In trial period
-          if (user.trialStartedAt && now - user.trialStartedAt < trialPeriod) {
+          // Paid user
+          if (user.paid) {
+            await tryAndCheckApi(tabId);
+            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
+          }
+          // Active trial
+          else if (user.trialStartedAt && now - user.trialStartedAt < trialPeriod) {
             await tryAndCheckApi(tabId);
             chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
-          } else {
-            // Paid user
-            if (user.paid) {
-              await tryAndCheckApi(tabId);
-              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
-            }
-            // Free user
-            else {
-              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "free" });
-              meow();
-              tryPremiumNotify().catch(() => {});
-            }
+          }
+          // Expired trial
+          else if (user.trialStartedAt) {
+            await tryAndCheckApi(tabId);
+            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
+            tryPremiumNotify().catch(() => {});
+          }
+          // First time user
+          else {
+            await tryAndCheckApi(tabId);
+            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
           }
         });
       } else if (command === "run-directions") {
@@ -590,7 +594,7 @@ function meow() {
 }
 
 // Payment system
-const trialPeriod = 14 * 24 * 60 * 60 * 1000; // 14 days
+const trialPeriod = 40 * 24 * 60 * 60 * 1000; // 40 days
 const extpay = ExtPay("the-maps-express");
 extpay.startBackground();
 
@@ -599,18 +603,13 @@ function handleExtensionPayment(user, sender) {
 
   // First time user
   if (!user.trialStartedAt) {
-    extpay.openTrialPage("14-day");
+    extpay.openTrialPage("40-day");
     chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "first" });
   }
 
-  // Trial or Pay
+  // Trial or expired trial
   else {
-    if (user.trialStartedAt && now - user.trialStartedAt < trialPeriod) {
-      extpay.openTrialPage();
-    } else {
-      extpay.openPaymentPage();
-      chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "payment" });
-    }
+    extpay.openTrialPage();
   }
 }
 
@@ -619,10 +618,12 @@ function checkPaymentStatus(user) {
   const isPremium = user.paid;
   const isFirst = !user.trialStartedAt && !isPremium;
   const isTrial = user.trialStartedAt && now - user.trialStartedAt < trialPeriod && !isPremium;
-  const isFree = !isFirst && !isTrial && !isPremium;
+  const isExpiredTrial =
+    user.trialStartedAt && now - user.trialStartedAt >= trialPeriod && !isPremium;
+  const isFree = false;
   const trialEnd = new Date(user.trialStartedAt).getTime() + trialPeriod;
 
-  return { isFirst, isTrial, isPremium, isFree, trialEnd };
+  return { isFirst, isTrial, isExpiredTrial, isPremium, isFree, trialEnd };
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

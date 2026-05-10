@@ -161,7 +161,7 @@
     "message": "購入を復元"
   },
   "firstNote": {
-    "message": "14 日間の無料体験で、Google マップとページの接続方法をご確認ください。"
+    "message": "40 日間の無料体験で、Google マップとページの接続方法をご確認ください。"
   },
   "trialNote": {
     "message": "体験は $date$ に終了",
@@ -173,6 +173,9 @@
   },
   "remindNote": {
     "message": "Gemini AI と Alt+S / &#8997;+S のショートカットキーで、リンク自動添付機能を利用する。"
+  },
+  "expiredNote": {
+    "message": "40 日間の試用が終了しました。アップグレードしてご支援いただけると嬉しいです！"
   },
   "premiumNote": {
     "message": "どうも、魔法使いの友よ\ud83e\uddd9ぜひフィードバックを気軽に共有して、もっと良くしよう。"
