@@ -152,6 +152,27 @@ describe("popup.js", () => {
 
       expect(searchInput.focus).toHaveBeenCalled();
     });
+
+    test("initializePopup blur active element before Bootstrap hides a modal", () => {
+      const searchInput = document.getElementById("searchInput");
+      jest.spyOn(searchInput, "blur");
+
+      popup.initializeDependencies({
+        state: mockState,
+        remove: mockRemove,
+        favorite: mockFavorite,
+        history: mockHistory,
+        gemini: mockGemini,
+        modal: mockModal,
+        payment: mockPayment,
+      });
+
+      popup.initializePopup();
+      searchInput.focus();
+      document.dispatchEvent(new Event("hide.bs.modal"));
+
+      expect(searchInput.blur).toHaveBeenCalled();
+    });
   });
 
   describe("popupLayout", () => {
@@ -1045,6 +1066,16 @@ describe("popup.js", () => {
       expect(mockState.videoSummaryMode).toBeUndefined();
       expect(mockGemini.checkCurrentTabForYoutube).toHaveBeenCalled();
     });
+
+    test("premiumNotify message opens premium modal trigger", () => {
+      const premiumTrigger = document.querySelector('[data-bs-target="#premiumModal"]');
+      const clickSpy = jest.spyOn(premiumTrigger, "click");
+
+      const listener = chrome.runtime.onMessage.addListener.mock.calls[0][0];
+      listener({ action: "premiumNotify" }, {}, () => {});
+
+      expect(clickSpy).toHaveBeenCalled();
+    });
   });
 
   describe("Escape Key Handler", () => {
@@ -1110,6 +1141,19 @@ describe("popup.js", () => {
       document.dispatchEvent(new Event("readystatechange"));
 
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(888, { action: "finishIframe" });
+    });
+
+    test("visibilitychange reports visibility to Analytics", () => {
+      window.Analytics = { handleVisibilityChange: jest.fn() };
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "visible",
+      });
+
+      document.dispatchEvent(new Event("visibilitychange"));
+
+      expect(window.Analytics.handleVisibilityChange).toHaveBeenCalledWith(true);
+      delete window.Analytics;
     });
   });
 
@@ -1186,12 +1230,31 @@ describe("popup.js", () => {
     });
 
     test("delayMeasurement function calls setTimeout", () => {
-      // Simply verify the function exists and can be called
-      expect(popup.delayMeasurement).toBeDefined();
-      expect(typeof popup.delayMeasurement).toBe("function");
+      jest.useFakeTimers();
+      Object.defineProperty(document.body, "offsetWidth", {
+        writable: true,
+        configurable: true,
+        value: 320,
+      });
+      Object.defineProperty(document.body, "offsetHeight", {
+        writable: true,
+        configurable: true,
+        value: 240,
+      });
+      chrome.tabs.query.mockImplementation((queryInfo, callback) => {
+        callback([{ id: 321 }]);
+      });
+      mockState.previousWidth = 0;
+      mockState.previousHeight = 0;
 
-      // Call it to cover the lines (though we can't easily test the setTimeout behavior in Jest)
       popup.delayMeasurement();
+      jest.advanceTimersByTime(100);
+
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
+        321,
+        expect.objectContaining({ action: "updateIframeSize" })
+      );
+      jest.useRealTimers();
     });
 
     test("retryMeasureContentSize handles zero width body", () => {
@@ -1207,6 +1270,44 @@ describe("popup.js", () => {
 
       // Verify function executed (covers the if branch for zero width)
       expect(document.body.offsetWidth).toBe(0);
+    });
+
+    test("retryMeasureContentSize measures once layout width is available", () => {
+      Object.defineProperty(document.body, "offsetWidth", {
+        writable: true,
+        configurable: true,
+        value: 320,
+      });
+      Object.defineProperty(document.body, "offsetHeight", {
+        writable: true,
+        configurable: true,
+        value: 240,
+      });
+
+      chrome.tabs.query.mockImplementation((queryInfo, callback) => {
+        callback([{ id: 123 }]);
+      });
+
+      mockState.previousWidth = 0;
+      mockState.previousHeight = 0;
+      popup.retryMeasureContentSize();
+
+      expect(mockState.hasInit).toBe(true);
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
+        123,
+        expect.objectContaining({ action: "updateIframeSize" })
+      );
+    });
+
+    test("getWarmState retries after a timeout and resolves empty after retries are exhausted", async () => {
+      jest.useFakeTimers();
+      chrome.runtime.sendMessage.mockImplementation(() => true);
+
+      const promise = popup.getWarmState(0, 50);
+      jest.advanceTimersByTime(50);
+
+      await expect(promise).resolves.toEqual({});
+      jest.useRealTimers();
     });
 
     test("checkTextOverflow adjusts cancelButton width when text overflows", () => {
@@ -1353,6 +1454,36 @@ describe("popup.js", () => {
         const key = elem.dataset.locale;
         expect(elem.innerText).toBe(chrome.i18n.getMessage(key));
       });
+    });
+
+    test("i18n changed event refreshes active subtitle and resets dynamic button widths", () => {
+      const subtitle = document.getElementById("subtitle");
+      const clearButton = document.getElementById("clearButton");
+      const cancelButton = document.getElementById("cancelButton");
+      const clearButtonSummary = document.getElementById("clearButtonSummary");
+
+      popup.initializeDependencies({ state: mockState });
+      document.getElementById("searchHistoryButton").classList.remove("active-button");
+      document.getElementById("favoriteListButton").classList.add("active-button");
+      clearButton.classList.replace("w-25", "w-auto");
+      cancelButton.classList.replace("w-25", "w-auto");
+      clearButtonSummary.classList.replace("w-25", "w-auto");
+      const originalGlobalRaf = global.requestAnimationFrame;
+      const originalWindowRaf = window.requestAnimationFrame;
+      const requestAnimationFrameMock = jest.fn();
+      global.requestAnimationFrame = requestAnimationFrameMock;
+      window.requestAnimationFrame = requestAnimationFrameMock;
+
+      window.dispatchEvent(new Event("i18n:changed"));
+
+      expect(subtitle.textContent).toBe(chrome.i18n.getMessage("favoriteListSubtitle"));
+      [clearButton, cancelButton, clearButtonSummary].forEach((button) => {
+        expect(button.classList.contains("w-25")).toBe(true);
+        expect(button.classList.contains("w-auto")).toBe(false);
+      });
+      expect(requestAnimationFrameMock).toHaveBeenCalled();
+      global.requestAnimationFrame = originalGlobalRaf;
+      window.requestAnimationFrame = originalWindowRaf;
     });
   });
 

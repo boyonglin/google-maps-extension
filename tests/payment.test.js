@@ -28,6 +28,17 @@ describe("Payment Component - Full Coverage", () => {
 
   // Constants
   const ONE_DAY_MS = 24 * 60 * 60 * 1000; // 86400000 milliseconds
+  const setPaymentStage = (stage) => {
+    global.state.paymentStage = stage;
+  };
+  const mockPaymentResult = (result) => {
+    chrome.runtime.sendMessage.mockImplementation((msg, cb) => cb({ result }));
+  };
+  const expectShortcutsPremiumOnly = (expected) => {
+    Array.from(global.shortcutTip).forEach((element) => {
+      expect(element.classList.contains("premium-only")).toBe(expected);
+    });
+  };
 
   beforeEach(() => {
     // Setup DOM elements
@@ -155,71 +166,59 @@ describe("Payment Component - Full Coverage", () => {
 
   describe("updateShortcutDisplay", () => {
     test("should remove premium-only class for trial users", () => {
-      global.state.paymentStage = {
+      setPaymentStage({
         isTrial: true,
         isPremium: false,
-      };
+      });
 
       // Verify initial state - all elements should have premium-only
-      Array.from(global.shortcutTip).forEach((element) => {
-        expect(element.classList.contains("premium-only")).toBe(true);
-      });
+      expectShortcutsPremiumOnly(true);
 
       paymentInstance.updateShortcutDisplay();
 
       // Verify premium-only class is removed from all elements
-      Array.from(global.shortcutTip).forEach((element) => {
-        expect(element.classList.contains("premium-only")).toBe(false);
-      });
+      expectShortcutsPremiumOnly(false);
     });
 
     test("should remove premium-only class for premium users", () => {
-      global.state.paymentStage = {
+      setPaymentStage({
         isTrial: false,
         isPremium: true,
-      };
+      });
 
       paymentInstance.updateShortcutDisplay();
 
-      Array.from(global.shortcutTip).forEach((element) => {
-        expect(element.classList.contains("premium-only")).toBe(false);
-      });
+      expectShortcutsPremiumOnly(false);
     });
 
     test("should keep premium-only class for first-time users", () => {
-      global.state.paymentStage = {
+      setPaymentStage({
         isFirst: true,
         isTrial: false,
         isPremium: false,
-      };
+      });
 
       paymentInstance.updateShortcutDisplay();
 
-      Array.from(global.shortcutTip).forEach((element) => {
-        expect(element.classList.contains("premium-only")).toBe(true);
-      });
+      expectShortcutsPremiumOnly(true);
     });
 
     test("should remove premium-only class for expired trial users", () => {
-      global.state.paymentStage = {
+      setPaymentStage({
         isTrial: false,
         isExpiredTrial: true,
         isPremium: false,
-      };
+      });
 
       paymentInstance.updateShortcutDisplay();
 
-      Array.from(global.shortcutTip).forEach((element) => {
-        expect(element.classList.contains("premium-only")).toBe(false);
-      });
+      expectShortcutsPremiumOnly(false);
     });
 
     test("should remove premium-only class when both trial and premium are true", () => {
-      global.state.paymentStage = { isTrial: true, isPremium: true };
+      setPaymentStage({ isTrial: true, isPremium: true });
       paymentInstance.updateShortcutDisplay();
-      Array.from(shortcutTip).forEach((element) => {
-        expect(element.classList.contains("premium-only")).toBe(false);
-      });
+      expectShortcutsPremiumOnly(false);
     });
   });
 
@@ -409,44 +408,32 @@ describe("Payment Component - Full Coverage", () => {
   describe("Integration - Full Payment Flow", () => {
     test("should handle trial user flow: unlock shortcuts and show trial note", () => {
       const trialEndTimestamp = Date.now() + ONE_DAY_MS;
-      chrome.runtime.sendMessage.mockImplementation((msg, cb) =>
-        cb({ result: { isTrial: true, trialEnd: trialEndTimestamp } })
-      );
+      mockPaymentResult({ isTrial: true, trialEnd: trialEndTimestamp });
 
       paymentInstance.checkPay();
 
       expect(global.state.paymentStage.isTrial).toBe(true);
-      Array.from(shortcutTip).forEach((el) =>
-        expect(el.classList.contains("premium-only")).toBe(false)
-      );
+      expectShortcutsPremiumOnly(false);
       expect(paymentSpan.innerHTML).toBeTruthy();
       expect(global.modal.text2Modal).toHaveBeenCalledTimes(2);
     });
 
     test("should handle premium user flow: unlock shortcuts and show feedback links", () => {
-      chrome.runtime.sendMessage.mockImplementation((msg, cb) =>
-        cb({ result: { isPremium: true } })
-      );
+      mockPaymentResult({ isPremium: true });
 
       paymentInstance.checkPay();
 
       expect(global.state.paymentStage.isPremium).toBe(true);
-      Array.from(shortcutTip).forEach((el) =>
-        expect(el.classList.contains("premium-only")).toBe(false)
-      );
+      expectShortcutsPremiumOnly(false);
       expect(global.modal.text2Link).toHaveBeenCalledTimes(3);
     });
 
     test("should handle expired trial flow: keep shortcuts unlocked, show ExtensionPay link", () => {
-      chrome.runtime.sendMessage.mockImplementation((msg, cb) =>
-        cb({ result: { isExpiredTrial: true } })
-      );
+      mockPaymentResult({ isExpiredTrial: true });
 
       paymentInstance.checkPay();
 
-      Array.from(shortcutTip).forEach((el) =>
-        expect(el.classList.contains("premium-only")).toBe(false)
-      );
+      expectShortcutsPremiumOnly(false);
       expect(global.modal.text2Link).toHaveBeenCalledWith(
         "premiumNote",
         "ExtensionPay",

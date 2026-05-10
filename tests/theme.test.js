@@ -3,6 +3,8 @@
  * Tests centralized dark mode management for the extension
  */
 
+const { createMockThemeUtils } = require("./testHelpers");
+
 // Store original ThemeUtils mock before requiring the actual module
 const originalThemeUtils = global.ThemeUtils;
 
@@ -624,23 +626,7 @@ describe("popup.js - Theme Integration", () => {
     jest.clearAllMocks();
 
     // Restore global ThemeUtils mock for popup tests
-    global.ThemeUtils = {
-      STORAGE_KEY: "isDarkMode",
-      THEME_ATTRIBUTE: "data-theme",
-      BS_THEME_ATTRIBUTE: "data-bs-theme",
-      DARK: "dark",
-      LIGHT: "light",
-      getSystemPreference: jest.fn(() => false),
-      getStoredPreference: jest.fn(() => Promise.resolve(false)),
-      savePreference: jest.fn(() => Promise.resolve()),
-      applyToElement: jest.fn(),
-      initialize: jest.fn((element, includeBootstrap, callback) => {
-        if (callback) callback(false);
-        return Promise.resolve(false);
-      }),
-      toggle: jest.fn(() => Promise.resolve(true)),
-      notifyContentScript: jest.fn(),
-    };
+    global.ThemeUtils = createMockThemeUtils();
   });
 
   test("initializeTheme should call ThemeUtils.initialize with correct parameters", () => {

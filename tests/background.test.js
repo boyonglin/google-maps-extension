@@ -165,6 +165,56 @@ describe("background.js", () => {
   const VERIFY_API_LISTENER = 2; // verifyApiKey
   const PAYMENT_LISTENER = 3; // extPay, restorePay, checkPay
   const STATE_QUERIES_LISTENER = 4; // getWarmState, getApiKey, buildSearchUrl, buildDirectionsUrl, buildMapsUrl
+  const daysAgo = (days) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const getExtPay = () => require("../Package/dist/utils/ExtPay.module.js").default;
+  const mockExtPayUser = ({ paid = false, trialStartedAt = null } = {}) => {
+    const extPay = getExtPay().mockExtPay;
+    extPay.getUser.mockResolvedValue({ paid, trialStartedAt });
+    return extPay;
+  };
+  const mockAutoAttachContentFlow = () => {
+    chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+      if (message.action === "getContent" && callback) {
+        callback({ content: "test content" });
+      }
+    });
+    mockFetch.mockResolvedValue({
+      json: () =>
+        Promise.resolve({
+          candidates: [
+            {
+              content: {
+                parts: [{ text: "location1    clue1\nlocation2    clue2" }],
+              },
+            },
+          ],
+        }),
+    });
+  };
+  const runAutoAttachCommand = async () => {
+    await listeners.onCommand("auto-attach");
+    await flushPromises();
+  };
+  const expectConsoleQuoteStage = (stage) => {
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+      action: "consoleQuote",
+      stage,
+    });
+  };
+  const runExtPayAction = async () => {
+    await listeners.onMessage[PAYMENT_LISTENER](
+      { action: "extPay" },
+      { tab: { id: 1 } },
+      jest.fn()
+    );
+    await flushPromises();
+  };
+  const checkPay = async () => {
+    const sendResponse = jest.fn();
+    const result = listeners.onMessage[PAYMENT_LISTENER]({ action: "checkPay" }, {}, sendResponse);
+    await flushPromises();
+    return { result, sendResponse };
+  };
 
   describe("Module Initialization", () => {
     test("should have registered all event listeners on load", () => {
@@ -622,123 +672,29 @@ describe("background.js", () => {
     });
 
     test("should handle auto-attach command for trial user", async () => {
-      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const trialStartDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000); // 3 days ago
-
-      ExtPay.mockExtPay.getUser.mockResolvedValue({
-        paid: false,
-        trialStartedAt: trialStartDate,
-      });
-
-      // Mock sendMessage to respond to getContent with content
-      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
-        if (message.action === "getContent" && callback) {
-          callback({ content: "test content" });
-        }
-      });
-
-      // Mock fetch for callApi
-      mockFetch.mockResolvedValue({
-        json: () =>
-          Promise.resolve({
-            candidates: [
-              {
-                content: {
-                  parts: [{ text: "location1    clue1\nlocation2    clue2" }],
-                },
-              },
-            ],
-          }),
-      });
-
-      await listeners.onCommand("auto-attach");
-
-      await flushPromises();
+      mockExtPayUser({ trialStartedAt: daysAgo(3) });
+      mockAutoAttachContentFlow();
+      await runAutoAttachCommand();
 
       // Check that consoleQuote was sent with trial stage
-      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
-        action: "consoleQuote",
-        stage: "trial",
-      });
+      expectConsoleQuoteStage("trial");
     });
 
     test("should handle auto-attach command for paid user", async () => {
-      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
+      mockExtPayUser({ paid: true });
+      mockAutoAttachContentFlow();
+      await runAutoAttachCommand();
 
-      ExtPay.mockExtPay.getUser.mockResolvedValue({
-        paid: true,
-        trialStartedAt: null,
-      });
-
-      // Mock sendMessage to respond to getContent with content
-      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
-        if (message.action === "getContent" && callback) {
-          callback({ content: "test content" });
-        }
-      });
-
-      // Mock fetch for callApi
-      mockFetch.mockResolvedValue({
-        json: () =>
-          Promise.resolve({
-            candidates: [
-              {
-                content: {
-                  parts: [{ text: "location1    clue1\nlocation2    clue2" }],
-                },
-              },
-            ],
-          }),
-      });
-
-      await listeners.onCommand("auto-attach");
-
-      await flushPromises();
-
-      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
-        action: "consoleQuote",
-        stage: "premium",
-      });
+      expectConsoleQuoteStage("premium");
     });
 
     test("should handle auto-attach command for expired trial user (no restrictions enforced)", async () => {
-      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const oldTrialStart = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000); // 50 days ago (past 40-day trial)
-
-      ExtPay.mockExtPay.getUser.mockResolvedValue({
-        paid: false,
-        trialStartedAt: oldTrialStart,
-      });
-
-      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
-        if (message.action === "getContent" && callback) {
-          callback({ content: "test content" });
-        }
-      });
-
-      // Mock fetch for callApi
-      mockFetch.mockResolvedValue({
-        json: () =>
-          Promise.resolve({
-            candidates: [
-              {
-                content: {
-                  parts: [{ text: "location1    clue1\nlocation2    clue2" }],
-                },
-              },
-            ],
-          }),
-      });
-
-      await listeners.onCommand("auto-attach");
-
-      await flushPromises();
+      mockExtPayUser({ trialStartedAt: daysAgo(50) });
+      mockAutoAttachContentFlow();
+      await runAutoAttachCommand();
 
       // Expired trial users still get trial access - no restrictions enforced
-      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
-        action: "consoleQuote",
-        stage: "trial",
-      });
+      expectConsoleQuoteStage("trial");
     });
 
     test("should handle run-directions command with startAddr", async () => {
@@ -1195,69 +1151,31 @@ describe("background.js", () => {
 
   describe("chrome.runtime.onMessage listener - Payment system", () => {
     test("should handle extPay action for first-time user", async () => {
-      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
+      const extPay = mockExtPayUser();
+      await runExtPayAction();
 
-      ExtPay.mockExtPay.getUser.mockResolvedValue({
-        paid: false,
-        trialStartedAt: null,
-      });
-
-      const sender = { tab: { id: 1 } };
-      const request = { action: "extPay" };
-
-      await listeners.onMessage[PAYMENT_LISTENER](request, sender, jest.fn());
-
-      await flushPromises();
-
-      expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalledWith("40-day");
-      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
-        action: "consoleQuote",
-        stage: "first",
-      });
+      expect(extPay.openTrialPage).toHaveBeenCalledWith("40-day");
+      expectConsoleQuoteStage("first");
     });
 
     test("should handle extPay action for trial user", async () => {
-      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const trialStart = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+      const extPay = mockExtPayUser({ trialStartedAt: daysAgo(2) });
+      await runExtPayAction();
 
-      ExtPay.mockExtPay.getUser.mockResolvedValue({
-        paid: false,
-        trialStartedAt: trialStart,
-      });
-
-      const sender = { tab: { id: 1 } };
-      const request = { action: "extPay" };
-
-      await listeners.onMessage[PAYMENT_LISTENER](request, sender, jest.fn());
-
-      await flushPromises();
-
-      expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalled();
+      expect(extPay.openTrialPage).toHaveBeenCalled();
     });
 
     test("should handle extPay action for expired trial user (opens trial page, no payment forced)", async () => {
-      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const trialStart = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000); // 50 days ago (past 40-day trial)
-
-      ExtPay.mockExtPay.getUser.mockResolvedValue({
-        paid: false,
-        trialStartedAt: trialStart,
-      });
-
-      const sender = { tab: { id: 1 } };
-      const request = { action: "extPay" };
-
-      await listeners.onMessage[PAYMENT_LISTENER](request, sender, jest.fn());
-
-      await flushPromises();
+      const extPay = mockExtPayUser({ trialStartedAt: daysAgo(50) });
+      await runExtPayAction();
 
       // Should open trial page, not payment page
-      expect(ExtPay.mockExtPay.openTrialPage).toHaveBeenCalled();
-      expect(ExtPay.mockExtPay.openPaymentPage).not.toHaveBeenCalled();
+      expect(extPay.openTrialPage).toHaveBeenCalled();
+      expect(extPay.openPaymentPage).not.toHaveBeenCalled();
     });
 
     test("should handle restorePay action", () => {
-      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
+      const ExtPay = getExtPay();
       const request = { action: "restorePay" };
 
       listeners.onMessage[PAYMENT_LISTENER](request, {}, jest.fn());
@@ -1266,21 +1184,10 @@ describe("background.js", () => {
     });
 
     test("should handle checkPay action", async () => {
-      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const sendResponse = jest.fn();
-      const trialStart = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-
-      ExtPay.mockExtPay.getUser.mockResolvedValue({
-        paid: false,
-        trialStartedAt: trialStart,
-      });
-
-      const request = { action: "checkPay" };
-      const result = listeners.onMessage[PAYMENT_LISTENER](request, {}, sendResponse);
+      mockExtPayUser({ trialStartedAt: daysAgo(2) });
+      const { result, sendResponse } = await checkPay();
 
       expect(result).toBe(true);
-
-      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         result: expect.objectContaining({
@@ -1294,19 +1201,8 @@ describe("background.js", () => {
     });
 
     test("should return isExpiredTrial for users past the 40-day trial", async () => {
-      const ExtPay = require("../Package/dist/utils/ExtPay.module.js").default;
-      const sendResponse = jest.fn();
-      const oldTrialStart = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000); // 50 days ago
-
-      ExtPay.mockExtPay.getUser.mockResolvedValue({
-        paid: false,
-        trialStartedAt: oldTrialStart,
-      });
-
-      const request = { action: "checkPay" };
-      listeners.onMessage[PAYMENT_LISTENER](request, {}, sendResponse);
-
-      await flushPromises();
+      mockExtPayUser({ trialStartedAt: daysAgo(50) });
+      const { sendResponse } = await checkPay();
 
       expect(sendResponse).toHaveBeenCalledWith({
         result: expect.objectContaining({

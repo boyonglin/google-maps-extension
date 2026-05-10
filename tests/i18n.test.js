@@ -23,6 +23,7 @@ const JA_MESSAGES = {
 const EN_MESSAGES = {
   searchInputPlaceholder: { message: "Search Google Maps" },
 };
+const FALLBACK_MESSAGE_KEY = "searchInputPlaceholder";
 
 /** Install a fake XMLHttpRequest that returns the queued response. */
 function installFakeXhr({ status = 200, body = JA_MESSAGES, throwOnSend = false } = {}) {
@@ -71,6 +72,30 @@ function loadI18n() {
   return mod;
 }
 
+function seedJaPreferenceAndCache() {
+  localStorage.setItem("userLanguage", "ja");
+  localStorage.setItem(
+    "userLanguageMessages",
+    JSON.stringify({ lang: "ja", messages: JA_MESSAGES })
+  );
+}
+
+function loadI18nWithJaCache() {
+  seedJaPreferenceAndCache();
+  installFakeXhr({ body: JA_MESSAGES });
+  return loadI18n();
+}
+
+function getLoadedStorageChangeListener(xhrOptions) {
+  installFakeXhr(xhrOptions);
+  loadI18n();
+  return chrome.storage.onChanged.addListener.mock.calls[0][0];
+}
+
+function expectBrowserFallbackMessage() {
+  expect(chrome.i18n.getMessage(FALLBACK_MESSAGE_KEY)).toBe(`BROWSER:${FALLBACK_MESSAGE_KEY}`);
+}
+
 describe("i18n.js", () => {
   beforeEach(() => {
     resetEnvironment();
@@ -82,9 +107,7 @@ describe("i18n.js", () => {
       const I18nUtils = loadI18n();
 
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
-      expect(chrome.i18n.getMessage("searchInputPlaceholder")).toBe(
-        "BROWSER:searchInputPlaceholder"
-      );
+      expectBrowserFallbackMessage();
       // No XHR should have been issued.
       expect(global.XMLHttpRequest.callCount).toBe(0);
     });
@@ -119,9 +142,7 @@ describe("i18n.js", () => {
       const I18nUtils = loadI18n();
 
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
-      expect(chrome.i18n.getMessage("searchInputPlaceholder")).toBe(
-        "BROWSER:searchInputPlaceholder"
-      );
+      expectBrowserFallbackMessage();
     });
 
     test("XHR throw degrades silently to auto", () => {
@@ -195,13 +216,7 @@ describe("i18n.js", () => {
     });
 
     test("setLanguage('auto') removes preference and cache from both stores", async () => {
-      localStorage.setItem("userLanguage", "ja");
-      localStorage.setItem(
-        "userLanguageMessages",
-        JSON.stringify({ lang: "ja", messages: JA_MESSAGES })
-      );
-      installFakeXhr({ body: JA_MESSAGES });
-      const I18nUtils = loadI18n();
+      const I18nUtils = loadI18nWithJaCache();
 
       await I18nUtils.setLanguage("auto");
 
@@ -225,25 +240,16 @@ describe("i18n.js", () => {
 
   describe("storage.onChanged mirror", () => {
     test("change to userLanguage is mirrored to localStorage", () => {
-      installFakeXhr();
-      loadI18n();
-
-      const listener = chrome.storage.onChanged.addListener.mock.calls[0][0];
+      const listener = getLoadedStorageChangeListener();
       listener({ userLanguage: { newValue: "ja" } }, "local");
 
       expect(localStorage.getItem("userLanguage")).toBe("ja");
     });
 
     test("removal/auto clears localStorage preference + cache", () => {
-      localStorage.setItem("userLanguage", "ja");
-      localStorage.setItem(
-        "userLanguageMessages",
-        JSON.stringify({ lang: "ja", messages: JA_MESSAGES })
-      );
-      installFakeXhr({ body: JA_MESSAGES });
-      loadI18n();
+      seedJaPreferenceAndCache();
 
-      const listener = chrome.storage.onChanged.addListener.mock.calls[0][0];
+      const listener = getLoadedStorageChangeListener({ body: JA_MESSAGES });
       listener({ userLanguage: { newValue: undefined } }, "local");
 
       expect(localStorage.getItem("userLanguage")).toBeNull();
@@ -251,10 +257,7 @@ describe("i18n.js", () => {
     });
 
     test("changes in the 'sync' area are ignored", () => {
-      installFakeXhr();
-      loadI18n();
-
-      const listener = chrome.storage.onChanged.addListener.mock.calls[0][0];
+      const listener = getLoadedStorageChangeListener();
       listener({ userLanguage: { newValue: "ja" } }, "sync");
 
       expect(localStorage.getItem("userLanguage")).toBeNull();
@@ -269,11 +272,7 @@ describe("i18n.js", () => {
 
       // Simulate setLanguage having written localStorage (we bypass the
       // setLanguage XHR by writing directly + seeding cache).
-      localStorage.setItem("userLanguage", "ja");
-      localStorage.setItem(
-        "userLanguageMessages",
-        JSON.stringify({ lang: "ja", messages: JA_MESSAGES })
-      );
+      seedJaPreferenceAndCache();
 
       const result = I18nUtils.reloadOverride();
       expect(result).toBe("ja");
@@ -282,22 +281,14 @@ describe("i18n.js", () => {
     });
 
     test("hot-swaps back from ja → auto", () => {
-      localStorage.setItem("userLanguage", "ja");
-      localStorage.setItem(
-        "userLanguageMessages",
-        JSON.stringify({ lang: "ja", messages: JA_MESSAGES })
-      );
-      installFakeXhr({ body: JA_MESSAGES });
-      const I18nUtils = loadI18n();
+      const I18nUtils = loadI18nWithJaCache();
       expect(I18nUtils.getCurrentLanguage()).toBe("ja");
 
       localStorage.removeItem("userLanguage");
       I18nUtils.reloadOverride();
 
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
-      expect(chrome.i18n.getMessage("searchInputPlaceholder")).toBe(
-        "BROWSER:searchInputPlaceholder"
-      );
+      expectBrowserFallbackMessage();
     });
   });
 

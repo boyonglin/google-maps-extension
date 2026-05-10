@@ -69,8 +69,24 @@ const stubTooltipSize = (instance, width = 200, height = 100) => {
   return original;
 };
 
+const setDocumentViewport = (width, height) => {
+  Object.defineProperty(document.documentElement, "clientWidth", {
+    configurable: true,
+    value: width,
+  });
+  Object.defineProperty(document.documentElement, "clientHeight", {
+    configurable: true,
+    value: height,
+  });
+};
+
 describe("Onboarding Component", () => {
   let onboarding;
+
+  const expectTourFinished = () => {
+    expect(document.getElementById("onboardingOverlay")).toBeNull();
+    expect(chrome.storage.local.set).toHaveBeenCalledWith({ onboardingDone: true });
+  };
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -275,8 +291,7 @@ describe("Onboarding Component", () => {
       onboarding.next(); // -> 4 (premium)
       onboarding.next(); // -> finish
 
-      expect(document.getElementById("onboardingOverlay")).toBeNull();
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({ onboardingDone: true });
+      expectTourFinished();
     });
 
     test("clicking the next button should advance the step", () => {
@@ -372,18 +387,16 @@ describe("Onboarding Component", () => {
       onboarding.start();
       onboarding.finish();
 
-      expect(document.getElementById("onboardingOverlay")).toBeNull();
+      expectTourFinished();
       expect(onboarding.overlay).toBeNull();
       expect(onboarding.tooltip).toBeNull();
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({ onboardingDone: true });
     });
 
     test("clicking Skip should finish the tour", () => {
       onboarding.start();
       onboarding.tooltip.querySelector(".onboarding-skip").click();
 
-      expect(document.getElementById("onboardingOverlay")).toBeNull();
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({ onboardingDone: true });
+      expectTourFinished();
     });
 
     test("should not throw when storage.set is unavailable", () => {
@@ -408,8 +421,7 @@ describe("Onboarding Component", () => {
       onboarding.start();
 
       // No tooltip should remain because render() finished early
-      expect(document.getElementById("onboardingOverlay")).toBeNull();
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({ onboardingDone: true });
+      expectTourFinished();
     });
   });
 
@@ -419,14 +431,7 @@ describe("Onboarding Component", () => {
 
   describe("positionTooltip", () => {
     test("placement 'top' should place tooltip above the target with margin", () => {
-      Object.defineProperty(document.documentElement, "clientWidth", {
-        configurable: true,
-        value: 400,
-      });
-      Object.defineProperty(document.documentElement, "clientHeight", {
-        configurable: true,
-        value: 600,
-      });
+      setDocumentViewport(400, 600);
 
       onboarding.start(); // step 1, placement "top", target top:300
       stubTooltipSize(onboarding, 200, 100);
@@ -441,14 +446,7 @@ describe("Onboarding Component", () => {
     });
 
     test("placement 'top' should flip below target when there is no room above", () => {
-      Object.defineProperty(document.documentElement, "clientWidth", {
-        configurable: true,
-        value: 400,
-      });
-      Object.defineProperty(document.documentElement, "clientHeight", {
-        configurable: true,
-        value: 600,
-      });
+      setDocumentViewport(400, 600);
 
       // Move target to the very top
       const target = document.querySelector('.footer-li[data-bs-target="#tipsModal"]');
@@ -475,14 +473,7 @@ describe("Onboarding Component", () => {
 
     test("should clamp tooltip horizontally inside the viewport", () => {
       // Force a narrow viewport via documentElement.clientWidth
-      Object.defineProperty(document.documentElement, "clientWidth", {
-        configurable: true,
-        value: 300,
-      });
-      Object.defineProperty(document.documentElement, "clientHeight", {
-        configurable: true,
-        value: 600,
-      });
+      setDocumentViewport(300, 600);
 
       onboarding.start();
       stubTooltipSize(onboarding, 200, 100);
