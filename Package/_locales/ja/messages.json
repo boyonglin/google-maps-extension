@@ -175,6 +175,15 @@
   "onboardingHintsDesc": {
     "message": "「ヒント」を開いて、Ctrl+Shift+S などのショートカットを確認しましょう。"
   },
+  "onboardingFavoriteTitle": {
+    "message": "場所をお気に入りに保存"
+  },
+  "onboardingFavoriteDesc": {
+    "message": "検索履歴の横にある + アイコンをタップすると、お気に入りに保存してあとですぐに開けます。"
+  },
+  "onboardingDemoPlace": {
+    "message": "エッフェル塔"
+  },
   "onboardingApiTitle": {
     "message": "AI 場所サマリー"
   },

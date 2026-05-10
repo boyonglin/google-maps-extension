@@ -983,6 +983,18 @@ li:hover .form-check-input {
   padding: 0.25rem 0.875rem;
 }
 
+// Demo history item shown during onboarding — force hover state so the
+// add-to-favorite icon (normally hidden until hover) is visible to the user.
+.onboarding-demo-item.history-list {
+  color: var(--google-green);
+  background-color: var(--google-green-bg);
+  border: 1px solid var(--google-green) !important;
+}
+.onboarding-demo-item i {
+  display: flex !important;
+  opacity: 1 !important;
+}
+
 .preview-video {
   position: absolute;
   display: none;

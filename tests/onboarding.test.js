@@ -3,8 +3,9 @@
  *
  * Covers:
  * - First-time gating via chrome.storage.local.onboardingDone
- * - 3-step flow (Hints -> API -> Premium)
+ * - 4-step flow (Hints -> Favorite -> API -> Premium)
  * - DOM construction (overlay, spotlight, tooltip)
+ * - Demo search-history item injection + cleanup
  * - Next / Skip / Finish behaviors and persistence
  * - i18n labels (Next vs Got it on final step)
  * - Tooltip positioning (placement: top/bottom + viewport clamp)
@@ -19,6 +20,8 @@ const Onboarding = require("../Package/dist/components/onboarding.js");
 const setupOnboardingDOM = () => {
   document.body.innerHTML = `
     <div id="geminiSummaryButton" style="position:absolute; top:20px; left:30px; width:40px; height:40px;"></div>
+    <div id="searchHistoryList"></div>
+    <p id="emptyMessage" style="display:block;">No history</p>
     <ul>
       <li class="footer-li" data-bs-toggle="modal" data-bs-target="#tipsModal" style="position:absolute; top:300px; left:50px; width:60px; height:24px;"></li>
       <li class="footer-li" data-bs-toggle="modal" data-bs-target="#premiumModal" style="position:absolute; top:300px; left:130px; width:60px; height:24px;"></li>
@@ -77,6 +80,9 @@ describe("Onboarding Component", () => {
     mockI18n({
       onboardingHintsTitle: "Keyboard shortcuts",
       onboardingHintsDesc: "Open Tips to view shortcuts.",
+      onboardingFavoriteTitle: "Save places to favorites",
+      onboardingFavoriteDesc: "Tap the + icon to save it.",
+      onboardingDemoPlace: "Eiffel Tower",
       onboardingApiTitle: "AI place summaries",
       onboardingApiDesc: "Add a Gemini API key.",
       onboardingPremiumTitle: "Premium features",
@@ -84,6 +90,7 @@ describe("Onboarding Component", () => {
       onboardingNextBtn: "Next",
       onboardingSkipBtn: "Skip",
       onboardingDoneBtn: "Got it",
+      plusLabel: "Add to favorites",
     });
 
     // Default: onboarding NOT done
@@ -104,11 +111,17 @@ describe("Onboarding Component", () => {
   // ==========================================================================
 
   describe("constructor", () => {
-    test("should expose 3 ordered steps (hints -> api -> premium)", () => {
-      expect(onboarding.steps).toHaveLength(3);
+    test("should expose 4 ordered steps (hints -> favorite -> api -> premium)", () => {
+      expect(onboarding.steps).toHaveLength(4);
       expect(onboarding.steps[0].targetSelector).toContain("tipsModal");
-      expect(onboarding.steps[1].targetSelector).toBe("#geminiSummaryButton");
-      expect(onboarding.steps[2].targetSelector).toContain("premiumModal");
+      expect(onboarding.steps[1].targetSelector).toBe(".onboarding-demo-item .bi");
+      expect(onboarding.steps[2].targetSelector).toBe("#geminiSummaryButton");
+      expect(onboarding.steps[3].targetSelector).toContain("premiumModal");
+    });
+
+    test("favorite step should declare setup and cleanup hooks", () => {
+      expect(typeof onboarding.steps[1].setup).toBe("function");
+      expect(typeof onboarding.steps[1].cleanup).toBe("function");
     });
 
     test("should use onboardingDone storage key", () => {
@@ -183,7 +196,7 @@ describe("Onboarding Component", () => {
       expect(tooltip.querySelector(".onboarding-tooltip-desc").textContent).toBe(
         "Open Tips to view shortcuts."
       );
-      expect(tooltip.querySelector(".onboarding-tooltip-counter").textContent).toBe("1 / 3");
+      expect(tooltip.querySelector(".onboarding-tooltip-counter").textContent).toBe("1 / 4");
       expect(tooltip.querySelector(".onboarding-skip").textContent).toBe("Skip");
       expect(tooltip.querySelector(".onboarding-next").textContent).toBe("Next");
     });
@@ -213,38 +226,54 @@ describe("Onboarding Component", () => {
   // ==========================================================================
 
   describe("next", () => {
-    test("should advance to step 2 (API / Gemini button)", () => {
+    test("should advance to step 2 (Favorite / demo history item)", () => {
       onboarding.start();
       onboarding.next();
 
       expect(onboarding.currentStep).toBe(1);
       expect(onboarding.tooltip.querySelector(".onboarding-tooltip-title").textContent).toBe(
-        "AI place summaries"
+        "Save places to favorites"
       );
       expect(onboarding.tooltip.querySelector(".onboarding-tooltip-counter").textContent).toBe(
-        "2 / 3"
+        "2 / 4"
       );
     });
 
-    test("should advance to step 3 (Premium) and show 'Got it' button", () => {
+    test("should advance to step 3 (API / Gemini button)", () => {
       onboarding.start();
       onboarding.next();
       onboarding.next();
 
       expect(onboarding.currentStep).toBe(2);
       expect(onboarding.tooltip.querySelector(".onboarding-tooltip-title").textContent).toBe(
+        "AI place summaries"
+      );
+      expect(onboarding.tooltip.querySelector(".onboarding-tooltip-counter").textContent).toBe(
+        "3 / 4"
+      );
+    });
+
+    test("should advance to step 4 (Premium) and show 'Got it' button", () => {
+      onboarding.start();
+      onboarding.next();
+      onboarding.next();
+      onboarding.next();
+
+      expect(onboarding.currentStep).toBe(3);
+      expect(onboarding.tooltip.querySelector(".onboarding-tooltip-title").textContent).toBe(
         "Premium features"
       );
       expect(onboarding.tooltip.querySelector(".onboarding-next").textContent).toBe("Got it");
       expect(onboarding.tooltip.querySelector(".onboarding-tooltip-counter").textContent).toBe(
-        "3 / 3"
+        "4 / 4"
       );
     });
 
     test("should finish tour after the final step", () => {
       onboarding.start();
-      onboarding.next(); // -> 2
-      onboarding.next(); // -> 3
+      onboarding.next(); // -> 2 (favorite)
+      onboarding.next(); // -> 3 (api)
+      onboarding.next(); // -> 4 (premium)
       onboarding.next(); // -> finish
 
       expect(document.getElementById("onboardingOverlay")).toBeNull();
@@ -256,6 +285,82 @@ describe("Onboarding Component", () => {
       onboarding.tooltip.querySelector(".onboarding-next").click();
 
       expect(onboarding.currentStep).toBe(1);
+    });
+  });
+
+  // ==========================================================================
+  // Favorite step: demo history item injection + cleanup
+  // ==========================================================================
+
+  describe("favorite step (demo history item)", () => {
+    const advanceToFavoriteStep = () => {
+      onboarding.start();
+      onboarding.next(); // -> step 2 (favorite)
+    };
+
+    test("should inject a demo history item with the favorite icon when entering the step", () => {
+      advanceToFavoriteStep();
+
+      const demo = document.querySelector(".onboarding-demo-item");
+      expect(demo).not.toBeNull();
+      expect(demo.querySelector("span").textContent).toBe("Eiffel Tower");
+      expect(demo.querySelector("i.bi-patch-plus-fill")).not.toBeNull();
+      // Demo item must be inside the real search history container
+      expect(document.getElementById("searchHistoryList").contains(demo)).toBe(true);
+    });
+
+    test("should hide the empty-history message while the demo item is shown", () => {
+      advanceToFavoriteStep();
+      expect(document.getElementById("emptyMessage").style.display).toBe("none");
+    });
+
+    test("should remove the demo item when advancing to the next step", () => {
+      advanceToFavoriteStep();
+      expect(document.querySelector(".onboarding-demo-item")).not.toBeNull();
+
+      onboarding.next();
+
+      expect(document.querySelector(".onboarding-demo-item")).toBeNull();
+    });
+
+    test("should restore the empty-history message after cleanup", () => {
+      advanceToFavoriteStep();
+      onboarding.next();
+
+      expect(document.getElementById("emptyMessage").style.display).toBe("block");
+    });
+
+    test("should remove the demo item when the tour is skipped mid-step", () => {
+      advanceToFavoriteStep();
+      onboarding.finish();
+
+      expect(document.querySelector(".onboarding-demo-item")).toBeNull();
+      expect(document.getElementById("emptyMessage").style.display).toBe("block");
+    });
+
+    test("clicking the demo favorite icon should advance to the next step without persisting a real favorite", () => {
+      advanceToFavoriteStep();
+      const icon = document.querySelector(".onboarding-demo-item .bi");
+
+      icon.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+
+      expect(onboarding.currentStep).toBe(2);
+      // Demo item should be cleaned up after leaving the step
+      expect(document.querySelector(".onboarding-demo-item")).toBeNull();
+      // chrome.storage.set should only ever be called for onboardingDone, never for favoriteList
+      const setCalls = chrome.storage.local.set.mock.calls.map((c) => c[0]);
+      const favoriteCalls = setCalls.filter((arg) => arg && "favoriteList" in arg);
+      expect(favoriteCalls).toHaveLength(0);
+    });
+
+    test("should be a no-op when the search history container is missing", () => {
+      document.getElementById("searchHistoryList").remove();
+      // Should still complete without throwing — the favorite step's target won't
+      // be found, so the tour finishes early.
+      expect(() => {
+        onboarding.start();
+        onboarding.next();
+      }).not.toThrow();
     });
   });
 

@@ -233,6 +233,18 @@
     "message": "Open Tips to view shortcuts like Ctrl+Shift+S for instant Google Maps search.",
     "description": "onboarding step 1 description"
   },
+  "onboardingFavoriteTitle": {
+    "message": "Save places to favorites",
+    "description": "onboarding favorite step title"
+  },
+  "onboardingFavoriteDesc": {
+    "message": "Tap the + icon next to any search result to save it to your favorites for quick access later.",
+    "description": "onboarding favorite step description"
+  },
+  "onboardingDemoPlace": {
+    "message": "Eiffel Tower",
+    "description": "onboarding demo search history item label"
+  },
   "onboardingApiTitle": {
     "message": "AI place summaries",
     "description": "onboarding step 2 title"

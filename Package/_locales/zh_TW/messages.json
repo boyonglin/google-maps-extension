@@ -175,6 +175,15 @@
   "onboardingHintsDesc": {
     "message": "點開「提示」查看快捷鍵，例如 Ctrl+Shift+S 可立即搜尋 Google 地圖。"
   },
+  "onboardingFavoriteTitle": {
+    "message": "把地點加入最愛"
+  },
+  "onboardingFavoriteDesc": {
+    "message": "點擊搜尋紀錄旁的 + 圖示，就能把地點加入最愛，之後一鍵快速開啟。"
+  },
+  "onboardingDemoPlace": {
+    "message": "艾菲爾鐵塔"
+  },
   "onboardingApiTitle": {
     "message": "AI 地點摘要"
   },
