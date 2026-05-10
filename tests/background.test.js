@@ -1288,7 +1288,6 @@ describe("background.js", () => {
           isTrial: true,
           isExpiredTrial: false,
           isPremium: false,
-          isFree: false,
           trialEnd: expect.any(Number),
         }),
       });
@@ -1315,7 +1314,6 @@ describe("background.js", () => {
           isTrial: false,
           isExpiredTrial: true,
           isPremium: false,
-          isFree: false,
         }),
       });
     });

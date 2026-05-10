@@ -6,6 +6,7 @@
     "test:verbose": "jest --verbose",
     "format": "prettier --write \"Package/dist/**/*.js\" \"tests/**/*.js\" \"scss/**/*.scss\"",
     "format:check": "prettier --check \"Package/dist/**/*.js\" \"tests/**/*.js\" \"scss/**/*.scss\"",
+    "build:css": "sass scss/popup.scss Package/css/popup.css",
     "prepare": "husky"
   },
   "devDependencies": {

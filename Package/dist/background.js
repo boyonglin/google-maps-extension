@@ -620,10 +620,9 @@ function checkPaymentStatus(user) {
   const isTrial = user.trialStartedAt && now - user.trialStartedAt < trialPeriod && !isPremium;
   const isExpiredTrial =
     user.trialStartedAt && now - user.trialStartedAt >= trialPeriod && !isPremium;
-  const isFree = false;
   const trialEnd = new Date(user.trialStartedAt).getTime() + trialPeriod;
 
-  return { isFirst, isTrial, isExpiredTrial, isPremium, isFree, trialEnd };
+  return { isFirst, isTrial, isExpiredTrial, isPremium, trialEnd };
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

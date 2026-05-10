@@ -42,9 +42,6 @@ class Payment {
       modal.text2Link("premiumNote", "回饋", feedbackUrl);
       modal.text2Link("premiumNote", "feedback", feedbackUrl);
       modal.text2Link("premiumNote", "フィードバック", feedbackUrl);
-    } else if (state.paymentStage.isFree) {
-      premiumNoteElement.innerHTML = chrome.i18n.getMessage("freeNote");
-      modal.text2Link("premiumNote", "ExtensionPay", "https://extensionpay.com/");
     }
   }
 

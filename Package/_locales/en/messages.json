@@ -199,7 +199,7 @@
   },
   "languageNote": {
     "message": "Override the extension language (Auto: browser language)",
-    "description": "language selector tooltip"
+    "description": "language selector helper text in settings"
   },
   "languageAuto": {
     "message": "Auto",
@@ -227,19 +227,19 @@
   },
   "onboardingHintsTitle": {
     "message": "Keyboard shortcuts",
-    "description": "onboarding step 1 title"
+    "description": "onboarding step 1 (hints) title"
   },
   "onboardingHintsDesc": {
     "message": "Press Ctrl+Shift+S to search Google Maps instantly. Open Tips to see all shortcuts.",
-    "description": "onboarding step 1 description"
+    "description": "onboarding step 1 (hints) description"
   },
   "onboardingFavoriteTitle": {
     "message": "Save places instantly",
-    "description": "onboarding favorite step title"
+    "description": "onboarding step 2 (favorite) title"
   },
   "onboardingFavoriteDesc": {
     "message": "Hit + on any result to pin it as a favorite — one tap to open next time.",
-    "description": "onboarding favorite step description"
+    "description": "onboarding step 2 (favorite) description"
   },
   "onboardingDemoPlace": {
     "message": "Statue of Liberty",
@@ -247,19 +247,19 @@
   },
   "onboardingApiTitle": {
     "message": "AI place summaries",
-    "description": "onboarding step 2 title"
+    "description": "onboarding step 3 (API) title"
   },
   "onboardingApiDesc": {
     "message": "Add a free Gemini API key to get AI-powered insights on any place you search.",
-    "description": "onboarding step 2 description"
+    "description": "onboarding step 3 (API) description"
   },
   "onboardingPremiumTitle": {
     "message": "40 days free",
-    "description": "onboarding step 3 title"
+    "description": "onboarding step 4 (premium) title"
   },
   "onboardingPremiumDesc": {
     "message": "Try Auto-attach Links and all premium features — no credit card needed.",
-    "description": "onboarding step 3 description"
+    "description": "onboarding step 4 (premium) description"
   },
   "onboardingNextBtn": {
     "message": "Next",

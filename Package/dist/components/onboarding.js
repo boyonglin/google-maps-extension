@@ -12,10 +12,12 @@
  * first renders; `cleanup` runs when leaving the step (via next or finish) so
  * any temporary DOM (e.g. the demo history item) is reliably removed.
  */
+const DEMO_ITEM_CLASS = "onboarding-demo-item";
+
 class Onboarding {
   constructor() {
     this.STORAGE_KEY = "onboardingDone";
-    this.DEMO_ITEM_CLASS = "onboarding-demo-item";
+    this.DEMO_ITEM_CLASS = DEMO_ITEM_CLASS;
     this.steps = [
       {
         targetSelector: '.footer-li[data-bs-target="#tipsModal"]',
@@ -24,7 +26,7 @@ class Onboarding {
         placement: "top",
       },
       {
-        targetSelector: `.${"onboarding-demo-item"} .bi`,
+        targetSelector: `.${DEMO_ITEM_CLASS} .bi`,
         titleKey: "onboardingFavoriteTitle",
         descKey: "onboardingFavoriteDesc",
         placement: "bottom",
@@ -150,6 +152,26 @@ class Onboarding {
     this.tooltip.setAttribute("role", "dialog");
     this.tooltip.setAttribute("aria-live", "polite");
 
+    // Build tooltip structure once; render() only updates text + listeners.
+    this.tooltip.innerHTML = `
+      <div class="onboarding-tooltip-header">
+        <span class="onboarding-tooltip-title"></span>
+        <span class="onboarding-tooltip-counter"></span>
+      </div>
+      <p class="onboarding-tooltip-desc"></p>
+      <div class="onboarding-tooltip-actions">
+        <button type="button" class="btn btn-link btn-sm onboarding-skip"></button>
+        <button type="button" class="btn btn-primary btn-sm onboarding-next"></button>
+      </div>
+    `;
+    this._titleEl = this.tooltip.querySelector(".onboarding-tooltip-title");
+    this._counterEl = this.tooltip.querySelector(".onboarding-tooltip-counter");
+    this._descEl = this.tooltip.querySelector(".onboarding-tooltip-desc");
+    this._skipBtn = this.tooltip.querySelector(".onboarding-skip");
+    this._nextBtn = this.tooltip.querySelector(".onboarding-next");
+    this._skipBtn.addEventListener("click", () => this.finish());
+    this._nextBtn.addEventListener("click", () => this.next());
+
     this.overlay.appendChild(this.spotlight);
     this.overlay.appendChild(this.tooltip);
     document.body.appendChild(this.overlay);
@@ -199,25 +221,11 @@ class Onboarding {
     const skipLabel = chrome.i18n.getMessage("onboardingSkipBtn") || "Skip";
     const counter = `${this.currentStep + 1} / ${this.steps.length}`;
 
-    this.tooltip.innerHTML = `
-      <div class="onboarding-tooltip-header">
-        <span class="onboarding-tooltip-title"></span>
-        <span class="onboarding-tooltip-counter"></span>
-      </div>
-      <p class="onboarding-tooltip-desc"></p>
-      <div class="onboarding-tooltip-actions">
-        <button type="button" class="btn btn-link btn-sm onboarding-skip"></button>
-        <button type="button" class="btn btn-primary btn-sm onboarding-next"></button>
-      </div>
-    `;
-    this.tooltip.querySelector(".onboarding-tooltip-title").textContent = title;
-    this.tooltip.querySelector(".onboarding-tooltip-counter").textContent = counter;
-    this.tooltip.querySelector(".onboarding-tooltip-desc").textContent = desc;
-    this.tooltip.querySelector(".onboarding-skip").textContent = skipLabel;
-    this.tooltip.querySelector(".onboarding-next").textContent = nextLabel;
-
-    this.tooltip.querySelector(".onboarding-skip").addEventListener("click", () => this.finish());
-    this.tooltip.querySelector(".onboarding-next").addEventListener("click", () => this.next());
+    this._titleEl.textContent = title;
+    this._counterEl.textContent = counter;
+    this._descEl.textContent = desc;
+    this._skipBtn.textContent = skipLabel;
+    this._nextBtn.textContent = nextLabel;
 
     this.positionTooltip(rect, step.placement);
   }
@@ -293,6 +301,11 @@ class Onboarding {
     this.overlay = null;
     this.spotlight = null;
     this.tooltip = null;
+    this._titleEl = null;
+    this._counterEl = null;
+    this._descEl = null;
+    this._skipBtn = null;
+    this._nextBtn = null;
   }
 }
 

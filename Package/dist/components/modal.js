@@ -268,8 +268,8 @@ class Modal {
         if (newLang === window.I18nUtils.getCurrentLanguage()) return;
         if (window.Analytics)
           window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
+        // setLanguage now applies the override synchronously, so no reloadOverride needed.
         await window.I18nUtils.setLanguage(newLang);
-        window.I18nUtils.reloadOverride();
         if (typeof window.applyI18n === "function") window.applyI18n();
         syncDropdownState(window.I18nUtils.getCurrentLanguage(), true);
         window.dispatchEvent(new CustomEvent("i18n:changed", { detail: { lang: newLang } }));

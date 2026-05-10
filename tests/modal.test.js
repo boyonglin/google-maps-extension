@@ -21,7 +21,6 @@ global.state = {
     isTrial: false,
     isPremium: false,
     isFirst: false,
-    isFree: false,
   },
 };
 
@@ -203,7 +202,6 @@ describe("Modal Component - Full Coverage", () => {
       isTrial: false,
       isPremium: false,
       isFirst: false,
-      isFree: false,
     };
 
     // Create fresh instance WITH DEPENDENCY INJECTION

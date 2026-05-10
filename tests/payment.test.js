@@ -4,7 +4,7 @@
  * Tests cover:
  * - checkPay() - Payment status checking with chrome.runtime.sendMessage
  * - updateShortcutDisplay() - UI updates based on payment stage
- * - updateNoteDisplay() - Dynamic note content based on payment stage (isFirst, isTrial, isPremium, isFree)
+ * - updateNoteDisplay() - Dynamic note content based on payment stage (isFirst, isTrial, isExpiredTrial, isPremium)
  * - calcTrialEndDate() - Date formatting logic
  */
 
@@ -84,7 +84,6 @@ describe("Payment Component - Full Coverage", () => {
         isFirst: false,
         isTrial: true,
         isPremium: false,
-        isFree: false,
         trialEnd: Date.now() + ONE_DAY_MS, // 1 day from now
       };
 
@@ -187,21 +186,6 @@ describe("Payment Component - Full Coverage", () => {
       });
     });
 
-    test("should keep premium-only class for free users", () => {
-      global.state.paymentStage = {
-        isTrial: false,
-        isPremium: false,
-        isFree: true,
-      };
-
-      paymentInstance.updateShortcutDisplay();
-
-      // Class should remain
-      Array.from(global.shortcutTip).forEach((element) => {
-        expect(element.classList.contains("premium-only")).toBe(true);
-      });
-    });
-
     test("should keep premium-only class for first-time users", () => {
       global.state.paymentStage = {
         isFirst: true,
@@ -249,7 +233,6 @@ describe("Payment Component - Full Coverage", () => {
         isFirst: true,
         isTrial: false,
         isPremium: false,
-        isFree: false,
       };
 
       paymentInstance.updateNoteDisplay();
@@ -328,42 +311,30 @@ describe("Payment Component - Full Coverage", () => {
     });
   });
 
-  describe("updateNoteDisplay - isFree", () => {
-    test("should display free user note with ExtensionPay link", () => {
-      global.state.paymentStage = { isFree: true };
-
-      paymentInstance.updateNoteDisplay();
-
-      expect(premiumNoteElement.innerHTML).toBe("Upgrade to premium via ExtensionPay");
-      expect(global.modal.text2Link).toHaveBeenCalledWith(
-        "premiumNote",
-        "ExtensionPay",
-        "https://extensionpay.com/"
-      );
-      expect(global.modal.text2Link).toHaveBeenCalledTimes(1);
-    });
-  });
-
   describe("updateNoteDisplay - Priority Testing", () => {
-    test("should prioritize isFirst > isTrial > isPremium > isFree", () => {
+    test("should prioritize isFirst > isExpiredTrial > isTrial > isPremium", () => {
       // Test if-else precedence: isFirst wins
-      global.state.paymentStage = { isFirst: true, isTrial: true, isPremium: true, isFree: true };
+      global.state.paymentStage = {
+        isFirst: true,
+        isExpiredTrial: true,
+        isTrial: true,
+        isPremium: true,
+      };
       paymentInstance.updateNoteDisplay();
       expect(premiumNoteElement.innerHTML).toBe("Welcome! This is your first time.");
 
-      // isTrial wins when isFirst is false
+      // isTrial wins when isFirst and isExpiredTrial are false
       global.state.paymentStage = {
         isTrial: true,
         isPremium: true,
-        isFree: true,
         trialEnd: Date.now(),
       };
       paymentInstance.updateNoteDisplay();
       expect(global.modal.text2Modal).toHaveBeenCalled();
 
-      // isPremium wins when isFirst and isTrial are false
+      // isPremium wins when isFirst, isExpiredTrial and isTrial are false
       global.modal.text2Link.mockClear();
-      global.state.paymentStage = { isPremium: true, isFree: true };
+      global.state.paymentStage = { isPremium: true };
       paymentInstance.updateNoteDisplay();
       expect(global.modal.text2Link).toHaveBeenCalledTimes(3);
     });
@@ -373,7 +344,6 @@ describe("Payment Component - Full Coverage", () => {
         isFirst: false,
         isTrial: false,
         isPremium: false,
-        isFree: false,
       };
       expect(() => paymentInstance.updateNoteDisplay()).not.toThrow();
       expect(global.modal.text2Modal).not.toHaveBeenCalled();
@@ -467,13 +437,15 @@ describe("Payment Component - Full Coverage", () => {
       expect(global.modal.text2Link).toHaveBeenCalledTimes(3);
     });
 
-    test("should handle free user flow: keep shortcuts locked", () => {
-      chrome.runtime.sendMessage.mockImplementation((msg, cb) => cb({ result: { isFree: true } }));
+    test("should handle expired trial flow: keep shortcuts unlocked, show ExtensionPay link", () => {
+      chrome.runtime.sendMessage.mockImplementation((msg, cb) =>
+        cb({ result: { isExpiredTrial: true } })
+      );
 
       paymentInstance.checkPay();
 
       Array.from(shortcutTip).forEach((el) =>
-        expect(el.classList.contains("premium-only")).toBe(true)
+        expect(el.classList.contains("premium-only")).toBe(false)
       );
       expect(global.modal.text2Link).toHaveBeenCalledWith(
         "premiumNote",

@@ -45,6 +45,8 @@
   }
 
   function loadMessagesSync(lang) {
+    // Defense in depth: never let an unexpected lang reach runtime.getURL.
+    if (!SUPPORTED_LANGUAGES.includes(lang) || lang === "auto") return null;
     try {
       const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
       const xhr = new XMLHttpRequest();
@@ -138,10 +140,11 @@
           writeMessagesCache(null);
         } else {
           localStorage.setItem(STORAGE_KEY, normalized);
-          const messages = loadMessagesSync(normalized);
-          if (messages) writeMessagesCache(normalized, messages);
         }
       } catch (e) {}
+      // Apply in-memory immediately (also refreshes cache via loadMessagesSync)
+      // so callers don't need a separate reloadOverride() round-trip.
+      applyOverride(normalized);
       return new Promise((resolve) => {
         if (normalized === "auto") {
           chrome.storage.local.remove(STORAGE_KEY, () => resolve(normalized));
