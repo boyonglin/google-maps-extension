@@ -223,7 +223,7 @@ https://youtu.be/xv0tVQAi3qo
 |------|------|
 | 擴充功能框架 | Chrome Manifest V3 |
 | UI | HTML + Bootstrap 5.3 + SCSS |
-| AI | Gemini Flash API（`gemini-3.1-flash-lite-preview`） |
+| AI | Gemini Flash API（`gemini-flash-lite-latest`） |
 | 付款 | ExtPay |
 | 資料儲存 | `localStorage` |
 | 在地化 | Chrome i18n（en · zh-TW · ja） |
