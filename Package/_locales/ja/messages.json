@@ -145,6 +145,15 @@
   "darkModeNote": {
     "message": "ポップアップにダークテーマを適用"
   },
+  "languageLabel": {
+    "message": "言語"
+  },
+  "languageNote": {
+    "message": "拡張機能の言語を上書き（自動: ブラウザの言語）"
+  },
+  "languageAuto": {
+    "message": "自動"
+  },
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"
   },
@@ -155,13 +164,49 @@
     "message": "\ud83d\udd25今後、さらに多くの上級魔法"
   },
   "paymentLabel": {
-    "message": "永久使用 $$2.00"
+    "message": "永久使用 $$9.00"
   },
   "restoreLabel": {
     "message": "購入を復元"
   },
+  "onboardingHintsTitle": {
+    "message": "キーボードショートカット"
+  },
+  "onboardingHintsDesc": {
+    "message": "Ctrl+Shift+S で Google マップを即検索。ヒントですべてのショートカットを確認できます。"
+  },
+  "onboardingFavoriteTitle": {
+    "message": "お気に入りに保存"
+  },
+  "onboardingFavoriteDesc": {
+    "message": "検索結果の + をタップして即登録。次回から一発で開けます。"
+  },
+  "onboardingDemoPlace": {
+    "message": "東京タワー"
+  },
+  "onboardingApiTitle": {
+    "message": "AI でスポットを要約"
+  },
+  "onboardingApiDesc": {
+    "message": "無料の Gemini API キーを追加すると、検索した場所の AI 要約をすぐに確認できます。"
+  },
+  "onboardingPremiumTitle": {
+    "message": "40 日間無料でお試し"
+  },
+  "onboardingPremiumDesc": {
+    "message": "リンク自動添付などのプレミアム機能を、クレジットカード不要でお試しいただけます。"
+  },
+  "onboardingNextBtn": {
+    "message": "次へ"
+  },
+  "onboardingSkipBtn": {
+    "message": "スキップ"
+  },
+  "onboardingDoneBtn": {
+    "message": "OK"
+  },
   "firstNote": {
-    "message": "14 日間の無料体験で、Google マップとページの接続方法をご確認ください。"
+    "message": "40 日間の無料体験で、Google マップとページの接続方法をご確認ください。"
   },
   "trialNote": {
     "message": "体験は $date$ に終了",
@@ -173,6 +218,9 @@
   },
   "remindNote": {
     "message": "Gemini AI と Alt+S / &#8997;+S のショートカットキーで、リンク自動添付機能を利用する。"
+  },
+  "expiredNote": {
+    "message": "40 日間の試用が終了しました。アップグレードしてご支援いただけると嬉しいです！"
   },
   "premiumNote": {
     "message": "どうも、魔法使いの友よ\ud83e\uddd9ぜひフィードバックを気軽に共有して、もっと良くしよう。"

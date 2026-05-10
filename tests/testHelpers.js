@@ -69,6 +69,24 @@ const setupMockStorage = (overrides = {}) => {
   return mockStorageData;
 };
 
+const createMockThemeUtils = ({ isDarkMode = false, toggleResult = true } = {}) => ({
+  STORAGE_KEY: "isDarkMode",
+  THEME_ATTRIBUTE: "data-theme",
+  BS_THEME_ATTRIBUTE: "data-bs-theme",
+  DARK: "dark",
+  LIGHT: "light",
+  getSystemPreference: jest.fn(() => isDarkMode),
+  getStoredPreference: jest.fn(() => Promise.resolve(isDarkMode)),
+  savePreference: jest.fn(() => Promise.resolve()),
+  applyToElement: jest.fn(),
+  initialize: jest.fn((_element, _includeBootstrap, callback) => {
+    if (callback) callback(isDarkMode);
+    return Promise.resolve(isDarkMode);
+  }),
+  toggle: jest.fn(() => Promise.resolve(toggleResult)),
+  notifyContentScript: jest.fn(),
+});
+
 /**
  * Mock global fetch API with responses
  * @param {Array|Object} responses - Single response or array of responses for consecutive calls
@@ -422,6 +440,7 @@ module.exports = {
   mockChromeStorage,
   mockTabsQuery,
   mockTabsSendMessage,
+  createMockThemeUtils,
 
   // Fetch Mocking
   setupMockFetch,

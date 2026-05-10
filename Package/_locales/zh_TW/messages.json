@@ -145,6 +145,15 @@
   "darkModeNote": {
     "message": "套用深色主題至此彈出視窗"
   },
+  "languageLabel": {
+    "message": "語言"
+  },
+  "languageNote": {
+    "message": "覆蓋擴充功能語言（自動：瀏覽器語言）"
+  },
+  "languageAuto": {
+    "message": "自動"
+  },
   "autoAttachLabel": {
     "message": "\ud83d\udccc自動附加 Google 地圖連結"
   },
@@ -155,13 +164,49 @@
     "message": "\ud83d\udd25將會有更多的高級魔法"
   },
   "paymentLabel": {
-    "message": "永久使用 $$2.00"
+    "message": "永久使用 $$9.00"
   },
   "restoreLabel": {
     "message": "恢復購買"
   },
+  "onboardingHintsTitle": {
+    "message": "快捷鍵一覽"
+  },
+  "onboardingHintsDesc": {
+    "message": "按 Ctrl+Shift+S 立刻搜尋 Google 地圖，更多快捷鍵可在「提示」查看。"
+  },
+  "onboardingFavoriteTitle": {
+    "message": "收藏常去的地方"
+  },
+  "onboardingFavoriteDesc": {
+    "message": "點一下 + 圖示，地點存入最愛，下次一秒開啟。"
+  },
+  "onboardingDemoPlace": {
+    "message": "台北101"
+  },
+  "onboardingApiTitle": {
+    "message": "AI 地點摘要"
+  },
+  "onboardingApiDesc": {
+    "message": "填入免費的 Gemini API 金鑰，即可查看任何地點的 AI 整理重點。"
+  },
+  "onboardingPremiumTitle": {
+    "message": "40 天免費體驗"
+  },
+  "onboardingPremiumDesc": {
+    "message": "試用自動附加連結等進階功能，免信用卡，無附加條件。"
+  },
+  "onboardingNextBtn": {
+    "message": "繼續"
+  },
+  "onboardingSkipBtn": {
+    "message": "略過"
+  },
+  "onboardingDoneBtn": {
+    "message": "知道了"
+  },
   "firstNote": {
-    "message": "透過 14 天的免費試用，體驗我們如何串聯你的網頁與 Google 地圖"
+    "message": "透過 40 天的免費試用，體驗我們如何串聯你的網頁與 Google 地圖"
   },
   "trialNote": {
     "message": "試用於 $date$ 結束",
@@ -173,6 +218,9 @@
   },
   "remindNote": {
     "message": "透過 Gemini AI 和 Alt+S / &#8997;+S 快捷鍵使用自動附加連結功能"
+  },
+  "expiredNote": {
+    "message": "40 天試用已結束，歡迎升級以支持我們！"
   },
   "premiumNote": {
     "message": "你好啊，巫師朋友\ud83e\uddd9歡迎隨時分享你的回饋，幫助我們做得更好"

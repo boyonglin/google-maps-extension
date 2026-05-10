@@ -193,6 +193,18 @@
     "message": "History and summaries won't be saved",
     "description": "incognito mode tooltip"
   },
+  "languageLabel": {
+    "message": "Language",
+    "description": "language selector label in settings"
+  },
+  "languageNote": {
+    "message": "Override the extension language (Auto: browser language)",
+    "description": "language selector helper text in settings"
+  },
+  "languageAuto": {
+    "message": "Auto",
+    "description": "language selector default option label"
+  },
   "autoAttachLabel": {
     "message": "\ud83d\udcccAuto-attach Google Maps link",
     "description": "modal auto-attach feature label"
@@ -206,15 +218,63 @@
     "description": "modal more feature label"
   },
   "paymentLabel": {
-    "message": "Life Time $$2.00",
+    "message": "Life Time $$9.00",
     "description": "modal pricing label"
   },
   "restoreLabel": {
     "message": "Restore Purchase",
     "description": "modal restore purchase label"
   },
+  "onboardingHintsTitle": {
+    "message": "Keyboard shortcuts",
+    "description": "onboarding step 1 (hints) title"
+  },
+  "onboardingHintsDesc": {
+    "message": "Press Ctrl+Shift+S to search Google Maps instantly. Open Tips to see all shortcuts.",
+    "description": "onboarding step 1 (hints) description"
+  },
+  "onboardingFavoriteTitle": {
+    "message": "Save places instantly",
+    "description": "onboarding step 2 (favorite) title"
+  },
+  "onboardingFavoriteDesc": {
+    "message": "Hit + on any result to pin it as a favorite — one tap to open next time.",
+    "description": "onboarding step 2 (favorite) description"
+  },
+  "onboardingDemoPlace": {
+    "message": "Statue of Liberty",
+    "description": "onboarding demo search history item label"
+  },
+  "onboardingApiTitle": {
+    "message": "AI place summaries",
+    "description": "onboarding step 3 (API) title"
+  },
+  "onboardingApiDesc": {
+    "message": "Add a free Gemini API key to get AI-powered insights on any place you search.",
+    "description": "onboarding step 3 (API) description"
+  },
+  "onboardingPremiumTitle": {
+    "message": "40 days free",
+    "description": "onboarding step 4 (premium) title"
+  },
+  "onboardingPremiumDesc": {
+    "message": "Try Auto-attach Links and all premium features — no credit card needed.",
+    "description": "onboarding step 4 (premium) description"
+  },
+  "onboardingNextBtn": {
+    "message": "Next",
+    "description": "onboarding next button"
+  },
+  "onboardingSkipBtn": {
+    "message": "Skip",
+    "description": "onboarding skip button"
+  },
+  "onboardingDoneBtn": {
+    "message": "Got it",
+    "description": "onboarding final button"
+  },
   "firstNote": {
-    "message": "Test out our 14-day free trial to see how we keep your pages connected to Google Maps.",
+    "message": "Test out our 40-day free trial to see how we keep your pages connected to Google Maps.",
     "description": "modal first note"
   },
   "trialNote": {
@@ -230,6 +290,10 @@
   "remindNote": {
     "message": "Use Gemini AI and Alt+S / &#8997;+S shortcut to enable the auto-attach links feature.",
     "description": "modal remind note"
+  },
+  "expiredNote": {
+    "message": "Your 40-day trial has ended. Consider upgrading to support us!",
+    "description": "modal expired trial note"
   },
   "premiumNote": {
     "message": "Hello there, wizard friend\ud83e\uddd9Feel free to share your feedback to help us make things better.",

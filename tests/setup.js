@@ -27,6 +27,7 @@ global.atob = (str) => Buffer.from(str, "base64").toString("binary");
 
 // Mock TextEncoder and TextDecoder for Node.js environment
 const { TextEncoder, TextDecoder } = require("util");
+const { createMockThemeUtils } = require("./testHelpers");
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
@@ -44,6 +45,7 @@ global.chrome = {
     },
     lastError: null,
     getURL: jest.fn((path) => `chrome-extension://mock-id/${path}`),
+    getManifest: jest.fn(() => ({ version: "1.0.0" })),
   },
   storage: {
     local: {
@@ -190,23 +192,7 @@ global.mapsButton = {
 };
 
 // Mock ThemeUtils
-global.ThemeUtils = {
-  STORAGE_KEY: "isDarkMode",
-  THEME_ATTRIBUTE: "data-theme",
-  BS_THEME_ATTRIBUTE: "data-bs-theme",
-  DARK: "dark",
-  LIGHT: "light",
-  getSystemPreference: jest.fn(() => false),
-  getStoredPreference: jest.fn(() => Promise.resolve(false)),
-  savePreference: jest.fn(() => Promise.resolve()),
-  applyToElement: jest.fn(),
-  initialize: jest.fn((element, includeBootstrap, callback) => {
-    if (callback) callback(false);
-    return Promise.resolve(false);
-  }),
-  toggle: jest.fn(() => Promise.resolve(true)),
-  notifyContentScript: jest.fn(),
-};
+global.ThemeUtils = createMockThemeUtils();
 
 // Mock DOMUtils
 global.DOMUtils = {

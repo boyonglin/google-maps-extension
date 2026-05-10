@@ -21,7 +21,6 @@ global.state = {
     isTrial: false,
     isPremium: false,
     isFirst: false,
-    isFree: false,
   },
 };
 
@@ -56,7 +55,11 @@ const setupGlobalDOMElements = () => {
         <button id="restoreButton"></button>
         <button class="btn-close"></button>
         <div id="apiModal"></div>
-        <div id="optionalModal"></div>
+        <div id="optionalModal">
+            <div class="modal-content">
+                <div class="modal-body settings-body"></div>
+            </div>
+        </div>
         <form id="apiForm" class="d-flex position-relative">
             <input id="apiInput">
             <button type="submit" class="btn btn-set d-none"></button>
@@ -199,7 +202,6 @@ describe("Modal Component - Full Coverage", () => {
       isTrial: false,
       isPremium: false,
       isFirst: false,
-      isFree: false,
     };
 
     // Create fresh instance WITH DEPENDENCY INJECTION
