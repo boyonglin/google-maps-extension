@@ -145,6 +145,15 @@
   "darkModeNote": {
     "message": "ポップアップにダークテーマを適用"
   },
+  "languageLabel": {
+    "message": "言語"
+  },
+  "languageNote": {
+    "message": "拡張機能の言語を上書き（自動: ブラウザの言語）"
+  },
+  "languageAuto": {
+    "message": "自動"
+  },
   "autoAttachLabel": {
     "message": "\ud83d\udcccGoogle マップリンクを自動添付"
   },

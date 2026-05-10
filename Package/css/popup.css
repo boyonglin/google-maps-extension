@@ -1,3 +1,4 @@
+@charset "UTF-8";
 /**
  * Shared Theme Variables
  * Light and Dark mode CSS custom properties
@@ -150,6 +151,25 @@
 }
 [data-theme=dark] .toggle-knob {
   background-color: var(--gray-800);
+}
+[data-theme=dark] .language-dropdown .language-dropdown-toggle {
+  background-color: transparent;
+  border-color: var(--gray-500);
+  color: var(--gray-800);
+}
+[data-theme=dark] .language-dropdown .language-dropdown-toggle[aria-expanded=true] {
+  border-color: var(--gray-500);
+}
+[data-theme=dark] .language-dropdown-menu {
+  background-color: var(--gray-300);
+  border-color: var(--gray-500);
+}
+[data-theme=dark] .language-dropdown-menu .language-dropdown-item {
+  color: var(--gray-800);
+}
+[data-theme=dark] .language-dropdown-menu .language-dropdown-item:hover, [data-theme=dark] .language-dropdown-menu .language-dropdown-item:focus {
+  background-color: var(--gray-200);
+  color: var(--gray-800);
 }
 
 html,
@@ -368,6 +388,89 @@ body {
   opacity: 0;
 }
 
+/* Custom dropdown (matches modalFormInput look) — used for language picker */
+.language-dropdown {
+  position: relative;
+}
+.language-dropdown .language-dropdown-toggle {
+  background-color: var(--background-color);
+  border: 1px solid var(--bs-border-color);
+  color: var(--gray-800);
+  font-weight: 400;
+  text-align: left;
+  padding-right: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.language-dropdown .language-dropdown-toggle:focus, .language-dropdown .language-dropdown-toggle:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: var(--border-color);
+}
+.language-dropdown .language-dropdown-toggle[aria-expanded=true] {
+  border-color: var(--border-color);
+}
+.language-dropdown .language-dropdown-toggle.is-default .language-dropdown-label {
+  color: var(--gray-600);
+  font-weight: 300;
+}
+.language-dropdown .language-dropdown-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.language-dropdown .language-dropdown-caret {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+  transition: transform 0.2s ease;
+}
+.language-dropdown .language-dropdown-toggle[aria-expanded=true] .language-dropdown-caret {
+  transform: rotate(180deg);
+}
+
+.language-dropdown-menu {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 1000;
+  list-style: none;
+  padding: 0.375rem 0;
+  margin: 0 0 0.25rem 0;
+  border-radius: 1rem;
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--background-color);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+}
+.language-dropdown-menu.show {
+  display: block;
+}
+.language-dropdown-menu .language-dropdown-item {
+  display: block;
+  width: calc(100% - 0.75rem);
+  margin: 0 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  color: var(--gray-800);
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.language-dropdown-menu .language-dropdown-item:hover, .language-dropdown-menu .language-dropdown-item:focus {
+  background-color: var(--gray-200, rgba(0, 0, 0, 0.04));
+  color: var(--gray-800);
+  outline: none;
+}
+.language-dropdown-menu .language-dropdown-item.active {
+  background-color: var(--google-purple);
+  color: #fff;
+}
+
 .btn-set,
 .btn-reset {
   position: absolute;
@@ -409,7 +512,7 @@ body {
   border-left-width: 0;
 }
 .history-max-stepper .btn-stepper i {
-  font-size: 20px;
+  font-size: 1rem;
 }
 .history-max-stepper .btn-stepper:hover {
   background-color: var(--background-color);

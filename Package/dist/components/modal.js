@@ -96,6 +96,7 @@ class Modal {
     const settingsModalContent = optionalModal.querySelector(".modal-content");
 
     const _updateSettingsFade = () => {
+      if (!settingsBody || !settingsModalContent) return;
       const atBottom =
         settingsBody.scrollHeight - settingsBody.scrollTop <= settingsBody.clientHeight + 2;
       settingsModalContent.classList.toggle("at-bottom", atBottom);
@@ -104,13 +105,13 @@ class Modal {
     // Update reset buttons when modal opens
     optionalModal.addEventListener("shown.bs.modal", () => {
       this._updateResetButtonsVisibility();
-      settingsModalContent.classList.remove("at-bottom");
+      if (settingsModalContent) settingsModalContent.classList.remove("at-bottom");
       _updateSettingsFade();
-      settingsBody.addEventListener("scroll", _updateSettingsFade);
+      if (settingsBody) settingsBody.addEventListener("scroll", _updateSettingsFade);
     });
 
     optionalModal.addEventListener("hide.bs.modal", () => {
-      settingsBody.removeEventListener("scroll", _updateSettingsFade);
+      if (settingsBody) settingsBody.removeEventListener("scroll", _updateSettingsFade);
     });
 
     optionalModal.addEventListener("hidden.bs.modal", () => {
@@ -206,6 +207,63 @@ class Modal {
         window.Analytics.trackFeatureClick("dark_mode_toggle", "darkModeToggle");
       applyTheme(newState);
     });
+
+    // Language selector (custom dropdown — manual toggle, no Bootstrap JS dep)
+    const languageDropdown = document.getElementById("languageDropdown");
+    if (languageDropdown && typeof window !== "undefined" && window.I18nUtils) {
+      const toggleBtn = languageDropdown.querySelector(".language-dropdown-toggle");
+      const menu = languageDropdown.querySelector(".language-dropdown-menu");
+      const labelEl = languageDropdown.querySelector(".language-dropdown-label");
+      const items = languageDropdown.querySelectorAll(".language-dropdown-item");
+
+      const setOpen = (open) => {
+        menu.classList.toggle("show", open);
+        toggleBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+
+      const syncDropdownState = (lang, isDirty = false) => {
+        // Gray (placeholder-like) until user makes a change in this session
+        toggleBtn.classList.toggle("is-default", !isDirty);
+        items.forEach((item) => {
+          const isActive = item.dataset.value === lang;
+          item.classList.toggle("active", isActive);
+          if (isActive && labelEl) {
+            labelEl.textContent = item.textContent;
+          }
+        });
+      };
+
+      syncDropdownState(window.I18nUtils.getCurrentLanguage());
+
+      toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setOpen(!menu.classList.contains("show"));
+      });
+
+      // Close when clicking outside
+      document.addEventListener("click", (e) => {
+        if (!languageDropdown.contains(e.target)) setOpen(false);
+      });
+
+      // Close on Escape
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setOpen(false);
+      });
+
+      items.forEach((item) => {
+        item.addEventListener("click", async () => {
+          const newLang = item.dataset.value;
+          setOpen(false);
+          syncDropdownState(newLang, true); // user made a change → go dark
+          if (newLang === window.I18nUtils.getCurrentLanguage()) return;
+          if (window.Analytics)
+            window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
+          await window.I18nUtils.setLanguage(newLang);
+          // Reload so every cached i18n string in the popup picks up the new language.
+          location.reload();
+        });
+      });
+    }
 
     // Premium panel
     paymentButton.addEventListener("click", () => {

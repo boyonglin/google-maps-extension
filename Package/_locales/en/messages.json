@@ -193,6 +193,18 @@
     "message": "History and summaries won't be saved",
     "description": "incognito mode tooltip"
   },
+  "languageLabel": {
+    "message": "Language",
+    "description": "language selector label in settings"
+  },
+  "languageNote": {
+    "message": "Override the extension language (Auto: browser language)",
+    "description": "language selector tooltip"
+  },
+  "languageAuto": {
+    "message": "Auto",
+    "description": "language selector default option label"
+  },
   "autoAttachLabel": {
     "message": "\ud83d\udcccAuto-attach Google Maps link",
     "description": "modal auto-attach feature label"
