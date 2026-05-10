@@ -92,10 +92,25 @@ class Modal {
     });
 
     const optionalModal = document.getElementById("optionalModal");
+    const settingsBody = optionalModal.querySelector(".settings-body");
+    const settingsModalContent = optionalModal.querySelector(".modal-content");
+
+    const _updateSettingsFade = () => {
+      const atBottom =
+        settingsBody.scrollHeight - settingsBody.scrollTop <= settingsBody.clientHeight + 2;
+      settingsModalContent.classList.toggle("at-bottom", atBottom);
+    };
 
     // Update reset buttons when modal opens
     optionalModal.addEventListener("shown.bs.modal", () => {
       this._updateResetButtonsVisibility();
+      settingsModalContent.classList.remove("at-bottom");
+      _updateSettingsFade();
+      settingsBody.addEventListener("scroll", _updateSettingsFade);
+    });
+
+    optionalModal.addEventListener("hide.bs.modal", () => {
+      settingsBody.removeEventListener("scroll", _updateSettingsFade);
     });
 
     optionalModal.addEventListener("hidden.bs.modal", () => {

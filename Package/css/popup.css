@@ -240,6 +240,24 @@ body {
   overflow-y: auto;
 }
 
+#optionalModal .modal-content::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0.5rem;
+  height: 4rem;
+  background: linear-gradient(to bottom, transparent, var(--background-color));
+  pointer-events: none;
+  border-radius: 0 0 0 var(--bs-modal-inner-border-radius, 0.5rem);
+  z-index: 10;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+#optionalModal .modal-content.at-bottom::after {
+  opacity: 0;
+}
+
 .settings-divider {
   border: none;
   border-top: 1px solid var(--gray-400);
@@ -733,6 +751,7 @@ li:hover .form-check-input {
   z-index: 2000;
   pointer-events: auto;
 }
+
 .onboarding-spotlight {
   position: absolute;
   border-radius: 0.5rem;
@@ -740,6 +759,7 @@ li:hover .form-check-input {
   transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
   pointer-events: none;
 }
+
 .onboarding-tooltip {
   position: absolute;
   width: 16rem;
@@ -752,36 +772,43 @@ li:hover .form-check-input {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
   font-size: 0.8125rem;
 }
+
 .onboarding-tooltip-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.25rem;
 }
+
 .onboarding-tooltip-title {
   font-weight: 600;
   font-size: 0.875rem;
 }
+
 .onboarding-tooltip-counter {
   color: var(--gray-500);
   font-size: 0.75rem;
 }
+
 .onboarding-tooltip-desc {
   color: var(--gray-600);
   margin: 0 0 0.625rem 0;
   line-height: 1.35;
 }
+
 .onboarding-tooltip-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
 }
+
 .onboarding-skip {
   color: var(--gray-500) !important;
   text-decoration: none;
   padding: 0.25rem 0.5rem;
 }
+
 .onboarding-next {
   padding: 0.25rem 0.875rem;
 }

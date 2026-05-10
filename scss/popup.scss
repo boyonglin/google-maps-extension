@@ -196,6 +196,27 @@ body {
   overflow-y: auto;
 }
 
+#optionalModal .modal-content {
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0.5rem;
+    height: 4rem;
+    background: linear-gradient(to bottom, transparent, var(--background-color));
+    pointer-events: none;
+    border-radius: 0 0 0 var(--bs-modal-inner-border-radius, 0.5rem);
+    z-index: 10;
+    opacity: 1;
+    transition: opacity 0.25s ease;
+  }
+
+  &.at-bottom::after {
+    opacity: 0;
+  }
+}
+
 .settings-divider {
   border: none;
   border-top: 1px solid var(--gray-400);
