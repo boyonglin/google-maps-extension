@@ -82,7 +82,6 @@ function initializeDependencies(deps = {}) {
   return { state, remove, favorite, history, gemini, modal, payment, onboarding };
 }
 
-// Initialize theme based on stored preference or system preference
 function initializeTheme() {
   ThemeUtils.initialize(document.documentElement, true, (isDark) => {
     updateDarkModeToggle(isDark);
@@ -90,14 +89,12 @@ function initializeTheme() {
   });
 }
 
-// Apply theme to document (used by modal toggle)
 function applyTheme(isDark) {
   ThemeUtils.applyToElement(document.documentElement, isDark, true);
   updateDarkModeToggle(isDark);
   ThemeUtils.notifyContentScript(isDark);
 }
 
-// Update dark mode toggle button UI (delegates to modal for consistency)
 function updateDarkModeToggle(isDark) {
   if (modal && typeof modal.updateDarkModeModal === "function") {
     modal.updateDarkModeModal(isDark);
@@ -112,7 +109,6 @@ function initializePopup() {
   // Initialize theme first to prevent flash
   initializeTheme();
 
-  // Track extension opened (anonymous)
   if (window.Analytics) window.Analytics.trackExtensionOpened();
 
   searchInput.focus();
@@ -132,7 +128,6 @@ function initializePopup() {
     setTimeout(() => payment.checkPay(), 0);
   }
 
-  // Add event listeners
   remove.addRemoveListener();
   favorite.addFavoritePageListener();
   history.addHistoryPageListener();
@@ -186,7 +181,6 @@ function popupLayout() {
       window.Analytics.trackPageView(lastTab);
     }
 
-    // Apply tab-specific initialization for restored tab
     if (lastTab === "favorite") {
       getWarmState().then(({ favoriteList = [] }) => {
         favorite.updateFavorite(favoriteList);
@@ -261,7 +255,6 @@ async function getWarmState(retries = 3, delay = 200) {
   });
 }
 
-// Fetch lists from Chrome storage
 async function fetchData() {
   searchHistoryListContainer.innerHTML = "";
 
@@ -311,11 +304,9 @@ async function fetchData() {
   state.localVideoToggle = videoSummaryToggle;
   videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
 
-  // Update maps button with current authUser from background
   state.buildMapsButtonUrl();
 }
 
-// Search bar event
 searchInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     if (searchInput.value.trim() === "") {
@@ -358,7 +349,6 @@ mapsButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackFeatureClick("open_maps", "mapsButton");
 });
 
-// Page layout
 function showPage(tabName) {
   const tabMap = {
     history: pageHistory,
@@ -449,14 +439,12 @@ geminiSummaryButton.addEventListener("click", () => {
   showPage("gemini");
   deleteListButton.disabled = true;
 
-  // Update video summary button visibility
   gemini.checkCurrentTabForYoutube();
 
   gemini.clearExpiredSummary();
   state.summaryListChanged = false;
 });
 
-// Track the storage change event
 chrome.storage.onChanged.addListener((changes) => {
   state.historyListChanged = changes.searchHistoryList;
   state.favoriteListChanged = changes.favoriteList;
@@ -486,13 +474,48 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-// Localization
-document.querySelectorAll("[data-locale]").forEach((elem) => {
-  elem.innerText = chrome.i18n.getMessage(elem.dataset.locale);
+// Exposed on window so modal.js can re-apply i18n after a language change.
+function applyI18n(root = document) {
+  root.querySelectorAll("[data-locale]").forEach((el) => {
+    const v = chrome.i18n.getMessage(el.dataset.locale);
+    if (v) el.innerText = v;
+  });
+  root.querySelectorAll("[data-locale-title]").forEach((el) => {
+    const v = chrome.i18n.getMessage(el.dataset.localeTitle);
+    if (v) el.title = v;
+  });
+  root.querySelectorAll("[data-locale-placeholder]").forEach((el) => {
+    const v = chrome.i18n.getMessage(el.dataset.localePlaceholder);
+    if (v) el.placeholder = v;
+  });
+  root.querySelectorAll("[data-locale-aria-label]").forEach((el) => {
+    const v = chrome.i18n.getMessage(el.dataset.localeAriaLabel);
+    if (v) el.setAttribute("aria-label", v);
+  });
+}
+window.applyI18n = applyI18n;
+applyI18n();
+
+// Refresh dynamic strings (set imperatively, not via [data-locale])
+// after an in-place language swap from the settings modal.
+window.addEventListener("i18n:changed", () => {
+  const subtitleByTab = {
+    searchHistoryButton: "searchHistorySubtitle",
+    favoriteListButton: "favoriteListSubtitle",
+    geminiSummaryButton: "geminiSummarySubtitle",
+  };
+  const activeTab = document.querySelector(".active-button");
+  const key = activeTab && subtitleByTab[activeTab.id];
+  if (key && subtitleElement) {
+    const v = chrome.i18n.getMessage(key);
+    if (v) subtitleElement.textContent = v;
+  }
+  // Re-measure after the new strings paint — translated text can change
+  // popup height and would otherwise trigger an outer scrollbar.
+  requestAnimationFrame(() => measureContentSize());
 });
 
 // Handle IME composition for CJK input
-searchInput.placeholder = chrome.i18n.getMessage("searchInputPlaceholder");
 let isComposing = false;
 
 searchInput.addEventListener("compositionstart", () => {
@@ -512,20 +535,8 @@ document.addEventListener(
   true
 );
 
-// tooltips
-videoSummaryButton.title = chrome.i18n.getMessage("videoLabel");
-geminiSummaryButton.title = chrome.i18n.getMessage("geminiLabel");
-searchHistoryButton.title = chrome.i18n.getMessage("historyLabel");
-favoriteListButton.title = chrome.i18n.getMessage("favoriteLabel");
-deleteListButton.title = chrome.i18n.getMessage("deleteLabel");
-enterButton.title = chrome.i18n.getMessage("enterLabel");
+// configureElements is consumed by modal.js for the shortcuts click handler.
 const configureElements = document.querySelectorAll(".modal-body p");
-configureElements[0].title = chrome.i18n.getMessage("shortcutsLabel");
-configureElements[1].title = chrome.i18n.getMessage("shortcutsLabel");
-configureElements[2].title = chrome.i18n.getMessage("shortcutsLabel");
-const apiSaveButton = document.querySelectorAll(".modal-body #apiForm button");
-apiSaveButton[0].title = chrome.i18n.getMessage("saveLabel");
-clearButtonSummary.title = chrome.i18n.getMessage("clearSummaryLabel");
 
 // Resize utils
 const body = document.body;
@@ -564,7 +575,6 @@ function retryMeasureContentSize() {
 function measureContentSize(summary = false) {
   const { width: currentWidth, height: currentHeight } = currentDimensions();
 
-  // Only update if dimensions have changed
   if (currentWidth !== state.previousWidth || currentHeight !== state.previousHeight) {
     state.updateDimensions(currentWidth, currentHeight);
 

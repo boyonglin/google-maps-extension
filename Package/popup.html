@@ -23,10 +23,10 @@
                     <span class="input-group-text brand"><img src="images/icon-32.png" alt="badge" /></span>
                 </div>
                 <input type="text" class="form-control ps-2 pe-5" autocomplete="off" placeholder="Search Google Maps"
-                    id="searchInput" />
+                    id="searchInput" data-locale-placeholder="searchInputPlaceholder" />
                 <button id="enterButton"
                     class="input-group-text btn-enter justify-content-center rounded-circle border-0 d-none"
-                    title="Search">
+                    title="Search" data-locale-title="enterLabel">
                     <i class="bi bi-arrow-right"></i>
                 </button>
             </div>
@@ -41,32 +41,37 @@
                         <div class="row g-1">
                             <div class="col">
                                 <button type="button" id="videoSummaryButton" class="btn btn-outline-secondary d-none"
-                                    aria-label="Video Summary" title="Video Summary">
+                                    aria-label="Video Summary" title="Video Summary"
+                                    data-locale-title="videoLabel" data-locale-aria-label="videoLabel">
                                     <i class="bi bi-youtube"></i>
                                 </button>
                             </div>
                             <div class="col">
                                 <button type="button" id="geminiSummaryButton" class="btn btn-outline-secondary"
-                                    aria-label="Gemini Summary" title="Gemini Summary">
+                                    aria-label="Gemini Summary" title="Gemini Summary"
+                                    data-locale-title="geminiLabel" data-locale-aria-label="geminiLabel">
                                     <i class="bi bi-stars"></i>
                                 </button>
                             </div>
                             <div class="col">
                                 <button type="button" id="searchHistoryButton"
                                     class="btn btn-outline-secondary active-button" aria-label="Search History"
-                                    title="Search History">
+                                    title="Search History"
+                                    data-locale-title="historyLabel" data-locale-aria-label="historyLabel">
                                     <i class="bi bi-clock-fill"></i>
                                 </button>
                             </div>
                             <div class="col">
                                 <button type="button" id="favoriteListButton" class="btn btn-outline-secondary"
-                                    aria-label="Favorite List" title="Favorite List">
+                                    aria-label="Favorite List" title="Favorite List"
+                                    data-locale-title="favoriteLabel" data-locale-aria-label="favoriteLabel">
                                     <i class="bi bi-patch-check-fill"></i>
                                 </button>
                             </div>
                             <div class="col">
                                 <button type="button" id="deleteListButton" class="btn btn-outline-secondary"
-                                    aria-label="Delete List" title="Delete Mode">
+                                    aria-label="Delete List" title="Delete Mode"
+                                    data-locale-title="deleteLabel" data-locale-aria-label="deleteLabel">
                                     <i class="bi bi-trash-fill"></i>
                                 </button>
                             </div>
@@ -112,7 +117,8 @@
                     data-bs-target="#apiModal">
                     <i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText"></span>
                 </button>
-                <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none">
+                <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none"
+                    data-locale-title="clearSummaryLabel">
                     <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText"></span>
                 </button>
                 <button id="sendButton" class="btn btn-send flex-fill">
@@ -147,25 +153,25 @@
                     <div class="modal-body">
                         <div class="d-flex justify-content-between mt-3">
                             <h2 class="fs-6 fw-normal" data-locale="quickSearchKeyLabel"></h2>
-                            <p type="button" class="text-muted" title="Keyboard shortcuts">
+                            <p type="button" class="text-muted" title="Keyboard shortcuts" data-locale-title="shortcutsLabel">
                                 Ctrl+Shift+S / &#8984;+&#8679;+S
                             </p>
                         </div>
                         <div class="d-flex justify-content-between">
                             <h2 class="fs-6 fw-normal" data-locale="searchBarKeyLabel"></h2>
-                            <p type="button" class="text-muted" title="Keyboard shortcuts">
+                            <p type="button" class="text-muted" title="Keyboard shortcuts" data-locale-title="shortcutsLabel">
                                 Alt+Shift+S / &#8997;+&#8679;+S
                             </p>
                         </div>
                         <div class="d-flex justify-content-between">
                             <h2 class="fs-6 fw-normal" data-locale="directionsKeyLabel"></h2>
-                            <p type="button" class="text-muted" title="Keyboard shortcuts">
+                            <p type="button" class="text-muted" title="Keyboard shortcuts" data-locale-title="shortcutsLabel">
                                 Alt+R / &#8997;+R
                             </p>
                         </div>
                         <div class="d-flex justify-content-between">
                             <h2 class="fs-6 fw-normal premium-only" data-locale="autoAttachKeyLabel"></h2>
-                            <p type="button" class="text-muted premium-only" title="Keyboard shortcuts">
+                            <p type="button" class="text-muted premium-only" title="Keyboard shortcuts" data-locale-title="shortcutsLabel">
                                 Alt+S / &#8997;+S
                             </p>
                         </div>
@@ -309,22 +315,23 @@
                                 <label class="settings-item-label" data-locale="languageLabel"></label>
                                 <span class="settings-item-desc" data-locale="languageNote"></span>
                             </div>
-                            <div class="language-dropdown mt-2" id="languageDropdown">
+                            <div class="dropup mt-2 language-dropdown" id="languageDropdown">
                                 <button type="button"
                                     class="modalFormInput language-dropdown-toggle py-2 d-flex align-items-center justify-content-between w-100"
-                                    id="languageDropdownToggle" aria-haspopup="listbox" aria-expanded="false">
+                                    id="languageDropdownToggle" data-bs-toggle="dropdown"
+                                    aria-haspopup="listbox" aria-expanded="false">
                                     <span class="language-dropdown-label" data-locale="languageAuto"></span>
                                     <i class="bi bi-chevron-down language-dropdown-caret"></i>
                                 </button>
-                                <ul class="language-dropdown-menu w-100" role="listbox"
+                                <ul class="dropdown-menu language-dropdown-menu w-100" role="listbox"
                                     aria-labelledby="languageDropdownToggle">
-                                    <li><button type="button" class="language-dropdown-item"
+                                    <li><button type="button" class="dropdown-item language-dropdown-item"
                                             data-value="auto" data-locale="languageAuto" role="option"></button></li>
-                                    <li><button type="button" class="language-dropdown-item"
+                                    <li><button type="button" class="dropdown-item language-dropdown-item"
                                             data-value="en" role="option">English</button></li>
-                                    <li><button type="button" class="language-dropdown-item"
+                                    <li><button type="button" class="dropdown-item language-dropdown-item"
                                             data-value="ja" role="option">日本語</button></li>
-                                    <li><button type="button" class="language-dropdown-item"
+                                    <li><button type="button" class="dropdown-item language-dropdown-item"
                                             data-value="zh_TW" role="option">繁體中文</button></li>
                                 </ul>
                             </div>
@@ -343,7 +350,7 @@
                     <div class="modal-body">
                         <form id="apiForm" class="d-flex my-3 position-relative">
                             <input type="text" class="form-control py-2 pe-5 modalFormInput" autocomplete="off" id="apiInput" />
-                            <button type="submit" data-bs-dismiss="modal" title="Save"
+                            <button type="submit" data-bs-dismiss="modal" title="Save" data-locale-title="saveLabel"
                                 class="btn btn-set d-flex align-items-center justify-content-center rounded-circle border-0 d-none">
                                 <i class="bi bi-arrow-right"></i>
                             </button>
@@ -373,7 +380,7 @@
     <script defer src="dist/components/onboarding.js"></script>
     <script defer src="dist/utils/payment.js"></script>
     <script defer src="dist/popup.js"></script>
-    <script src="vendor/bootstrap.min.js"></script>
+    <script src="vendor/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

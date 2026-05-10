@@ -16,11 +16,11 @@ function createPopupDOM() {
       <div class="input-group-prepend">
         <span class="input-group-text brand"><img src="images/icon-32.png" alt="badge" /></span>
       </div>
-      <input type="text" class="form-control ps-2 pe-5" autocomplete="off" 
-             placeholder="Search Google Maps" id="searchInput" />
-      <button id="enterButton" 
+      <input type="text" class="form-control ps-2 pe-5" autocomplete="off"
+             placeholder="Search Google Maps" id="searchInput" data-locale-placeholder="searchInputPlaceholder" />
+      <button id="enterButton"
               class="input-group-text btn-enter justify-content-center rounded-circle border-0 d-none"
-              title="Search">
+              title="Search" data-locale-title="enterLabel">
         <i class="bi bi-arrow-right"></i>
       </button>
     </div>
@@ -39,32 +39,37 @@ function createPopupDOM() {
           <div class="row g-1">
             <div class="col">
               <button type="button" id="videoSummaryButton" class="btn btn-outline-secondary d-none"
-                      aria-label="Video Summary" title="Video Summary">
+                      aria-label="Video Summary" title="Video Summary"
+                      data-locale-title="videoLabel" data-locale-aria-label="videoLabel">
                 <i class="bi bi-youtube"></i>
               </button>
             </div>
             <div class="col">
               <button type="button" id="geminiSummaryButton" class="btn btn-outline-secondary"
-                      aria-label="Gemini Summary" title="Gemini Summary">
+                      aria-label="Gemini Summary" title="Gemini Summary"
+                      data-locale-title="geminiLabel" data-locale-aria-label="geminiLabel">
                 <i class="bi bi-stars"></i>
               </button>
             </div>
             <div class="col">
               <button type="button" id="searchHistoryButton"
                       class="btn btn-outline-secondary active-button" aria-label="Search History"
-                      title="Search History">
+                      title="Search History"
+                      data-locale-title="historyLabel" data-locale-aria-label="historyLabel">
                 <i class="bi bi-clock-fill"></i>
               </button>
             </div>
             <div class="col">
               <button type="button" id="favoriteListButton" class="btn btn-outline-secondary"
-                      aria-label="Favorite List" title="Favorite List">
+                      aria-label="Favorite List" title="Favorite List"
+                      data-locale-title="favoriteLabel" data-locale-aria-label="favoriteLabel">
                 <i class="bi bi-patch-check-fill"></i>
               </button>
             </div>
             <div class="col">
               <button type="button" id="deleteListButton" class="btn btn-outline-secondary"
-                      aria-label="Delete List" title="Delete Mode">
+                      aria-label="Delete List" title="Delete Mode"
+                      data-locale-title="deleteLabel" data-locale-aria-label="deleteLabel">
                 <i class="bi bi-trash-fill"></i>
               </button>
             </div>
@@ -184,7 +189,7 @@ function createPopupDOM() {
             <h1 class="modal-title fs-6" id="optionalModalLabel" data-locale="optionalTitle">Optional Settings</h1>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body settings-body">
             <hr class="settings-divider">
             <form id="authUserForm" class="settings-item">
               <div class="settings-item-info">

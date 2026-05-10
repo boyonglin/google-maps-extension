@@ -1,19 +1,17 @@
-/**
- * I18n Utilities Module
- * Allows the user to override the browser's default UI language for the
- * extension popup. The selected language is mirrored to localStorage so it
- * can be read synchronously before the rest of the popup initializes.
- *
- * Strategy:
- *  - Default ("auto") behavior: leave chrome.i18n.getMessage untouched, so the
- *    browser's UI language is used (current behavior).
- *  - Custom language: synchronously load the corresponding _locales/<lang>/
- *    messages.json bundled with the extension and patch chrome.i18n.getMessage
- *    so all existing call sites transparently return the chosen language.
- */
+// I18n override: wraps chrome.i18n.getMessage once at load to serve a
+// user-selected language bundle from localStorage. chrome.storage.local is
+// the source of truth; a storage.onChanged listener mirrors it back to
+// localStorage so every popup boot can apply the override synchronously.
 (function () {
   const STORAGE_KEY = "userLanguage";
+  const MESSAGES_CACHE_KEY = "userLanguageMessages";
   const SUPPORTED_LANGUAGES = ["auto", "en", "ja", "zh_TW"];
+
+  // Captured before wrapping so re-wrapping on language change is never needed.
+  const originalGetMessage = chrome.i18n.getMessage.bind(chrome.i18n);
+
+  let activeLanguage = "auto";
+  let overrideMessages = null;
 
   function readSyncPreference() {
     try {
@@ -21,6 +19,25 @@
     } catch (e) {
       return null;
     }
+  }
+
+  function readMessagesCacheSync() {
+    try {
+      const raw = localStorage.getItem(MESSAGES_CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeMessagesCache(lang, messages) {
+    try {
+      if (!lang || lang === "auto" || !messages) {
+        localStorage.removeItem(MESSAGES_CACHE_KEY);
+      } else {
+        localStorage.setItem(MESSAGES_CACHE_KEY, JSON.stringify({ lang, messages }));
+      }
+    } catch (e) {}
   }
 
   function loadMessagesSync(lang) {
@@ -32,9 +49,7 @@
       if (xhr.status === 200) {
         return JSON.parse(xhr.responseText);
       }
-    } catch (e) {
-      // fall through – will use browser default
-    }
+    } catch (e) {}
     return null;
   }
 
@@ -48,47 +63,80 @@
     return result;
   }
 
-  const stored = readSyncPreference();
-  const isOverride = stored && stored !== "auto" && SUPPORTED_LANGUAGES.includes(stored);
-  let activeLanguage = isOverride ? stored : "auto";
+  chrome.i18n.getMessage = function (key, substitutions) {
+    if (overrideMessages) {
+      const entry = overrideMessages[key];
+      if (entry && entry.message != null) {
+        return applySubstitutions(entry.message, substitutions);
+      }
+    }
+    return originalGetMessage(key, substitutions);
+  };
 
-  if (isOverride) {
-    const messages = loadMessagesSync(stored);
+  // Cache-first, XHR-fallback. Degrades silently to "auto" on any failure.
+  function applyOverride(lang) {
+    if (!lang || lang === "auto" || !SUPPORTED_LANGUAGES.includes(lang)) {
+      activeLanguage = "auto";
+      overrideMessages = null;
+      return;
+    }
+    const cache = readMessagesCacheSync();
+    let messages = cache && cache.lang === lang ? cache.messages : null;
+    if (!messages) {
+      messages = loadMessagesSync(lang);
+      if (messages) writeMessagesCache(lang, messages);
+    }
     if (messages) {
-      const original = chrome.i18n.getMessage.bind(chrome.i18n);
-      chrome.i18n.getMessage = function (key, substitutions) {
-        const entry = messages[key];
-        if (entry && entry.message != null) {
-          return applySubstitutions(entry.message, substitutions);
-        }
-        return original(key, substitutions);
-      };
+      activeLanguage = lang;
+      overrideMessages = messages;
     } else {
       activeLanguage = "auto";
+      overrideMessages = null;
     }
+  }
+
+  applyOverride(readSyncPreference());
+
+  // Mirror storage.local → localStorage so the next popup boot applies the
+  // override synchronously (a language set elsewhere takes effect immediately).
+  if (chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local") return;
+      if (changes[STORAGE_KEY]) {
+        const newVal = changes[STORAGE_KEY].newValue;
+        try {
+          if (newVal && newVal !== "auto") {
+            localStorage.setItem(STORAGE_KEY, newVal);
+          } else {
+            localStorage.removeItem(STORAGE_KEY);
+            writeMessagesCache(null);
+          }
+        } catch (e) {}
+      }
+    });
   }
 
   const I18nUtils = {
     STORAGE_KEY,
+    MESSAGES_CACHE_KEY,
     SUPPORTED_LANGUAGES,
 
     getCurrentLanguage() {
       return activeLanguage;
     },
 
-    // Persist the user's language choice. Mirrors to both chrome.storage.local
-    // (for cross-context sync) and localStorage (for synchronous startup read).
     setLanguage(lang) {
       const normalized = SUPPORTED_LANGUAGES.includes(lang) ? lang : "auto";
       try {
         if (normalized === "auto") {
           localStorage.removeItem(STORAGE_KEY);
+          writeMessagesCache(null);
         } else {
           localStorage.setItem(STORAGE_KEY, normalized);
+          const messages = loadMessagesSync(normalized);
+          if (messages) writeMessagesCache(normalized, messages);
         }
-      } catch (e) {
-        /* ignore quota / disabled storage */
-      }
+      } catch (e) {}
       return new Promise((resolve) => {
         if (normalized === "auto") {
           chrome.storage.local.remove(STORAGE_KEY, () => resolve(normalized));
@@ -96,6 +144,13 @@
           chrome.storage.local.set({ [STORAGE_KEY]: normalized }, () => resolve(normalized));
         }
       });
+    },
+
+    // Re-applies the stored language in place. Call window.applyI18n() after
+    // this to re-render already-painted data-locale* attributes.
+    reloadOverride() {
+      applyOverride(readSyncPreference());
+      return activeLanguage;
     },
   };
 

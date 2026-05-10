@@ -1,10 +1,8 @@
 class Modal {
-  // Allow dependency injection for testing
   constructor(encryptApiKeyFn = null) {
     this.encryptApiKey = encryptApiKeyFn;
   }
 
-  // Load crypto module dynamically (for browser extension context)
   async loadCrypto() {
     if (!this.encryptApiKey) {
       const { encryptApiKey } = await import(chrome.runtime.getURL("dist/utils/crypto.js"));
@@ -15,7 +13,28 @@ class Modal {
   async addModalListener() {
     await this.loadCrypto();
 
-    // Shortcuts configuration link
+    this._setupShortcutsLinks();
+    this._setupApiForm();
+    this._setupSettingsScrollFade();
+    this._setupOptionalModalLifecycle();
+    this._setupDirForm();
+    this._setupAuthUserForm();
+    this._setupHistoryMaxStepper();
+
+    this._setupInputButtonToggle(authUserInput);
+    this._setupInputButtonToggle(dirInput);
+
+    this._setupIncognitoToggle();
+    this._setupDarkModeToggle();
+    this._setupLanguageDropdown();
+    this._setupPremiumPanel();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private setup helpers (called once from addModalListener)
+  // ---------------------------------------------------------------------------
+
+  _setupShortcutsLinks() {
     for (let i = 0; i < configureElements.length; i++) {
       configureElements[i].onclick = function (event) {
         if (window.Analytics)
@@ -32,7 +51,9 @@ class Modal {
         event.preventDefault();
       };
     }
+  }
 
+  _setupApiForm() {
     // Save the API key
     document.getElementById("apiForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -68,10 +89,8 @@ class Modal {
 
     this.text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
 
-    // Modal close event
     const apiModal = document.getElementById("apiModal");
 
-    // Update reset button when API modal opens
     apiModal.addEventListener("shown.bs.modal", () => {
       this._updateApiResetButtonVisibility();
     });
@@ -81,50 +100,51 @@ class Modal {
       this._hideInputButtons(apiInput);
     });
 
-    // Show/hide API submit button based on input content
     this._setupInputButtonToggle(apiInput);
 
-    // Setup reset button for API input
     this._setupResetButton(apiInput, "geminiApiKey", () => {
       apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
       sendButton.disabled = true;
     });
+  }
 
+  _setupSettingsScrollFade() {
     const optionalModal = document.getElementById("optionalModal");
     const settingsBody = optionalModal.querySelector(".settings-body");
     const settingsModalContent = optionalModal.querySelector(".modal-content");
 
-    const _updateSettingsFade = () => {
-      if (!settingsBody || !settingsModalContent) return;
+    const updateFade = () => {
       const atBottom =
         settingsBody.scrollHeight - settingsBody.scrollTop <= settingsBody.clientHeight + 2;
       settingsModalContent.classList.toggle("at-bottom", atBottom);
     };
 
-    // Update reset buttons when modal opens
     optionalModal.addEventListener("shown.bs.modal", () => {
       this._updateResetButtonsVisibility();
-      if (settingsModalContent) settingsModalContent.classList.remove("at-bottom");
-      _updateSettingsFade();
-      if (settingsBody) settingsBody.addEventListener("scroll", _updateSettingsFade);
+      settingsModalContent.classList.remove("at-bottom");
+      updateFade();
+      settingsBody.addEventListener("scroll", updateFade);
     });
 
     optionalModal.addEventListener("hide.bs.modal", () => {
-      if (settingsBody) settingsBody.removeEventListener("scroll", _updateSettingsFade);
+      settingsBody.removeEventListener("scroll", updateFade);
     });
+  }
 
+  _setupOptionalModalLifecycle() {
+    const optionalModal = document.getElementById("optionalModal");
     optionalModal.addEventListener("hidden.bs.modal", () => {
       dirInput.value = "";
       authUserInput.value = "";
       this._hideInputButtons(dirInput);
       this._hideInputButtons(authUserInput);
 
-      // Save historyMax value on modal close
       this._saveHistoryMax();
     });
+  }
 
-    // Save the starting address
+  _setupDirForm() {
     document.getElementById("dirForm").addEventListener("submit", (event) => {
       event.preventDefault();
       if (window.Analytics) window.Analytics.trackFeatureClick("save_start_address", "dirForm");
@@ -140,12 +160,12 @@ class Modal {
       }
     });
 
-    // Setup reset button for direction input
     this._setupResetButton(dirInput, "startAddr", () => {
       dirInput.placeholder = chrome.i18n.getMessage("dirPlaceholder");
     });
+  }
 
-    // Save the authentication user
+  _setupAuthUserForm() {
     document.getElementById("authUserForm").addEventListener("submit", (event) => {
       event.preventDefault();
       if (window.Analytics) window.Analytics.trackFeatureClick("save_auth_user", "authUserForm");
@@ -161,7 +181,6 @@ class Modal {
       }
     });
 
-    // Setup reset button for authUser input
     this._setupResetButton(
       authUserInput,
       "authUser",
@@ -170,14 +189,14 @@ class Modal {
       },
       true
     );
+  }
 
-    // History Max stepper buttons
+  _setupHistoryMaxStepper() {
     const historyMaxDecrement = document.getElementById("historyMaxDecrement");
     const historyMaxIncrement = document.getElementById("historyMaxIncrement");
 
     historyMaxDecrement.addEventListener("click", () => {
       const currentValue = parseInt(historyMaxInput.value || historyMaxInput.placeholder, 10) || 10;
-      // Clamp to valid range first, then decrement
       const clampedValue = Math.min(100, Math.max(1, currentValue));
       const newValue = Math.max(1, clampedValue - 1);
       historyMaxInput.value = newValue;
@@ -185,87 +204,74 @@ class Modal {
 
     historyMaxIncrement.addEventListener("click", () => {
       const currentValue = parseInt(historyMaxInput.value || historyMaxInput.placeholder, 10) || 10;
-      // Clamp to valid range first, then increment
       const clampedValue = Math.min(100, Math.max(1, currentValue));
       const newValue = Math.min(100, clampedValue + 1);
       historyMaxInput.value = newValue;
     });
+  }
 
-    // Show/hide submit buttons based on input content (search bar behavior)
-    this._setupInputButtonToggle(authUserInput);
-    this._setupInputButtonToggle(dirInput);
-
-    // Toggle handlers using shared pattern
+  _setupIncognitoToggle() {
     this._setupToggle(incognitoToggle, "isIncognito", (newState) => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("incognito_toggle", "incognitoToggle");
       this.updateIncognitoModal(newState);
     });
+  }
 
+  _setupDarkModeToggle() {
     this._setupToggle(darkModeToggle, "isDarkMode", (newState) => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("dark_mode_toggle", "darkModeToggle");
       applyTheme(newState);
     });
+  }
 
-    // Language selector (custom dropdown — manual toggle, no Bootstrap JS dep)
+  // Language selector — uses Bootstrap's dropdown plugin (Popper bundled via
+  // bootstrap.bundle.min.js). Bootstrap handles open/close, outside-click, and
+  // Escape; we only sync the visual state and persist the selection.
+  _setupLanguageDropdown() {
     const languageDropdown = document.getElementById("languageDropdown");
-    if (languageDropdown && typeof window !== "undefined" && window.I18nUtils) {
-      const toggleBtn = languageDropdown.querySelector(".language-dropdown-toggle");
-      const menu = languageDropdown.querySelector(".language-dropdown-menu");
-      const labelEl = languageDropdown.querySelector(".language-dropdown-label");
-      const items = languageDropdown.querySelectorAll(".language-dropdown-item");
+    if (!languageDropdown || typeof window === "undefined" || !window.I18nUtils) return;
 
-      const setOpen = (open) => {
-        menu.classList.toggle("show", open);
-        toggleBtn.setAttribute("aria-expanded", open ? "true" : "false");
-      };
+    const toggleBtn = languageDropdown.querySelector(".language-dropdown-toggle");
+    const labelEl = languageDropdown.querySelector(".language-dropdown-label");
+    const items = languageDropdown.querySelectorAll(".language-dropdown-item");
 
-      const syncDropdownState = (lang, isDirty = false) => {
-        // Gray (placeholder-like) until user makes a change in this session
-        toggleBtn.classList.toggle("is-default", !isDirty);
-        items.forEach((item) => {
-          const isActive = item.dataset.value === lang;
-          item.classList.toggle("active", isActive);
-          if (isActive && labelEl) {
-            labelEl.textContent = item.textContent;
-          }
-        });
-      };
-
-      syncDropdownState(window.I18nUtils.getCurrentLanguage());
-
-      toggleBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        setOpen(!menu.classList.contains("show"));
-      });
-
-      // Close when clicking outside
-      document.addEventListener("click", (e) => {
-        if (!languageDropdown.contains(e.target)) setOpen(false);
-      });
-
-      // Close on Escape
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") setOpen(false);
-      });
-
+    const syncDropdownState = (lang, isDirty = false) => {
+      // Gray (placeholder-like) until user makes a change in this session
+      toggleBtn.classList.toggle("is-default", !isDirty);
       items.forEach((item) => {
-        item.addEventListener("click", async () => {
-          const newLang = item.dataset.value;
-          setOpen(false);
-          syncDropdownState(newLang, true); // user made a change → go dark
-          if (newLang === window.I18nUtils.getCurrentLanguage()) return;
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
-          await window.I18nUtils.setLanguage(newLang);
-          // Reload so every cached i18n string in the popup picks up the new language.
-          location.reload();
-        });
+        const isActive = item.dataset.value === lang;
+        item.classList.toggle("active", isActive);
+        if (isActive && labelEl) {
+          // Prefer the i18n message directly so this works regardless of
+          // whether popup.js's [data-locale] pass has run yet.
+          const localeKey = item.dataset.locale;
+          const localized = localeKey ? chrome.i18n.getMessage(localeKey) : "";
+          labelEl.textContent = localized || item.textContent;
+        }
       });
-    }
+    };
 
-    // Premium panel
+    syncDropdownState(window.I18nUtils.getCurrentLanguage());
+
+    items.forEach((item) => {
+      item.addEventListener("click", async () => {
+        const newLang = item.dataset.value;
+        syncDropdownState(newLang, true); // user made a change → go dark
+        if (newLang === window.I18nUtils.getCurrentLanguage()) return;
+        if (window.Analytics)
+          window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
+        await window.I18nUtils.setLanguage(newLang);
+        window.I18nUtils.reloadOverride();
+        if (typeof window.applyI18n === "function") window.applyI18n();
+        syncDropdownState(window.I18nUtils.getCurrentLanguage(), true);
+        window.dispatchEvent(new CustomEvent("i18n:changed", { detail: { lang: newLang } }));
+      });
+    });
+  }
+
+  _setupPremiumPanel() {
     paymentButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("payment", "paymentButton");
       chrome.runtime.sendMessage({ action: "extPay" });
@@ -344,7 +350,6 @@ class Modal {
       iconEl.classList.toggle("d-none", !isActive);
     }
 
-    // Modern toggle switch - just toggle the active class
     toggleElement.classList.toggle("toggle-active", isActive);
   }
 
@@ -378,7 +383,6 @@ class Modal {
     inputElement.addEventListener("input", () => {
       if (inputElement.value.trim() === "") {
         submitButton.classList.add("d-none");
-        // Show reset button if there's a custom placeholder (user setting exists)
         if (resetButton) {
           const defaultPlaceholder = inputElement.dataset.defaultPlaceholder;
           const hasCustomValue =
@@ -387,7 +391,6 @@ class Modal {
         }
       } else {
         submitButton.classList.remove("d-none");
-        // Hide reset button when typing
         if (resetButton) resetButton.classList.add("d-none");
       }
     });
@@ -398,7 +401,6 @@ class Modal {
     const resetButton = inputElement.parentElement.querySelector(".btn-reset");
     if (!resetButton) return;
 
-    // Store default placeholder for comparison
     const defaultPlaceholder =
       chrome.i18n.getMessage(inputElement.id.replace("Input", "Placeholder")) ||
       inputElement.placeholder;
@@ -411,18 +413,15 @@ class Modal {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("reset_" + storageKey, "resetButton");
 
-      // Remove or reset the storage value
       if (isNumeric) {
         chrome.storage.local.set({ [storageKey]: 0 });
       } else {
         chrome.storage.local.remove(storageKey);
       }
 
-      // Clear input and reset placeholder
       inputElement.value = "";
       onReset();
 
-      // Hide reset button after reset
       resetButton.classList.add("d-none");
     });
   }
@@ -433,7 +432,6 @@ class Modal {
       const dirResetButton = dirInput.parentElement.querySelector(".btn-reset");
       const authResetButton = authUserInput.parentElement.querySelector(".btn-reset");
 
-      // Show/hide based on whether custom values exist
       if (dirResetButton) {
         const hasCustomDir = result.startAddr && result.startAddr.trim() !== "";
         dirResetButton.classList.toggle("d-none", !hasCustomDir);
@@ -452,7 +450,6 @@ class Modal {
       const apiResetButton = apiInput.parentElement.querySelector(".btn-reset");
 
       if (apiResetButton) {
-        // Check if API key exists (placeholder shows masked key)
         const hasApiKey = result.geminiApiKey && result.geminiApiKey.trim() !== "";
         apiResetButton.classList.toggle("d-none", !hasApiKey);
       }
