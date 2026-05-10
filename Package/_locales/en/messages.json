@@ -213,6 +213,42 @@
     "message": "Restore Purchase",
     "description": "modal restore purchase label"
   },
+  "onboardingHintsTitle": {
+    "message": "Keyboard shortcuts",
+    "description": "onboarding step 1 title"
+  },
+  "onboardingHintsDesc": {
+    "message": "Open Tips to view shortcuts like Ctrl+Shift+S for instant Google Maps search.",
+    "description": "onboarding step 1 description"
+  },
+  "onboardingApiTitle": {
+    "message": "AI place summaries",
+    "description": "onboarding step 2 title"
+  },
+  "onboardingApiDesc": {
+    "message": "Click here to add a free Gemini API key and unlock AI-powered place summaries.",
+    "description": "onboarding step 2 description"
+  },
+  "onboardingPremiumTitle": {
+    "message": "Premium features",
+    "description": "onboarding step 3 title"
+  },
+  "onboardingPremiumDesc": {
+    "message": "Start your 40-day free trial to try Auto-attach Links and more.",
+    "description": "onboarding step 3 description"
+  },
+  "onboardingNextBtn": {
+    "message": "Next",
+    "description": "onboarding next button"
+  },
+  "onboardingSkipBtn": {
+    "message": "Skip",
+    "description": "onboarding skip button"
+  },
+  "onboardingDoneBtn": {
+    "message": "Got it",
+    "description": "onboarding final button"
+  },
   "firstNote": {
     "message": "Test out our 40-day free trial to see how we keep your pages connected to Google Maps.",
     "description": "modal first note"

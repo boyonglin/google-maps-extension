@@ -160,6 +160,33 @@
   "restoreLabel": {
     "message": "購入を復元"
   },
+  "onboardingHintsTitle": {
+    "message": "キーボードショートカット"
+  },
+  "onboardingHintsDesc": {
+    "message": "「ヒント」を開いて、Ctrl+Shift+S などのショートカットを確認しましょう。"
+  },
+  "onboardingApiTitle": {
+    "message": "AI 場所サマリー"
+  },
+  "onboardingApiDesc": {
+    "message": "ここから無料の Gemini API キーを設定して、AI による場所のサマリーを利用できます。"
+  },
+  "onboardingPremiumTitle": {
+    "message": "プレミアム機能"
+  },
+  "onboardingPremiumDesc": {
+    "message": "40 日間の無料体験で、リンク自動添付などのプレミアム機能をお試しください。"
+  },
+  "onboardingNextBtn": {
+    "message": "次へ"
+  },
+  "onboardingSkipBtn": {
+    "message": "スキップ"
+  },
+  "onboardingDoneBtn": {
+    "message": "完了"
+  },
   "firstNote": {
     "message": "40 日間の無料体験で、Google マップとページの接続方法をご確認ください。"
   },

@@ -67,7 +67,7 @@ const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
 
 // Import Scripts
-let state, remove, favorite, history, gemini, modal, payment;
+let state, remove, favorite, history, gemini, modal, payment, onboarding;
 
 function initializeDependencies(deps = {}) {
   state = deps.state || new State();
@@ -77,8 +77,9 @@ function initializeDependencies(deps = {}) {
   gemini = deps.gemini || new Gemini();
   modal = deps.modal || new Modal();
   payment = deps.payment || new Payment();
+  onboarding = deps.onboarding || (typeof Onboarding !== "undefined" ? new Onboarding() : null);
 
-  return { state, remove, favorite, history, gemini, modal, payment };
+  return { state, remove, favorite, history, gemini, modal, payment, onboarding };
 }
 
 // Initialize theme based on stored preference or system preference
@@ -137,6 +138,11 @@ function initializePopup() {
   history.addHistoryPageListener();
   gemini.addGeminiPageListener();
   modal.addModalListener();
+
+  // Show first-time onboarding (no-op if already completed)
+  if (onboarding && typeof onboarding.maybeStart === "function") {
+    onboarding.maybeStart();
+  }
 
   // Fix: "Blocked aria-hidden..."
   document.addEventListener("hide.bs.modal", function (event) {

@@ -760,6 +760,80 @@ li:hover .form-check-input {
   pointer-events: none !important;
 }
 
+/* Onboarding (first-time tour) */
+
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: auto;
+}
+
+.onboarding-spotlight {
+  position: absolute;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  transition:
+    top 0.2s ease,
+    left 0.2s ease,
+    width 0.2s ease,
+    height 0.2s ease;
+  pointer-events: none;
+}
+
+.onboarding-tooltip {
+  position: absolute;
+  width: 16rem;
+  max-width: calc(100% - 1rem);
+  padding: 0.875rem 1rem;
+  background: var(--background-color);
+  color: var(--gray-800);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  font-size: 0.8125rem;
+}
+
+.onboarding-tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.onboarding-tooltip-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.onboarding-tooltip-counter {
+  color: var(--gray-500);
+  font-size: 0.75rem;
+}
+
+.onboarding-tooltip-desc {
+  color: var(--gray-600);
+  margin: 0 0 0.625rem 0;
+  line-height: 1.35;
+}
+
+.onboarding-tooltip-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.onboarding-skip {
+  color: var(--gray-500) !important;
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+}
+
+.onboarding-next {
+  padding: 0.25rem 0.875rem;
+}
+
 .preview-video {
   position: absolute;
   display: none;
