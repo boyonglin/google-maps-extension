@@ -1,1 +1,1 @@
-npm run format && git add -u
+npx --no-install lint-staged
