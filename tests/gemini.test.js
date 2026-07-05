@@ -539,7 +539,7 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      expect(state.videoSummaryMode).toBeUndefined();
+      expect(state.videoSummaryMode).toBe(false);
       expect(chrome.storage.local.remove).toHaveBeenCalledWith("currentVideoInfo");
     });
 
@@ -573,7 +573,28 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      expect(state.videoSummaryMode).toBeUndefined();
+      expect(state.videoSummaryMode).toBe(false);
+    });
+
+    test("should not block toggle visibility on the video length scrape", async () => {
+      let resolveScrapeLen;
+      geminiInstance.scrapeLen = jest.fn(
+        () =>
+          new Promise((resolve) => {
+            resolveScrapeLen = resolve;
+          })
+      );
+      geminiSummaryButton.classList.add("active-button");
+      videoSummaryButton.classList.add("d-none");
+      mockTabsQuery([{ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }]);
+
+      await geminiInstance.checkCurrentTabForYoutube();
+
+      // Toggle should already be visible even though scrapeLen hasn't resolved yet
+      expect(videoSummaryButton.classList.contains("d-none")).toBe(false);
+
+      resolveScrapeLen(600);
+      await flushPromises();
     });
   });
 

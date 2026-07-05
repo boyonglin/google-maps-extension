@@ -132,21 +132,25 @@ class Gemini {
       if (youtubeMatch) {
         const videoId = youtubeMatch[1];
         state.videoSummaryMode = Boolean(videoId);
-        try {
-          const videoLength = await this.scrapeLen(videoId);
 
-          // Store video info for later use in summarization
-          chrome.storage.local.set({
-            currentVideoInfo: {
-              videoId: videoId,
-              length: videoLength,
-            },
+        // Scrape the video length in the background: it's only needed later
+        // for summarization, so don't make toggle visibility wait on this
+        // network fetch.
+        this.scrapeLen(videoId)
+          .then((videoLength) => {
+            chrome.storage.local.set({
+              currentVideoInfo: {
+                videoId: videoId,
+                length: videoLength,
+              },
+            });
+          })
+          .catch((error) => {
+            console.error("Error scraping video length:", error);
           });
-        } catch (error) {
-          console.error("Error scraping video length:", error);
-        }
       } else {
         // Clear currentVideoInfo if not on YouTube
+        state.videoSummaryMode = false;
         chrome.storage.local.remove("currentVideoInfo");
       }
 
