@@ -223,11 +223,12 @@ class Gemini {
   // may have echoed from untrusted page content (prompt injection).
   parseSummaryItems(response) {
     const doc = new DOMParser().parseFromString(response, "text/html");
+    const normalize = (text) => text.replace(/\s+/g, " ").trim();
     const items = [];
     doc.querySelectorAll("li").forEach((li) => {
-      const spans = li.querySelectorAll("span");
-      const name = (spans[0] ? spans[0].textContent : li.textContent).trim();
-      const clue = spans[1] ? spans[1].textContent.trim() : "";
+      const spans = Array.from(li.children).filter((el) => el.tagName === "SPAN");
+      const name = normalize(spans[0] ? spans[0].textContent : li.textContent);
+      const clue = spans[1] ? normalize(spans[1].textContent) : "";
       if (name) items.push({ name, clue });
     });
     return items;

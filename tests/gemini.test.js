@@ -1512,7 +1512,27 @@ describe("Gemini Component", () => {
       expect(summaryListContainer.querySelector("a")).toBeNull();
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
         expect.objectContaining({
-          summaryList: [{ name: "Place  1", clue: "Clue link" }],
+          summaryList: [{ name: "Place 1", clue: "Clue link" }],
+        })
+      );
+    });
+
+    test("should ignore nested spans when parsing name/clue", () => {
+      const mockResponse = `
+                <ul class="list-group">
+                    <li class="summary-list">
+                        <span>Place <span>note</span></span>
+                        <span class="d-none">City</span>
+                    </li>
+                </ul>
+            `;
+      mockChromeStorage({ favoriteList: [] });
+
+      geminiInstance.createSummaryList(mockResponse);
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          summaryList: [{ name: "Place note", clue: "City" }],
         })
       );
     });
