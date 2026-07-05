@@ -14,18 +14,10 @@
   let activeLanguage = "auto";
   let overrideMessages = null;
 
-  function readSyncPreference() {
+  function safeLocalGet(key, parse = false) {
     try {
-      return localStorage.getItem(STORAGE_KEY);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function readMessagesCacheSync() {
-    try {
-      const raw = localStorage.getItem(MESSAGES_CACHE_KEY);
-      return raw ? JSON.parse(raw) : null;
+      const raw = localStorage.getItem(key);
+      return parse ? (raw ? JSON.parse(raw) : null) : raw;
     } catch (e) {
       return null;
     }
@@ -99,7 +91,7 @@
       overrideMessages = null;
       return;
     }
-    const cache = readMessagesCacheSync();
+    const cache = safeLocalGet(MESSAGES_CACHE_KEY, true);
     let messages =
       cache && cache.lang === lang && cache.version === EXT_VERSION ? cache.messages : null;
     if (!messages) {
@@ -115,7 +107,7 @@
     }
   }
 
-  applyOverride(readSyncPreference());
+  applyOverride(safeLocalGet(STORAGE_KEY));
 
   // Mirror storage.local → localStorage so the next popup boot applies the
   // override synchronously (a language set elsewhere takes effect immediately).
@@ -170,7 +162,7 @@
     // Re-applies the stored language in place. Call window.applyI18n() after
     // this to re-render already-painted data-locale* attributes.
     reloadOverride() {
-      applyOverride(readSyncPreference());
+      applyOverride(safeLocalGet(STORAGE_KEY));
       return activeLanguage;
     },
   };

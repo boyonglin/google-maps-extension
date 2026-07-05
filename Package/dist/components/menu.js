@@ -115,7 +115,7 @@ class ContextMenuUtil {
     }
 
     const urls = [];
-    const { groupTitle, groupColor } = this.getGroupInfo(listItems[0]);
+    const { groupTitle, groupColor } = this.getListInfo(listItems[0]);
 
     const promises = Array.from(listItems).map((item) => {
       const spans = item.querySelectorAll("span");
@@ -150,22 +150,20 @@ class ContextMenuUtil {
     });
   }
 
-  // Get tab group information based on the list item
+  // Get list type and tab group info from the first list item's CSS class
+  static getListInfo(firstItem) {
+    if (firstItem.classList.contains("summary-list"))
+      return { type: "summary", groupTitle: "✨", groupColor: "purple" };
+    if (firstItem.classList.contains("history-list"))
+      return { type: "history", groupTitle: "🕓", groupColor: "green" };
+    if (firstItem.classList.contains("favorite-list"))
+      return { type: "favorite", groupTitle: "🏵️", groupColor: "yellow" };
+    return { type: "unknown", groupTitle: "", groupColor: "" };
+  }
+
+  // Backward-compatible alias — delegates to getListInfo
   static getGroupInfo(firstItem) {
-    let groupTitle = "";
-    let groupColor = "";
-
-    if (firstItem.classList.contains("summary-list")) {
-      groupTitle = "✨";
-      groupColor = "purple";
-    } else if (firstItem.classList.contains("history-list")) {
-      groupTitle = "🕓";
-      groupColor = "green";
-    } else if (firstItem.classList.contains("favorite-list")) {
-      groupTitle = "🏵️";
-      groupColor = "yellow";
-    }
-
+    const { groupTitle, groupColor } = this.getListInfo(firstItem);
     return { groupTitle, groupColor };
   }
 
@@ -204,7 +202,7 @@ class ContextMenuUtil {
       {
         action: "organizeLocations",
         locations,
-        listType: this.getListType(listItems[0]),
+        listType: this.getListInfo(listItems[0]).type,
       },
       (response) => {
         // Stop breathing effect when response is received
@@ -218,14 +216,7 @@ class ContextMenuUtil {
   }
 
   static getListType(firstItem) {
-    if (firstItem.classList.contains("summary-list")) {
-      return "summary";
-    } else if (firstItem.classList.contains("history-list")) {
-      return "history";
-    } else if (firstItem.classList.contains("favorite-list")) {
-      return "favorite";
-    }
-    return "unknown";
+    return this.getListInfo(firstItem).type;
   }
 
   static applyOrganization(organizedData, listItems) {
@@ -251,7 +242,7 @@ class ContextMenuUtil {
     existingHeaders.forEach((header) => header.remove());
 
     // Determine layout strategy
-    const currentListType = this.getListType(elementsList[0]);
+    const currentListType = this.getListInfo(elementsList[0]).type;
     const hasFlexReverse = ["history", "favorite"].includes(currentListType);
 
     // Render organized categories
