@@ -9,6 +9,9 @@
     "build:css": "sass scss/popup.scss Package/css/popup.css",
     "prepare": "husky"
   },
+  "lint-staged": {
+    "*.{js,scss}": "prettier --write"
+  },
   "devDependencies": {
     "@babel/core": "^7.23.0",
     "@babel/preset-env": "^7.23.0",
@@ -17,6 +20,7 @@
     "isomorphic-dompurify": "^2.30.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "lint-staged": "^17.0.8",
     "prettier": "^3.7.4",
     "sass": "^1.99.0"
   }
