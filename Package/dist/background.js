@@ -495,9 +495,14 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.action === "summarizeVideo" && request.text) {
-    getApiKey().then((apiKey) => {
-      callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
-    });
+    getApiKey()
+      .then((apiKey) => {
+        callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
+      })
+      .catch((err) => {
+        // Without this the popup would wait forever on a missing API key
+        sendResponse({ error: err.message });
+      });
     return true; // Will respond asynchronously
   }
 });

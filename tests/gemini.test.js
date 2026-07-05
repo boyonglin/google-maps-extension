@@ -1213,6 +1213,21 @@ describe("Gemini Component", () => {
       expect(sendButton.disabled).toBe(false);
     });
 
+    test("should re-enable send button when response is undefined", async () => {
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback(undefined);
+      });
+
+      sendButton.disabled = true;
+      geminiInstance.summarizeContent("content", "api-key", "https://example.com");
+
+      await wait(50);
+
+      expect(responseField.value).toContain("API Error:");
+      expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalled();
+      expect(sendButton.disabled).toBe(false);
+    });
+
     test("should handle HTML parsing error", async () => {
       const invalidResponse = "Not valid HTML";
       chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
