@@ -1206,6 +1206,111 @@ describe("background.js", () => {
 
       expect(sendResponse).toHaveBeenCalledWith({ error: "Network failed" });
     });
+
+    describe("verification result caching", () => {
+      const nodeCrypto = require("crypto");
+      const testKeyHash = nodeCrypto.createHash("sha256").update("test-key").digest("hex");
+
+      beforeEach(() => {
+        global.crypto.subtle.digest = jest.fn((algorithm, data) => {
+          const hash = nodeCrypto.createHash("sha256").update(Buffer.from(data)).digest();
+          // Buffer#buffer may reference a larger, pooled ArrayBuffer with a
+          // non-zero byteOffset, so slice out exactly the digest bytes
+          // instead of returning the raw (possibly oversized) buffer.
+          return Promise.resolve(
+            hash.buffer.slice(hash.byteOffset, hash.byteOffset + hash.byteLength)
+          );
+        });
+      });
+
+      test("should skip the network when a fresh cached result matches", async () => {
+        const sendResponse = jest.fn();
+        chrome.storage.local.get.mockImplementation((keys, callback) => {
+          callback({
+            apiKeyVerifyCache: {
+              keyHash: testKeyHash,
+              valid: true,
+              verifiedAt: Date.now() - 1000,
+            },
+          });
+        });
+
+        listeners.onMessage[VERIFY_API_LISTENER](
+          { action: "verifyApiKey", apiKey: "test-key" },
+          {},
+          sendResponse
+        );
+        await flushPromises();
+
+        expect(mockFetch).not.toHaveBeenCalled();
+        expect(sendResponse).toHaveBeenCalledWith({ valid: true });
+      });
+
+      test("should verify over the network when the cache is stale", async () => {
+        const sendResponse = jest.fn();
+        chrome.storage.local.get.mockImplementation((keys, callback) => {
+          callback({
+            apiKeyVerifyCache: {
+              keyHash: testKeyHash,
+              valid: true,
+              verifiedAt: Date.now() - 25 * 60 * 60 * 1000,
+            },
+          });
+        });
+        mockFetch.mockResolvedValue({ ok: true });
+
+        listeners.onMessage[VERIFY_API_LISTENER](
+          { action: "verifyApiKey", apiKey: "test-key" },
+          {},
+          sendResponse
+        );
+        await flushPromises();
+
+        expect(mockFetch).toHaveBeenCalled();
+        expect(sendResponse).toHaveBeenCalledWith({ valid: true });
+      });
+
+      test("should cache a successful verification", async () => {
+        const sendResponse = jest.fn();
+        chrome.storage.local.get.mockImplementation((keys, callback) => {
+          callback({});
+        });
+        mockFetch.mockResolvedValue({ ok: true });
+
+        listeners.onMessage[VERIFY_API_LISTENER](
+          { action: "verifyApiKey", apiKey: "test-key" },
+          {},
+          sendResponse
+        );
+        await flushPromises();
+
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({
+          apiKeyVerifyCache: expect.objectContaining({
+            keyHash: testKeyHash,
+            valid: true,
+            verifiedAt: expect.any(Number),
+          }),
+        });
+      });
+
+      test("should not cache a failed verification", async () => {
+        const sendResponse = jest.fn();
+        chrome.storage.local.get.mockImplementation((keys, callback) => {
+          callback({});
+        });
+        mockFetch.mockResolvedValue({ ok: false });
+
+        listeners.onMessage[VERIFY_API_LISTENER](
+          { action: "verifyApiKey", apiKey: "test-key" },
+          {},
+          sendResponse
+        );
+        await flushPromises();
+
+        expect(chrome.storage.local.set).not.toHaveBeenCalled();
+        expect(sendResponse).toHaveBeenCalledWith({ valid: false });
+      });
+    });
   });
 
   describe("chrome.runtime.onMessage listener - Payment system", () => {
