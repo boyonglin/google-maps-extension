@@ -484,7 +484,7 @@ describe("background.js", () => {
       });
     });
 
-    test("should handle googleMapsSearch context menu click", () => {
+    test("should handle googleMapsSearch context menu click", async () => {
       const { buildSearchUrl } = require("../Package/dist/hooks/backgroundState.js");
       const { Analytics } = require("../Package/dist/utils/analytics.module.js");
       const info = {
@@ -492,14 +492,26 @@ describe("background.js", () => {
         selectionText: "Tokyo Tower",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(Analytics.trackContextMenu).toHaveBeenCalledWith("search");
       expect(buildSearchUrl).toHaveBeenCalledWith("Tokyo Tower");
       expect(chrome.tabs.create).toHaveBeenCalled();
     });
 
-    test("should handle googleMapsDirections context menu click", () => {
+    test("should warm the cache before acting on a context menu click", async () => {
+      const { ensureWarm } = require("../Package/dist/hooks/backgroundState.js");
+      const info = {
+        menuItemId: "googleMapsSearch",
+        selectionText: "Tokyo Tower",
+      };
+
+      await listeners.onContextMenuClicked(info);
+
+      expect(ensureWarm).toHaveBeenCalled();
+    });
+
+    test("should handle googleMapsDirections context menu click", async () => {
       const { buildDirectionsUrl } = require("../Package/dist/hooks/backgroundState.js");
       const { Analytics } = require("../Package/dist/utils/analytics.module.js");
       const info = {
@@ -507,28 +519,28 @@ describe("background.js", () => {
         selectionText: "Tokyo Tower",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(Analytics.trackContextMenu).toHaveBeenCalledWith("directions");
       expect(buildDirectionsUrl).toHaveBeenCalledWith("123 Main St", "Tokyo Tower");
       expect(chrome.tabs.create).toHaveBeenCalled();
     });
 
-    test("should not create tab with empty selection text", () => {
+    test("should not create tab with empty selection text", async () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
       const info = {
         menuItemId: "googleMapsSearch",
         selectionText: "",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(chrome.tabs.create).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith("No valid selected text.");
       consoleSpy.mockRestore();
     });
 
-    test("should update search history after search", () => {
+    test("should update search history after search", async () => {
       chrome.storage.local.get.mockImplementation((keys, callback) => {
         callback({ searchHistoryList: ["Previous Search"] });
       });
@@ -541,14 +553,14 @@ describe("background.js", () => {
         selectionText: "New Search",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         searchHistoryList: expect.arrayContaining(["New Search"]),
       });
     });
 
-    test("should not update history in incognito mode", () => {
+    test("should not update history in incognito mode", async () => {
       const { getCache } = require("../Package/dist/hooks/backgroundState.js");
       getCache.mockReturnValue({ isIncognito: true });
 
@@ -557,12 +569,12 @@ describe("background.js", () => {
         selectionText: "Secret Search",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(chrome.storage.local.set).not.toHaveBeenCalled();
     });
 
-    test("should limit history list to maxListLength", () => {
+    test("should limit history list to maxListLength", async () => {
       const existingHistory = Array.from({ length: 10 }, (_, i) => `Search ${i + 1}`);
 
       chrome.storage.local.get.mockImplementation((keys, callback) => {
@@ -577,7 +589,7 @@ describe("background.js", () => {
         selectionText: "Search 11",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         searchHistoryList: expect.arrayContaining(["Search 11"]),
@@ -587,7 +599,7 @@ describe("background.js", () => {
       expect(savedList.length).toBeLessThanOrEqual(10);
     });
 
-    test("should move existing search to end of history", () => {
+    test("should move existing search to end of history", async () => {
       chrome.storage.local.get.mockImplementation((keys, callback) => {
         callback({ searchHistoryList: ["Search A", "Search B", "Search C"] });
       });
@@ -600,13 +612,13 @@ describe("background.js", () => {
         selectionText: "Search B",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       const savedList = chrome.storage.local.set.mock.calls[0][0].searchHistoryList;
       expect(savedList[savedList.length - 1]).toBe("Search B");
     });
 
-    test("should initialize empty search history when null", () => {
+    test("should initialize empty search history when null", async () => {
       chrome.storage.local.get.mockImplementation((keys, callback) => {
         callback({ searchHistoryList: null });
       });
@@ -619,7 +631,7 @@ describe("background.js", () => {
         selectionText: "First Search",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         searchHistoryList: ["First Search"],
@@ -634,7 +646,7 @@ describe("background.js", () => {
       });
     });
 
-    test("should track shortcut usage for all commands", () => {
+    test("should track shortcut usage for all commands", async () => {
       const { Analytics } = require("../Package/dist/utils/analytics.module.js");
 
       chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
@@ -643,7 +655,7 @@ describe("background.js", () => {
         }
       });
 
-      listeners.onCommand("run-search");
+      await listeners.onCommand("run-search");
       expect(Analytics.trackShortcut).toHaveBeenCalledWith("run-search");
 
       Analytics.trackShortcut.mockClear();
@@ -655,14 +667,14 @@ describe("background.js", () => {
       expect(Analytics.trackShortcut).toHaveBeenCalledWith("run-directions");
     });
 
-    test("should handle run-search command", () => {
+    test("should handle run-search command", async () => {
       chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
         if (message.action === "getSelectedText") {
           callback({ selectedText: "Search Term" });
         }
       });
 
-      listeners.onCommand("run-search");
+      await listeners.onCommand("run-search");
 
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
         1,
@@ -742,14 +754,14 @@ describe("background.js", () => {
       );
     });
 
-    test("should not execute on non-HTTP URL", () => {
+    test("should not execute on non-HTTP URL", async () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
       chrome.tabs.query.mockImplementation((query, callback) => {
         callback([{ id: 1, url: "chrome://extensions" }]);
       });
 
-      listeners.onCommand("run-search");
+      await listeners.onCommand("run-search");
 
       expect(consoleSpy).toHaveBeenCalledWith("Cannot execute extension on non-HTTP URL.");
       consoleSpy.mockRestore();
@@ -770,7 +782,7 @@ describe("background.js", () => {
       });
     });
 
-    test("should handle searchInput action", () => {
+    test("should handle searchInput action", async () => {
       const { buildSearchUrl } = require("../Package/dist/hooks/backgroundState.js");
       const request = {
         action: "searchInput",
@@ -785,6 +797,7 @@ describe("background.js", () => {
       getCache.mockReturnValue({ isIncognito: false });
 
       listeners.onMessage[BASIC_ACTIONS_LISTENER](request, {}, jest.fn());
+      await flushPromises();
 
       expect(buildSearchUrl).toHaveBeenCalledWith("Tokyo");
       expect(chrome.tabs.create).toHaveBeenCalled();
@@ -1251,7 +1264,7 @@ describe("background.js", () => {
       expect(sendResponse).toHaveBeenCalledWith({ apiKey: "my-api-key" });
     });
 
-    test("should handle buildSearchUrl action", () => {
+    test("should handle buildSearchUrl action", async () => {
       const { buildSearchUrl } = require("../Package/dist/hooks/backgroundState.js");
       const sendResponse = jest.fn();
       const request = {
@@ -1262,13 +1275,14 @@ describe("background.js", () => {
       buildSearchUrl.mockReturnValue("https://maps.google.com?q=Tokyo");
 
       listeners.onMessage[STATE_QUERIES_LISTENER](request, {}, sendResponse);
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         url: "https://maps.google.com?q=Tokyo",
       });
     });
 
-    test("should handle buildDirectionsUrl action", () => {
+    test("should handle buildDirectionsUrl action", async () => {
       const { buildDirectionsUrl } = require("../Package/dist/hooks/backgroundState.js");
       const sendResponse = jest.fn();
       const request = {
@@ -1282,13 +1296,14 @@ describe("background.js", () => {
       );
 
       listeners.onMessage[STATE_QUERIES_LISTENER](request, {}, sendResponse);
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         url: expect.stringContaining("Tokyo"),
       });
     });
 
-    test("should handle buildMapsUrl action", () => {
+    test("should handle buildMapsUrl action", async () => {
       const { buildMapsUrl } = require("../Package/dist/hooks/backgroundState.js");
       const sendResponse = jest.fn();
       const request = { action: "buildMapsUrl" };
@@ -1296,6 +1311,7 @@ describe("background.js", () => {
       buildMapsUrl.mockReturnValue("https://maps.google.com");
 
       listeners.onMessage[STATE_QUERIES_LISTENER](request, {}, sendResponse);
+      await flushPromises();
 
       expect(sendResponse).toHaveBeenCalledWith({
         url: "https://maps.google.com",
@@ -1372,7 +1388,7 @@ describe("background.js", () => {
   });
 
   describe("Edge cases and error handling", () => {
-    test("should handle null/undefined in handleSelectedText", () => {
+    test("should handle null/undefined in handleSelectedText", async () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
       const info = {
@@ -1380,7 +1396,7 @@ describe("background.js", () => {
         selectionText: null,
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(chrome.tabs.create).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalled();
@@ -1500,7 +1516,7 @@ describe("background.js", () => {
       getApiKey.mockImplementation(originalGetApiKey || (() => Promise.resolve("test-api-key")));
     });
 
-    test("should handle whitespace-only selection", () => {
+    test("should handle whitespace-only selection", async () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
       const info = {
@@ -1508,13 +1524,13 @@ describe("background.js", () => {
         selectionText: "   ",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(chrome.tabs.create).not.toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
 
-    test("should handle empty selection for directions", () => {
+    test("should handle empty selection for directions", async () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
       const info = {
@@ -1522,7 +1538,7 @@ describe("background.js", () => {
         selectionText: "",
       };
 
-      listeners.onContextMenuClicked(info);
+      await listeners.onContextMenuClicked(info);
 
       expect(chrome.tabs.create).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith("No valid selected text.");
