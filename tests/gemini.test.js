@@ -1022,11 +1022,7 @@ describe("Gemini Component", () => {
 
     test("should update loading message with estimated time from video info", async () => {
       // Create a mock that returns video info when queried
-      let videoInfoCallback;
-      chrome.storage.local.get.mockImplementation((key, callback) => {
-        if (key === "currentVideoInfo") {
-          videoInfoCallback = callback;
-        }
+      chrome.storage.local.get.mockImplementation((_key, callback) => {
         callback({ currentVideoInfo: { videoId: "test123", length: 300 } });
       });
 

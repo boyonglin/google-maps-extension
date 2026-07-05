@@ -22,7 +22,7 @@ const setupMockStorageWithDecryption = (decryptedApiKey, storageOverrides = {}) 
 
 describe("backgroundState.js - URL Building Functions", () => {
   let backgroundState;
-  let updateUserUrls, buildSearchUrl, buildDirectionsUrl, buildMapsUrl, DEFAULTS;
+  let updateUserUrls, buildSearchUrl, buildDirectionsUrl, buildMapsUrl;
 
   beforeEach(() => {
     // Don't reset modules - it clears mocks!
@@ -34,7 +34,6 @@ describe("backgroundState.js - URL Building Functions", () => {
     buildSearchUrl = backgroundState.buildSearchUrl;
     buildDirectionsUrl = backgroundState.buildDirectionsUrl;
     buildMapsUrl = backgroundState.buildMapsUrl;
-    DEFAULTS = backgroundState.DEFAULTS;
 
     // Reset cache for test isolation
     if (backgroundState.__resetCacheForTesting) {
@@ -276,8 +275,7 @@ describe("backgroundState.js - URL Building Functions", () => {
 
 describe("backgroundState.js - Edge Cases and Performance", () => {
   let backgroundState;
-  let updateUserUrls, buildSearchUrl, buildDirectionsUrl, buildMapsUrl;
-  let ensureWarm, getCache, getApiKey, applyStorageChanges, DEFAULTS;
+  let ensureWarm, getApiKey, applyStorageChanges, DEFAULTS;
 
   beforeEach(() => {
     // Don't reset modules - it clears the mock!
@@ -286,12 +284,7 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
     decryptApiKey.mockReset();
 
     backgroundState = require("../Package/dist/hooks/backgroundState.js");
-    updateUserUrls = backgroundState.updateUserUrls;
-    buildSearchUrl = backgroundState.buildSearchUrl;
-    buildDirectionsUrl = backgroundState.buildDirectionsUrl;
-    buildMapsUrl = backgroundState.buildMapsUrl;
     ensureWarm = backgroundState.ensureWarm;
-    getCache = backgroundState.getCache;
     getApiKey = backgroundState.getApiKey;
     applyStorageChanges = backgroundState.applyStorageChanges;
     DEFAULTS = backgroundState.DEFAULTS;

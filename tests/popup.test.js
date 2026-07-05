@@ -1214,7 +1214,7 @@ describe("popup.js", () => {
         return true;
       });
 
-      jest.spyOn(mockHistory, "createListItem").mockImplementation((item) => {
+      jest.spyOn(mockHistory, "createListItem").mockImplementation(() => {
         const li = document.createElement("li");
         li.className = "list-group-item";
         return li;
