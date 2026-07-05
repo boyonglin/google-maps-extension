@@ -664,16 +664,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-if (typeof State === "undefined" && typeof require !== "undefined") {
-  global.State = require("./hooks/popupState");
-  global.Remove = require("./components/remove");
-  global.Favorite = require("./components/favorite");
-  global.History = require("./components/history");
-  global.Gemini = require("./components/gemini");
-  global.Modal = require("./components/modal");
-  global.Payment = require("./utils/payment");
-}
-
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     initializeDependencies,
