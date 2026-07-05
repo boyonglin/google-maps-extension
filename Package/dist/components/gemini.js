@@ -219,26 +219,48 @@ class Gemini {
     });
   }
 
-  constructSummaryHTML(summaryList, favoriteList = []) {
-    let html = '<ul class="list-group d-flex">';
+  // Parse LLM output into plain-text items, dropping any markup the model
+  // may have echoed from untrusted page content (prompt injection).
+  parseSummaryItems(response) {
+    const doc = new DOMParser().parseFromString(response, "text/html");
+    const items = [];
+    doc.querySelectorAll("li").forEach((li) => {
+      const spans = li.querySelectorAll("span");
+      const name = (spans[0] ? spans[0].textContent : li.textContent).trim();
+      const clue = spans[1] ? spans[1].textContent.trim() : "";
+      if (name) items.push({ name, clue });
+    });
+    return items;
+  }
+
+  buildSummaryListElement(summaryList) {
+    const ul = document.createElement("ul");
+    ul.className = "list-group d-flex";
 
     summaryList.forEach((item, index) => {
       const isLastItem = index === summaryList.length - 1;
-      const mbClass = isLastItem ? "" : "mb-3";
+      const li = document.createElement("li");
+      li.className =
+        "list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center text-break" +
+        (isLastItem ? "" : " mb-3");
 
-      html += `
-          <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center text-break ${mbClass}">
-            <span>${item.name}</span>
-            <span class="d-none">${item.clue}</span>
-            <i class="bi"></i>
-          </li>
-        `;
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = item.name ?? "";
+      const clueSpan = document.createElement("span");
+      clueSpan.className = "d-none";
+      clueSpan.textContent = item.clue ?? "";
+      const icon = document.createElement("i");
+      icon.className = "bi";
+
+      li.append(nameSpan, clueSpan, icon);
+      ul.appendChild(li);
     });
 
-    html += "</ul>";
+    return ul;
+  }
 
-    // Set the HTML first, then update the favorite icons
-    summaryListContainer.innerHTML = html;
+  constructSummaryHTML(summaryList, favoriteList = []) {
+    summaryListContainer.replaceChildren(this.buildSummaryListElement(summaryList));
     this.updateSummaryFavoriteIcons(favoriteList);
 
     return summaryListContainer.innerHTML;
@@ -292,7 +314,11 @@ class Gemini {
 
       // success when we get a string fragment of <ul>...</ul>
       if (typeof response === "string") {
-        this.createSummaryList(response);
+        try {
+          this.createSummaryList(response);
+        } catch (error) {
+          this.ResponseErrorMsg({ error: String(error) });
+        }
       } else {
         this.ResponseErrorMsg(response);
       }
@@ -386,16 +412,15 @@ class Gemini {
   }
 
   createSummaryList(response) {
+    const summaryItems = this.parseSummaryItems(response);
+    if (summaryItems.length === 0) {
+      throw new Error("No summary items found in response");
+    }
+
     document.documentElement.classList.add("no-expand-scroll");
     summaryListContainer.classList.add("no-expand-scroll");
 
-    summaryListContainer.innerHTML = response;
-    const lastListItem = summaryListContainer.querySelector(
-      ".list-group .list-group-item:last-child"
-    );
-    if (lastListItem) {
-      lastListItem.classList.remove("mb-3");
-    }
+    summaryListContainer.replaceChildren(this.buildSummaryListElement(summaryItems));
     state.hasSummary = true;
     geminiEmptyMessage.classList.remove("shineText");
     geminiEmptyMessage.classList.add("d-none");
@@ -411,28 +436,12 @@ class Gemini {
       summaryListContainer.classList.remove("no-expand-scroll");
     }, 400);
 
-    // store the response and current time
-    const listItems = document.querySelectorAll(".summary-list");
-    const data = [];
-
-    listItems.forEach((item) => {
-      const nameSpan = item.querySelector("span:first-child").textContent;
-      const clueElem = item.querySelector("span.d-none");
-      const clueSpan = clueElem ? clueElem.textContent : "";
-      data.push({ name: nameSpan, clue: clueSpan });
-    });
-
     chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
       if (!favoriteList) {
         return;
       }
 
-      const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
-      listItems.forEach((item) => {
-        const itemName = item.querySelector("span:first-child").textContent;
-        const icon = favorite.createFavoriteIcon(itemName, trimmedFavorite);
-        item.appendChild(icon);
-      });
+      this.updateSummaryFavoriteIcons(favoriteList);
     });
 
     // Respect incognito mode: do not persist summaries when enabled
@@ -440,7 +449,7 @@ class Gemini {
       if (!isIncognito) {
         const currentTime = Date.now();
         chrome.storage.local.set({
-          summaryList: data,
+          summaryList: summaryItems,
           timestamp: currentTime,
         });
       }
