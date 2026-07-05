@@ -10,7 +10,9 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,scss}": "prettier --write"
+    "Package/dist/**/*.js": "prettier --write",
+    "tests/**/*.js": "prettier --write",
+    "scss/**/*.scss": "prettier --write"
   },
   "devDependencies": {
     "@babel/core": "^7.23.0",
