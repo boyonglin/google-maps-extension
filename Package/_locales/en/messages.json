@@ -370,5 +370,17 @@
   "tidyLocations" : {
     "message": "Tidy Locations",
     "description": "context menu tidy locations option"
+  },
+  "undoLabel": {
+    "message": "Undo",
+    "description": "undo button in the clear toast"
+  },
+  "historyClearedMsg": {
+    "message": "Search history cleared",
+    "description": "toast after clearing search history"
+  },
+  "summaryClearedMsg": {
+    "message": "Summary cleared",
+    "description": "toast after clearing the Gemini summary"
   }
 }

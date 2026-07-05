@@ -61,21 +61,37 @@ class History {
 
     clearButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
-      chrome.storage.local.set({ searchHistoryList: [] });
 
-      clearButton.disabled = true;
-      searchHistoryListContainer.innerHTML = "";
+      // Keep the cleared list around so the toast can restore it
+      chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
+        const clearedList = Array.isArray(searchHistoryList) ? searchHistoryList : [];
 
-      emptyMessage.style.display = "block";
-      const message = chrome.i18n.getMessage("clearedUpMsg");
-      emptyMessage.innerHTML = message ? message.replace(/\n/g, "<br>") : "";
+        chrome.storage.local.set({ searchHistoryList: [] });
 
-      state.hasHistory = false;
+        clearButton.disabled = true;
+        searchHistoryListContainer.innerHTML = "";
 
-      // Send a message to background.js to request clearing of selected text list data
-      chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
+        emptyMessage.style.display = "block";
+        const message = chrome.i18n.getMessage("clearedUpMsg");
+        emptyMessage.innerHTML = message ? message.replace(/\n/g, "<br>") : "";
 
-      measureContentSize();
+        state.hasHistory = false;
+
+        // Send a message to background.js to request clearing of selected text list data
+        chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
+
+        measureContentSize();
+
+        if (clearedList.length > 0) {
+          DOMUtils.showUndoToast(chrome.i18n.getMessage("historyClearedMsg"), () => {
+            // popup.js's storage.onChanged listener re-renders the list
+            chrome.storage.local.set({ searchHistoryList: clearedList });
+            state.hasHistory = true;
+            emptyMessage.style.display = "none";
+            clearButton.disabled = false;
+          });
+        }
+      });
     });
   }
 

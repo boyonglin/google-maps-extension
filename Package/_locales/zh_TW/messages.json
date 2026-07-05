@@ -278,5 +278,17 @@
   },
   "tidyLocations" : {
     "message": "整理地點"
+  },
+  "undoLabel": {
+    "message": "復原",
+    "description": "undo button in the clear toast"
+  },
+  "historyClearedMsg": {
+    "message": "已清空搜尋紀錄",
+    "description": "toast after clearing search history"
+  },
+  "summaryClearedMsg": {
+    "message": "已清空摘要",
+    "description": "toast after clearing the Gemini summary"
   }
 }

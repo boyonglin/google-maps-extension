@@ -169,3 +169,55 @@ describe("DOMUtils", () => {
     });
   });
 });
+
+describe("DOMUtils.showUndoToast", () => {
+  const { mockI18n } = require("./testHelpers");
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    mockI18n({ undoLabel: "Undo" });
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test("renders the message and an undo button", () => {
+    DOMUtils.showUndoToast("History cleared", jest.fn());
+
+    const toast = document.querySelector(".undo-toast");
+    expect(toast).not.toBeNull();
+    expect(toast.querySelector("span").textContent).toBe("History cleared");
+    expect(toast.querySelector(".undo-toast-btn").textContent).toBe("Undo");
+  });
+
+  test("clicking undo fires the callback and removes the toast", () => {
+    const onUndo = jest.fn();
+    DOMUtils.showUndoToast("History cleared", onUndo);
+
+    document.querySelector(".undo-toast-btn").click();
+
+    expect(onUndo).toHaveBeenCalledTimes(1);
+    expect(document.querySelector(".undo-toast")).toBeNull();
+  });
+
+  test("auto-dismisses after 6 seconds without firing the callback", () => {
+    const onUndo = jest.fn();
+    DOMUtils.showUndoToast("History cleared", onUndo);
+
+    jest.advanceTimersByTime(6100);
+
+    expect(document.querySelector(".undo-toast")).toBeNull();
+    expect(onUndo).not.toHaveBeenCalled();
+  });
+
+  test("replaces a previous toast instead of stacking", () => {
+    DOMUtils.showUndoToast("First", jest.fn());
+    DOMUtils.showUndoToast("Second", jest.fn());
+
+    const toasts = document.querySelectorAll(".undo-toast");
+    expect(toasts.length).toBe(1);
+    expect(toasts[0].querySelector("span").textContent).toBe("Second");
+  });
+});

@@ -573,6 +573,35 @@ describe("History Component", () => {
         expect(global.state.hasHistory).toBe(false);
       });
 
+      test("should offer undo after clearing and restore the list on undo", () => {
+        mockChromeStorage({ searchHistoryList: ["Tokyo", "Paris"] });
+        mockI18n({ historyClearedMsg: "Search history cleared" });
+
+        clearButton.dispatchEvent(new Event("click"));
+
+        expect(DOMUtils.showUndoToast).toHaveBeenCalledWith(
+          "Search history cleared",
+          expect.any(Function)
+        );
+
+        const onUndo = DOMUtils.showUndoToast.mock.calls[0][1];
+        onUndo();
+
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({
+          searchHistoryList: ["Tokyo", "Paris"],
+        });
+        expect(global.state.hasHistory).toBe(true);
+        expect(clearButton.disabled).toBe(false);
+      });
+
+      test("should not offer undo when the list was already empty", () => {
+        mockChromeStorage({ searchHistoryList: [] });
+
+        clearButton.dispatchEvent(new Event("click"));
+
+        expect(DOMUtils.showUndoToast).not.toHaveBeenCalled();
+      });
+
       test("should send message to background to clear history", () => {
         clearButton.dispatchEvent(new Event("click"));
 

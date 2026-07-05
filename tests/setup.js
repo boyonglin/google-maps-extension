@@ -211,6 +211,7 @@ global.DOMUtils = {
     }, 500);
   }),
   refreshFavoriteList: jest.fn(),
+  showUndoToast: jest.fn(),
 };
 
 // Mock requestAnimationFrame and requestIdleCallback

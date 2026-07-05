@@ -41,16 +41,29 @@ class Gemini {
     clearButtonSummary.addEventListener("click", () => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("clear_summary", "clearButtonSummary");
-      chrome.storage.local.remove(["summaryList", "timestamp"]);
 
-      state.hasSummary = false;
-      summaryListContainer.innerHTML = "";
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-      clearButtonSummary.classList.add("d-none");
-      geminiEmptyMessage.classList.remove("d-none");
-      apiButton.classList.remove("d-none");
+      // Keep the cleared summary around so the toast can restore it
+      chrome.storage.local.get(["summaryList", "timestamp"], ({ summaryList, timestamp }) => {
+        chrome.storage.local.remove(["summaryList", "timestamp"]);
 
-      measureContentSize();
+        state.hasSummary = false;
+        summaryListContainer.innerHTML = "";
+        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
+        clearButtonSummary.classList.add("d-none");
+        geminiEmptyMessage.classList.remove("d-none");
+        apiButton.classList.remove("d-none");
+
+        measureContentSize();
+
+        if (summaryList && summaryList.length > 0) {
+          DOMUtils.showUndoToast(chrome.i18n.getMessage("summaryClearedMsg"), () => {
+            chrome.storage.local.set({ summaryList, timestamp }, () => {
+              state.summaryListChanged = true;
+              this.clearExpiredSummary();
+            });
+          });
+        }
+      });
     });
 
     // Video Summary Button toggle functionality

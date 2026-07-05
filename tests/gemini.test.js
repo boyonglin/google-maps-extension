@@ -320,6 +320,33 @@ describe("Gemini Component", () => {
       expect(apiButton.classList.contains("d-none")).toBe(false);
       expect(measureContentSize).toHaveBeenCalled();
     });
+
+    test("should offer undo after clearing and restore the summary on undo", () => {
+      const summaryList = [{ name: "Place", clue: "Info" }];
+      mockChromeStorage({ summaryList, timestamp: 12345 });
+      mockI18n({ summaryClearedMsg: "Summary cleared", geminiEmptyMsg: "No summaries yet" });
+      geminiInstance.clearExpiredSummary = jest.fn();
+
+      clearButtonSummary.click();
+
+      expect(DOMUtils.showUndoToast).toHaveBeenCalledWith("Summary cleared", expect.any(Function));
+
+      const onUndo = DOMUtils.showUndoToast.mock.calls[0][1];
+      onUndo();
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { summaryList, timestamp: 12345 },
+        expect.any(Function)
+      );
+    });
+
+    test("should not offer undo when there was no summary", () => {
+      mockChromeStorage({ summaryList: [], timestamp: null });
+
+      clearButtonSummary.click();
+
+      expect(DOMUtils.showUndoToast).not.toHaveBeenCalled();
+    });
   });
 
   // ============================================================================
