@@ -68,6 +68,7 @@ const paymentSpan = document.querySelector("#paymentButton > span");
 
 // Import Scripts
 let state, remove, favorite, history, gemini, modal, payment, onboarding;
+let lastGeminiApiKey = "";
 
 function initializeDependencies(deps = {}) {
   state = deps.state || new State();
@@ -301,6 +302,7 @@ async function fetchData() {
 
   state.hasInit ? measureContentSizeLast() : retryMeasureContentSize();
 
+  lastGeminiApiKey = geminiApiKey;
   gemini.fetchAPIKey(geminiApiKey);
   modal.updateOptionalModal(startAddr, authUser, historyMax);
   modal.updateIncognitoModal(!!isIncognito);
@@ -513,6 +515,9 @@ window.addEventListener("i18n:changed", () => {
     const v = chrome.i18n.getMessage(key);
     if (v) subtitleElement.textContent = v;
   }
+  // gemini.fetchAPIKey sets apiInput.placeholder / geminiEmptyMessage
+  // imperatively (not via [data-locale]), so it needs its own re-run.
+  if (gemini) gemini.fetchAPIKey(lastGeminiApiKey);
   // Reset buttons to their default width
   [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {
     btn.classList.remove("w-auto");

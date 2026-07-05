@@ -13,6 +13,9 @@
 
   let activeLanguage = "auto";
   let overrideMessages = null;
+  // Increments on every applyOverride call so a slow async bundle load can
+  // never clobber a newer language selection.
+  let applyToken = 0;
 
   function safeLocalGet(key, parse = false) {
     try {
@@ -36,19 +39,40 @@
     } catch (e) {}
   }
 
-  function loadMessagesSync(lang) {
+  function readValidCache(lang) {
+    const cache = safeLocalGet(MESSAGES_CACHE_KEY, true);
+    return cache && cache.lang === lang && cache.version === EXT_VERSION ? cache.messages : null;
+  }
+
+  // Async fallback for cache misses. Sync XHR is deprecated and blocks the
+  // popup's first paint, so misses render in "auto" first and re-render when
+  // the bundle arrives.
+  async function fetchMessages(lang) {
     // Defense in depth: never let an unexpected lang reach runtime.getURL.
     if (!SUPPORTED_LANGUAGES.includes(lang) || lang === "auto") return null;
     try {
-      const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
-      const xhr = new XMLHttpRequest();
-      xhr.open("GET", url, false); // sync XHR is acceptable for a tiny packaged file
-      xhr.send();
-      if (xhr.status === 200) {
-        return JSON.parse(xhr.responseText);
-      }
-    } catch (e) {}
-    return null;
+      const res = await fetch(chrome.runtime.getURL(`_locales/${lang}/messages.json`));
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function applyMessages(lang, messages) {
+    if (messages) {
+      activeLanguage = lang;
+      overrideMessages = messages;
+    } else {
+      activeLanguage = "auto";
+      overrideMessages = null;
+    }
+  }
+
+  function notifyApplied(lang) {
+    if (typeof window === "undefined") return;
+    if (typeof window.applyI18n === "function") window.applyI18n();
+    window.dispatchEvent(new CustomEvent("i18n:changed", { detail: { lang } }));
   }
 
   // Resolve named placeholders (e.g. $checkedCount$) the same way
@@ -84,30 +108,34 @@
     return originalGetMessage(key, substitutions);
   };
 
-  // Cache-first, XHR-fallback. Degrades silently to "auto" on any failure.
-  function applyOverride(lang) {
+  // Cache-first: a valid cache applies synchronously (no flash). On a miss
+  // the bundle loads asynchronously; `notifyOnAsync` re-renders the page when
+  // it lands. Degrades silently to "auto" on any failure. Returns a promise
+  // resolving to the language actually applied.
+  function applyOverride(lang, { notifyOnAsync = false } = {}) {
+    const token = ++applyToken;
+
     if (!lang || lang === "auto" || !SUPPORTED_LANGUAGES.includes(lang)) {
-      activeLanguage = "auto";
-      overrideMessages = null;
-      return;
+      applyMessages("auto", null);
+      return Promise.resolve(activeLanguage);
     }
-    const cache = safeLocalGet(MESSAGES_CACHE_KEY, true);
-    let messages =
-      cache && cache.lang === lang && cache.version === EXT_VERSION ? cache.messages : null;
-    if (!messages) {
-      messages = loadMessagesSync(lang);
+
+    const cached = readValidCache(lang);
+    if (cached) {
+      applyMessages(lang, cached);
+      return Promise.resolve(activeLanguage);
+    }
+
+    return fetchMessages(lang).then((messages) => {
+      if (token !== applyToken) return activeLanguage; // superseded
       if (messages) writeMessagesCache(lang, messages);
-    }
-    if (messages) {
-      activeLanguage = lang;
-      overrideMessages = messages;
-    } else {
-      activeLanguage = "auto";
-      overrideMessages = null;
-    }
+      applyMessages(lang, messages);
+      if (messages && notifyOnAsync) notifyApplied(lang);
+      return activeLanguage;
+    });
   }
 
-  applyOverride(safeLocalGet(STORAGE_KEY));
+  applyOverride(safeLocalGet(STORAGE_KEY), { notifyOnAsync: true });
 
   // Mirror storage.local → localStorage so the next popup boot applies the
   // override synchronously (a language set elsewhere takes effect immediately).
@@ -137,7 +165,7 @@
       return activeLanguage;
     },
 
-    setLanguage(lang) {
+    async setLanguage(lang) {
       const normalized = SUPPORTED_LANGUAGES.includes(lang) ? lang : "auto";
       try {
         if (normalized === "auto") {
@@ -147,9 +175,9 @@
           localStorage.setItem(STORAGE_KEY, normalized);
         }
       } catch (e) {}
-      // Apply in-memory immediately (also refreshes cache via loadMessagesSync)
-      // so callers don't need a separate reloadOverride() round-trip.
-      applyOverride(normalized);
+      // Wait for the bundle (also refreshes the cache) so callers can
+      // re-render immediately after this resolves.
+      await applyOverride(normalized);
       return new Promise((resolve) => {
         if (normalized === "auto") {
           chrome.storage.local.remove(STORAGE_KEY, () => resolve(normalized));
@@ -159,10 +187,11 @@
       });
     },
 
-    // Re-applies the stored language in place. Call window.applyI18n() after
-    // this to re-render already-painted data-locale* attributes.
+    // Re-applies the stored language in place. A valid cache applies
+    // synchronously; otherwise the bundle loads in the background and the
+    // page re-renders when it arrives.
     reloadOverride() {
-      applyOverride(safeLocalGet(STORAGE_KEY));
+      applyOverride(safeLocalGet(STORAGE_KEY), { notifyOnAsync: true });
       return activeLanguage;
     },
   };

@@ -4,7 +4,8 @@
  * The module is an IIFE with side effects at load time:
  *   1. captures chrome.i18n.getMessage as `originalGetMessage`
  *   2. wraps chrome.i18n.getMessage
- *   3. reads localStorage userLanguage and applies the override (sync XHR)
+ *   3. reads localStorage userLanguage and applies the override
+ *      (synchronously from the cache, via async fetch on a miss)
  *   4. registers a chrome.storage.onChanged listener
  *   5. publishes window.I18nUtils
  *
@@ -13,6 +14,7 @@
  */
 
 const path = require("path");
+const { flushPromises } = require("./testHelpers");
 
 const I18N_PATH = path.resolve(__dirname, "../Package/dist/utils/i18n.js");
 
@@ -25,28 +27,22 @@ const EN_MESSAGES = {
 };
 const FALLBACK_MESSAGE_KEY = "searchInputPlaceholder";
 
-/** Install a fake XMLHttpRequest that returns the queued response. */
-function installFakeXhr({ status = 200, body = JA_MESSAGES, throwOnSend = false } = {}) {
-  class FakeXhr {
-    constructor() {
-      this.status = 0;
-      this.responseText = "";
-    }
-    open(_method, url) {
-      this._url = url;
-    }
-    send() {
-      if (throwOnSend) throw new Error("network");
-      this.status = status;
-      this.responseText = JSON.stringify(body);
-      FakeXhr.lastUrl = this._url;
-      FakeXhr.callCount += 1;
-    }
-  }
-  FakeXhr.lastUrl = null;
-  FakeXhr.callCount = 0;
-  global.XMLHttpRequest = FakeXhr;
-  return FakeXhr;
+/** Install a fake fetch that returns the queued response. */
+function installFakeFetch({ status = 200, body = JA_MESSAGES, throwOnSend = false } = {}) {
+  const fakeFetch = jest.fn((url) => {
+    fakeFetch.lastUrl = url;
+    fakeFetch.callCount += 1;
+    if (throwOnSend) return Promise.reject(new Error("network"));
+    return Promise.resolve({
+      ok: status >= 200 && status < 300,
+      status,
+      json: () => Promise.resolve(body),
+    });
+  });
+  fakeFetch.lastUrl = null;
+  fakeFetch.callCount = 0;
+  global.fetch = fakeFetch;
+  return fakeFetch;
 }
 
 /** Reset all chrome mocks + storage shims before each load. */
@@ -76,18 +72,22 @@ function seedJaPreferenceAndCache() {
   localStorage.setItem("userLanguage", "ja");
   localStorage.setItem(
     "userLanguageMessages",
-    JSON.stringify({ lang: "ja", messages: JA_MESSAGES })
+    JSON.stringify({
+      lang: "ja",
+      version: chrome.runtime.getManifest().version,
+      messages: JA_MESSAGES,
+    })
   );
 }
 
 function loadI18nWithJaCache() {
   seedJaPreferenceAndCache();
-  installFakeXhr({ body: JA_MESSAGES });
+  installFakeFetch({ body: JA_MESSAGES });
   return loadI18n();
 }
 
-function getLoadedStorageChangeListener(xhrOptions) {
-  installFakeXhr(xhrOptions);
+function getLoadedStorageChangeListener(fetchOptions) {
+  installFakeFetch(fetchOptions);
   loadI18n();
   return chrome.storage.onChanged.addListener.mock.calls[0][0];
 }
@@ -103,106 +103,116 @@ describe("i18n.js", () => {
 
   describe("boot — default", () => {
     test("with no stored preference, activeLanguage is 'auto' and getMessage falls through", () => {
-      installFakeXhr();
+      installFakeFetch();
       const I18nUtils = loadI18n();
 
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
       expectBrowserFallbackMessage();
-      // No XHR should have been issued.
-      expect(global.XMLHttpRequest.callCount).toBe(0);
+      // No fetch should have been issued.
+      expect(global.fetch.callCount).toBe(0);
     });
   });
 
   describe("boot — override", () => {
-    test("stored 'ja' loads bundle via XHR and overrides getMessage", () => {
+    test("stored 'ja' loads bundle via fetch and overrides getMessage", async () => {
       localStorage.setItem("userLanguage", "ja");
-      const Xhr = installFakeXhr({ body: JA_MESSAGES });
+      const fakeFetch = installFakeFetch({ body: JA_MESSAGES });
 
       const I18nUtils = loadI18n();
+      await flushPromises();
 
       expect(I18nUtils.getCurrentLanguage()).toBe("ja");
-      expect(Xhr.callCount).toBe(1);
-      expect(Xhr.lastUrl).toMatch(/_locales\/ja\/messages\.json$/);
+      expect(fakeFetch.callCount).toBe(1);
+      expect(fakeFetch.lastUrl).toMatch(/_locales\/ja\/messages\.json$/);
       expect(chrome.i18n.getMessage("searchInputPlaceholder")).toBe("Google マップを検索");
     });
 
-    test("unknown key in override bundle falls through to original", () => {
+    test("unknown key in override bundle falls through to original", async () => {
       localStorage.setItem("userLanguage", "ja");
-      installFakeXhr({ body: JA_MESSAGES });
+      installFakeFetch({ body: JA_MESSAGES });
 
       loadI18n();
+      await flushPromises();
 
       expect(chrome.i18n.getMessage("notInBundle")).toBe("BROWSER:notInBundle");
     });
 
-    test("XHR failure (non-200) degrades silently to auto", () => {
+    test("fetch failure (non-200) degrades silently to auto", async () => {
       localStorage.setItem("userLanguage", "ja");
-      installFakeXhr({ status: 404 });
+      installFakeFetch({ status: 404 });
 
       const I18nUtils = loadI18n();
+      await flushPromises();
 
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
       expectBrowserFallbackMessage();
     });
 
-    test("XHR throw degrades silently to auto", () => {
+    test("fetch rejection degrades silently to auto", async () => {
       localStorage.setItem("userLanguage", "ja");
-      installFakeXhr({ throwOnSend: true });
+      installFakeFetch({ throwOnSend: true });
 
       const I18nUtils = loadI18n();
+      await flushPromises();
 
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
     });
 
     test("invalid stored language is treated as auto", () => {
       localStorage.setItem("userLanguage", "klingon");
-      installFakeXhr();
+      installFakeFetch();
 
       const I18nUtils = loadI18n();
 
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
-      expect(global.XMLHttpRequest.callCount).toBe(0);
+      expect(global.fetch.callCount).toBe(0);
     });
   });
 
   describe("messages cache", () => {
-    test("cache is preferred over XHR on next boot", () => {
+    test("cache is preferred over fetch on next boot", async () => {
       localStorage.setItem("userLanguage", "ja");
-      installFakeXhr({ body: JA_MESSAGES });
+      installFakeFetch({ body: JA_MESSAGES });
       loadI18n();
-      expect(global.XMLHttpRequest.callCount).toBe(1);
+      await flushPromises();
+      expect(global.fetch.callCount).toBe(1);
 
-      installFakeXhr({ body: { searchInputPlaceholder: { message: "FROM_XHR" } } });
+      installFakeFetch({ body: { searchInputPlaceholder: { message: "FROM_FETCH" } } });
       const I18nUtils = loadI18n();
 
-      expect(global.XMLHttpRequest.callCount).toBe(0);
+      expect(global.fetch.callCount).toBe(0);
       expect(I18nUtils.getCurrentLanguage()).toBe("ja");
-      // Message comes from the cache, not the new XHR body.
+      // Message comes from the cache, not a fresh fetch.
       expect(chrome.i18n.getMessage("searchInputPlaceholder")).toBe("Google マップを検索");
     });
 
-    test("cache for a different language is ignored (XHR fires for the new lang)", () => {
+    test("cache for a different language is ignored (fetch fires for the new lang)", async () => {
       localStorage.setItem(
         "userLanguageMessages",
-        JSON.stringify({ lang: "en", messages: EN_MESSAGES })
+        JSON.stringify({
+          lang: "en",
+          version: chrome.runtime.getManifest().version,
+          messages: EN_MESSAGES,
+        })
       );
       localStorage.setItem("userLanguage", "ja");
-      installFakeXhr({ body: JA_MESSAGES });
+      installFakeFetch({ body: JA_MESSAGES });
 
       const I18nUtils = loadI18n();
+      await flushPromises();
 
-      expect(global.XMLHttpRequest.callCount).toBe(1);
+      expect(global.fetch.callCount).toBe(1);
       expect(I18nUtils.getCurrentLanguage()).toBe("ja");
     });
   });
 
   describe("setLanguage", () => {
     test("writes both localStorage and chrome.storage.local, pre-caches messages", async () => {
-      installFakeXhr({ body: JA_MESSAGES });
+      installFakeFetch({ body: JA_MESSAGES });
       const I18nUtils = loadI18n();
 
-      // setLanguage triggers another sync XHR to pre-cache.
-      installFakeXhr({ body: JA_MESSAGES });
+      // setLanguage awaits the bundle fetch to pre-cache.
+      installFakeFetch({ body: JA_MESSAGES });
       await I18nUtils.setLanguage("ja");
 
       expect(localStorage.getItem("userLanguage")).toBe("ja");
@@ -229,7 +239,7 @@ describe("i18n.js", () => {
     });
 
     test("invalid lang normalizes to 'auto'", async () => {
-      installFakeXhr();
+      installFakeFetch();
       const I18nUtils = loadI18n();
 
       const result = await I18nUtils.setLanguage("klingon");
@@ -266,12 +276,12 @@ describe("i18n.js", () => {
 
   describe("reloadOverride", () => {
     test("hot-swaps from auto → ja without re-loading the module", () => {
-      installFakeXhr({ body: JA_MESSAGES });
+      installFakeFetch({ body: JA_MESSAGES });
       const I18nUtils = loadI18n();
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
 
       // Simulate setLanguage having written localStorage (we bypass the
-      // setLanguage XHR by writing directly + seeding cache).
+      // setLanguage fetch by writing directly + seeding a versioned cache).
       seedJaPreferenceAndCache();
 
       const result = I18nUtils.reloadOverride();
@@ -293,29 +303,31 @@ describe("i18n.js", () => {
   });
 
   describe("substitutions", () => {
-    test("$1 / $2 placeholders are interpolated from array substitutions", () => {
+    test("$1 / $2 placeholders are interpolated from array substitutions", async () => {
       localStorage.setItem("userLanguage", "ja");
-      installFakeXhr({
+      installFakeFetch({
         body: { greet: { message: "こんにちは $1 さん、$2 へようこそ" } },
       });
       loadI18n();
+      await flushPromises();
 
       expect(chrome.i18n.getMessage("greet", ["太郎", "東京"])).toBe(
         "こんにちは 太郎 さん、東京 へようこそ"
       );
     });
 
-    test("single string substitution is supported", () => {
+    test("single string substitution is supported", async () => {
       localStorage.setItem("userLanguage", "ja");
-      installFakeXhr({ body: { greet: { message: "Hi $1" } } });
+      installFakeFetch({ body: { greet: { message: "Hi $1" } } });
       loadI18n();
+      await flushPromises();
 
       expect(chrome.i18n.getMessage("greet", "太郎")).toBe("Hi 太郎");
     });
 
-    test("named placeholders (e.g. $checkedCount$) resolve via the placeholders map", () => {
+    test("named placeholders (e.g. $checkedCount$) resolve via the placeholders map", async () => {
       localStorage.setItem("userLanguage", "ja");
-      installFakeXhr({
+      installFakeFetch({
         body: {
           deleteBtnText: {
             message: "$checkedCount$ 件の場所を削除",
@@ -324,13 +336,14 @@ describe("i18n.js", () => {
         },
       });
       loadI18n();
+      await flushPromises();
 
       expect(chrome.i18n.getMessage("deleteBtnText", "3")).toBe("3 件の場所を削除");
     });
 
-    test("named placeholder lookup is case-insensitive", () => {
+    test("named placeholder lookup is case-insensitive", async () => {
       localStorage.setItem("userLanguage", "ja");
-      installFakeXhr({
+      installFakeFetch({
         body: {
           deleteBtnText: {
             message: "$CheckedCount$ 件の場所を削除",
@@ -339,6 +352,7 @@ describe("i18n.js", () => {
         },
       });
       loadI18n();
+      await flushPromises();
 
       expect(chrome.i18n.getMessage("deleteBtnText", "3")).toBe("3 件の場所を削除");
     });

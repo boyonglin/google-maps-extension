@@ -1521,6 +1521,26 @@ describe("popup.js", () => {
       global.requestAnimationFrame = originalGlobalRaf;
       window.requestAnimationFrame = originalWindowRaf;
     });
+
+    test("i18n changed event re-applies gemini's imperatively-set locale strings", () => {
+      const originalGlobalRaf = global.requestAnimationFrame;
+      const originalWindowRaf = window.requestAnimationFrame;
+      global.requestAnimationFrame = jest.fn();
+      window.requestAnimationFrame = jest.fn();
+
+      popup.initializeDependencies({ state: mockState, gemini: mockGemini });
+      mockGemini.fetchAPIKey.mockClear();
+
+      window.dispatchEvent(new Event("i18n:changed"));
+
+      // apiInput.placeholder / geminiEmptyMessage are set via chrome.i18n.getMessage
+      // inside fetchAPIKey, not via [data-locale], so a cache-miss async bundle load
+      // (or a settings-modal language swap) needs this re-run to pick up the new bundle.
+      expect(mockGemini.fetchAPIKey).toHaveBeenCalled();
+
+      global.requestAnimationFrame = originalGlobalRaf;
+      window.requestAnimationFrame = originalWindowRaf;
+    });
   });
 
   describe("Button Tooltips", () => {
