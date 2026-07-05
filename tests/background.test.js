@@ -968,6 +968,34 @@ describe("background.js", () => {
       });
     });
 
+    test("should log the Gemini API error message to the console", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      const sendResponse = jest.fn();
+      const request = {
+        action: "summarizeApi",
+        text: "Content",
+        apiKey: "test-key",
+        url: "https://example.com",
+      };
+
+      mockFetch.mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            error: { message: "Invalid URI provided" },
+          }),
+      });
+
+      listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
+
+      await flushPromises();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Gemini API returned an error:",
+        "Invalid URI provided"
+      );
+      consoleSpy.mockRestore();
+    });
+
     test("should handle summarizeVideo action", async () => {
       const { getApiKey } = require("../Package/dist/hooks/backgroundState.js");
       const sendResponse = jest.fn();

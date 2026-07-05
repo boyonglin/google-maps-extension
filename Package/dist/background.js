@@ -557,6 +557,10 @@ function callApi(prompt, content, apiKey, sendResponse) {
     .then((response) => response.json())
     .then((data) => {
       if (data.error) {
+        // Without this, an API-level error (e.g. an unsupported YouTube URL)
+        // only surfaced as the generic "geminiErrorMsg" in the UI with no
+        // way to find out what actually went wrong.
+        console.error("Gemini API returned an error:", data.error.message);
         sendResponse({ error: data.error.message });
         return;
       }

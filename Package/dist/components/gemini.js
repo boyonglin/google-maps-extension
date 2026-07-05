@@ -93,7 +93,7 @@ class Gemini {
       if (isVideoSummaryActive) {
         // Use video summary functionality
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          this.summarizeFromGeminiVideoUnderstanding(tabs[0].url);
+          this.summarizeFromGeminiVideoUnderstanding(this.normalizeYoutubeUrl(tabs[0].url));
         });
       } else {
         // Use normal content summarization
@@ -262,6 +262,18 @@ class Gemini {
         existingIcon.className = newIcon.className;
       }
     });
+  }
+
+  // Strip decorative query params (timestamps like "&t=7s", playlist/session
+  // context, etc.) so the Gemini video-understanding API receives a clean,
+  // canonical YouTube URL. Falls back to the original URL if it doesn't
+  // match the expected watch/shorts pattern.
+  normalizeYoutubeUrl(url) {
+    const match = url.match(/youtube\.com\/(watch\?v=|shorts\/)(.{11})/);
+    if (!match) return url;
+    return match[1] === "shorts/"
+      ? `https://www.youtube.com/shorts/${match[2]}`
+      : `https://www.youtube.com/watch?v=${match[2]}`;
   }
 
   // Get Gemini response

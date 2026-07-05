@@ -410,6 +410,21 @@ describe("Gemini Component", () => {
       );
     });
 
+    test("should strip decorative query params (e.g. timestamp) from the video URL", async () => {
+      videoSummaryButton.classList.add("active-button");
+      videoSummaryButton.classList.remove("d-none");
+
+      mockTabsQuery([{ url: "https://www.youtube.com/watch?v=P5kUjhQXrJw&t=7s" }]);
+
+      sendButton.click();
+
+      await wait(50);
+
+      expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).toHaveBeenCalledWith(
+        "https://www.youtube.com/watch?v=P5kUjhQXrJw"
+      );
+    });
+
     test("should use normal content summary when videoSummaryButton is not active", () => {
       videoSummaryButton.classList.remove("active-button");
 
@@ -888,6 +903,40 @@ describe("Gemini Component", () => {
       geminiInstance.updateSummaryFavoriteIcons(["Place @Extra Info", "Another @Data"]);
 
       expect(favorite.createFavoriteIcon).toHaveBeenCalledWith("Place", ["Place", "Another"]);
+    });
+  });
+
+  // ============================================================================
+  // Test: normalizeYoutubeUrl
+  // ============================================================================
+
+  describe("normalizeYoutubeUrl", () => {
+    test("should strip a timestamp query param from a watch URL", () => {
+      expect(
+        geminiInstance.normalizeYoutubeUrl("https://www.youtube.com/watch?v=P5kUjhQXrJw&t=7s")
+      ).toBe("https://www.youtube.com/watch?v=P5kUjhQXrJw");
+    });
+
+    test("should strip playlist/session query params from a watch URL", () => {
+      expect(
+        geminiInstance.normalizeYoutubeUrl(
+          "https://www.youtube.com/watch?v=P5kUjhQXrJw&list=PLabc&index=3&si=xyz"
+        )
+      ).toBe("https://www.youtube.com/watch?v=P5kUjhQXrJw");
+    });
+
+    test("should normalize a shorts URL", () => {
+      expect(
+        geminiInstance.normalizeYoutubeUrl(
+          "https://www.youtube.com/shorts/abc12345678?feature=share"
+        )
+      ).toBe("https://www.youtube.com/shorts/abc12345678");
+    });
+
+    test("should return the original URL when it doesn't match the expected pattern", () => {
+      expect(geminiInstance.normalizeYoutubeUrl("https://www.example.com/page")).toBe(
+        "https://www.example.com/page"
+      );
     });
   });
 
