@@ -114,11 +114,30 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function isYouTubeWatchPage() {
+  return (
+    /(^|\.)youtube\.com$/.test(window.location.hostname) && window.location.pathname === "/watch"
+  );
+}
+
 function getContent() {
   // Get the summary topic
   const titleElement = document.querySelector("head > title");
   const titleText = getTextContent(titleElement);
   const summaryTopic = `Page's main topic: <title>${titleText}</title>`;
+
+  if (isYouTubeWatchPage()) {
+    // On a watch page, document.body also holds unrelated content — the
+    // related-videos sidebar, comments, and YouTube's own auto-generated
+    // summary panel — that would otherwise leak into the prompt and pollute
+    // results with places mentioned in OTHER videos. Only use this video's
+    // own description.
+    const descriptionElement = document.querySelector(
+      "#description-inline-expander, div#description ytd-text-inline-expander"
+    );
+    const descriptionText = getTextContent(descriptionElement);
+    return summaryTopic + `\n\nPage body content: ` + descriptionText;
+  }
 
   const headerElement = document.querySelector("header");
   const footerElement = document.querySelector("footer");
