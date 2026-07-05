@@ -428,6 +428,21 @@ describe("Gemini Component", () => {
       expect(geminiInstance.performNormalContentSummary).toHaveBeenCalled();
       expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).not.toHaveBeenCalled();
     });
+
+    test("should restore button state when no active tab is found (video summary path)", async () => {
+      videoSummaryButton.classList.add("active-button");
+      videoSummaryButton.classList.remove("d-none");
+
+      mockTabsQuery([]);
+
+      sendButton.click();
+
+      await wait(50);
+
+      expect(sendButton.disabled).toBe(false);
+      expect(clearButtonSummary.disabled).toBe(false);
+      expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).not.toHaveBeenCalled();
+    });
   });
 
   // ============================================================================
@@ -1078,6 +1093,24 @@ describe("Gemini Component", () => {
       expect(sendButton.disabled).toBe(false);
       expect(clearButtonSummary.disabled).toBe(false);
       expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalled();
+    });
+
+    test("should restore button state when no active tab is found", async () => {
+      sendButton.disabled = true;
+      clearButtonSummary.disabled = true;
+
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback({ apiKey: "test-api-key" });
+      });
+      mockTabsQuery([]);
+
+      geminiInstance.performNormalContentSummary();
+
+      await wait(50);
+
+      expect(sendButton.disabled).toBe(false);
+      expect(clearButtonSummary.disabled).toBe(false);
+      expect(geminiInstance.getContentAndSummarize).not.toHaveBeenCalled();
     });
   });
 
