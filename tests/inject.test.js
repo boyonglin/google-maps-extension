@@ -420,6 +420,20 @@ describe("inject.js - TME Module", () => {
       // Should not throw
       expect(() => TME.eject()).not.toThrow();
     });
+
+    test("should remove document listeners so they do not accumulate", () => {
+      TME.eject();
+
+      const ejectSpy = jest.spyOn(TME, "eject");
+      const escapeEvent = new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+      });
+      document.dispatchEvent(escapeEvent);
+
+      // The Escape listener registered by setup() must be gone after eject()
+      expect(ejectSpy).not.toHaveBeenCalled();
+    });
   });
 
   // ============================================================================

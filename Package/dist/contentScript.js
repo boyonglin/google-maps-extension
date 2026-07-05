@@ -114,11 +114,27 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function isYouTubeWatchPage() {
+  return (
+    /(^|\.)youtube\.com$/.test(window.location.hostname) && window.location.pathname === "/watch"
+  );
+}
+
 function getContent() {
   // Get the summary topic
   const titleElement = document.querySelector("head > title");
   const titleText = getTextContent(titleElement);
   const summaryTopic = `Page's main topic: <title>${titleText}</title>`;
+
+  if (isYouTubeWatchPage()) {
+    // Use only the video's own description; document.body also holds the
+    // sidebar/comments/auto-summary of OTHER videos
+    const descriptionElement = document.querySelector(
+      "#description-inline-expander, div#description ytd-text-inline-expander"
+    );
+    const descriptionText = getTextContent(descriptionElement);
+    return summaryTopic + `\n\nPage body content: ` + descriptionText;
+  }
 
   const headerElement = document.querySelector("header");
   const footerElement = document.querySelector("footer");

@@ -159,6 +159,7 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("readystatechange", () => {
   if (document.readyState === "complete") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs.length) return;
       chrome.tabs.sendMessage(tabs[0].id, {
         action: "finishIframe",
       });
@@ -188,6 +189,10 @@ function popupLayout() {
     } else if (lastTab === "gemini") {
       deleteListButton.disabled = true;
       gemini.clearExpiredSummary();
+
+      // Re-run: checkCurrentTabForYoutube() ran earlier and missed this tab
+      // becoming the active gemini tab
+      gemini.checkCurrentTabForYoutube();
     }
   });
 }
@@ -584,7 +589,9 @@ function measureContentSize(summary = false) {
     state.updateDimensions(currentWidth, currentHeight);
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      let contentTabId = summary ? state.summarizedTabId : tabs[0].id;
+      let contentTabId = summary ? state.summarizedTabId : tabs[0]?.id;
+
+      if (contentTabId == null) return;
 
       sendUpdateIframeSize(contentTabId, currentWidth, currentHeight);
 
@@ -623,6 +630,7 @@ function measureContentSizeLast() {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs.length) return;
       chrome.scripting.executeScript({
         target: { tabId: tabs[0].id },
         files: ["dist/ejectLite.js"],
@@ -663,16 +671,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     gemini.checkCurrentTabForYoutube();
   }
 });
-
-if (typeof State === "undefined" && typeof require !== "undefined") {
-  global.State = require("./hooks/popupState");
-  global.Remove = require("./components/remove");
-  global.Favorite = require("./components/favorite");
-  global.History = require("./components/history");
-  global.Gemini = require("./components/gemini");
-  global.Modal = require("./components/modal");
-  global.Payment = require("./utils/payment");
-}
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {

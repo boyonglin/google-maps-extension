@@ -16,7 +16,8 @@ class Favorite {
         const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
         const csv = "name\n" + trimmedFavorite.map((item) => `${escapeCSV(item)}`).join("\n");
 
-        const blob = new Blob([csv], {
+        // UTF-8 BOM so Excel renders non-ASCII names (e.g. Chinese/Japanese) correctly
+        const blob = new Blob(["\uFEFF" + csv], {
           type: "text/csv; charset=utf-8;",
         });
 
@@ -45,20 +46,32 @@ class Favorite {
           const fileContent = event.target.result;
 
           if (fileContent && fileContent.length > 0) {
-            // Parse CSV content
-            const rows = fileContent
-              .split("\n")
-              .map((row) => row.trim())
-              .filter((row) => row.length > 0);
-            importedData = rows.slice(1).map((row) => row.replace(/,$/, ""));
-            favoriteEmptyMessage.style.display = "none";
-          } else {
-            favoriteEmptyMessage.style.display = "block";
+            const rows = this.parseCSV(fileContent);
+            importedData = rows
+              .slice(1) // drop the "name" header row
+              .map((row) => (row[0] || "").trim())
+              .filter((name) => name.length > 0);
           }
 
-          chrome.storage.local.set({ favoriteList: importedData }, () => {
-            this.updateFavorite(importedData);
-            this.updateHistoryFavoriteIcons();
+          chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
+            // Merge with the existing list (don't overwrite); dedupe by name,
+            // ignoring the " @clue" suffix
+            const existingList = Array.isArray(favoriteList) ? favoriteList : [];
+            const existingNames = new Set(existingList.map((item) => item.split(" @")[0]));
+            const newNames = [];
+            importedData.forEach((name) => {
+              if (!existingNames.has(name) && !newNames.includes(name)) {
+                newNames.push(name);
+              }
+            });
+            const mergedList = existingList.concat(newNames);
+
+            favoriteEmptyMessage.style.display = mergedList.length ? "none" : "block";
+
+            chrome.storage.local.set({ favoriteList: mergedList }, () => {
+              this.updateFavorite(mergedList);
+              this.updateHistoryFavoriteIcons();
+            });
           });
         } catch (error) {
           favoriteEmptyMessage.style.display = "block";
@@ -117,6 +130,51 @@ class Favorite {
     favoriteListContainer.addEventListener("contextmenu", (event) => {
       ContextMenuUtil.createContextMenu(event, favoriteListContainer);
     });
+  }
+
+  // Minimal RFC 4180-style parser matching what escapeCSV produces on export
+  parseCSV(content) {
+    const rows = [];
+    let row = [];
+    let field = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < content.length; i++) {
+      const ch = content[i];
+
+      if (inQuotes) {
+        if (ch === '"') {
+          if (content[i + 1] === '"') {
+            field += '"';
+            i++;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          field += ch;
+        }
+      } else if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        row.push(field);
+        field = "";
+      } else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && content[i + 1] === "\n") i++;
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else {
+        field += ch;
+      }
+    }
+
+    if (field !== "" || row.length > 0) {
+      row.push(field);
+      rows.push(row);
+    }
+
+    return rows.filter((r) => r.some((f) => f.trim().length > 0));
   }
 
   createFavoriteIcon(itemName, favoriteList) {

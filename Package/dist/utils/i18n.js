@@ -59,10 +59,23 @@
     return null;
   }
 
-  function applySubstitutions(message, substitutions) {
-    if (substitutions == null) return message;
+  // Resolve named placeholders (e.g. $checkedCount$) the same way
+  // chrome.i18n.getMessage does: name -> positional token -> value
+  function resolveNamedPlaceholders(message, placeholders) {
+    if (!placeholders) return message;
+    return message.replace(/\$(\w+)\$/g, (match, name) => {
+      const placeholderKey = Object.keys(placeholders).find(
+        (key) => key.toLowerCase() === name.toLowerCase()
+      );
+      const content = placeholderKey && placeholders[placeholderKey].content;
+      return content != null ? content : match;
+    });
+  }
+
+  function applySubstitutions(message, substitutions, placeholders) {
+    let result = resolveNamedPlaceholders(message, placeholders);
+    if (substitutions == null) return result;
     const subs = Array.isArray(substitutions) ? substitutions : [substitutions];
-    let result = message;
     subs.forEach((value, index) => {
       result = result.replace(new RegExp("\\$" + (index + 1), "g"), String(value));
     });
@@ -73,7 +86,7 @@
     if (overrideMessages) {
       const entry = overrideMessages[key];
       if (entry && entry.message != null) {
-        return applySubstitutions(entry.message, substitutions);
+        return applySubstitutions(entry.message, substitutions, entry.placeholders);
       }
     }
     return originalGetMessage(key, substitutions);

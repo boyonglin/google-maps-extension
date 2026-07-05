@@ -410,6 +410,21 @@ describe("Gemini Component", () => {
       );
     });
 
+    test("should strip decorative query params (e.g. timestamp) from the video URL", async () => {
+      videoSummaryButton.classList.add("active-button");
+      videoSummaryButton.classList.remove("d-none");
+
+      mockTabsQuery([{ url: "https://www.youtube.com/watch?v=P5kUjhQXrJw&t=7s" }]);
+
+      sendButton.click();
+
+      await wait(50);
+
+      expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).toHaveBeenCalledWith(
+        "https://www.youtube.com/watch?v=P5kUjhQXrJw"
+      );
+    });
+
     test("should use normal content summary when videoSummaryButton is not active", () => {
       videoSummaryButton.classList.remove("active-button");
 
@@ -426,6 +441,21 @@ describe("Gemini Component", () => {
       sendButton.click();
 
       expect(geminiInstance.performNormalContentSummary).toHaveBeenCalled();
+      expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).not.toHaveBeenCalled();
+    });
+
+    test("should restore button state when no active tab is found (video summary path)", async () => {
+      videoSummaryButton.classList.add("active-button");
+      videoSummaryButton.classList.remove("d-none");
+
+      mockTabsQuery([]);
+
+      sendButton.click();
+
+      await wait(50);
+
+      expect(sendButton.disabled).toBe(false);
+      expect(clearButtonSummary.disabled).toBe(false);
       expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).not.toHaveBeenCalled();
     });
   });
@@ -539,7 +569,7 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      expect(state.videoSummaryMode).toBeUndefined();
+      expect(state.videoSummaryMode).toBe(false);
       expect(chrome.storage.local.remove).toHaveBeenCalledWith("currentVideoInfo");
     });
 
@@ -573,7 +603,28 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      expect(state.videoSummaryMode).toBeUndefined();
+      expect(state.videoSummaryMode).toBe(false);
+    });
+
+    test("should not block toggle visibility on the video length scrape", async () => {
+      let resolveScrapeLen;
+      geminiInstance.scrapeLen = jest.fn(
+        () =>
+          new Promise((resolve) => {
+            resolveScrapeLen = resolve;
+          })
+      );
+      geminiSummaryButton.classList.add("active-button");
+      videoSummaryButton.classList.add("d-none");
+      mockTabsQuery([{ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }]);
+
+      await geminiInstance.checkCurrentTabForYoutube();
+
+      // Toggle should already be visible even though scrapeLen hasn't resolved yet
+      expect(videoSummaryButton.classList.contains("d-none")).toBe(false);
+
+      resolveScrapeLen(600);
+      await flushPromises();
     });
   });
 
@@ -871,6 +922,40 @@ describe("Gemini Component", () => {
   });
 
   // ============================================================================
+  // Test: normalizeYoutubeUrl
+  // ============================================================================
+
+  describe("normalizeYoutubeUrl", () => {
+    test("should strip a timestamp query param from a watch URL", () => {
+      expect(
+        geminiInstance.normalizeYoutubeUrl("https://www.youtube.com/watch?v=P5kUjhQXrJw&t=7s")
+      ).toBe("https://www.youtube.com/watch?v=P5kUjhQXrJw");
+    });
+
+    test("should strip playlist/session query params from a watch URL", () => {
+      expect(
+        geminiInstance.normalizeYoutubeUrl(
+          "https://www.youtube.com/watch?v=P5kUjhQXrJw&list=PLabc&index=3&si=xyz"
+        )
+      ).toBe("https://www.youtube.com/watch?v=P5kUjhQXrJw");
+    });
+
+    test("should normalize a shorts URL", () => {
+      expect(
+        geminiInstance.normalizeYoutubeUrl(
+          "https://www.youtube.com/shorts/abc12345678?feature=share"
+        )
+      ).toBe("https://www.youtube.com/shorts/abc12345678");
+    });
+
+    test("should return the original URL when it doesn't match the expected pattern", () => {
+      expect(geminiInstance.normalizeYoutubeUrl("https://www.example.com/page")).toBe(
+        "https://www.example.com/page"
+      );
+    });
+  });
+
+  // ============================================================================
   // Test: summarizeFromGeminiVideoUnderstanding
   // ============================================================================
 
@@ -957,8 +1042,8 @@ describe("Gemini Component", () => {
       await wait(100);
 
       // The loading message should have been updated with estimated time
-      // 300 seconds / 10 = 30, rounded up = 30
-      expect(geminiEmptyMessage.innerHTML).toContain("30");
+      // 300 seconds / 30 = 10, rounded up = 10
+      expect(geminiEmptyMessage.innerHTML).toContain("10");
     });
 
     test("should not update loading message if no video info available", async () => {
@@ -1078,6 +1163,24 @@ describe("Gemini Component", () => {
       expect(sendButton.disabled).toBe(false);
       expect(clearButtonSummary.disabled).toBe(false);
       expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalled();
+    });
+
+    test("should restore button state when no active tab is found", async () => {
+      sendButton.disabled = true;
+      clearButtonSummary.disabled = true;
+
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback({ apiKey: "test-api-key" });
+      });
+      mockTabsQuery([]);
+
+      geminiInstance.performNormalContentSummary();
+
+      await wait(50);
+
+      expect(sendButton.disabled).toBe(false);
+      expect(clearButtonSummary.disabled).toBe(false);
+      expect(geminiInstance.getContentAndSummarize).not.toHaveBeenCalled();
     });
   });
 
@@ -1210,6 +1313,21 @@ describe("Gemini Component", () => {
 
       expect(responseField.value).toBe("API Error: API rate limit exceeded");
       expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalledWith(mockError);
+      expect(sendButton.disabled).toBe(false);
+    });
+
+    test("should re-enable send button when response is undefined", async () => {
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (callback) callback(undefined);
+      });
+
+      sendButton.disabled = true;
+      geminiInstance.summarizeContent("content", "api-key", "https://example.com");
+
+      await wait(50);
+
+      expect(responseField.value).toContain("API Error:");
+      expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalled();
       expect(sendButton.disabled).toBe(false);
     });
 

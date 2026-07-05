@@ -93,7 +93,13 @@ class Gemini {
       if (isVideoSummaryActive) {
         // Use video summary functionality
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          this.summarizeFromGeminiVideoUnderstanding(tabs[0].url);
+          if (!tabs.length) {
+            // No active tab (e.g. focus on devtools/detached window): restore controls
+            sendButton.disabled = false;
+            clearButtonSummary.disabled = false;
+            return;
+          }
+          this.summarizeFromGeminiVideoUnderstanding(this.normalizeYoutubeUrl(tabs[0].url));
         });
       } else {
         // Use normal content summarization
@@ -132,21 +138,23 @@ class Gemini {
       if (youtubeMatch) {
         const videoId = youtubeMatch[1];
         state.videoSummaryMode = Boolean(videoId);
-        try {
-          const videoLength = await this.scrapeLen(videoId);
 
-          // Store video info for later use in summarization
-          chrome.storage.local.set({
-            currentVideoInfo: {
-              videoId: videoId,
-              length: videoLength,
-            },
+        // Scrape length in the background; not needed until summarization runs
+        this.scrapeLen(videoId)
+          .then((videoLength) => {
+            chrome.storage.local.set({
+              currentVideoInfo: {
+                videoId: videoId,
+                length: videoLength,
+              },
+            });
+          })
+          .catch((error) => {
+            console.error("Error scraping video length:", error);
           });
-        } catch (error) {
-          console.error("Error scraping video length:", error);
-        }
       } else {
         // Clear currentVideoInfo if not on YouTube
+        state.videoSummaryMode = false;
         chrome.storage.local.remove("currentVideoInfo");
       }
 
@@ -283,6 +291,15 @@ class Gemini {
     });
   }
 
+  // Strip decorative query params so Gemini gets a canonical YouTube URL
+  normalizeYoutubeUrl(url) {
+    const match = url.match(/youtube\.com\/(watch\?v=|shorts\/)(.{11})/);
+    if (!match) return url;
+    return match[1] === "shorts/"
+      ? `https://www.youtube.com/shorts/${match[2]}`
+      : `https://www.youtube.com/watch?v=${match[2]}`;
+  }
+
   // Get Gemini response
   summarizeFromGeminiVideoUnderstanding(videoUrl) {
     // Clear any existing summary data first to prevent race condition
@@ -299,7 +316,7 @@ class Gemini {
     // request background video length
     chrome.storage.local.get("currentVideoInfo", ({ currentVideoInfo }) => {
       if (currentVideoInfo && currentVideoInfo.length) {
-        const estTime = Math.ceil(currentVideoInfo.length / 10);
+        const estTime = Math.ceil(currentVideoInfo.length / 30);
         const originalText = geminiEmptyMessage.innerHTML;
         const newText = originalText.replace("NaN", estTime);
         geminiEmptyMessage.innerHTML = newText;
@@ -331,6 +348,12 @@ class Gemini {
       const apiKey = res ? res.apiKey : "";
 
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (!tabs.length) {
+          // No active tab (e.g. focus on devtools/detached window): restore controls
+          sendButton.disabled = false;
+          clearButtonSummary.disabled = false;
+          return;
+        }
         chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
           if (chrome.runtime.lastError) {
             summaryListContainer.innerHTML = "";
@@ -395,8 +418,10 @@ class Gemini {
     chrome.runtime.sendMessage(
       { action: "summarizeApi", text: content, apiKey: apiKey, url: url },
       (response) => {
-        if (response.error) {
-          responseField.value = `API Error: ${response.error}`;
+        // response is undefined if the channel closed early (e.g. SW killed);
+        // treat as an error so the send button gets re-enabled
+        if (!response || response.error) {
+          responseField.value = `API Error: ${response?.error || "No response from background"}`;
           this.ResponseErrorMsg(response);
         } else {
           responseField.value = response;
@@ -459,8 +484,7 @@ class Gemini {
 
   RecordSummaryTab() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const currentTab = tabs[0];
-      state.summarizedTabId = currentTab.id;
+      state.summarizedTabId = tabs[0]?.id;
     });
   }
 
