@@ -120,6 +120,7 @@ export default [
       "Package/vendor/**",
       "Package/dist/utils/browser-polyfill.js",
       "Package/dist/utils/ExtPay.module.js",
+      "Package/dist/popup.bundle.js",
       "**/*.min.js",
     ],
   },
@@ -219,6 +220,17 @@ export default [
     files: ["tests/crypto.test.js", "tests/__mocks__/ExtPay.module.js"],
     languageOptions: {
       sourceType: "module",
+    },
+  },
+
+  // Node.js build scripts
+  {
+    files: ["scripts/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
+      },
     },
   },
 ];

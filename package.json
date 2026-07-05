@@ -11,6 +11,8 @@
     "format": "prettier --write \"Package/dist/**/*.js\" \"tests/**/*.js\" \"scss/**/*.scss\"",
     "format:check": "prettier --check \"Package/dist/**/*.js\" \"tests/**/*.js\" \"scss/**/*.scss\"",
     "build:css": "sass scss/popup.scss Package/css/popup.css",
+    "build:popup": "node scripts/build-popup-bundle.js",
+    "build": "npm run build:css && npm run build:popup",
     "prepare": "husky"
   },
   "lint-staged": {
