@@ -18,8 +18,8 @@
     "scss/**/*.scss": "prettier --write"
   },
   "devDependencies": {
-    "@babel/core": "^7.23.0",
-    "@babel/preset-env": "^7.23.0",
+    "@babel/core": "^7.29.7",
+    "@babel/preset-env": "^7.28.3",
     "babel-jest": "^29.7.0",
     "husky": "^9.1.7",
     "isomorphic-dompurify": "^2.30.0",

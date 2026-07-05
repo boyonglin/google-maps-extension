@@ -1581,25 +1581,25 @@ describe("Gemini Component", () => {
       expect(geminiInstance.performNormalContentSummary).toHaveBeenCalledTimes(1);
     });
 
-    test("should handle empty summary list from API", () => {
+    test("should throw on empty summary list from API", () => {
       const mockResponse = '<ul class="list-group"></ul>';
       mockChromeStorage({ favoriteList: [] });
 
-      geminiInstance.createSummaryList(mockResponse);
-
-      expect(summaryListContainer.innerHTML).toContain("</ul>");
+      expect(() => {
+        geminiInstance.createSummaryList(mockResponse);
+      }).toThrow("No summary items found in response");
     });
 
-    test("should handle malformed HTML response gracefully", () => {
+    test("should throw on malformed HTML response", () => {
       const mockResponse = "<div>Not a list</div>";
       mockChromeStorage({ favoriteList: [] });
 
       expect(() => {
         geminiInstance.createSummaryList(mockResponse);
-      }).not.toThrow();
+      }).toThrow("No summary items found in response");
     });
 
-    test("should handle summary list with only whitespace spans", () => {
+    test("should drop items with only whitespace spans", () => {
       const mockResponse = `
                 <ul><li class="summary-list">
                     <span>   </span>
@@ -1608,11 +1608,49 @@ describe("Gemini Component", () => {
             `;
       mockChromeStorage({ favoriteList: [] });
 
+      expect(() => {
+        geminiInstance.createSummaryList(mockResponse);
+      }).toThrow("No summary items found in response");
+    });
+
+    test("should strip injected markup from summary items", () => {
+      const mockResponse = `
+                <ul class="list-group">
+                    <li class="summary-list">
+                        <span>Place <img src="https://evil.example/x.png"> 1</span>
+                        <span class="d-none">Clue <a href="https://evil.example">link</a></span>
+                    </li>
+                </ul>
+            `;
+      mockChromeStorage({ favoriteList: [] });
+
+      geminiInstance.createSummaryList(mockResponse);
+
+      expect(summaryListContainer.querySelector("img")).toBeNull();
+      expect(summaryListContainer.querySelector("a")).toBeNull();
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          summaryList: [{ name: "Place 1", clue: "Clue link" }],
+        })
+      );
+    });
+
+    test("should ignore nested spans when parsing name/clue", () => {
+      const mockResponse = `
+                <ul class="list-group">
+                    <li class="summary-list">
+                        <span>Place <span>note</span></span>
+                        <span class="d-none">City</span>
+                    </li>
+                </ul>
+            `;
+      mockChromeStorage({ favoriteList: [] });
+
       geminiInstance.createSummaryList(mockResponse);
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith(
         expect.objectContaining({
-          summaryList: [{ name: "   ", clue: "   " }],
+          summaryList: [{ name: "Place note", clue: "City" }],
         })
       );
     });
