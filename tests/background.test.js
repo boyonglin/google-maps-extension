@@ -1235,6 +1235,28 @@ describe("background.js", () => {
       expect(sendResponse).toHaveBeenCalledWith(mockCache);
     });
 
+    test("should not expose aesKey through getWarmState", async () => {
+      const { ensureWarm, getCache } = require("../Package/dist/hooks/backgroundState.js");
+      const sendResponse = jest.fn();
+      const request = { action: "getWarmState" };
+
+      ensureWarm.mockResolvedValue({});
+      getCache.mockReturnValue({
+        geminiApiKey: "decrypted-key",
+        aesKey: { kty: "oct", k: "secret-jwk-material" },
+        historyMax: 10,
+      });
+
+      listeners.onMessage[STATE_QUERIES_LISTENER](request, {}, sendResponse);
+
+      await flushPromises();
+
+      expect(sendResponse).toHaveBeenCalledWith({
+        geminiApiKey: "decrypted-key",
+        historyMax: 10,
+      });
+    });
+
     test("should handle getApiKey action", async () => {
       const { getApiKey } = require("../Package/dist/hooks/backgroundState.js");
       const sendResponse = jest.fn();
