@@ -167,6 +167,11 @@ chrome.commands.onCommand.addListener(async (command) => {
           }
         });
       } else if (command === "auto-attach") {
+        // Immediate in-page feedback; replaced by a result/error toast later
+        chrome.tabs.sendMessage(tabId, { action: "attachStatus", stage: "loading" }, () => {
+          // Content script may not be ready yet on this tab; ignore
+          chrome.runtime.lastError;
+        });
         extpay.getUser().then(async (user) => {
           const now = new Date();
 
@@ -218,6 +223,7 @@ async function tryAndCheckApi(tabId) {
   try {
     await getApiKey();
   } catch (error) {
+    chrome.tabs.sendMessage(tabId, { action: "attachStatus", stage: "missing" });
     chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "missing" });
     meow();
     tryAPINotify().catch(() => {});
@@ -237,6 +243,12 @@ async function trySuggest(tabId, retries = 10) {
       if (!response?.content) throw new Error(RECEIVING_END_ERR);
 
       callApi(geminiPrompts.attach, response.content, apiKey, (apiResponse) => {
+        // callApi reports failures as { error }; surface them in-page
+        // instead of handing a non-string to attachMapLinkToPage
+        if (typeof apiResponse !== "string") {
+          chrome.tabs.sendMessage(tabId, { action: "attachStatus", stage: "error" });
+          return;
+        }
         chrome.tabs.sendMessage(tabId, {
           action: "attachMapLink",
           content: apiResponse,

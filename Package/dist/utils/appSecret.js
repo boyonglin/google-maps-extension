@@ -1,9 +1,12 @@
 (() => {
+  // Returns the number of pins attached so the caller can surface feedback
   function attachMapLinkToPage(request) {
     // Handle null, undefined, or empty content
     if (!request || !request.content) {
-      return;
+      return 0;
     }
+
+    let attachedCount = 0;
 
     let candidates = request.content
       .split("\n")
@@ -58,6 +61,7 @@
                 // Create and insert the pin
                 const pin = makePin(searchUrl);
                 textNode.parentNode.insertBefore(pin, textNode.nextSibling);
+                attachedCount++;
 
                 // Add the remaining text if any
                 if (afterText) {
@@ -89,6 +93,8 @@
         attachMapLink(element);
       });
     }
+
+    return attachedCount;
   }
 
   function makePin(href) {

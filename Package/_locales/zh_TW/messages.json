@@ -278,5 +278,26 @@
   },
   "tidyLocations" : {
     "message": "整理地點"
+  },
+  "attachLoadingMsg": {
+    "message": "The Maps Express:正在尋找頁面上的地點…",
+    "description": "auto-attach in-page toast while analyzing"
+  },
+  "attachDoneMsg": {
+    "message": "已標記 $count$ 個地點 📌",
+    "description": "auto-attach in-page toast on success",
+    "placeholders": {"count": {"content": "$1", "example": "3"}}
+  },
+  "attachNoneMsg": {
+    "message": "這個頁面上找不到地點",
+    "description": "auto-attach in-page toast when nothing matched"
+  },
+  "attachErrorMsg": {
+    "message": "分析頁面時發生錯誤,請稍後再試",
+    "description": "auto-attach in-page toast on API error"
+  },
+  "attachMissingMsg": {
+    "message": "請先在 The Maps Express 設定 Gemini API 金鑰",
+    "description": "auto-attach in-page toast when API key is missing"
   }
 }

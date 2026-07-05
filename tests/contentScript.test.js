@@ -363,6 +363,29 @@ describe("contentScript.js - attachMapLink Action", () => {
     expect(globalThis.attachMapLinkToPage).toHaveBeenCalledWith(request);
   });
 
+  test("should show a toast with the attached pin count", () => {
+    globalThis.attachMapLinkToPage = jest.fn(() => 3);
+    chrome.i18n.getMessage.mockImplementation((key, subs) =>
+      key === "attachDoneMsg" ? `Attached ${subs[0]} map pin(s)` : key
+    );
+
+    messageListener({ action: "attachMapLink", content: "data" }, {}, jest.fn());
+
+    const toast = document.getElementById("TMEattachToast");
+    expect(toast).not.toBeNull();
+    expect(toast.textContent).toBe("Attached 3 map pin(s)");
+  });
+
+  test("should show the no-results toast when nothing was attached", () => {
+    globalThis.attachMapLinkToPage = jest.fn(() => 0);
+    chrome.i18n.getMessage.mockImplementation((key) => key);
+
+    messageListener({ action: "attachMapLink", content: "data" }, {}, jest.fn());
+
+    const toast = document.getElementById("TMEattachToast");
+    expect(toast.textContent).toBe("attachNoneMsg");
+  });
+
   test("should not call attachMapLinkToPage when content is missing", () => {
     const request = { action: "attachMapLink" };
     const sendResponse = jest.fn();
@@ -1131,5 +1154,53 @@ describe("contentScript.js - Integration Tests", () => {
 
     expect(sendResponse1).toHaveBeenCalled();
     expect(sendResponse2).toHaveBeenCalledWith({ status: "connected" });
+  });
+});
+
+describe("contentScript.js - attachStatus Action", () => {
+  let messageListener;
+
+  beforeEach(() => {
+    messageListener = setupContentScriptTest();
+    chrome.i18n.getMessage.mockImplementation((key) => key);
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test("should show the loading toast and keep it up (sticky)", () => {
+    messageListener({ action: "attachStatus", stage: "loading" }, {}, jest.fn());
+
+    const toast = document.getElementById("TMEattachToast");
+    expect(toast.textContent).toBe("attachLoadingMsg");
+
+    // Still visible after the normal toast duration
+    jest.advanceTimersByTime(5000);
+    expect(document.getElementById("TMEattachToast")).not.toBeNull();
+  });
+
+  test("should replace the loading toast with an error toast that auto-dismisses", () => {
+    messageListener({ action: "attachStatus", stage: "loading" }, {}, jest.fn());
+    messageListener({ action: "attachStatus", stage: "error" }, {}, jest.fn());
+
+    const toast = document.getElementById("TMEattachToast");
+    expect(toast.textContent).toBe("attachErrorMsg");
+
+    jest.advanceTimersByTime(3000);
+    expect(document.getElementById("TMEattachToast")).toBeNull();
+  });
+
+  test("should show the missing-key toast", () => {
+    messageListener({ action: "attachStatus", stage: "missing" }, {}, jest.fn());
+
+    expect(document.getElementById("TMEattachToast").textContent).toBe("attachMissingMsg");
+  });
+
+  test("should ignore unknown stages", () => {
+    messageListener({ action: "attachStatus", stage: "bogus" }, {}, jest.fn());
+
+    expect(document.getElementById("TMEattachToast")).toBeNull();
   });
 });

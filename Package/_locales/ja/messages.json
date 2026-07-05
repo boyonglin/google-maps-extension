@@ -278,5 +278,26 @@
   },
   "tidyLocations" : {
     "message": "場所を整頓"
+  },
+  "attachLoadingMsg": {
+    "message": "The Maps Express:ページ内のスポットを検索中…",
+    "description": "auto-attach in-page toast while analyzing"
+  },
+  "attachDoneMsg": {
+    "message": "$count$ 件のスポットにピンを付けました 📌",
+    "description": "auto-attach in-page toast on success",
+    "placeholders": {"count": {"content": "$1", "example": "3"}}
+  },
+  "attachNoneMsg": {
+    "message": "このページにスポットは見つかりませんでした",
+    "description": "auto-attach in-page toast when nothing matched"
+  },
+  "attachErrorMsg": {
+    "message": "ページを分析できませんでした。後でもう一度お試しください",
+    "description": "auto-attach in-page toast on API error"
+  },
+  "attachMissingMsg": {
+    "message": "先に The Maps Express で Gemini API キーを設定してください",
+    "description": "auto-attach in-page toast when API key is missing"
   }
 }

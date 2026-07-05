@@ -18,7 +18,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "attachMapLink" && request.content) {
-    globalThis.attachMapLinkToPage(request);
+    const attachedCount = globalThis.attachMapLinkToPage(request);
+    if (attachedCount > 0) {
+      showAttachToast(chrome.i18n.getMessage("attachDoneMsg", [String(attachedCount)]));
+    } else {
+      showAttachToast(chrome.i18n.getMessage("attachNoneMsg"));
+    }
+  }
+
+  // Progress/error feedback for the auto-attach flow
+  if (request.action === "attachStatus" && request.stage) {
+    const statusMessages = {
+      loading: chrome.i18n.getMessage("attachLoadingMsg"),
+      missing: chrome.i18n.getMessage("attachMissingMsg"),
+      error: chrome.i18n.getMessage("attachErrorMsg"),
+    };
+    showAttachToast(statusMessages[request.stage], { sticky: request.stage === "loading" });
   }
 
   // Check the connection between the background and the content script
@@ -102,6 +117,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   }
 });
+
+// In-page toast so keyboard-driven flows (auto-attach) give visible feedback
+// instead of only logging to the console. Styles are inline: content-script
+// CSS is not guaranteed to win against host page rules.
+let attachToastTimer = null;
+
+function showAttachToast(text, { sticky = false } = {}) {
+  if (!text || !document.body) return;
+
+  let toast = document.getElementById("TMEattachToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "TMEattachToast";
+    Object.assign(toast.style, {
+      position: "fixed",
+      right: "16px",
+      bottom: "16px",
+      zIndex: "2147483647",
+      maxWidth: "320px",
+      padding: "10px 14px",
+      borderRadius: "8px",
+      background: "rgba(32, 33, 36, 0.92)",
+      color: "#fff",
+      font: "13px/1.4 system-ui, -apple-system, sans-serif",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.25)",
+      pointerEvents: "none",
+    });
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = text;
+  clearTimeout(attachToastTimer);
+  // A loading toast stays until replaced by a result, with a safety timeout
+  attachToastTimer = setTimeout(() => toast.remove(), sticky ? 15000 : 2600);
+}
 
 // Get plain text from an element (visible text || including hidden text)
 function getTextContent(element) {

@@ -840,4 +840,26 @@ describe("appSecret.js - Map Link Attachment", () => {
       expect(links.length).toBeGreaterThanOrEqual(0);
     });
   });
+
+  describe("return value (attached pin count)", () => {
+    test("returns the number of pins attached", () => {
+      setBodyHTML("<p>Visit Tokyo Tower today</p><p>Then see Eiffel Tower</p>");
+      const count = attachMapLinkToPage(createRequest("Tokyo Tower\nEiffel Tower"));
+
+      expect(count).toBe(2);
+      expect(getMapLinks().length).toBe(2);
+    });
+
+    test("returns 0 when nothing matches", () => {
+      setBodyHTML("<p>Nothing relevant here</p>");
+      const count = attachMapLinkToPage(createRequest("Louvre Museum"));
+
+      expect(count).toBe(0);
+    });
+
+    test("returns 0 for empty content", () => {
+      expect(attachMapLinkToPage(createRequest(""))).toBe(0);
+      expect(attachMapLinkToPage(null)).toBe(0);
+    });
+  });
 });

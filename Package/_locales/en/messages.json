@@ -370,5 +370,26 @@
   "tidyLocations" : {
     "message": "Tidy Locations",
     "description": "context menu tidy locations option"
+  },
+  "attachLoadingMsg": {
+    "message": "The Maps Express: finding places on this page…",
+    "description": "auto-attach in-page toast while analyzing"
+  },
+  "attachDoneMsg": {
+    "message": "Attached $count$ map pin(s) 📌",
+    "description": "auto-attach in-page toast on success",
+    "placeholders": {"count": {"content": "$1", "example": "3"}}
+  },
+  "attachNoneMsg": {
+    "message": "No places found on this page",
+    "description": "auto-attach in-page toast when nothing matched"
+  },
+  "attachErrorMsg": {
+    "message": "Couldn't analyze this page. Please try again later.",
+    "description": "auto-attach in-page toast on API error"
+  },
+  "attachMissingMsg": {
+    "message": "Set your Gemini API key in The Maps Express first",
+    "description": "auto-attach in-page toast when API key is missing"
   }
 }

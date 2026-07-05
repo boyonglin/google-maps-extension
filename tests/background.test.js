@@ -1689,6 +1689,58 @@ describe("background.js", () => {
       getApiKey.mockImplementation(originalGetApiKey || (() => Promise.resolve("test-api-key")));
     });
 
+    test("should send a loading status toast when auto-attach starts", async () => {
+      mockExtPayUser({ trialStartedAt: daysAgo(3) });
+      mockAutoAttachContentFlow();
+
+      await runAutoAttachCommand();
+
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
+        1,
+        { action: "attachStatus", stage: "loading" },
+        expect.any(Function)
+      );
+    });
+
+    test("should send a missing-key status toast when no API key is set", async () => {
+      mockExtPayUser({ trialStartedAt: daysAgo(3) });
+
+      const { getApiKey } = require("../Package/dist/hooks/backgroundState.js");
+      const originalGetApiKey = getApiKey.getMockImplementation();
+      getApiKey.mockRejectedValueOnce(new Error("No API key"));
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (callback) callback({});
+      });
+
+      await runAutoAttachCommand();
+
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+        action: "attachStatus",
+        stage: "missing",
+      });
+
+      getApiKey.mockImplementation(originalGetApiKey || (() => Promise.resolve("test-api-key")));
+    });
+
+    test("should send an error status toast when the Gemini call fails", async () => {
+      mockExtPayUser({ trialStartedAt: daysAgo(3) });
+      mockAutoAttachContentFlow();
+      mockFetch.mockResolvedValue({
+        json: () => Promise.resolve({ error: { message: "quota exceeded" } }),
+      });
+
+      await runAutoAttachCommand();
+
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+        action: "attachStatus",
+        stage: "error",
+      });
+      expect(chrome.tabs.sendMessage).not.toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ action: "attachMapLink" })
+      );
+    });
+
     test("should handle whitespace-only selection", async () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
