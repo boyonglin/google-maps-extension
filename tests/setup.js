@@ -303,7 +303,7 @@ beforeAll(() => {
     // Filter out inject.js ASCII art banner and activation messages
     if (
       firstArg.includes("_____  _     ____") ||
-      firstArg.includes("| |\/|  / /\\  | |_)") ||
+      firstArg.includes("| |/|  / /\\  | |_)") ||
       firstArg.includes("Activated -") ||
       firstArg.includes("Deactivated -")
     ) {

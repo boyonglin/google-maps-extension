@@ -24,7 +24,7 @@ const { mockI18n, cleanupDOM, wait } = require("./testHelpers");
 
 describe("Payment Component - Full Coverage", () => {
   let paymentInstance;
-  let shortcutTip, premiumNoteElement, paymentSpan;
+  let premiumNoteElement, paymentSpan;
 
   // Constants
   const ONE_DAY_MS = 24 * 60 * 60 * 1000; // 86400000 milliseconds
@@ -53,7 +53,7 @@ describe("Payment Component - Full Coverage", () => {
         `;
 
     // Assign global references
-    global.shortcutTip = shortcutTip = document.getElementsByClassName("premium-only");
+    global.shortcutTip = document.getElementsByClassName("premium-only");
     global.premiumNoteElement = premiumNoteElement = document.querySelector(
       'p[data-locale="premiumNote"]'
     );

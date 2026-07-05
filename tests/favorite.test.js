@@ -604,7 +604,7 @@ describe("Favorite Component", () => {
 
         global.state.buildSearchUrl.mockResolvedValue("http://maps.test/search");
 
-        await withWindowOpenSpy(async (openSpy) => {
+        await withWindowOpenSpy(async () => {
           const mouseEvent = createMouseEvent(li, 0);
           li.dispatchEvent(mouseEvent);
 

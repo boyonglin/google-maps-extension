@@ -616,7 +616,7 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
       chrome.storage.local.get.mockResolvedValue({ aesKey: mockAesKey });
       crypto.subtle.importKey.mockResolvedValue(mockCryptoKey);
-      crypto.subtle.decrypt.mockImplementation((params, key, data) => {
+      crypto.subtle.decrypt.mockImplementation(() => {
         const text = "decrypted-key";
         return Promise.resolve(new TextEncoder().encode(text).buffer);
       });

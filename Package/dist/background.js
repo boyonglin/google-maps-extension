@@ -651,8 +651,6 @@ const extpay = ExtPay("the-maps-express");
 extpay.startBackground();
 
 function handleExtensionPayment(user, sender) {
-  const now = new Date();
-
   // First time user
   if (!user.trialStartedAt) {
     extpay.openTrialPage("40-day");
@@ -700,7 +698,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "getWarmState") {
     ensureWarm().then(() => {
       // Never ship AES key material outside the service worker
-      const { aesKey, ...warmState } = getCache();
+      const { aesKey: _aesKey, ...warmState } = getCache();
       sendResponse(warmState);
     });
     return true;

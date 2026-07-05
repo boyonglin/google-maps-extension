@@ -324,7 +324,7 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
     });
 
     test("should silently fail on storage error", async () => {
-      chrome.storage.local.get.mockImplementation((keys, callback) => {
+      chrome.storage.local.get.mockImplementation(() => {
         throw new Error("Storage error");
       });
 

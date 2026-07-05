@@ -140,7 +140,7 @@ function initializePopup() {
   }
 
   // Fix: "Blocked aria-hidden..."
-  document.addEventListener("hide.bs.modal", function (event) {
+  document.addEventListener("hide.bs.modal", function () {
     if (document.activeElement) {
       document.activeElement.blur();
     }
@@ -644,7 +644,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message) => {
   if (message.action === "apiNotify") {
     geminiSummaryButton.click();
     apiButton.click();

@@ -452,7 +452,7 @@ describe("History Component", () => {
 
         global.state.buildSearchUrl.mockResolvedValue(TEST_CONSTANTS.URL);
 
-        await withWindowOpenSpy(async (openSpy) => {
+        await withWindowOpenSpy(async () => {
           const mouseEvent = createMouseEvent(li, 0);
           li.dispatchEvent(mouseEvent);
 
@@ -468,7 +468,7 @@ describe("History Component", () => {
 
         global.state.buildSearchUrl.mockResolvedValue(TEST_CONSTANTS.URL);
 
-        await withWindowOpenSpy(async (openSpy) => {
+        await withWindowOpenSpy(async () => {
           const mouseEvent = createMouseEvent(li, 0);
           li.dispatchEvent(mouseEvent);
 
