@@ -1153,9 +1153,15 @@ describe("background.js", () => {
       const testKeyHash = nodeCrypto.createHash("sha256").update("test-key").digest("hex");
 
       beforeEach(() => {
-        global.crypto.subtle.digest = jest.fn((algorithm, data) =>
-          Promise.resolve(nodeCrypto.createHash("sha256").update(Buffer.from(data)).digest().buffer)
-        );
+        global.crypto.subtle.digest = jest.fn((algorithm, data) => {
+          const hash = nodeCrypto.createHash("sha256").update(Buffer.from(data)).digest();
+          // Buffer#buffer may reference a larger, pooled ArrayBuffer with a
+          // non-zero byteOffset, so slice out exactly the digest bytes
+          // instead of returning the raw (possibly oversized) buffer.
+          return Promise.resolve(
+            hash.buffer.slice(hash.byteOffset, hash.byteOffset + hash.byteLength)
+          );
+        });
       });
 
       test("should skip the network when a fresh cached result matches", async () => {
