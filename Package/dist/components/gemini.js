@@ -292,7 +292,7 @@ class Gemini {
     // request background video length
     chrome.storage.local.get("currentVideoInfo", ({ currentVideoInfo }) => {
       if (currentVideoInfo && currentVideoInfo.length) {
-        const estTime = Math.ceil(currentVideoInfo.length / 10);
+        const estTime = Math.ceil(currentVideoInfo.length / 30);
         const originalText = geminiEmptyMessage.innerHTML;
         const newText = originalText.replace("NaN", estTime);
         geminiEmptyMessage.innerHTML = newText;

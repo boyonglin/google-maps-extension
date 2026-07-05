@@ -1027,8 +1027,8 @@ describe("Gemini Component", () => {
       await wait(100);
 
       // The loading message should have been updated with estimated time
-      // 300 seconds / 10 = 30, rounded up = 30
-      expect(geminiEmptyMessage.innerHTML).toContain("30");
+      // 300 seconds / 30 = 10, rounded up = 10
+      expect(geminiEmptyMessage.innerHTML).toContain("10");
     });
 
     test("should not update loading message if no video info available", async () => {
