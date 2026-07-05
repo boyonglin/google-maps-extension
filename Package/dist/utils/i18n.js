@@ -13,8 +13,7 @@
 
   let activeLanguage = "auto";
   let overrideMessages = null;
-  // Increments on every applyOverride call so a slow async bundle load can
-  // never clobber a newer language selection.
+  // Prevents slow async loads from clobbering newer selections.
   let applyToken = 0;
 
   function safeLocalGet(key, parse = false) {
@@ -44,9 +43,7 @@
     return cache && cache.lang === lang && cache.version === EXT_VERSION ? cache.messages : null;
   }
 
-  // Async fallback for cache misses. Sync XHR is deprecated and blocks the
-  // popup's first paint, so misses render in "auto" first and re-render when
-  // the bundle arrives.
+  // Async fallback for cache misses.
   async function fetchMessages(lang) {
     // Defense in depth: never let an unexpected lang reach runtime.getURL.
     if (!SUPPORTED_LANGUAGES.includes(lang) || lang === "auto") return null;
@@ -108,10 +105,7 @@
     return originalGetMessage(key, substitutions);
   };
 
-  // Cache-first: a valid cache applies synchronously (no flash). On a miss
-  // the bundle loads asynchronously; `notifyOnAsync` re-renders the page when
-  // it lands. Degrades silently to "auto" on any failure. Returns a promise
-  // resolving to the language actually applied.
+  // Cache-first, falls back to async fetch. Degrades to "auto" on failure.
   function applyOverride(lang, { notifyOnAsync = false } = {}) {
     const token = ++applyToken;
 
@@ -187,9 +181,7 @@
       });
     },
 
-    // Re-applies the stored language in place. A valid cache applies
-    // synchronously; otherwise the bundle loads in the background and the
-    // page re-renders when it arrives.
+    // Re-applies the stored language in place.
     reloadOverride() {
       applyOverride(safeLocalGet(STORAGE_KEY), { notifyOnAsync: true });
       return activeLanguage;

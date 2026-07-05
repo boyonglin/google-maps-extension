@@ -1,10 +1,7 @@
 import js from "@eslint/js";
 import globals from "globals";
 
-// The popup is a set of classic <script> tags (see popup.html): top-level
-// class/const/function declarations in one file are referenced as bare
-// identifiers from the others. This block documents that shared contract so
-// no-undef can stay enabled everywhere.
+// Shared globals for classic <script> tags in popup.html
 const popupSharedGlobals = {
   // Component constructors (top-level class declarations)
   State: "readonly",
@@ -93,8 +90,7 @@ const popupSharedGlobals = {
   paymentSpan: "readonly",
 };
 
-// Classic scripts loaded together by popup.html. Their top-level declarations
-// intentionally form one shared lexical environment.
+// Classic popup scripts
 const popupClassicScriptFiles = [
   "Package/dist/themeInit.js",
   "Package/dist/utils/i18n.js",
@@ -143,8 +139,7 @@ export default [
     },
   },
 
-  // Baseline extension runtime. More specific blocks below describe the
-  // popup's shared classic-script environment and the ES modules.
+  // Baseline extension runtime
   {
     files: ["Package/dist/**/*.js"],
     languageOptions: {
@@ -156,7 +151,7 @@ export default [
     },
   },
 
-  // Popup classic scripts share top-level declarations across <script> tags.
+  // Popup classic scripts
   {
     files: popupClassicScriptFiles,
     languageOptions: {
@@ -167,9 +162,7 @@ export default [
       },
     },
     rules: {
-      // Top-level declarations in these classic scripts are consumed by the
-      // other <script> tags, so per-file "unused" is meaningless there.
-      // Function/block scopes are still checked.
+      // Only check block scopes, unused globals are expected
       "no-unused-vars": [
         "error",
         { vars: "local", argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
@@ -177,7 +170,7 @@ export default [
     },
   },
 
-  // ES modules: the service worker and everything it imports
+  // ES modules
   {
     files: extensionModuleFiles,
     languageOptions: {
@@ -185,7 +178,7 @@ export default [
     },
   },
 
-  // Two ES modules expose CommonJS-only hooks when transformed under Jest.
+  // CommonJS hooks for Jest
   {
     files: ["Package/dist/hooks/backgroundState.js", "Package/dist/utils/analytics.js"],
     languageOptions: {
@@ -196,8 +189,7 @@ export default [
     },
   },
 
-  // inject.js publishes window.TME and then uses the corresponding global
-  // binding. Other content-script boundaries use explicit window/globalThis.
+  // inject.js globals
   {
     files: ["Package/dist/inject.js"],
     languageOptions: {
@@ -222,7 +214,7 @@ export default [
     },
   },
 
-  // ESM test files (must come after the tests block to win on sourceType)
+  // ESM test files
   {
     files: ["tests/crypto.test.js", "tests/__mocks__/ExtPay.module.js"],
     languageOptions: {

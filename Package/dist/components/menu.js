@@ -150,7 +150,7 @@ class ContextMenuUtil {
     });
   }
 
-  // Get list type and tab group info from the first list item's CSS class
+  // Get list info from class
   static getListInfo(firstItem) {
     if (firstItem.classList.contains("summary-list"))
       return { type: "summary", groupTitle: "✨", groupColor: "purple" };
@@ -161,7 +161,7 @@ class ContextMenuUtil {
     return { type: "unknown", groupTitle: "", groupColor: "" };
   }
 
-  // Backward-compatible alias — delegates to getListInfo
+  // Delegate to getListInfo
   static getGroupInfo(firstItem) {
     const { groupTitle, groupColor } = this.getListInfo(firstItem);
     return { groupTitle, groupColor };

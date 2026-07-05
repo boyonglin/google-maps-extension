@@ -227,8 +227,7 @@ class Gemini {
     });
   }
 
-  // Parse LLM output into plain-text items, dropping any markup the model
-  // may have echoed from untrusted page content (prompt injection).
+  // Parse LLM output into plain-text items to prevent prompt injection.
   parseSummaryItems(response) {
     const doc = new DOMParser().parseFromString(response, "text/html");
     const normalize = (text) => text.replace(/\s+/g, " ").trim();

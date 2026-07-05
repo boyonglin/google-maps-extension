@@ -515,8 +515,7 @@ window.addEventListener("i18n:changed", () => {
     const v = chrome.i18n.getMessage(key);
     if (v) subtitleElement.textContent = v;
   }
-  // gemini.fetchAPIKey sets apiInput.placeholder / geminiEmptyMessage
-  // imperatively (not via [data-locale]), so it needs its own re-run.
+  // Re-run fetchAPIKey to update imperative locales.
   if (gemini) gemini.fetchAPIKey(lastGeminiApiKey);
   // Reset buttons to their default width
   [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {

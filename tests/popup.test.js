@@ -1533,9 +1533,7 @@ describe("popup.js", () => {
 
       window.dispatchEvent(new Event("i18n:changed"));
 
-      // apiInput.placeholder / geminiEmptyMessage are set via chrome.i18n.getMessage
-      // inside fetchAPIKey, not via [data-locale], so a cache-miss async bundle load
-      // (or a settings-modal language swap) needs this re-run to pick up the new bundle.
+      // Needs re-run to pick up new bundle on language change.
       expect(mockGemini.fetchAPIKey).toHaveBeenCalled();
 
       global.requestAnimationFrame = originalGlobalRaf;
