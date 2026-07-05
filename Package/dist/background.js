@@ -661,7 +661,11 @@ chrome.tabs.onActivated.addListener(() => {
 // 2) Fast message responder for popup
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "getWarmState") {
-    ensureWarm().then(() => sendResponse(getCache()));
+    ensureWarm().then(() => {
+      // Never ship AES key material outside the service worker
+      const { aesKey, ...warmState } = getCache();
+      sendResponse(warmState);
+    });
     return true;
   } else if (request.action === "getApiKey") {
     getApiKey().then((apiKey) => sendResponse({ apiKey }));
