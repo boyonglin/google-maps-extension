@@ -11,6 +11,17 @@ window.TME = {
     const defaultX = window.innerWidth - 480;
     const defaultY = 50;
 
+    // Collects every document/window listener registered below so eject()
+    // can remove them all; otherwise each on/off toggle leaks a set. Kept on
+    // window (like TMEhasRun) so a re-injected script can still abort the
+    // previous instance's listeners.
+    if (window.TMEcleanup) {
+      window.TMEcleanup.abort();
+    }
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+    window.TMEcleanup = abortController;
+
     let iframeContainer = document.createElement("div");
     iframeContainer.id = "TMEiframe";
     iframeContainer.style.left = defaultX + "px";
@@ -56,11 +67,15 @@ window.TME = {
     });
 
     // Close by Esc key
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        TME.eject();
-      }
-    });
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key === "Escape") {
+          TME.eject();
+        }
+      },
+      { signal }
+    );
 
     draggableBar.appendChild(linesContainer);
     draggableBar.appendChild(closeButton);
@@ -96,12 +111,16 @@ window.TME = {
     };
 
     // Adjust iframe left position when the document width becomes smaller
-    window.addEventListener("resize", () => {
-      const coordsX = iframeContainer.getBoundingClientRect().left;
-      const adjustedX = Math.min(coordsX, window.innerWidth - iframeContainer.offsetWidth - 40);
+    window.addEventListener(
+      "resize",
+      () => {
+        const coordsX = iframeContainer.getBoundingClientRect().left;
+        const adjustedX = Math.min(coordsX, window.innerWidth - iframeContainer.offsetWidth - 40);
 
-      iframeContainer.style.left = `${adjustedX}px`;
-    });
+        iframeContainer.style.left = `${adjustedX}px`;
+      },
+      { signal }
+    );
 
     // Create a custom resizer
     const resizer = document.createElement("div");
@@ -124,8 +143,10 @@ window.TME = {
       event.preventDefault();
     });
 
-    document.addEventListener("mousemove", (event) => {
-      if (isResizing) {
+    document.addEventListener(
+      "mousemove",
+      (event) => {
+        if (!isResizing) return;
         let currentMouseY = event.clientY;
         let newHeight = currentMouseY - iframeContainer.getBoundingClientRect().top;
         const mouseDirection = currentMouseY <= initialMouseY ? "up" : "down";
@@ -152,19 +173,28 @@ window.TME = {
           type: "resize",
           heightChange: heightChange,
         });
-      }
-    });
+      },
+      { signal }
+    );
 
-    document.addEventListener("mouseup", () => {
-      if (isResizing) {
-        iframeContainer.style.transition = "width 0.3s ease-in-out, height 0.3s ease-in-out";
-      }
-      isResizing = false;
-    });
+    document.addEventListener(
+      "mouseup",
+      () => {
+        if (isResizing) {
+          iframeContainer.style.transition = "width 0.3s ease-in-out, height 0.3s ease-in-out";
+        }
+        isResizing = false;
+      },
+      { signal }
+    );
 
     return iframe;
   },
   eject: function () {
+    if (window.TMEcleanup) {
+      window.TMEcleanup.abort();
+      window.TMEcleanup = null;
+    }
     let iframeContainer = document.getElementById("TMEiframe");
     if (iframeContainer) {
       iframeContainer.remove();

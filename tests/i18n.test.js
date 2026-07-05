@@ -312,5 +312,35 @@ describe("i18n.js", () => {
 
       expect(chrome.i18n.getMessage("greet", "太郎")).toBe("Hi 太郎");
     });
+
+    test("named placeholders (e.g. $checkedCount$) resolve via the placeholders map", () => {
+      localStorage.setItem("userLanguage", "ja");
+      installFakeXhr({
+        body: {
+          deleteBtnText: {
+            message: "$checkedCount$ 件の場所を削除",
+            placeholders: { checkedCount: { content: "$1" } },
+          },
+        },
+      });
+      loadI18n();
+
+      expect(chrome.i18n.getMessage("deleteBtnText", "3")).toBe("3 件の場所を削除");
+    });
+
+    test("named placeholder lookup is case-insensitive", () => {
+      localStorage.setItem("userLanguage", "ja");
+      installFakeXhr({
+        body: {
+          deleteBtnText: {
+            message: "$CheckedCount$ 件の場所を削除",
+            placeholders: { checkedcount: { content: "$1" } },
+          },
+        },
+      });
+      loadI18n();
+
+      expect(chrome.i18n.getMessage("deleteBtnText", "3")).toBe("3 件の場所を削除");
+    });
   });
 });

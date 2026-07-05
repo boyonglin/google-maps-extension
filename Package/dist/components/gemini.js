@@ -99,7 +99,7 @@ class Gemini {
             clearButtonSummary.disabled = false;
             return;
           }
-          this.summarizeFromGeminiVideoUnderstanding(tabs[0].url);
+          this.summarizeFromGeminiVideoUnderstanding(this.normalizeYoutubeUrl(tabs[0].url));
         });
       } else {
         // Use normal content summarization
@@ -138,21 +138,25 @@ class Gemini {
       if (youtubeMatch) {
         const videoId = youtubeMatch[1];
         state.videoSummaryMode = Boolean(videoId);
-        try {
-          const videoLength = await this.scrapeLen(videoId);
 
-          // Store video info for later use in summarization
-          chrome.storage.local.set({
-            currentVideoInfo: {
-              videoId: videoId,
-              length: videoLength,
-            },
+        // Scrape the video length in the background: it's only needed later
+        // for summarization, so don't make toggle visibility wait on this
+        // network fetch.
+        this.scrapeLen(videoId)
+          .then((videoLength) => {
+            chrome.storage.local.set({
+              currentVideoInfo: {
+                videoId: videoId,
+                length: videoLength,
+              },
+            });
+          })
+          .catch((error) => {
+            console.error("Error scraping video length:", error);
           });
-        } catch (error) {
-          console.error("Error scraping video length:", error);
-        }
       } else {
         // Clear currentVideoInfo if not on YouTube
+        state.videoSummaryMode = false;
         chrome.storage.local.remove("currentVideoInfo");
       }
 
@@ -266,6 +270,18 @@ class Gemini {
     });
   }
 
+  // Strip decorative query params (timestamps like "&t=7s", playlist/session
+  // context, etc.) so the Gemini video-understanding API receives a clean,
+  // canonical YouTube URL. Falls back to the original URL if it doesn't
+  // match the expected watch/shorts pattern.
+  normalizeYoutubeUrl(url) {
+    const match = url.match(/youtube\.com\/(watch\?v=|shorts\/)(.{11})/);
+    if (!match) return url;
+    return match[1] === "shorts/"
+      ? `https://www.youtube.com/shorts/${match[2]}`
+      : `https://www.youtube.com/watch?v=${match[2]}`;
+  }
+
   // Get Gemini response
   summarizeFromGeminiVideoUnderstanding(videoUrl) {
     // Clear any existing summary data first to prevent race condition
@@ -282,7 +298,7 @@ class Gemini {
     // request background video length
     chrome.storage.local.get("currentVideoInfo", ({ currentVideoInfo }) => {
       if (currentVideoInfo && currentVideoInfo.length) {
-        const estTime = Math.ceil(currentVideoInfo.length / 10);
+        const estTime = Math.ceil(currentVideoInfo.length / 30);
         const originalText = geminiEmptyMessage.innerHTML;
         const newText = originalText.replace("NaN", estTime);
         geminiEmptyMessage.innerHTML = newText;
@@ -380,8 +396,11 @@ class Gemini {
     chrome.runtime.sendMessage(
       { action: "summarizeApi", text: content, apiKey: apiKey, url: url },
       (response) => {
-        if (response.error) {
-          responseField.value = `API Error: ${response.error}`;
+        // response is undefined when the message channel closes early
+        // (e.g. the service worker was killed); treat it as an error so
+        // the send button is re-enabled instead of throwing here.
+        if (!response || response.error) {
+          responseField.value = `API Error: ${response?.error || "No response from background"}`;
           this.ResponseErrorMsg(response);
         } else {
           responseField.value = response;
