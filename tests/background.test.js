@@ -983,6 +983,24 @@ describe("background.js", () => {
       expect(getApiKey).toHaveBeenCalled();
     });
 
+    test("should respond with an error when summarizeVideo has no API key", async () => {
+      const { getApiKey } = require("../Package/dist/hooks/backgroundState.js");
+      getApiKey.mockRejectedValueOnce(new Error("No API key found. Please provide one."));
+      const sendResponse = jest.fn();
+      const request = {
+        action: "summarizeVideo",
+        text: "https://youtube.com/video",
+      };
+
+      listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
+
+      await flushPromises();
+
+      expect(sendResponse).toHaveBeenCalledWith({
+        error: "No API key found. Please provide one.",
+      });
+    });
+
     test("should handle organizeLocations action", async () => {
       const sendResponse = jest.fn();
       const request = {

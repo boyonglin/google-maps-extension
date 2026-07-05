@@ -368,8 +368,11 @@ class Gemini {
     chrome.runtime.sendMessage(
       { action: "summarizeApi", text: content, apiKey: apiKey, url: url },
       (response) => {
-        if (response.error) {
-          responseField.value = `API Error: ${response.error}`;
+        // response is undefined when the message channel closes early
+        // (e.g. the service worker was killed); treat it as an error so
+        // the send button is re-enabled instead of throwing here.
+        if (!response || response.error) {
+          responseField.value = `API Error: ${response?.error || "No response from background"}`;
           this.ResponseErrorMsg(response);
         } else {
           responseField.value = response;
