@@ -1,5 +1,5 @@
 /**
- * Unit Tests for appSecret.js
+ * Unit Tests for attachMapLink.js
  * Tests the map link attachment functionality for web pages
  *
  * This module is responsible for:
@@ -25,7 +25,7 @@ DOMPurify.addHook("uponSanitizeElement", (node, data) => {
   }
 });
 
-describe("appSecret.js - Map Link Attachment", () => {
+describe("attachMapLink.js - Map Link Attachment", () => {
   let attachMapLinkToPage;
 
   // Constants for testing
@@ -90,7 +90,7 @@ describe("appSecret.js - Map Link Attachment", () => {
 
     // Load the module - this will execute the IIFE and set globalThis.attachMapLinkToPage
     // Using require instead of eval ensures Jest can track coverage
-    require("../Package/dist/utils/appSecret.js");
+    require("../Package/dist/utils/attachMapLink.js");
 
     attachMapLinkToPage = globalThis.attachMapLinkToPage;
   });

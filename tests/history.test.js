@@ -585,15 +585,16 @@ describe("History Component", () => {
         clearButton.dispatchEvent(new Event("click"));
 
         expect(chrome.i18n.getMessage).toHaveBeenCalledWith("clearedUpMsg");
-        expect(emptyMessage.innerHTML).toBe("All cleared up!<br>Nothing to see here.");
+        expect(emptyMessage.textContent).toBe("All cleared up!\nNothing to see here.");
       });
 
-      test("should replace newlines with br tags in empty message", () => {
+      test("should render newlines as text with pre-line whitespace", () => {
         mockI18n({ clearedUpMsg: "Line 1\nLine 2\nLine 3" });
 
         clearButton.dispatchEvent(new Event("click"));
 
-        expect(emptyMessage.innerHTML).toBe("Line 1<br>Line 2<br>Line 3");
+        expect(emptyMessage.textContent).toBe("Line 1\nLine 2\nLine 3");
+        expect(emptyMessage.style.whiteSpace).toBe("pre-line");
       });
 
       test("should call measureContentSize after clearing", () => {

@@ -67,7 +67,7 @@ window.TME = {
 
     const iframe = document.createElement("iframe");
     iframe.id = "TMEmain";
-    iframe.src = chrome.runtime.getURL("../popup.html");
+    iframe.src = chrome.runtime.getURL("popup.html");
 
     // Append the iframe elements
     iframeContainer.appendChild(draggableBar);
