@@ -314,6 +314,46 @@ describe("Favorite Component", () => {
         expect(data.favoriteList).toEqual(["Cafe, Downtown", 'The "Best" Bar', "Line1\nLine2"]);
       });
 
+      test("should merge imported names into the existing list instead of replacing it", async () => {
+        mockFileUpload(fileInput, "name\nNew Place\n");
+
+        const storageSetPromise = new Promise((resolve) => {
+          mockChromeStorage({ favoriteList: ["Existing Place @Tokyo"] }, (data) => resolve(data));
+        });
+
+        fileInput.dispatchEvent(new Event("change"));
+
+        const data = await storageSetPromise;
+        expect(data.favoriteList).toEqual(["Existing Place @Tokyo", "New Place"]);
+      });
+
+      test("should not clear existing favorites when the imported CSV is empty", async () => {
+        mockFileUpload(fileInput, "name\n");
+
+        const storageSetPromise = new Promise((resolve) => {
+          mockChromeStorage({ favoriteList: ["Existing Place @Tokyo"] }, (data) => resolve(data));
+        });
+
+        fileInput.dispatchEvent(new Event("change"));
+
+        const data = await storageSetPromise;
+        expect(data.favoriteList).toEqual(["Existing Place @Tokyo"]);
+        expect(favoriteEmptyMessage.style.display).toBe("none");
+      });
+
+      test("should skip names that already exist (ignoring the @clue suffix) to avoid duplicates", async () => {
+        mockFileUpload(fileInput, "name\nExisting Place\nBrand New Place\n");
+
+        const storageSetPromise = new Promise((resolve) => {
+          mockChromeStorage({ favoriteList: ["Existing Place @Tokyo"] }, (data) => resolve(data));
+        });
+
+        fileInput.dispatchEvent(new Event("change"));
+
+        const data = await storageSetPromise;
+        expect(data.favoriteList).toEqual(["Existing Place @Tokyo", "Brand New Place"]);
+      });
+
       test("should return early if no file selected", () => {
         Object.defineProperty(fileInput, "files", {
           value: [],

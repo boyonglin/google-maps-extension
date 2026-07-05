@@ -55,14 +55,31 @@ class Favorite {
               .slice(1) // drop the "name" header row
               .map((row) => (row[0] || "").trim())
               .filter((name) => name.length > 0);
-            favoriteEmptyMessage.style.display = importedData.length ? "none" : "block";
-          } else {
-            favoriteEmptyMessage.style.display = "block";
           }
 
-          chrome.storage.local.set({ favoriteList: importedData }, () => {
-            this.updateFavorite(importedData);
-            this.updateHistoryFavoriteIcons();
+          chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
+            // Merge with the existing list instead of replacing it, so
+            // importing a CSV (e.g. a shared list, or an accidentally
+            // empty/malformed file) never destroys favorites that aren't
+            // in the file. Dedupe against existing names (ignoring the
+            // " @clue" suffix) so re-importing the same export doesn't
+            // create duplicate entries.
+            const existingList = Array.isArray(favoriteList) ? favoriteList : [];
+            const existingNames = new Set(existingList.map((item) => item.split(" @")[0]));
+            const newNames = [];
+            importedData.forEach((name) => {
+              if (!existingNames.has(name) && !newNames.includes(name)) {
+                newNames.push(name);
+              }
+            });
+            const mergedList = existingList.concat(newNames);
+
+            favoriteEmptyMessage.style.display = mergedList.length ? "none" : "block";
+
+            chrome.storage.local.set({ favoriteList: mergedList }, () => {
+              this.updateFavorite(mergedList);
+              this.updateHistoryFavoriteIcons();
+            });
           });
         } catch (error) {
           favoriteEmptyMessage.style.display = "block";
