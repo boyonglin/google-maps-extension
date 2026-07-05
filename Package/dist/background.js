@@ -157,6 +157,8 @@ chrome.commands.onCommand.addListener(async (command) => {
   await ensureWarm();
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    // No active tab when focus is on devtools or a detached window
+    if (!tabs.length) return;
     const url = tabs[0].url;
     const tabId = tabs[0].id;
     if (url && url.startsWith("http")) {
@@ -623,6 +625,7 @@ chrome.action.onClicked.addListener(meow);
 
 function meow() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs.length) return;
     chrome.scripting.executeScript(
       {
         target: { tabId: tabs[0].id },

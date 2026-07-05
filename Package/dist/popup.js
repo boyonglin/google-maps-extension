@@ -159,6 +159,7 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("readystatechange", () => {
   if (document.readyState === "complete") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs.length) return;
       chrome.tabs.sendMessage(tabs[0].id, {
         action: "finishIframe",
       });
@@ -591,7 +592,9 @@ function measureContentSize(summary = false) {
     state.updateDimensions(currentWidth, currentHeight);
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      let contentTabId = summary ? state.summarizedTabId : tabs[0].id;
+      let contentTabId = summary ? state.summarizedTabId : tabs[0]?.id;
+
+      if (contentTabId == null) return;
 
       sendUpdateIframeSize(contentTabId, currentWidth, currentHeight);
 
@@ -630,6 +633,7 @@ function measureContentSizeLast() {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs.length) return;
       chrome.scripting.executeScript({
         target: { tabId: tabs[0].id },
         files: ["dist/ejectLite.js"],

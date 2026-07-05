@@ -93,6 +93,12 @@ class Gemini {
       if (isVideoSummaryActive) {
         // Use video summary functionality
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (!tabs.length) {
+            // No active tab (e.g. focus on devtools/detached window): restore controls
+            sendButton.disabled = false;
+            clearButtonSummary.disabled = false;
+            return;
+          }
           this.summarizeFromGeminiVideoUnderstanding(this.normalizeYoutubeUrl(tabs[0].url));
         });
       } else {
@@ -320,6 +326,12 @@ class Gemini {
       const apiKey = res ? res.apiKey : "";
 
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (!tabs.length) {
+          // No active tab (e.g. focus on devtools/detached window): restore controls
+          sendButton.disabled = false;
+          clearButtonSummary.disabled = false;
+          return;
+        }
         chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
           if (chrome.runtime.lastError) {
             summaryListContainer.innerHTML = "";
@@ -468,8 +480,7 @@ class Gemini {
 
   RecordSummaryTab() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const currentTab = tabs[0];
-      state.summarizedTabId = currentTab.id;
+      state.summarizedTabId = tabs[0]?.id;
     });
   }
 
