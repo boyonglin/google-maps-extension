@@ -23,6 +23,16 @@ const createMockSelection = (text) => ({
   toString: jest.fn(() => text),
 });
 
+// Temporarily override window.location for a single test (jsdom defaults to http://localhost/)
+const mockLocation = (url) => {
+  const original = window.location;
+  delete window.location;
+  window.location = new URL(url);
+  return () => {
+    window.location = original;
+  };
+};
+
 const sendMessageAndExpect = (listener, request, expectedResponse) => {
   const sendResponse = jest.fn();
   listener(request, {}, sendResponse);
@@ -262,6 +272,74 @@ describe("contentScript.js - getContent Action", () => {
     const response = sendResponse.mock.calls[0][0];
     expect(response.content).toContain("<h1>");
     expect(response.content).toContain("<strong>");
+  });
+
+  describe("on a YouTube watch page", () => {
+    let restoreLocation;
+
+    beforeEach(() => {
+      restoreLocation = mockLocation("https://www.youtube.com/watch?v=UbJdB4335YQ");
+    });
+
+    afterEach(() => {
+      restoreLocation();
+    });
+
+    test("should only include the video description, not unrelated sidebar/comment content", () => {
+      document.head.innerHTML = "<title>My Video - YouTube</title>";
+      document.body.innerHTML = `
+        <div id="description-inline-expander">The actual video is about Taipei 101.</div>
+        <div id="related">
+          <span>Recommended: A trip to Hokkaido and Ginza</span>
+        </div>
+        <div id="comments">Great video! Loved the Kyoto scenery.</div>
+      `;
+
+      const request = { action: "getContent" };
+      const sendResponse = jest.fn();
+
+      messageListener(request, {}, sendResponse);
+
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.content).toContain("Taipei 101");
+      expect(response.content).not.toContain("Hokkaido");
+      expect(response.content).not.toContain("Ginza");
+      expect(response.content).not.toContain("Kyoto");
+    });
+
+    test("should fall back to the alternate description selector", () => {
+      document.head.innerHTML = "<title>My Video - YouTube</title>";
+      document.body.innerHTML = `
+        <div id="description">
+          <ytd-text-inline-expander>Description via alternate selector</ytd-text-inline-expander>
+        </div>
+        <div id="related"><span>Unrelated recommended video</span></div>
+      `;
+
+      const request = { action: "getContent" };
+      const sendResponse = jest.fn();
+
+      messageListener(request, {}, sendResponse);
+
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.content).toContain("Description via alternate selector");
+      expect(response.content).not.toContain("Unrelated recommended video");
+    });
+
+    test("should not crash when no description element is found", () => {
+      document.head.innerHTML = "<title>My Video - YouTube</title>";
+      document.body.innerHTML = `<div id="related"><span>Unrelated recommended video</span></div>`;
+
+      const request = { action: "getContent" };
+      const sendResponse = jest.fn();
+
+      expect(() => {
+        messageListener(request, {}, sendResponse);
+      }).not.toThrow();
+
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.content).not.toContain("Unrelated recommended video");
+    });
   });
 });
 

@@ -93,7 +93,13 @@ class Gemini {
       if (isVideoSummaryActive) {
         // Use video summary functionality
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          this.summarizeFromGeminiVideoUnderstanding(tabs[0].url);
+          if (!tabs.length) {
+            // No active tab (e.g. focus on devtools/detached window): restore controls
+            sendButton.disabled = false;
+            clearButtonSummary.disabled = false;
+            return;
+          }
+          this.summarizeFromGeminiVideoUnderstanding(this.normalizeYoutubeUrl(tabs[0].url));
         });
       } else {
         // Use normal content summarization
@@ -132,21 +138,23 @@ class Gemini {
       if (youtubeMatch) {
         const videoId = youtubeMatch[1];
         state.videoSummaryMode = Boolean(videoId);
-        try {
-          const videoLength = await this.scrapeLen(videoId);
 
-          // Store video info for later use in summarization
-          chrome.storage.local.set({
-            currentVideoInfo: {
-              videoId: videoId,
-              length: videoLength,
-            },
+        // Scrape length in the background; not needed until summarization runs
+        this.scrapeLen(videoId)
+          .then((videoLength) => {
+            chrome.storage.local.set({
+              currentVideoInfo: {
+                videoId: videoId,
+                length: videoLength,
+              },
+            });
+          })
+          .catch((error) => {
+            console.error("Error scraping video length:", error);
           });
-        } catch (error) {
-          console.error("Error scraping video length:", error);
-        }
       } else {
         // Clear currentVideoInfo if not on YouTube
+        state.videoSummaryMode = false;
         chrome.storage.local.remove("currentVideoInfo");
       }
 
@@ -219,26 +227,49 @@ class Gemini {
     });
   }
 
-  constructSummaryHTML(summaryList, favoriteList = []) {
-    let html = '<ul class="list-group d-flex">';
+  // Parse LLM output into plain-text items, dropping any markup the model
+  // may have echoed from untrusted page content (prompt injection).
+  parseSummaryItems(response) {
+    const doc = new DOMParser().parseFromString(response, "text/html");
+    const normalize = (text) => text.replace(/\s+/g, " ").trim();
+    const items = [];
+    doc.querySelectorAll("li").forEach((li) => {
+      const spans = Array.from(li.children).filter((el) => el.tagName === "SPAN");
+      const name = normalize(spans[0] ? spans[0].textContent : li.textContent);
+      const clue = spans[1] ? normalize(spans[1].textContent) : "";
+      if (name) items.push({ name, clue });
+    });
+    return items;
+  }
+
+  buildSummaryListElement(summaryList) {
+    const ul = document.createElement("ul");
+    ul.className = "list-group d-flex";
 
     summaryList.forEach((item, index) => {
       const isLastItem = index === summaryList.length - 1;
-      const mbClass = isLastItem ? "" : "mb-3";
+      const li = document.createElement("li");
+      li.className =
+        "list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center text-break" +
+        (isLastItem ? "" : " mb-3");
 
-      html += `
-          <li class="list-group-item border rounded px-3 summary-list d-flex justify-content-between align-items-center text-break ${mbClass}">
-            <span>${item.name}</span>
-            <span class="d-none">${item.clue}</span>
-            <i class="bi"></i>
-          </li>
-        `;
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = item.name ?? "";
+      const clueSpan = document.createElement("span");
+      clueSpan.className = "d-none";
+      clueSpan.textContent = item.clue ?? "";
+      const icon = document.createElement("i");
+      icon.className = "bi";
+
+      li.append(nameSpan, clueSpan, icon);
+      ul.appendChild(li);
     });
 
-    html += "</ul>";
+    return ul;
+  }
 
-    // Set the HTML first, then update the favorite icons
-    summaryListContainer.innerHTML = html;
+  constructSummaryHTML(summaryList, favoriteList = []) {
+    summaryListContainer.replaceChildren(this.buildSummaryListElement(summaryList));
     this.updateSummaryFavoriteIcons(favoriteList);
 
     return summaryListContainer.innerHTML;
@@ -260,6 +291,15 @@ class Gemini {
     });
   }
 
+  // Strip decorative query params so Gemini gets a canonical YouTube URL
+  normalizeYoutubeUrl(url) {
+    const match = url.match(/youtube\.com\/(watch\?v=|shorts\/)(.{11})/);
+    if (!match) return url;
+    return match[1] === "shorts/"
+      ? `https://www.youtube.com/shorts/${match[2]}`
+      : `https://www.youtube.com/watch?v=${match[2]}`;
+  }
+
   // Get Gemini response
   summarizeFromGeminiVideoUnderstanding(videoUrl) {
     // Clear any existing summary data first to prevent race condition
@@ -276,7 +316,7 @@ class Gemini {
     // request background video length
     chrome.storage.local.get("currentVideoInfo", ({ currentVideoInfo }) => {
       if (currentVideoInfo && currentVideoInfo.length) {
-        const estTime = Math.ceil(currentVideoInfo.length / 10);
+        const estTime = Math.ceil(currentVideoInfo.length / 30);
         const originalText = geminiEmptyMessage.innerHTML;
         const newText = originalText.replace("NaN", estTime);
         geminiEmptyMessage.innerHTML = newText;
@@ -292,7 +332,11 @@ class Gemini {
 
       // success when we get a string fragment of <ul>...</ul>
       if (typeof response === "string") {
-        this.createSummaryList(response);
+        try {
+          this.createSummaryList(response);
+        } catch (error) {
+          this.ResponseErrorMsg({ error: String(error) });
+        }
       } else {
         this.ResponseErrorMsg(response);
       }
@@ -304,6 +348,12 @@ class Gemini {
       const apiKey = res ? res.apiKey : "";
 
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (!tabs.length) {
+          // No active tab (e.g. focus on devtools/detached window): restore controls
+          sendButton.disabled = false;
+          clearButtonSummary.disabled = false;
+          return;
+        }
         chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
           if (chrome.runtime.lastError) {
             summaryListContainer.innerHTML = "";
@@ -368,8 +418,10 @@ class Gemini {
     chrome.runtime.sendMessage(
       { action: "summarizeApi", text: content, apiKey: apiKey, url: url },
       (response) => {
-        if (response.error) {
-          responseField.value = `API Error: ${response.error}`;
+        // response is undefined if the channel closed early (e.g. SW killed);
+        // treat as an error so the send button gets re-enabled
+        if (!response || response.error) {
+          responseField.value = `API Error: ${response?.error || "No response from background"}`;
           this.ResponseErrorMsg(response);
         } else {
           responseField.value = response;
@@ -386,16 +438,15 @@ class Gemini {
   }
 
   createSummaryList(response) {
+    const summaryItems = this.parseSummaryItems(response);
+    if (summaryItems.length === 0) {
+      throw new Error("No summary items found in response");
+    }
+
     document.documentElement.classList.add("no-expand-scroll");
     summaryListContainer.classList.add("no-expand-scroll");
 
-    summaryListContainer.innerHTML = response;
-    const lastListItem = summaryListContainer.querySelector(
-      ".list-group .list-group-item:last-child"
-    );
-    if (lastListItem) {
-      lastListItem.classList.remove("mb-3");
-    }
+    summaryListContainer.replaceChildren(this.buildSummaryListElement(summaryItems));
     state.hasSummary = true;
     geminiEmptyMessage.classList.remove("shineText");
     geminiEmptyMessage.classList.add("d-none");
@@ -411,28 +462,12 @@ class Gemini {
       summaryListContainer.classList.remove("no-expand-scroll");
     }, 400);
 
-    // store the response and current time
-    const listItems = document.querySelectorAll(".summary-list");
-    const data = [];
-
-    listItems.forEach((item) => {
-      const nameSpan = item.querySelector("span:first-child").textContent;
-      const clueElem = item.querySelector("span.d-none");
-      const clueSpan = clueElem ? clueElem.textContent : "";
-      data.push({ name: nameSpan, clue: clueSpan });
-    });
-
     chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
       if (!favoriteList) {
         return;
       }
 
-      const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
-      listItems.forEach((item) => {
-        const itemName = item.querySelector("span:first-child").textContent;
-        const icon = favorite.createFavoriteIcon(itemName, trimmedFavorite);
-        item.appendChild(icon);
-      });
+      this.updateSummaryFavoriteIcons(favoriteList);
     });
 
     // Respect incognito mode: do not persist summaries when enabled
@@ -440,7 +475,7 @@ class Gemini {
       if (!isIncognito) {
         const currentTime = Date.now();
         chrome.storage.local.set({
-          summaryList: data,
+          summaryList: summaryItems,
           timestamp: currentTime,
         });
       }
@@ -449,8 +484,7 @@ class Gemini {
 
   RecordSummaryTab() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const currentTab = tabs[0];
-      state.summarizedTabId = currentTab.id;
+      state.summarizedTabId = tabs[0]?.id;
     });
   }
 

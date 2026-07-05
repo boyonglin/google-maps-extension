@@ -74,6 +74,16 @@ describe("popup.js", () => {
       return true;
     });
 
+    // Provide the component constructors popup.js resolves as globals in
+    // the browser (top-level class declarations from the other scripts)
+    global.State = State;
+    global.Remove = Remove;
+    global.Favorite = Favorite;
+    global.History = History;
+    global.Gemini = Gemini;
+    global.Modal = Modal;
+    global.Payment = Payment;
+
     // Load popup module AFTER DOM is set up
     popup = require("../Package/dist/popup");
   });
@@ -82,6 +92,16 @@ describe("popup.js", () => {
     teardownPopupDOM();
     jest.resetModules();
     jest.clearAllMocks();
+
+    // Clean up the component constructor globals set in beforeEach to keep
+    // the test environment isolated between tests.
+    delete global.State;
+    delete global.Remove;
+    delete global.Favorite;
+    delete global.History;
+    delete global.Gemini;
+    delete global.Modal;
+    delete global.Payment;
   });
 
   describe("Initialization", () => {
@@ -244,6 +264,22 @@ describe("popup.js", () => {
       const deleteListButton = document.getElementById("deleteListButton");
       expect(deleteListButton.disabled).toBe(true);
       expect(mockGemini.clearExpiredSummary).toHaveBeenCalled();
+    });
+
+    test("popupLayout re-checks YouTube state after restoring the gemini tab", () => {
+      // Must re-run since checkCurrentTabForYoutube() ran before this tab became active
+      popup.initializeDependencies({
+        state: mockState,
+        gemini: mockGemini,
+      });
+
+      chrome.storage.local.get.mockImplementation((key, callback) => {
+        callback({ lastActiveTab: "gemini" });
+      });
+
+      popup.popupLayout();
+
+      expect(mockGemini.checkCurrentTabForYoutube).toHaveBeenCalled();
     });
 
     test("popupLayout ignores invalid lastActiveTab value", () => {

@@ -72,7 +72,11 @@ function seedJaPreferenceAndCache() {
   localStorage.setItem("userLanguage", "ja");
   localStorage.setItem(
     "userLanguageMessages",
-    JSON.stringify({ lang: "ja", version: "1.0.0", messages: JA_MESSAGES })
+    JSON.stringify({
+      lang: "ja",
+      version: chrome.runtime.getManifest().version,
+      messages: JA_MESSAGES,
+    })
   );
 }
 
@@ -82,8 +86,8 @@ function loadI18nWithJaCache() {
   return loadI18n();
 }
 
-function getLoadedStorageChangeListener(xhrOptions) {
-  installFakeFetch(xhrOptions);
+function getLoadedStorageChangeListener(fetchOptions) {
+  installFakeFetch(fetchOptions);
   loadI18n();
   return chrome.storage.onChanged.addListener.mock.calls[0][0];
 }
@@ -104,7 +108,7 @@ describe("i18n.js", () => {
 
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
       expectBrowserFallbackMessage();
-      // No XHR should have been issued.
+      // No fetch should have been issued.
       expect(global.fetch.callCount).toBe(0);
     });
   });
@@ -185,7 +189,11 @@ describe("i18n.js", () => {
     test("cache for a different language is ignored (fetch fires for the new lang)", async () => {
       localStorage.setItem(
         "userLanguageMessages",
-        JSON.stringify({ lang: "en", messages: EN_MESSAGES })
+        JSON.stringify({
+          lang: "en",
+          version: chrome.runtime.getManifest().version,
+          messages: EN_MESSAGES,
+        })
       );
       localStorage.setItem("userLanguage", "ja");
       installFakeFetch({ body: JA_MESSAGES });
@@ -315,6 +323,38 @@ describe("i18n.js", () => {
       await flushPromises();
 
       expect(chrome.i18n.getMessage("greet", "太郎")).toBe("Hi 太郎");
+    });
+
+    test("named placeholders (e.g. $checkedCount$) resolve via the placeholders map", async () => {
+      localStorage.setItem("userLanguage", "ja");
+      installFakeFetch({
+        body: {
+          deleteBtnText: {
+            message: "$checkedCount$ 件の場所を削除",
+            placeholders: { checkedCount: { content: "$1" } },
+          },
+        },
+      });
+      loadI18n();
+      await flushPromises();
+
+      expect(chrome.i18n.getMessage("deleteBtnText", "3")).toBe("3 件の場所を削除");
+    });
+
+    test("named placeholder lookup is case-insensitive", async () => {
+      localStorage.setItem("userLanguage", "ja");
+      installFakeFetch({
+        body: {
+          deleteBtnText: {
+            message: "$CheckedCount$ 件の場所を削除",
+            placeholders: { checkedcount: { content: "$1" } },
+          },
+        },
+      });
+      loadI18n();
+      await flushPromises();
+
+      expect(chrome.i18n.getMessage("deleteBtnText", "3")).toBe("3 件の場所を削除");
     });
   });
 });

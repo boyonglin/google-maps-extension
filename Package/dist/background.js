@@ -135,7 +135,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 // Track the right-click event
-chrome.contextMenus.onClicked.addListener((info) => {
+chrome.contextMenus.onClicked.addListener(async (info) => {
+  // The service worker may have just woken up; warm the cache first.
+  await ensureWarm();
   const selectedText = info.selectionText;
   if (info.menuItemId === "googleMapsSearch") {
     Analytics.trackContextMenu("search");
@@ -147,10 +149,13 @@ chrome.contextMenus.onClicked.addListener((info) => {
 });
 
 // Track the shortcuts event
-chrome.commands.onCommand.addListener((command) => {
+chrome.commands.onCommand.addListener(async (command) => {
   Analytics.trackShortcut(command);
+  await ensureWarm();
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    // No active tab when focus is on devtools or a detached window
+    if (!tabs.length) return;
     const url = tabs[0].url;
     const tabId = tabs[0].id;
     if (url && url.startsWith("http")) {
@@ -315,9 +320,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "searchInput") {
     let searchTerm = request.searchTerm;
     if (searchTerm) {
-      const searchUrl = buildSearchUrl(searchTerm);
-      chrome.tabs.create({ url: searchUrl });
-      updateHistoryList(searchTerm);
+      ensureWarm().then(() => {
+        const searchUrl = buildSearchUrl(searchTerm);
+        chrome.tabs.create({ url: searchUrl });
+        updateHistoryList(searchTerm);
+      });
     }
   } else if (request.action === "addToFavoriteList") {
     const selectedText = request.selectedText;
@@ -422,7 +429,9 @@ function openUrlsInNewGroup(urls, title, color, collapsed) {
 }
 
 // Add the selected text to history list
-function updateHistoryList(selectedText) {
+async function updateHistoryList(selectedText) {
+  // Defense in depth: never trim or record history against cold DEFAULTS.
+  await ensureWarm();
   chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
     // Respect incognito mode: do not persist history when enabled
     if (getCache().isIncognito) {
@@ -485,9 +494,13 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.action === "summarizeVideo" && request.text) {
-    getApiKey().then((apiKey) => {
-      callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
-    });
+    getApiKey()
+      .then((apiKey) => {
+        callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
+      })
+      .catch((err) => {
+        sendResponse({ error: err.message });
+      });
     return true; // Will respond asynchronously
   }
 });
@@ -504,10 +517,47 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
 const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest";
 
+const VERIFY_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+async function hashApiKey(apiKey) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(apiKey));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function getVerifyCache() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("apiKeyVerifyCache", (result) => {
+      resolve(result ? result.apiKeyVerifyCache : undefined);
+    });
+  });
+}
+
 async function verifyApiKey(apiKey) {
+  let keyHash = null;
+  try {
+    keyHash = await hashApiKey(apiKey);
+    const cached = await getVerifyCache();
+    if (
+      cached &&
+      cached.keyHash === keyHash &&
+      cached.valid === true &&
+      Date.now() - cached.verifiedAt < VERIFY_CACHE_TTL
+    ) {
+      return { valid: true };
+    }
+  } catch (_e) {
+    // Hashing/cache problems only mean we verify over the network
+  }
+
   const res = await fetch(endpoint, {
     headers: { "x-goog-api-key": apiKey },
   });
+  // Only cache positive results; failures may be transient
+  if (res.ok && keyHash) {
+    chrome.storage.local.set({
+      apiKeyVerifyCache: { keyHash, valid: true, verifiedAt: Date.now() },
+    });
+  }
   return { valid: res.ok };
 }
 
@@ -542,6 +592,7 @@ function callApi(prompt, content, apiKey, sendResponse) {
     .then((response) => response.json())
     .then((data) => {
       if (data.error) {
+        console.error("Gemini API returned an error:", data.error.message);
         sendResponse({ error: data.error.message });
         return;
       }
@@ -565,6 +616,7 @@ chrome.action.onClicked.addListener(meow);
 
 function meow() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs.length) return;
     chrome.scripting.executeScript(
       {
         target: { tabId: tabs[0].id },
@@ -646,19 +698,25 @@ chrome.tabs.onActivated.addListener(() => {
 // 2) Fast message responder for popup
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "getWarmState") {
-    ensureWarm().then(() => sendResponse(getCache()));
+    ensureWarm().then(() => {
+      // Never ship AES key material outside the service worker
+      const { aesKey, ...warmState } = getCache();
+      sendResponse(warmState);
+    });
     return true;
   } else if (request.action === "getApiKey") {
     getApiKey().then((apiKey) => sendResponse({ apiKey }));
     return true;
   } else if (request.action === "buildSearchUrl") {
-    sendResponse({ url: buildSearchUrl(request.query) });
+    ensureWarm().then(() => sendResponse({ url: buildSearchUrl(request.query) }));
     return true;
   } else if (request.action === "buildDirectionsUrl") {
-    sendResponse({ url: buildDirectionsUrl(request.origin, request.destination) });
+    ensureWarm().then(() =>
+      sendResponse({ url: buildDirectionsUrl(request.origin, request.destination) })
+    );
     return true;
   } else if (request.action === "buildMapsUrl") {
-    sendResponse({ url: buildMapsUrl() });
+    ensureWarm().then(() => sendResponse({ url: buildMapsUrl() }));
     return true;
   }
 });
