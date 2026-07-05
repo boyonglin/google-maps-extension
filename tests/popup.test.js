@@ -92,6 +92,16 @@ describe("popup.js", () => {
     teardownPopupDOM();
     jest.resetModules();
     jest.clearAllMocks();
+
+    // Clean up the component constructor globals set in beforeEach to keep
+    // the test environment isolated between tests.
+    delete global.State;
+    delete global.Remove;
+    delete global.Favorite;
+    delete global.History;
+    delete global.Gemini;
+    delete global.Modal;
+    delete global.Payment;
   });
 
   describe("Initialization", () => {
