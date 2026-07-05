@@ -16,7 +16,10 @@ class Favorite {
         const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
         const csv = "name\n" + trimmedFavorite.map((item) => `${escapeCSV(item)}`).join("\n");
 
-        const blob = new Blob([csv], {
+        // Prepend a UTF-8 BOM so Excel/Windows detect the encoding correctly;
+        // without it, non-ASCII names (e.g. Chinese/Japanese) render as "?"
+        // when the file is opened outside the browser.
+        const blob = new Blob(["\uFEFF" + csv], {
           type: "text/csv; charset=utf-8;",
         });
 

@@ -59,10 +59,26 @@
     return null;
   }
 
-  function applySubstitutions(message, substitutions) {
-    if (substitutions == null) return message;
+  // Named placeholders (e.g. $checkedCount$) are declared per-message in the
+  // "placeholders" map and point at a positional token (e.g. "$1"). Chrome's
+  // real getMessage resolves name -> "$1" -> substitution value in that
+  // order; replicate it here instead of only handling "$1"/"$2" directly,
+  // otherwise messages that use named placeholders never get substituted.
+  function resolveNamedPlaceholders(message, placeholders) {
+    if (!placeholders) return message;
+    return message.replace(/\$(\w+)\$/g, (match, name) => {
+      const placeholderKey = Object.keys(placeholders).find(
+        (key) => key.toLowerCase() === name.toLowerCase()
+      );
+      const content = placeholderKey && placeholders[placeholderKey].content;
+      return content != null ? content : match;
+    });
+  }
+
+  function applySubstitutions(message, substitutions, placeholders) {
+    let result = resolveNamedPlaceholders(message, placeholders);
+    if (substitutions == null) return result;
     const subs = Array.isArray(substitutions) ? substitutions : [substitutions];
-    let result = message;
     subs.forEach((value, index) => {
       result = result.replace(new RegExp("\\$" + (index + 1), "g"), String(value));
     });
@@ -73,7 +89,7 @@
     if (overrideMessages) {
       const entry = overrideMessages[key];
       if (entry && entry.message != null) {
-        return applySubstitutions(entry.message, substitutions);
+        return applySubstitutions(entry.message, substitutions, entry.placeholders);
       }
     }
     return originalGetMessage(key, substitutions);

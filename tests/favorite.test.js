@@ -174,6 +174,17 @@ describe("Favorite Component", () => {
         await wait();
       });
 
+      test("should prepend a UTF-8 BOM so non-ASCII names don't render as ? outside the browser", async () => {
+        mockChromeStorage({ favoriteList: ["中島公園", "大通公園"] });
+
+        exportButton.click();
+        await wait();
+
+        const blobContent = global.Blob.mock.calls[0][0][0];
+        expect(blobContent.startsWith("\uFEFF")).toBe(true);
+        expect(blobContent).toContain("中島公園");
+      });
+
       test("should escape commas in location names for CSV export", async () => {
         mockChromeStorage({ favoriteList: ["New York, NY", "Location B"] });
 
