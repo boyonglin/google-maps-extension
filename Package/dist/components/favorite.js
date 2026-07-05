@@ -45,13 +45,14 @@ class Favorite {
           const fileContent = event.target.result;
 
           if (fileContent && fileContent.length > 0) {
-            // Parse CSV content
-            const rows = fileContent
-              .split("\n")
-              .map((row) => row.trim())
-              .filter((row) => row.length > 0);
-            importedData = rows.slice(1).map((row) => row.replace(/,$/, ""));
-            favoriteEmptyMessage.style.display = "none";
+            // Parse CSV rows (quote-aware, so exported names containing
+            // commas, quotes, or newlines round-trip unchanged)
+            const rows = this.parseCSV(fileContent);
+            importedData = rows
+              .slice(1) // drop the "name" header row
+              .map((row) => (row[0] || "").trim())
+              .filter((name) => name.length > 0);
+            favoriteEmptyMessage.style.display = importedData.length ? "none" : "block";
           } else {
             favoriteEmptyMessage.style.display = "block";
           }
@@ -117,6 +118,54 @@ class Favorite {
     favoriteListContainer.addEventListener("contextmenu", (event) => {
       ContextMenuUtil.createContextMenu(event, favoriteListContainer);
     });
+  }
+
+  // Minimal RFC 4180-style parser: handles quoted fields with embedded
+  // commas, doubled quotes, and newlines — the same cases escapeCSV in the
+  // export path produces.
+  parseCSV(content) {
+    const rows = [];
+    let row = [];
+    let field = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < content.length; i++) {
+      const ch = content[i];
+
+      if (inQuotes) {
+        if (ch === '"') {
+          if (content[i + 1] === '"') {
+            field += '"';
+            i++;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          field += ch;
+        }
+      } else if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        row.push(field);
+        field = "";
+      } else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && content[i + 1] === "\n") i++;
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else {
+        field += ch;
+      }
+    }
+
+    if (field !== "" || row.length > 0) {
+      row.push(field);
+      rows.push(row);
+    }
+
+    // Drop rows that are entirely empty (e.g. blank lines)
+    return rows.filter((r) => r.some((f) => f.trim().length > 0));
   }
 
   createFavoriteIcon(itemName, favoriteList) {

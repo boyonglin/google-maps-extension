@@ -288,6 +288,21 @@ describe("Favorite Component", () => {
         expect(data.favoriteList).toEqual(["Location 1", "Location 2"]);
       });
 
+      test("should round-trip names containing commas, quotes, and newlines", async () => {
+        // Exactly what the export path produces for these names
+        const csv = 'name\n"Cafe, Downtown"\n"The ""Best"" Bar"\n"Line1\nLine2"\n';
+        mockFileUpload(fileInput, csv);
+
+        const storageSetPromise = new Promise((resolve) => {
+          mockChromeStorage({}, (data) => resolve(data));
+        });
+
+        fileInput.dispatchEvent(new Event("change"));
+
+        const data = await storageSetPromise;
+        expect(data.favoriteList).toEqual(["Cafe, Downtown", 'The "Best" Bar', "Line1\nLine2"]);
+      });
+
       test("should return early if no file selected", () => {
         Object.defineProperty(fileInput, "files", {
           value: [],
