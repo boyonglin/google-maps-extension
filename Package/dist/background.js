@@ -135,7 +135,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 // Track the right-click event
-chrome.contextMenus.onClicked.addListener((info) => {
+chrome.contextMenus.onClicked.addListener(async (info) => {
+  // This event can be the service worker's first wake-up: warm the cache
+  // before anything reads isIncognito, historyMax, or authUser, otherwise
+  // stale DEFAULTS would leak history or trim it to the default length.
+  await ensureWarm();
   const selectedText = info.selectionText;
   if (info.menuItemId === "googleMapsSearch") {
     Analytics.trackContextMenu("search");
@@ -147,8 +151,10 @@ chrome.contextMenus.onClicked.addListener((info) => {
 });
 
 // Track the shortcuts event
-chrome.commands.onCommand.addListener((command) => {
+chrome.commands.onCommand.addListener(async (command) => {
   Analytics.trackShortcut(command);
+  // Same first-wake-up concern as the context menu listener above.
+  await ensureWarm();
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const url = tabs[0].url;
@@ -315,9 +321,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "searchInput") {
     let searchTerm = request.searchTerm;
     if (searchTerm) {
-      const searchUrl = buildSearchUrl(searchTerm);
-      chrome.tabs.create({ url: searchUrl });
-      updateHistoryList(searchTerm);
+      ensureWarm().then(() => {
+        const searchUrl = buildSearchUrl(searchTerm);
+        chrome.tabs.create({ url: searchUrl });
+        updateHistoryList(searchTerm);
+      });
     }
   } else if (request.action === "addToFavoriteList") {
     const selectedText = request.selectedText;
@@ -422,7 +430,9 @@ function openUrlsInNewGroup(urls, title, color, collapsed) {
 }
 
 // Add the selected text to history list
-function updateHistoryList(selectedText) {
+async function updateHistoryList(selectedText) {
+  // Defense in depth: never trim or record history against cold DEFAULTS.
+  await ensureWarm();
   chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
     // Respect incognito mode: do not persist history when enabled
     if (getCache().isIncognito) {
@@ -652,13 +662,15 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     getApiKey().then((apiKey) => sendResponse({ apiKey }));
     return true;
   } else if (request.action === "buildSearchUrl") {
-    sendResponse({ url: buildSearchUrl(request.query) });
+    ensureWarm().then(() => sendResponse({ url: buildSearchUrl(request.query) }));
     return true;
   } else if (request.action === "buildDirectionsUrl") {
-    sendResponse({ url: buildDirectionsUrl(request.origin, request.destination) });
+    ensureWarm().then(() =>
+      sendResponse({ url: buildDirectionsUrl(request.origin, request.destination) })
+    );
     return true;
   } else if (request.action === "buildMapsUrl") {
-    sendResponse({ url: buildMapsUrl() });
+    ensureWarm().then(() => sendResponse({ url: buildMapsUrl() }));
     return true;
   }
 });
