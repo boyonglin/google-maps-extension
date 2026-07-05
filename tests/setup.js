@@ -89,6 +89,7 @@ global.chrome = {
     onCommand: {
       addListener: jest.fn(),
     },
+    getAll: jest.fn((callback) => callback && callback([])),
   },
   action: {
     onClicked: {

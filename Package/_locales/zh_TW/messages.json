@@ -278,5 +278,9 @@
   },
   "tidyLocations" : {
     "message": "整理地點"
+  },
+  "shortcutUnsetLabel": {
+    "message": "未設定,點此前往設定",
+    "description": "tips modal label when a keyboard shortcut has no key assigned"
   }
 }

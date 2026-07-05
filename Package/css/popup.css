@@ -87,9 +87,6 @@
   background-color: transparent;
   border-color: var(--gray-500);
 }
-[data-theme=dark] .form-control::-moz-placeholder {
-  color: var(--gray-500);
-}
 [data-theme=dark] .form-control::placeholder {
   color: var(--gray-500);
 }
@@ -206,10 +203,6 @@ body {
   border-bottom-right-radius: 2rem;
   color: var(--gray-800);
 }
-#searchInput::-moz-placeholder {
-  color: var(--gray-600);
-  font-weight: 300;
-}
 #searchInput::placeholder {
   color: var(--gray-600);
   font-weight: 300;
@@ -220,9 +213,6 @@ body {
   border-color: var(--border-color);
   outline: none;
   box-shadow: none;
-}
-#searchInput:focus::-moz-placeholder {
-  opacity: 0;
 }
 #searchInput:focus::placeholder {
   opacity: 0;
@@ -307,9 +297,7 @@ body {
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  user-select: none;
 }
 .settings-toggle-item.toggle-active .toggle-switch {
   background-color: var(--google-purple);
@@ -372,10 +360,6 @@ body {
   border-radius: 2rem;
   padding-left: 1rem;
 }
-.modalFormInput::-moz-placeholder {
-  color: var(--gray-600);
-  font-weight: 300;
-}
 .modalFormInput::placeholder {
   color: var(--gray-600);
   font-weight: 300;
@@ -386,9 +370,6 @@ body {
   border-color: var(--border-color);
   outline: none;
   box-shadow: none;
-}
-.modalFormInput:focus::-moz-placeholder {
-  opacity: 0;
 }
 .modalFormInput:focus::placeholder {
   opacity: 0;
@@ -831,8 +812,7 @@ li:hover .form-check-input {
 }
 
 .modal-body p:hover {
-  -webkit-text-decoration: var(--border-color) underline;
-          text-decoration: var(--border-color) underline;
+  text-decoration: var(--border-color) underline;
 }
 
 .btn-close {
@@ -1046,4 +1026,12 @@ html.no-expand-scroll::-webkit-scrollbar, html.no-expand-scroll body::-webkit-sc
   100% {
     opacity: 1;
   }
-}/*# sourceMappingURL=popup.css.map */
+}
+.shortcut-unset {
+  color: #d97706 !important;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/*# sourceMappingURL=popup.css.map */

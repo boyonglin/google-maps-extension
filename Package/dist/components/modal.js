@@ -14,6 +14,7 @@ class Modal {
     await this.loadCrypto();
 
     this._setupShortcutsLinks();
+    this._setupShortcutsDisplay();
     this._setupApiForm();
     this._setupSettingsScrollFade();
     this._setupOptionalModalLifecycle();
@@ -51,6 +52,42 @@ class Modal {
         event.preventDefault();
       };
     }
+  }
+
+  // Show the shortcuts that are actually assigned on this machine.
+  // Suggested keys (Alt+S etc.) can be taken by the OS or another
+  // extension, in which case the command silently never fires — surface
+  // that instead of displaying a combo that does nothing.
+  _setupShortcutsDisplay() {
+    this._updateShortcutsDisplay();
+
+    // Re-check on every open: the user may have (re)assigned shortcuts
+    // in chrome://extensions/shortcuts since the popup loaded
+    const tipsModal = document.getElementById("tipsModal");
+    if (tipsModal) {
+      tipsModal.addEventListener("show.bs.modal", () => {
+        this._updateShortcutsDisplay();
+      });
+    }
+  }
+
+  _updateShortcutsDisplay() {
+    if (!chrome.commands || typeof chrome.commands.getAll !== "function") return;
+
+    chrome.commands.getAll((commands) => {
+      commands.forEach((command) => {
+        const el = document.querySelector(`#tipsModal p[data-command="${command.name}"]`);
+        if (!el) return;
+
+        if (command.shortcut) {
+          el.textContent = command.shortcut;
+          el.classList.remove("shortcut-unset");
+        } else {
+          el.textContent = chrome.i18n.getMessage("shortcutUnsetLabel");
+          el.classList.add("shortcut-unset");
+        }
+      });
+    });
   }
 
   _setupApiForm() {

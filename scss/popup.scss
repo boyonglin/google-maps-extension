@@ -1135,3 +1135,11 @@ html.no-expand-scroll {
     opacity: 1;
   }
 }
+
+// Shortcut rows in the tips modal whose command has no key assigned
+.shortcut-unset {
+  color: #d97706 !important;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}

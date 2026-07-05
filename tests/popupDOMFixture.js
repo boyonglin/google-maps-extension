@@ -154,9 +154,10 @@ function createPopupDOM() {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p class="premium-only" data-locale="shortcutsNote">Configure shortcuts</p>
-            <p class="premium-only" data-locale="shortcutsNote">Configure shortcuts</p>
-            <p class="premium-only" data-locale="shortcutsNote">Configure shortcuts</p>
+            <p class="text-muted" data-command="run-search">Ctrl+Shift+S</p>
+            <p class="text-muted" data-command="_execute_action">Alt+Shift+S</p>
+            <p class="text-muted" data-command="run-directions">Alt+R</p>
+            <p class="text-muted premium-only" data-command="auto-attach">Alt+S</p>
           </div>
         </div>
       </div>

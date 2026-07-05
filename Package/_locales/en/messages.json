@@ -370,5 +370,9 @@
   "tidyLocations" : {
     "message": "Tidy Locations",
     "description": "context menu tidy locations option"
+  },
+  "shortcutUnsetLabel": {
+    "message": "Not set — click to configure",
+    "description": "tips modal label when a keyboard shortcut has no key assigned"
   }
 }
