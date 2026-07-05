@@ -504,10 +504,49 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
 const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest";
 
+// A successful verification is cached (keyed by a hash of the key) so
+// opening the popup doesn't hit the Gemini API every single time.
+const VERIFY_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+async function hashApiKey(apiKey) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(apiKey));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function getVerifyCache() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("apiKeyVerifyCache", (result) => {
+      resolve(result ? result.apiKeyVerifyCache : undefined);
+    });
+  });
+}
+
 async function verifyApiKey(apiKey) {
+  let keyHash = null;
+  try {
+    keyHash = await hashApiKey(apiKey);
+    const cached = await getVerifyCache();
+    if (
+      cached &&
+      cached.keyHash === keyHash &&
+      cached.valid === true &&
+      Date.now() - cached.verifiedAt < VERIFY_CACHE_TTL
+    ) {
+      return { valid: true };
+    }
+  } catch (_e) {
+    // Hashing/cache problems only mean we verify over the network
+  }
+
   const res = await fetch(endpoint, {
     headers: { "x-goog-api-key": apiKey },
   });
+  // Only cache positive results; failures may be transient
+  if (res.ok && keyHash) {
+    chrome.storage.local.set({
+      apiKeyVerifyCache: { keyHash, valid: true, verifiedAt: Date.now() },
+    });
+  }
   return { valid: res.ok };
 }
 
