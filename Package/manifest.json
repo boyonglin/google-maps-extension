@@ -79,23 +79,7 @@
   "web_accessible_resources": [
     {
       "matches": ["<all_urls>"],
-      "resources": [
-        "vendor/fonts/*.woff2",
-        "popup.html",
-        "css/iframe.css",
-        "dist/inject.js",
-        "dist/ejectLite.js",
-        "dist/checkStatus.js",
-        "dist/utils/ExtPay.module.js",
-        "dist/utils/browser-polyfill.js",
-        "dist/utils/crypto.js",
-        "dist/utils/prompt.js",
-        "dist/utils/theme.js",
-        "dist/utils/analytics.js",
-        "dist/utils/analytics.module.js",
-        "dist/hooks/backgroundState.js",
-        "dist/hooks/popupState.js"
-      ]
+      "resources": ["vendor/fonts/*.woff2", "popup.html", "css/iframe.css"]
     }
   ]
 }
