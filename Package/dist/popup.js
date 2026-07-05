@@ -190,11 +190,8 @@ function popupLayout() {
       deleteListButton.disabled = true;
       gemini.clearExpiredSummary();
 
-      // showPage() just set geminiSummaryButton to active, but the earlier
-      // checkCurrentTabForYoutube() call (fired synchronously from
-      // initializePopup, before this async storage callback ran) captured
-      // isGeminiActive as false and skipped un-hiding videoSummaryButton.
-      // Re-run now so the YouTube toggle reflects the restored tab state.
+      // Re-run: checkCurrentTabForYoutube() ran earlier and missed this tab
+      // becoming the active gemini tab
       gemini.checkCurrentTabForYoutube();
     }
   });

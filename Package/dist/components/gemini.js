@@ -139,9 +139,7 @@ class Gemini {
         const videoId = youtubeMatch[1];
         state.videoSummaryMode = Boolean(videoId);
 
-        // Scrape the video length in the background: it's only needed later
-        // for summarization, so don't make toggle visibility wait on this
-        // network fetch.
+        // Scrape length in the background; not needed until summarization runs
         this.scrapeLen(videoId)
           .then((videoLength) => {
             chrome.storage.local.set({
@@ -270,10 +268,7 @@ class Gemini {
     });
   }
 
-  // Strip decorative query params (timestamps like "&t=7s", playlist/session
-  // context, etc.) so the Gemini video-understanding API receives a clean,
-  // canonical YouTube URL. Falls back to the original URL if it doesn't
-  // match the expected watch/shorts pattern.
+  // Strip decorative query params so Gemini gets a canonical YouTube URL
   normalizeYoutubeUrl(url) {
     const match = url.match(/youtube\.com\/(watch\?v=|shorts\/)(.{11})/);
     if (!match) return url;
@@ -396,9 +391,8 @@ class Gemini {
     chrome.runtime.sendMessage(
       { action: "summarizeApi", text: content, apiKey: apiKey, url: url },
       (response) => {
-        // response is undefined when the message channel closes early
-        // (e.g. the service worker was killed); treat it as an error so
-        // the send button is re-enabled instead of throwing here.
+        // response is undefined if the channel closed early (e.g. SW killed);
+        // treat as an error so the send button gets re-enabled
         if (!response || response.error) {
           responseField.value = `API Error: ${response?.error || "No response from background"}`;
           this.ResponseErrorMsg(response);

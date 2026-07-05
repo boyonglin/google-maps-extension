@@ -267,11 +267,7 @@ describe("popup.js", () => {
     });
 
     test("popupLayout re-checks YouTube state after restoring the gemini tab", () => {
-      // Regression test: checkCurrentTabForYoutube() may have run earlier
-      // (from initializePopup) before showPage("gemini") marked the tab
-      // active, so it must be re-run once popupLayout restores that tab —
-      // otherwise the video summary toggle stays hidden until the user
-      // manually clicks away and back to the gemini tab.
+      // Must re-run since checkCurrentTabForYoutube() ran before this tab became active
       popup.initializeDependencies({
         state: mockState,
         gemini: mockGemini,

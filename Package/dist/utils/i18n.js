@@ -59,11 +59,8 @@
     return null;
   }
 
-  // Named placeholders (e.g. $checkedCount$) are declared per-message in the
-  // "placeholders" map and point at a positional token (e.g. "$1"). Chrome's
-  // real getMessage resolves name -> "$1" -> substitution value in that
-  // order; replicate it here instead of only handling "$1"/"$2" directly,
-  // otherwise messages that use named placeholders never get substituted.
+  // Resolve named placeholders (e.g. $checkedCount$) the same way
+  // chrome.i18n.getMessage does: name -> positional token -> value
   function resolveNamedPlaceholders(message, placeholders) {
     if (!placeholders) return message;
     return message.replace(/\$(\w+)\$/g, (match, name) => {

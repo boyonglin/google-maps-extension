@@ -136,9 +136,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 // Track the right-click event
 chrome.contextMenus.onClicked.addListener(async (info) => {
-  // This event can be the service worker's first wake-up: warm the cache
-  // before anything reads isIncognito, historyMax, or authUser, otherwise
-  // stale DEFAULTS would leak history or trim it to the default length.
+  // The service worker may have just woken up; warm the cache first.
   await ensureWarm();
   const selectedText = info.selectionText;
   if (info.menuItemId === "googleMapsSearch") {
@@ -153,7 +151,6 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
 // Track the shortcuts event
 chrome.commands.onCommand.addListener(async (command) => {
   Analytics.trackShortcut(command);
-  // Same first-wake-up concern as the context menu listener above.
   await ensureWarm();
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -502,7 +499,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
       })
       .catch((err) => {
-        // Without this the popup would wait forever on a missing API key
         sendResponse({ error: err.message });
       });
     return true; // Will respond asynchronously
@@ -521,8 +517,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
 const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest";
 
-// A successful verification is cached (keyed by a hash of the key) so
-// opening the popup doesn't hit the Gemini API every single time.
 const VERIFY_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 async function hashApiKey(apiKey) {
@@ -598,9 +592,6 @@ function callApi(prompt, content, apiKey, sendResponse) {
     .then((response) => response.json())
     .then((data) => {
       if (data.error) {
-        // Without this, an API-level error (e.g. an unsupported YouTube URL)
-        // only surfaced as the generic "geminiErrorMsg" in the UI with no
-        // way to find out what actually went wrong.
         console.error("Gemini API returned an error:", data.error.message);
         sendResponse({ error: data.error.message });
         return;

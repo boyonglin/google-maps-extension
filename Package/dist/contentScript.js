@@ -127,11 +127,8 @@ function getContent() {
   const summaryTopic = `Page's main topic: <title>${titleText}</title>`;
 
   if (isYouTubeWatchPage()) {
-    // On a watch page, document.body also holds unrelated content — the
-    // related-videos sidebar, comments, and YouTube's own auto-generated
-    // summary panel — that would otherwise leak into the prompt and pollute
-    // results with places mentioned in OTHER videos. Only use this video's
-    // own description.
+    // Use only the video's own description; document.body also holds the
+    // sidebar/comments/auto-summary of OTHER videos
     const descriptionElement = document.querySelector(
       "#description-inline-expander, div#description ytd-text-inline-expander"
     );

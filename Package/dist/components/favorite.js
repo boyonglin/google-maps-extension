@@ -16,9 +16,7 @@ class Favorite {
         const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
         const csv = "name\n" + trimmedFavorite.map((item) => `${escapeCSV(item)}`).join("\n");
 
-        // Prepend a UTF-8 BOM so Excel/Windows detect the encoding correctly;
-        // without it, non-ASCII names (e.g. Chinese/Japanese) render as "?"
-        // when the file is opened outside the browser.
+        // UTF-8 BOM so Excel renders non-ASCII names (e.g. Chinese/Japanese) correctly
         const blob = new Blob(["\uFEFF" + csv], {
           type: "text/csv; charset=utf-8;",
         });
@@ -48,8 +46,6 @@ class Favorite {
           const fileContent = event.target.result;
 
           if (fileContent && fileContent.length > 0) {
-            // Parse CSV rows (quote-aware, so exported names containing
-            // commas, quotes, or newlines round-trip unchanged)
             const rows = this.parseCSV(fileContent);
             importedData = rows
               .slice(1) // drop the "name" header row
@@ -58,12 +54,8 @@ class Favorite {
           }
 
           chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-            // Merge with the existing list instead of replacing it, so
-            // importing a CSV (e.g. a shared list, or an accidentally
-            // empty/malformed file) never destroys favorites that aren't
-            // in the file. Dedupe against existing names (ignoring the
-            // " @clue" suffix) so re-importing the same export doesn't
-            // create duplicate entries.
+            // Merge with the existing list (don't overwrite); dedupe by name,
+            // ignoring the " @clue" suffix
             const existingList = Array.isArray(favoriteList) ? favoriteList : [];
             const existingNames = new Set(existingList.map((item) => item.split(" @")[0]));
             const newNames = [];
@@ -140,9 +132,7 @@ class Favorite {
     });
   }
 
-  // Minimal RFC 4180-style parser: handles quoted fields with embedded
-  // commas, doubled quotes, and newlines — the same cases escapeCSV in the
-  // export path produces.
+  // Minimal RFC 4180-style parser matching what escapeCSV produces on export
   parseCSV(content) {
     const rows = [];
     let row = [];
@@ -184,7 +174,6 @@ class Favorite {
       rows.push(row);
     }
 
-    // Drop rows that are entirely empty (e.g. blank lines)
     return rows.filter((r) => r.some((f) => f.trim().length > 0));
   }
 

@@ -11,10 +11,8 @@ window.TME = {
     const defaultX = window.innerWidth - 480;
     const defaultY = 50;
 
-    // Collects every document/window listener registered below so eject()
-    // can remove them all; otherwise each on/off toggle leaks a set. Kept on
-    // window (like TMEhasRun) so a re-injected script can still abort the
-    // previous instance's listeners.
+    // Abort any previous instance's listeners; eject() uses this to remove
+    // them all, and it's kept on window so a re-injected script can find it
     if (window.TMEcleanup) {
       window.TMEcleanup.abort();
     }
