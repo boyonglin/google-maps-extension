@@ -5,7 +5,7 @@ module.exports = {
     'Package/dist/hooks/popupState.js',
     'Package/dist/hooks/backgroundState.js',
     'Package/dist/utils/crypto.js',
-    'Package/dist/utils/appSecret.js',
+    'Package/dist/utils/attachMapLink.js',
     'Package/dist/contentScript.js',
     'Package/dist/components/menu.js',
     'Package/dist/components/remove.js',
