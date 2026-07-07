@@ -60,9 +60,17 @@ class Onboarding {
    * `next()` so the real history click handler never adds it to favorites.
    */
   injectDemoHistoryItem() {
+    if (this.store?.dispatch) {
+      this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
+      // History.render() rebuilds the list on every dispatch, so a listener
+      // attached to this specific <li> would be discarded on the next render.
+      // History's own container-level mousedown/contextmenu listeners swallow
+      // clicks on .onboarding-demo-item instead (see history.js).
+      return;
+    }
+
     const container = document.getElementById("searchHistoryList");
     if (!container) return;
-
     let ul = container.querySelector("ul");
     if (!ul) {
       ul = document.createElement("ul");
@@ -70,20 +78,17 @@ class Onboarding {
       ul.dataset.onboardingCreated = "true";
       container.appendChild(ul);
     }
-
     const placeName = chrome?.i18n?.getMessage?.("onboardingDemoPlace") || "Eiffel Tower";
-
     const li = document.createElement("li");
     li.className = `${this.DEMO_ITEM_CLASS} list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center text-break`;
-
     const span = document.createElement("span");
     span.textContent = placeName;
-    li.appendChild(span);
-
     const icon = document.createElement("i");
     icon.className = "bi bi-patch-plus-fill";
-    icon.title = chrome?.i18n?.getMessage?.("plusLabel") || "";
-    li.appendChild(icon);
+    li.append(span, icon);
+    ul.appendChild(li);
+    const empty = document.getElementById("emptyMessage");
+    if (empty) empty.style.display = "none";
 
     // Swallow real clicks so the existing history listener does not persist
     // the demo item to chrome.storage favorites. Clicking the icon advances.
@@ -93,31 +98,20 @@ class Onboarding {
       if (event.target.classList.contains("bi")) this.next();
     };
     ["mousedown", "click", "contextmenu"].forEach((evt) => li.addEventListener(evt, swallow, true));
-
-    ul.appendChild(li);
-
-    const emptyMessage = document.getElementById("emptyMessage");
-    if (emptyMessage && emptyMessage.style.display !== "none") {
-      emptyMessage.dataset.onboardingHidden = "true";
-      emptyMessage.style.display = "none";
-    }
   }
 
   removeDemoHistoryItem() {
+    if (this.store?.dispatch) {
+      this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: false });
+      return;
+    }
     const container = document.getElementById("searchHistoryList");
     if (!container) return;
-
     container.querySelectorAll(`.${this.DEMO_ITEM_CLASS}`).forEach((el) => el.remove());
-
-    // If we created the <ul> ourselves and it is now empty, drop it too.
     const ul = container.querySelector("ul[data-onboarding-created='true']");
     if (ul && ul.children.length === 0) ul.remove();
-
-    const emptyMessage = document.getElementById("emptyMessage");
-    if (emptyMessage && emptyMessage.dataset.onboardingHidden === "true") {
-      emptyMessage.style.display = "block";
-      delete emptyMessage.dataset.onboardingHidden;
-    }
+    const empty = document.getElementById("emptyMessage");
+    if (empty) empty.style.display = "block";
   }
 
   /**

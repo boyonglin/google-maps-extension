@@ -36,6 +36,9 @@ export const DEFAULTS = Object.freeze({
   isIncognito: false,
   videoSummaryToggle: false,
   historyMax: 10,
+  summaryList: [],
+  timestamp: null,
+  lastActiveTab: "history",
 });
 
 let cache = null;

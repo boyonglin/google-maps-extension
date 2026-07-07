@@ -307,6 +307,9 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
         isIncognito: false,
         videoSummaryToggle: false,
         historyMax: 10,
+        summaryList: [],
+        timestamp: null,
+        lastActiveTab: "history",
       });
     });
 

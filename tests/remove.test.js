@@ -46,6 +46,7 @@ describe("Remove Component", () => {
     global.searchButtonGroup = document.getElementById("searchButtonGroup");
     global.exportButtonGroup = document.getElementById("exportButtonGroup");
     global.deleteButtonGroup = document.getElementById("deleteButtonGroup");
+    global.geminiButtonGroup = document.getElementById("geminiButtonGroup");
     global.deleteButtonSpan = document.querySelector("#deleteButton span");
     global.searchHistoryListContainer = document.getElementById("searchHistoryList");
     global.favoriteListContainer = document.getElementById("favoriteList");

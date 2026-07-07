@@ -62,6 +62,13 @@ class Modal {
       const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
       chrome.storage.local.set({ geminiApiKey: encrypted });
 
+      // Popup production flow delegates API state to the Gemini controller/store.
+      // Standalone component consumers keep the legacy fallback below.
+      if (this.onApiKeyChange) {
+        this.onApiKeyChange(apiKey);
+        return;
+      }
+
       if (!apiKey) {
         apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
         geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
@@ -103,6 +110,10 @@ class Modal {
 
     this._setupResetButton(apiInput, "geminiApiKey", () => {
       apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+      if (this.onApiKeyChange) {
+        this.onApiKeyChange("");
+        return;
+      }
       geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
       sendButton.disabled = true;
     });

@@ -1,8 +1,7 @@
 // Page
-const pageHistory = document.getElementsByClassName("page-H");
-const pageFavorite = document.getElementsByClassName("page-F");
-const pageDelete = document.getElementsByClassName("page-D");
-const pageGemini = document.getElementsByClassName("page-G");
+const historyPanel = document.getElementById("historyPanel");
+const favoritePanel = document.getElementById("favoritePanel");
+const geminiPanel = document.getElementById("geminiPanel");
 
 // Context
 const searchInput = document.getElementById("searchInput");
@@ -36,6 +35,7 @@ const videoSummaryButton = document.getElementById("videoSummaryButton");
 const searchButtonGroup = document.getElementById("searchButtonGroup");
 const deleteButtonGroup = document.getElementById("deleteButtonGroup");
 const exportButtonGroup = document.getElementById("exportButtonGroup");
+const geminiButtonGroup = document.getElementById("geminiButtonGroup");
 const clearButton = document.getElementById("clearButton");
 const cancelButton = document.getElementById("cancelButton");
 const deleteButton = document.getElementById("deleteButton");
@@ -68,7 +68,9 @@ const paymentSpan = document.querySelector("#paymentButton > span");
 
 // Import Scripts
 let state, remove, favorite, history, gemini, modal, payment, onboarding;
-let lastGeminiApiKey = "";
+let unsubscribeState = null;
+let hydrationPromise = null;
+let iframeRevealed = false;
 
 function initializeDependencies(deps = {}) {
   state = deps.state || new State();
@@ -79,6 +81,23 @@ function initializeDependencies(deps = {}) {
   modal = deps.modal || new Modal();
   payment = deps.payment || new Payment();
   onboarding = deps.onboarding || (typeof Onboarding !== "undefined" ? new Onboarding() : null);
+  history.favoriteComponent = favorite;
+  gemini.favoriteComponent = favorite;
+  gemini.store = state;
+  // Let Modal delegate directly to the Gemini controller instead of relying
+  // solely on the storage.onChanged round-trip to update the API-key UI.
+  modal.onApiKeyChange = (apiKey) => gemini.fetchAPIKey(apiKey);
+  if (onboarding) onboarding.store = state;
+
+  // renderPopup must be subscribed to whichever `state` is active. Re-running
+  // this wires it to a newly-provided state instance instead of leaving a
+  // stale subscription on the previous one. Guarded since callers may pass a
+  // minimal/mock state object with no subscribe() method.
+  if (unsubscribeState) unsubscribeState();
+  if (typeof state.subscribe === "function") {
+    unsubscribeState = state.subscribe(renderPopup);
+  }
+  previousPopupSnapshot = null;
 
   return { state, remove, favorite, history, gemini, modal, payment, onboarding };
 }
@@ -114,12 +133,6 @@ function initializePopup() {
 
   searchInput.focus();
 
-  // Optimize by running heavy operations asynchronously
-  requestAnimationFrame(() => {
-    popupLayout();
-    Promise.all([fetchData(), gemini.checkCurrentTabForYoutube()]);
-  });
-
   // Run payment check in background to avoid blocking UI
   if ("requestIdleCallback" in window) {
     requestIdleCallback(() => {
@@ -135,9 +148,11 @@ function initializePopup() {
   gemini.addGeminiPageListener();
   modal.addModalListener();
 
-  if (onboarding && typeof onboarding.maybeStart === "function") {
-    onboarding.maybeStart();
-  }
+  requestAnimationFrame(() => {
+    hydrationPromise = hydratePopup().then(() => {
+      if (onboarding && typeof onboarding.maybeStart === "function") onboarding.maybeStart();
+    });
+  });
 
   // Fix: "Blocked aria-hidden..."
   document.addEventListener("hide.bs.modal", function () {
@@ -157,45 +172,8 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-document.addEventListener("readystatechange", () => {
-  if (document.readyState === "complete") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (!tabs.length) return;
-      chrome.tabs.sendMessage(tabs[0].id, {
-        action: "finishIframe",
-      });
-    });
-  }
-});
-
 function popupLayout() {
-  chrome.storage.local.get("lastActiveTab", (result) => {
-    const lastTab = ["history", "favorite", "gemini"].includes(result?.lastActiveTab)
-      ? result.lastActiveTab
-      : "history";
-
-    showPage(lastTab);
-    checkTextOverflow();
-
-    if (window.Analytics) {
-      window.Analytics.trackPageView(lastTab);
-    }
-
-    if (lastTab === "favorite") {
-      getWarmState().then(({ favoriteList = [] }) => {
-        favorite.updateFavorite(favoriteList);
-        state.hasFavorite = favoriteList.length > 0;
-        favoriteEmptyMessage.style.display = favoriteList.length ? "none" : "block";
-      });
-    } else if (lastTab === "gemini") {
-      deleteListButton.disabled = true;
-      gemini.clearExpiredSummary();
-
-      // Re-run: checkCurrentTabForYoutube() ran earlier and missed this tab
-      // becoming the active gemini tab
-      gemini.checkCurrentTabForYoutube();
-    }
-  });
+  return hydratePopup();
 }
 
 // Check if the text overflows the button since locale
@@ -260,56 +238,59 @@ async function getWarmState(retries = 3, delay = 200) {
 }
 
 async function fetchData() {
-  searchHistoryListContainer.innerHTML = "";
+  return hydratePopup();
+}
 
-  const {
-    searchHistoryList = [],
-    favoriteList = [],
-    geminiApiKey = "",
-    startAddr = "",
-    authUser = 0,
-    isIncognito = false,
-    videoSummaryToggle = false,
-    historyMax = 10,
-  } = await getWarmState();
+async function hydratePopup() {
+  // Independent of each other: run together instead of serializing, so the
+  // youtube-tab probe doesn't add its own latency on top of getWarmState().
+  const [warmState] = await Promise.all([getWarmState(), gemini.checkCurrentTabForYoutube()]);
+  const payload = {
+    searchHistoryList: warmState.searchHistoryList || [],
+    favoriteList: warmState.favoriteList || [],
+    summaryList: warmState.summaryList || [],
+    timestamp: warmState.timestamp ?? null,
+    lastActiveTab: warmState.lastActiveTab,
+    geminiApiKey: warmState.geminiApiKey || "",
+    videoSummaryToggle: Boolean(warmState.videoSummaryToggle),
+    now: Date.now(),
+  };
 
-  if (searchHistoryList.length) {
-    emptyMessage.style.display = "none";
-    state.hasHistory = true;
-    clearButton.disabled = false;
+  const hadPersistedSummary = payload.summaryList.length > 0 || payload.timestamp != null;
+  const timestamp = Number(payload.timestamp);
+  const persistedSummaryIsValid = State.isSummaryFresh(payload.summaryList, timestamp, payload.now);
 
-    const ul = document.createElement("ul");
-    ul.className = "list-group d-flex flex-column-reverse";
+  state.dispatch({ type: "HYDRATE", payload });
 
-    const frag = document.createDocumentFragment();
-    searchHistoryList.forEach((item) =>
-      frag.appendChild(history.createListItem(item, favoriteList))
-    );
-    ul.appendChild(frag);
-    searchHistoryListContainer.appendChild(ul);
-
-    const first = searchHistoryListContainer.querySelector(
-      ".list-group .list-group-item:first-child"
-    );
-    first?.classList.remove("mb-3");
-  } else {
-    emptyMessage.style.display = "block";
-    state.hasHistory = false;
-    clearButton.disabled = true;
+  if (hadPersistedSummary && !persistedSummaryIsValid) {
+    chrome.storage.local.remove(["summaryList", "timestamp"]);
   }
 
-  remove.attachCheckboxEventListener(searchHistoryListContainer);
-
-  state.hasInit ? measureContentSizeLast() : retryMeasureContentSize();
-
-  lastGeminiApiKey = geminiApiKey;
-  gemini.fetchAPIKey(geminiApiKey);
-  modal.updateOptionalModal(startAddr, authUser, historyMax);
-  modal.updateIncognitoModal(!!isIncognito);
-  state.localVideoToggle = videoSummaryToggle;
-  videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
-
+  gemini.fetchAPIKey(payload.geminiApiKey);
+  modal.updateOptionalModal(
+    warmState.startAddr || "",
+    warmState.authUser || 0,
+    warmState.historyMax || 10
+  );
+  modal.updateIncognitoModal(Boolean(warmState.isIncognito));
   state.buildMapsButtonUrl();
+
+  checkTextOverflow();
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  measureContentSize();
+  revealIframe();
+
+  if (window.Analytics) window.Analytics.trackPageView(state.getSnapshot().activeTab);
+  return state.getSnapshot();
+}
+
+function revealIframe() {
+  if (iframeRevealed) return;
+  iframeRevealed = true;
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs.length) return;
+    chrome.tabs.sendMessage(tabs[0].id, { action: "finishIframe" });
+  });
 }
 
 searchInput.addEventListener("keydown", (event) => {
@@ -354,40 +335,62 @@ mapsButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackFeatureClick("open_maps", "mapsButton");
 });
 
-function showPage(tabName) {
-  const tabMap = {
-    history: pageHistory,
-    favorite: pageFavorite,
-    gemini: pageGemini,
-    delete: pageDelete,
-  };
+// Tracks the last snapshot renderPopup saw, so a dispatch that only touches
+// one slice of state (e.g. VIDEO_CONTEXT_REQUEST) doesn't force every
+// component to tear down and rebuild its DOM.
+let previousPopupSnapshot = null;
 
-  Object.keys(tabMap).forEach((key) => {
-    for (let i = 0; i < tabMap[key].length; i++) {
-      tabMap[key][i].classList[key === tabName ? "remove" : "add"]("d-none");
-    }
+function renderPopup(snapshot = state.getSnapshot(), action = null, force = false) {
+  const prev = previousPopupSnapshot;
+  previousPopupSnapshot = snapshot;
+  const first = force || prev === null;
+
+  const ready = snapshot.boot === "ready";
+  const tab = snapshot.activeTab;
+  const panels = { history: historyPanel, favorite: favoritePanel, gemini: geminiPanel };
+
+  Object.entries(panels).forEach(([name, panel]) => {
+    if (panel) panel.classList.toggle("d-none", !ready || name !== tab);
   });
 
-  searchHistoryButton.classList.toggle("active-button", tabName === "history");
-  favoriteListButton.classList.toggle("active-button", tabName === "favorite");
-  geminiSummaryButton.classList.toggle("active-button", tabName === "gemini");
-  deleteListButton.classList.toggle("active-button", tabName === "delete");
+  searchHistoryButton.classList.toggle("active-button", tab === "history");
+  favoriteListButton.classList.toggle("active-button", tab === "favorite");
+  geminiSummaryButton.classList.toggle("active-button", tab === "gemini");
 
-  if (tabName === "history" || tabName === "favorite") {
-    videoSummaryButton.classList.add("d-none");
+  const subtitleKeys = {
+    history: "searchHistorySubtitle",
+    favorite: "favoriteListSubtitle",
+    gemini: "geminiSummarySubtitle",
+  };
+  subtitleElement.textContent = chrome.i18n.getMessage(subtitleKeys[tab]);
+
+  const historyChanged = first || snapshot.history !== prev.history;
+  const favoriteChanged = first || snapshot.favorite !== prev.favorite;
+  const deleteModeChanged = first || snapshot.deleteMode !== prev.deleteMode;
+  const onboardingChanged = first || snapshot.onboarding !== prev.onboarding;
+  const summaryChanged = first || snapshot.summary !== prev.summary;
+  const apiChanged = first || snapshot.api !== prev.api;
+  const videoChanged = first || snapshot.video !== prev.video;
+  const activeTabChanged = first || snapshot.activeTab !== prev.activeTab;
+
+  if (historyChanged || deleteModeChanged || favoriteChanged || onboardingChanged) {
+    history.render(snapshot);
+  }
+  if (favoriteChanged || deleteModeChanged) {
+    favorite.render(snapshot);
+  }
+  if (summaryChanged || apiChanged || videoChanged || favoriteChanged) {
+    gemini.render(snapshot, { summaryChanged });
+  }
+  if (deleteModeChanged || activeTabChanged) {
+    remove.render(snapshot);
   }
 
-  switch (tabName) {
-    case "history":
-      subtitleElement.textContent = chrome.i18n.getMessage("searchHistorySubtitle");
-      break;
-    case "favorite":
-      subtitleElement.textContent = chrome.i18n.getMessage("favoriteListSubtitle");
-      break;
-    case "gemini":
-      subtitleElement.textContent = chrome.i18n.getMessage("geminiSummarySubtitle");
-      break;
-  }
+  deleteListButton.disabled = tab === "gemini";
+  if (tab !== "gemini") videoSummaryButton.classList.add("d-none");
+  scheduleContentMeasurement(
+    action?.type === "SUMMARY_SUCCESS" ? snapshot.summary.originTabId : null
+  );
 }
 
 apiButton.addEventListener("click", () => {
@@ -401,72 +404,54 @@ optionalButton.addEventListener("click", () => {
 searchHistoryButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("history");
   chrome.storage.local.set({ lastActiveTab: "history" });
-  showPage("history");
-
-  if (!state.hasHistory) {
-    emptyMessage.style.display = "block";
-    clearButton.disabled = true;
-  } else {
-    emptyMessage.style.display = "none";
-    clearButton.disabled = false;
-  }
-
-  deleteListButton.disabled = false;
-
-  measureContentSize();
-  remove.updateInput();
+  state.dispatch({ type: "SET_ACTIVE_TAB", tab: "history" });
 });
 
 favoriteListButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("favorite");
   chrome.storage.local.set({ lastActiveTab: "favorite" });
-  getWarmState().then(({ favoriteList = [] }) => {
-    favorite.updateFavorite(favoriteList);
-  });
-
-  showPage("favorite");
-
-  if (!state.hasFavorite) {
-    favoriteEmptyMessage.style.display = "block";
-  } else {
-    favoriteEmptyMessage.style.display = "none";
-  }
-
-  deleteListButton.disabled = false;
-
-  remove.updateInput();
-  state.favoriteListChanged = false;
+  state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
 });
 
 geminiSummaryButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("gemini");
   chrome.storage.local.set({ lastActiveTab: "gemini" });
-  showPage("gemini");
-  deleteListButton.disabled = true;
-
-  gemini.checkCurrentTabForYoutube();
-
+  state.dispatch({ type: "SET_ACTIVE_TAB", tab: "gemini" });
   gemini.clearExpiredSummary();
-  state.summaryListChanged = false;
+  gemini.checkCurrentTabForYoutube();
 });
 
-chrome.storage.onChanged.addListener((changes) => {
-  state.historyListChanged = changes.searchHistoryList;
-  state.favoriteListChanged = changes.favoriteList;
-  state.summaryListChanged = changes.summaryList;
-
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName && areaName !== "local") return;
   const incognitoChange = changes.isIncognito;
 
-  if (state.favoriteListChanged && state.favoriteListChanged.newValue) {
-    favorite.updateFavorite(state.favoriteListChanged.newValue);
+  if (changes.favoriteList) {
+    state.dispatch({ type: "FAVORITE_SET", items: changes.favoriteList.newValue || [] });
   }
 
-  if (state.historyListChanged && state.historyListChanged.newValue) {
-    const newList = state.historyListChanged.newValue;
-    const oldList = state.historyListChanged.oldValue || [];
+  if (changes.searchHistoryList) {
+    state.dispatch({ type: "HISTORY_SET", items: changes.searchHistoryList.newValue || [] });
+  }
 
-    if (newList.length >= oldList.length) {
-      fetchData(state.hasInit);
+  if (changes.summaryList) {
+    state.dispatch({
+      type: "SUMMARY_STORAGE_SET",
+      items: changes.summaryList.newValue || [],
+      timestamp: changes.timestamp?.newValue ?? state.getSnapshot().summary.timestamp,
+    });
+  }
+
+  if (changes.videoSummaryToggle) {
+    state.dispatch({ type: "VIDEO_TOGGLE", enabled: changes.videoSummaryToggle.newValue });
+  }
+
+  if (changes.geminiApiKey) {
+    if (!changes.geminiApiKey.newValue) {
+      gemini.fetchAPIKey("");
+    } else {
+      chrome.runtime.sendMessage({ action: "getApiKey" }, ({ apiKey = "" } = {}) => {
+        gemini.fetchAPIKey(apiKey);
+      });
     }
   }
 
@@ -503,31 +488,32 @@ applyI18n();
 
 // Refresh dynamic strings (set imperatively, not via [data-locale])
 // after an in-place language swap from the settings modal.
-window.addEventListener("i18n:changed", () => {
-  const subtitleByTab = {
-    searchHistoryButton: "searchHistorySubtitle",
-    favoriteListButton: "favoriteListSubtitle",
-    geminiSummaryButton: "geminiSummarySubtitle",
-  };
-  const activeTab = document.querySelector(".active-button");
-  const key = activeTab && subtitleByTab[activeTab.id];
-  if (key && subtitleElement) {
-    const v = chrome.i18n.getMessage(key);
-    if (v) subtitleElement.textContent = v;
+// Tracked on window (not a module-scope const) so re-requiring this script
+// (e.g. across Jest tests) replaces the previous listener instead of
+// stacking a new one on top of it every time.
+if (window.__popupI18nChangedHandler) {
+  window.removeEventListener("i18n:changed", window.__popupI18nChangedHandler);
+}
+window.__popupI18nChangedHandler = () => {
+  // force: nothing in the snapshot changed, but every getMessage() result did.
+  if (state?.getSnapshot) renderPopup(state.getSnapshot(), null, true);
+  // Re-localize the API key placeholder (set imperatively, not via [data-locale]).
+  if (gemini) {
+    chrome.runtime.sendMessage({ action: "getApiKey" }, ({ apiKey = "" } = {}) => {
+      gemini?.fetchAPIKey(apiKey);
+    });
   }
-  // Re-run fetchAPIKey to update imperative locales.
-  if (gemini) gemini.fetchAPIKey(lastGeminiApiKey);
   // Reset buttons to their default width
   [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {
     btn.classList.remove("w-auto");
     btn.classList.add("w-25");
   });
-  // Re-measure after the new strings paint
-  requestAnimationFrame(() => {
-    checkTextOverflow();
-    measureContentSize();
-  });
-});
+  // Re-measure after the new strings paint, through the same coalescing
+  // scheduler renderPopup uses instead of a raw, uncoordinated rAF.
+  requestAnimationFrame(checkTextOverflow);
+  scheduleContentMeasurement();
+};
+window.addEventListener("i18n:changed", window.__popupI18nChangedHandler);
 
 // Handle IME composition for CJK input
 let isComposing = false;
@@ -554,6 +540,19 @@ const configureElements = document.querySelectorAll(".modal-body p");
 
 // Resize utils
 const body = document.body;
+let measurementFrame = null;
+let measurementTargetTabId = null;
+
+function scheduleContentMeasurement(targetTabId = null) {
+  if (targetTabId != null) measurementTargetTabId = targetTabId;
+  if (measurementFrame != null) cancelAnimationFrame(measurementFrame);
+  measurementFrame = requestAnimationFrame(() => {
+    measurementFrame = null;
+    const target = measurementTargetTabId;
+    measurementTargetTabId = null;
+    measureContentSize(false, target);
+  });
+}
 
 function currentDimensions() {
   return {
@@ -582,18 +581,17 @@ function retryMeasureContentSize() {
     setTimeout(retryMeasureContentSize, 100);
   } else {
     measureContentSize();
-    state.hasInit = true;
   }
 }
 
-function measureContentSize(summary = false) {
+function measureContentSize(summary = false, targetTabId = null) {
   const { width: currentWidth, height: currentHeight } = currentDimensions();
 
   if (currentWidth !== state.previousWidth || currentHeight !== state.previousHeight) {
     state.updateDimensions(currentWidth, currentHeight);
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      let contentTabId = summary ? state.summarizedTabId : tabs[0]?.id;
+      let contentTabId = targetTabId ?? (summary ? state.summarizedTabId : tabs[0]?.id);
 
       if (contentTabId == null) return;
 
@@ -671,7 +669,6 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 
   if (message.action === "checkYoutube") {
-    state.videoSummaryMode = undefined;
     gemini.checkCurrentTabForYoutube();
   }
 });
@@ -681,7 +678,8 @@ if (typeof module !== "undefined" && module.exports) {
     initializeDependencies,
     initializePopup,
     popupLayout,
-    showPage,
+    hydratePopup,
+    renderPopup,
     checkTextOverflow,
     getWarmState,
     fetchData,

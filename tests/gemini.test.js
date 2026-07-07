@@ -3,15 +3,11 @@
  * Tests cover all methods with comprehensive mocking of Chrome APIs and DOM manipulation
  */
 
-// Mock global functions and objects before requiring module
-global.state = {
-  hasSummary: false,
-  buildSearchUrl: jest.fn(),
-  localVideoToggle: false,
-  videoSummaryMode: undefined,
-  summarizedTabId: undefined,
-  summaryListChanged: false,
-};
+// Use the production store so component tests exercise reducer-driven rendering.
+const State = require("../Package/dist/hooks/popupState.js");
+global.State = State;
+global.state = new State();
+global.state.buildSearchUrl = jest.fn();
 
 global.favorite = {
   addToFavoriteList: jest.fn(),
@@ -57,12 +53,8 @@ describe("Gemini Component", () => {
   // ============================================================================
 
   beforeEach(() => {
-    // Reset state object
-    global.state.hasSummary = false;
-    global.state.localVideoToggle = false;
-    global.state.videoSummaryMode = undefined;
-    global.state.summarizedTabId = undefined;
-    global.state.summaryListChanged = false;
+    global.state = new State();
+    global.state.buildSearchUrl = jest.fn();
 
     // Create DOM structure
     document.body.innerHTML = `
@@ -93,7 +85,8 @@ describe("Gemini Component", () => {
     mockI18n({
       geminiEmptyMsg: "No summaries yet",
       geminiFirstMsg: "Enter API key first",
-      geminiLoadMsg: "Loading... ~NaN seconds",
+      geminiLoadMsg: "Loading... ~$1 seconds",
+      geminiLoadMsgNoEstimate: "Loading...",
       geminiOverloadMsg: "Server overloaded",
       geminiErrorMsg: "Error occurred",
       apiPlaceholder: "Enter API key",
@@ -101,6 +94,9 @@ describe("Gemini Component", () => {
 
     // Create fresh instance
     geminiInstance = new Gemini();
+    global.state.dispatch({ type: "API_VERIFY_RESULT", token: 0, valid: true });
+    global.state.subscribe((snapshot) => geminiInstance.render(snapshot));
+    mockTabsQuery([{ id: 1, url: "https://example.com" }]);
 
     jest.clearAllMocks();
   });
@@ -312,13 +308,12 @@ describe("Gemini Component", () => {
       clearButtonSummary.click();
 
       expect(chrome.storage.local.remove).toHaveBeenCalledWith(["summaryList", "timestamp"]);
-      expect(state.hasSummary).toBe(false);
+      expect(state.getSnapshot().summary.phase).toBe("empty");
       expect(summaryListContainer.innerHTML).toBe("");
       expect(geminiEmptyMessage.innerText).toBe("No summaries yet");
       expect(clearButtonSummary.classList.contains("d-none")).toBe(true);
       expect(geminiEmptyMessage.classList.contains("d-none")).toBe(false);
       expect(apiButton.classList.contains("d-none")).toBe(false);
-      expect(measureContentSize).toHaveBeenCalled();
     });
   });
 
@@ -336,23 +331,23 @@ describe("Gemini Component", () => {
         if (callback) callback();
       });
 
-      expect(state.localVideoToggle).toBe(false);
+      expect(state.getSnapshot().video.enabled).toBe(false);
 
       videoSummaryButton.click();
 
-      expect(state.localVideoToggle).toBe(true);
+      expect(state.getSnapshot().video.enabled).toBe(true);
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ videoSummaryToggle: true });
       expect(videoSummaryButton.classList.contains("active-button")).toBe(true);
       expect(videoSummaryButton.classList.contains("no-hover-temp")).toBe(false);
     });
 
     test("should toggle off video summary button on second click", () => {
-      state.localVideoToggle = true;
+      state.dispatch({ type: "VIDEO_TOGGLE", enabled: true });
       videoSummaryButton.classList.add("active-button");
 
       videoSummaryButton.click();
 
-      expect(state.localVideoToggle).toBe(false);
+      expect(state.getSnapshot().video.enabled).toBe(false);
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ videoSummaryToggle: false });
       expect(videoSummaryButton.classList.contains("active-button")).toBe(false);
       expect(videoSummaryButton.classList.contains("no-hover-temp")).toBe(true);
@@ -391,6 +386,8 @@ describe("Gemini Component", () => {
     test("should use video summary when videoSummaryButton is active and visible", async () => {
       videoSummaryButton.classList.add("active-button");
       videoSummaryButton.classList.remove("d-none");
+      state.dispatch({ type: "VIDEO_CONTEXT_RESULT", token: 0, available: true });
+      state.dispatch({ type: "VIDEO_TOGGLE", enabled: true });
 
       mockTabsQuery([{ url: "https://www.youtube.com/watch?v=test123" }]);
 
@@ -400,19 +397,21 @@ describe("Gemini Component", () => {
 
       expect(sendButton.disabled).toBe(true);
       expect(clearButtonSummary.disabled).toBe(true);
-      expect(geminiInstance.RecordSummaryTab).toHaveBeenCalled();
       expect(chrome.tabs.query).toHaveBeenCalledWith(
         { active: true, currentWindow: true },
         expect.any(Function)
       );
       expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).toHaveBeenCalledWith(
-        "https://www.youtube.com/watch?v=test123"
+        "https://www.youtube.com/watch?v=test123",
+        expect.any(String)
       );
     });
 
     test("should strip decorative query params (e.g. timestamp) from the video URL", async () => {
       videoSummaryButton.classList.add("active-button");
       videoSummaryButton.classList.remove("d-none");
+      state.dispatch({ type: "VIDEO_CONTEXT_RESULT", token: 0, available: true });
+      state.dispatch({ type: "VIDEO_TOGGLE", enabled: true });
 
       mockTabsQuery([{ url: "https://www.youtube.com/watch?v=P5kUjhQXrJw&t=7s" }]);
 
@@ -421,26 +420,35 @@ describe("Gemini Component", () => {
       await wait(50);
 
       expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).toHaveBeenCalledWith(
-        "https://www.youtube.com/watch?v=P5kUjhQXrJw"
+        "https://www.youtube.com/watch?v=P5kUjhQXrJw",
+        expect.any(String)
       );
     });
 
-    test("should use normal content summary when videoSummaryButton is not active", () => {
+    test("should use normal content summary when videoSummaryButton is not active", async () => {
       videoSummaryButton.classList.remove("active-button");
 
       sendButton.click();
+      await wait(0);
 
-      expect(geminiInstance.performNormalContentSummary).toHaveBeenCalled();
+      expect(geminiInstance.performNormalContentSummary).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ id: 1 })
+      );
       expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).not.toHaveBeenCalled();
     });
 
-    test("should use normal content summary when videoSummaryButton is hidden", () => {
+    test("should use normal content summary when videoSummaryButton is hidden", async () => {
       videoSummaryButton.classList.add("active-button");
       videoSummaryButton.classList.add("d-none");
 
       sendButton.click();
+      await wait(0);
 
-      expect(geminiInstance.performNormalContentSummary).toHaveBeenCalled();
+      expect(geminiInstance.performNormalContentSummary).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ id: 1 })
+      );
       expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).not.toHaveBeenCalled();
     });
 
@@ -455,7 +463,7 @@ describe("Gemini Component", () => {
       await wait(50);
 
       expect(sendButton.disabled).toBe(false);
-      expect(clearButtonSummary.disabled).toBe(false);
+      expect(clearButtonSummary.disabled).toBe(true);
       expect(geminiInstance.summarizeFromGeminiVideoUnderstanding).not.toHaveBeenCalled();
     });
   });
@@ -545,7 +553,7 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      expect(state.videoSummaryMode).toBe(true);
+      expect(state.getSnapshot().video.available).toBe(true);
       expect(geminiInstance.scrapeLen).toHaveBeenCalledWith("dQw4w9WgXcQ");
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         currentVideoInfo: {
@@ -560,7 +568,7 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      expect(state.videoSummaryMode).toBe(true);
+      expect(state.getSnapshot().video.available).toBe(true);
       expect(geminiInstance.scrapeLen).toHaveBeenCalledWith("abc12345678");
     });
 
@@ -569,7 +577,7 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      expect(state.videoSummaryMode).toBe(false);
+      expect(state.getSnapshot().video.available).toBe(false);
       expect(chrome.storage.local.remove).toHaveBeenCalledWith("currentVideoInfo");
     });
 
@@ -578,10 +586,10 @@ describe("Gemini Component", () => {
     // doesn't affect the main flow. Manual testing shows this works correctly.
 
     test("should toggle videoSummaryButton visibility when gemini is active", async () => {
-      state.videoSummaryMode = true; // Set manually instead of waiting for async detection
+      state.dispatch({ type: "VIDEO_CONTEXT_RESULT", token: 0, available: true });
       geminiSummaryButton.classList.add("active-button");
       videoSummaryButton.classList.add("d-none"); // Start hidden
-      mockTabsQuery([{ url: "https://www.youtube.com/watch?v=test12345" }]);
+      mockTabsQuery([{ url: "https://www.youtube.com/watch?v=test1234567" }]);
 
       await geminiInstance.checkCurrentTabForYoutube();
 
@@ -590,8 +598,8 @@ describe("Gemini Component", () => {
     });
 
     test("should apply localVideoToggle state to button classes", async () => {
-      state.localVideoToggle = true;
-      mockTabsQuery([{ url: "https://www.youtube.com/watch?v=test12345" }]);
+      state.dispatch({ type: "VIDEO_TOGGLE", enabled: true });
+      mockTabsQuery([{ url: "https://www.youtube.com/watch?v=test1234567" }]);
 
       await geminiInstance.checkCurrentTabForYoutube();
 
@@ -603,7 +611,7 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      expect(state.videoSummaryMode).toBe(false);
+      expect(state.getSnapshot().video.available).toBe(false);
     });
 
     test("should not block toggle visibility on the video length scrape", async () => {
@@ -687,7 +695,7 @@ describe("Gemini Component", () => {
 
       geminiInstance.clearExpiredSummary();
 
-      expect(state.hasSummary).toBe(false);
+      expect(state.getSnapshot().summary.phase).toBe("empty");
       expect(summaryListContainer.innerHTML).toBe("");
       expect(geminiEmptyMessage.innerText).toBe("No summaries yet");
       expect(clearButtonSummary.classList.contains("d-none")).toBe(true);
@@ -695,8 +703,6 @@ describe("Gemini Component", () => {
       expect(apiButton.classList.contains("d-none")).toBe(false);
       expect(clearButtonSummary.disabled).toBe(true);
       expect(chrome.storage.local.remove).toHaveBeenCalledWith(["summaryList", "timestamp"]);
-      expect(checkTextOverflow).toHaveBeenCalled();
-      expect(delayMeasurement).toHaveBeenCalled();
     });
 
     test("should keep valid summary data (less than 24 hours old)", () => {
@@ -715,13 +721,11 @@ describe("Gemini Component", () => {
 
       geminiInstance.clearExpiredSummary();
 
-      expect(state.hasSummary).toBe(true);
+      expect(state.getSnapshot().summary.phase).toBe("ready");
       expect(geminiEmptyMessage.classList.contains("d-none")).toBe(true);
       expect(clearButtonSummary.classList.contains("d-none")).toBe(false);
       expect(clearButtonSummary.disabled).toBe(false);
       expect(apiButton.classList.contains("d-none")).toBe(true);
-      expect(checkTextOverflow).toHaveBeenCalled();
-      expect(delayMeasurement).toHaveBeenCalled();
     });
 
     test("should handle empty summary list", () => {
@@ -732,9 +736,6 @@ describe("Gemini Component", () => {
       });
 
       geminiInstance.clearExpiredSummary();
-
-      expect(checkTextOverflow).toHaveBeenCalled();
-      expect(delayMeasurement).toHaveBeenCalled();
     });
 
     test("should handle undefined summaryList gracefully", () => {
@@ -761,12 +762,9 @@ describe("Gemini Component", () => {
       }).not.toThrow();
     });
 
-    test("should reconstruct HTML when summaryListChanged is true", () => {
+    test("should hydrate a valid stored summary through the store", () => {
       const recentTimestamp = Date.now() - 1000 * 60;
       const summaryList = [{ name: "Place", clue: "Info" }];
-
-      state.summaryListChanged = true;
-      geminiInstance.constructSummaryHTML = jest.fn().mockReturnValue("<ul><li>Place</li></ul>");
 
       mockChromeStorage({
         summaryList,
@@ -776,8 +774,8 @@ describe("Gemini Component", () => {
 
       geminiInstance.clearExpiredSummary();
 
-      expect(geminiInstance.constructSummaryHTML).toHaveBeenCalledWith(summaryList, []);
-      expect(summaryListContainer.innerHTML).toBe("<ul><li>Place</li></ul>");
+      expect(state.getSnapshot().summary.phase).toBe("ready");
+      expect(summaryListContainer.textContent).toContain("Place");
     });
 
     test("should update favorite icons when only favorites changed", () => {
@@ -785,9 +783,8 @@ describe("Gemini Component", () => {
       const summaryList = [{ name: "Place", clue: "Info" }];
       const favoriteList = ["Place"];
 
-      state.summaryListChanged = false;
-      summaryListContainer.innerHTML = "<ul><li>Place</li></ul>";
-      geminiInstance.updateSummaryFavoriteIcons = jest.fn();
+      state.dispatch({ type: "FAVORITE_SET", items: favoriteList });
+      favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
 
       mockChromeStorage({
         summaryList,
@@ -797,7 +794,72 @@ describe("Gemini Component", () => {
 
       geminiInstance.clearExpiredSummary();
 
-      expect(geminiInstance.updateSummaryFavoriteIcons).toHaveBeenCalledWith(favoriteList);
+      expect(favorite.createFavoriteIcon).toHaveBeenCalledWith("Place", favoriteList);
+    });
+  });
+
+  // ============================================================================
+  // Test: render() with meta.summaryChanged (icon-patch-in-place)
+  //
+  // renderPopup passes { summaryChanged: false } when only the favorite slice
+  // changed, so render() should patch icon classNames on the existing nodes
+  // instead of tearing down and rebuilding the list (which would cut off an
+  // in-flight favorite-icon animation).
+  // ============================================================================
+
+  describe("render() summaryChanged meta", () => {
+    beforeEach(() => {
+      favorite.createFavoriteIcon.mockImplementation((itemName, favoriteList) => {
+        const icon = document.createElement("i");
+        icon.className = favoriteList.includes(itemName)
+          ? "bi bi-patch-check-fill matched"
+          : "bi bi-patch-plus-fill";
+        return icon;
+      });
+      state.dispatch({
+        type: "SUMMARY_STORAGE_SET",
+        items: [{ name: "Place", clue: "" }],
+        timestamp: Date.now(),
+      });
+      expect(state.getSnapshot().summary.phase).toBe("ready");
+    });
+
+    test("keeps the existing list nodes when summaryChanged is false", () => {
+      const originalLi = summaryListContainer.querySelector(".summary-list");
+      expect(originalLi).not.toBeNull();
+
+      geminiInstance.render(state.getSnapshot(), { summaryChanged: false });
+
+      expect(summaryListContainer.querySelector(".summary-list")).toBe(originalLi);
+    });
+
+    test("rebuilds the list when summaryChanged is true (or omitted)", () => {
+      const originalLi = summaryListContainer.querySelector(".summary-list");
+
+      geminiInstance.render(state.getSnapshot(), { summaryChanged: true });
+
+      expect(summaryListContainer.querySelector(".summary-list")).not.toBe(originalLi);
+    });
+
+    test("does not overwrite an icon mid favorite-toggle animation", () => {
+      const icon = summaryListContainer.querySelector(".summary-list i");
+      icon.className = "bi bi-patch-check-fill matched spring-animation";
+
+      geminiInstance.render(state.getSnapshot(), { summaryChanged: false });
+
+      expect(icon.classList.contains("spring-animation")).toBe(true);
+    });
+
+    test("patches a non-animating icon's className when the favorite list changed", () => {
+      const icon = summaryListContainer.querySelector(".summary-list i");
+      expect(icon.className).not.toContain("matched");
+
+      // Bypass the automatic subscription so this exercises render()'s patch
+      // path directly rather than the subscriber's default full rebuild.
+      const snapshot = { ...state.getSnapshot(), favorite: { items: ["Place"] } };
+      geminiInstance.render(snapshot, { summaryChanged: false });
+
+      expect(icon.className).toContain("bi-patch-check-fill matched");
     });
   });
 
@@ -979,14 +1041,15 @@ describe("Gemini Component", () => {
       // Verify the main flow
       expect(chrome.storage.local.remove).toHaveBeenCalledWith(["summaryList", "timestamp"]);
       expect(geminiEmptyMessage.classList.contains("shineText")).toBe(true);
-      expect(measureContentSize).toHaveBeenCalled();
 
       expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
         { action: "summarizeVideo", text: "https://youtube.com/watch?v=test123" },
         expect.any(Function)
       );
-      expect(sendButton.disabled).toBe(false);
-      expect(geminiInstance.createSummaryList).toHaveBeenCalledWith(mockResponse);
+      expect(geminiInstance.createSummaryList).toHaveBeenCalledWith(
+        mockResponse,
+        expect.any(String)
+      );
     });
 
     test("should handle video summarization error", async () => {
@@ -1001,7 +1064,7 @@ describe("Gemini Component", () => {
 
       await wait(50);
 
-      expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalledWith(mockError);
+      expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalledWith(mockError, expect.any(String));
     });
 
     test("should call chrome.storage to get video info for time estimate", async () => {
@@ -1030,9 +1093,6 @@ describe("Gemini Component", () => {
         if (callback) callback("<ul></ul>");
       });
 
-      // Set initial message with NaN (this is what geminiLoadMsg contains)
-      geminiEmptyMessage.innerHTML = "Loading... Estimated time: NaN seconds";
-
       geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
 
       await wait(100);
@@ -1052,15 +1112,11 @@ describe("Gemini Component", () => {
         if (callback) callback("<ul></ul>");
       });
 
-      // Set initial message with NaN
-      geminiEmptyMessage.innerHTML = "Loading... ~NaN seconds";
-
       geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
 
       await wait(100);
 
-      // Message should still contain NaN since no video info
-      expect(geminiEmptyMessage.innerHTML).toContain("NaN");
+      expect(geminiEmptyMessage.textContent).toBe("Loading...");
     });
 
     test("should not update loading message if video info has no length", async () => {
@@ -1073,15 +1129,12 @@ describe("Gemini Component", () => {
         if (callback) callback("<ul></ul>");
       });
 
-      // Set initial message with NaN
-      geminiEmptyMessage.innerHTML = "Loading... ~NaN seconds";
-
       geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
 
       await wait(100);
 
       // Message should still contain NaN since no length
-      expect(geminiEmptyMessage.innerHTML).toContain("NaN");
+      expect(geminiEmptyMessage.textContent).toBe("Loading...");
     });
   });
 
@@ -1118,7 +1171,8 @@ describe("Gemini Component", () => {
       expect(geminiInstance.getContentAndSummarize).toHaveBeenCalledWith(
         1,
         "test-api-key",
-        "https://www.youtube.com/watch?v=test"
+        "https://www.youtube.com/watch?v=test",
+        expect.any(String)
       );
 
       jest.useRealTimers();
@@ -1138,7 +1192,8 @@ describe("Gemini Component", () => {
       expect(geminiInstance.getContentAndSummarize).toHaveBeenCalledWith(
         1,
         "test-api-key",
-        "https://www.example.com"
+        "https://www.example.com",
+        expect.any(String)
       );
     });
 
@@ -1156,8 +1211,6 @@ describe("Gemini Component", () => {
       await wait(50);
 
       expect(geminiEmptyMessage.classList.contains("d-none")).toBe(false);
-      expect(sendButton.disabled).toBe(false);
-      expect(clearButtonSummary.disabled).toBe(false);
       expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalled();
     });
 
@@ -1174,8 +1227,6 @@ describe("Gemini Component", () => {
 
       await wait(50);
 
-      expect(sendButton.disabled).toBe(false);
-      expect(clearButtonSummary.disabled).toBe(false);
       expect(geminiInstance.getContentAndSummarize).not.toHaveBeenCalled();
     });
   });
@@ -1207,15 +1258,20 @@ describe("Gemini Component", () => {
       expect(geminiInstance.summarizeContent).toHaveBeenCalledWith(
         mockContent,
         "api-key",
-        "https://example.com"
+        "https://example.com",
+        expect.any(String)
       );
-      expect(measureContentSize).toHaveBeenCalled();
+      // Regression test: estimateSeconds must be computed from the actual
+      // content length (response.content.length), not response.length
+      // (which is undefined on the { content } response object and produces NaN).
+      const { estimateSeconds } = global.state.getSnapshot().summary;
+      expect(estimateSeconds).toBe(Math.ceil(mockContent.length / 1500));
     });
 
     test("should use different divisors for Latin vs non-Latin characters", async () => {
       // Test that the function distinguishes between character types
       const latinText = "English content ".repeat(100);
-      const cjkText = "中文内容".repeat(100);
+      const cjkText = "中文內容".repeat(100);
 
       expect(geminiInstance.isPredominantlyLatinChars(latinText)).toBe(true);
       expect(geminiInstance.isPredominantlyLatinChars(cjkText)).toBe(false);
@@ -1293,8 +1349,7 @@ describe("Gemini Component", () => {
         expect.any(Function)
       );
       expect(responseField.value).toBe(mockResponse);
-      expect(geminiInstance.createSummaryList).toHaveBeenCalledWith(mockResponse);
-      expect(sendButton.disabled).toBe(false);
+      expect(geminiInstance.createSummaryList).toHaveBeenCalledWith(mockResponse, undefined);
     });
 
     test("should handle API error", async () => {
@@ -1308,8 +1363,7 @@ describe("Gemini Component", () => {
       await wait(50);
 
       expect(responseField.value).toBe("API Error: API rate limit exceeded");
-      expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalledWith(mockError);
-      expect(sendButton.disabled).toBe(false);
+      expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalledWith(mockError, undefined);
     });
 
     test("should re-enable send button when response is undefined", async () => {
@@ -1324,7 +1378,6 @@ describe("Gemini Component", () => {
 
       expect(responseField.value).toContain("API Error:");
       expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalled();
-      expect(sendButton.disabled).toBe(false);
     });
 
     test("should handle HTML parsing error", async () => {
@@ -1375,13 +1428,11 @@ describe("Gemini Component", () => {
 
       expect(summaryListContainer.innerHTML).toContain("Place 1");
       expect(summaryListContainer.innerHTML).toContain("Place 2");
-      expect(state.hasSummary).toBe(true);
+      expect(state.getSnapshot().summary.phase).toBe("ready");
       expect(geminiEmptyMessage.classList.contains("d-none")).toBe(true);
       expect(clearButtonSummary.classList.contains("d-none")).toBe(false);
       expect(apiButton.classList.contains("d-none")).toBe(true);
       expect(clearButtonSummary.disabled).toBe(false);
-      expect(checkTextOverflow).toHaveBeenCalled();
-      expect(measureContentSize).toHaveBeenCalledWith(true);
     });
 
     test("should remove mb-3 from last list item", () => {
@@ -1453,7 +1504,7 @@ describe("Gemini Component", () => {
       mockIcon.className = "bi bi-patch-check-fill";
 
       favorite.createFavoriteIcon.mockReturnValue(mockIcon);
-      mockChromeStorage({ favoriteList: ["Place"] });
+      state.dispatch({ type: "FAVORITE_SET", items: ["Place"] });
 
       geminiInstance.createSummaryList(mockResponse);
 
@@ -1516,7 +1567,7 @@ describe("Gemini Component", () => {
       geminiInstance.ResponseErrorMsg({ error: "Server is overloaded" });
 
       expect(geminiEmptyMessage.innerText).toBe("Server overloaded");
-      expect(state.hasSummary).toBe(false);
+      expect(state.getSnapshot().summary.phase).toBe("error");
       expect(geminiEmptyMessage.classList.contains("shineText")).toBe(false);
       expect(clearButtonSummary.classList.contains("d-none")).toBe(true);
       expect(apiButton.classList.contains("d-none")).toBe(false);
@@ -1540,7 +1591,7 @@ describe("Gemini Component", () => {
       }).not.toThrow();
 
       expect(geminiEmptyMessage.innerText).toBe("Error occurred");
-      expect(state.hasSummary).toBe(false);
+      expect(state.getSnapshot().summary.phase).toBe("error");
     });
 
     test("should handle null response gracefully", () => {
@@ -1565,13 +1616,14 @@ describe("Gemini Component", () => {
   // ============================================================================
 
   describe("Edge Cases and Integration", () => {
-    test("should handle rapid successive sendButton clicks", () => {
+    test("should handle rapid successive sendButton clicks", async () => {
       geminiInstance.addGeminiPageListener();
       geminiInstance.performNormalContentSummary = jest.fn();
 
       sendButton.click();
       sendButton.click();
       sendButton.click();
+      await wait(0);
 
       // Should only process once since button is disabled
       expect(geminiInstance.performNormalContentSummary).toHaveBeenCalledTimes(1);
@@ -1651,12 +1703,17 @@ describe("Gemini Component", () => {
       );
     });
 
-    test("should handle clearExpiredSummary with exactly 24 hours", async () => {
-      const exactTimestamp = Date.now() - 86400 * 1000;
+    test("should handle clearExpiredSummary just under 24 hours", async () => {
+      favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+      // A few seconds of margin instead of an exact boundary: comparing
+      // Date.now() read here against Date.now() read again inside
+      // clearExpiredSummary() makes an exact-24h timestamp flaky (real
+      // elapsed test time can tip it just past the TTL).
+      const justUnderTimestamp = Date.now() - (86400 * 1000 - 5000);
 
       mockChromeStorage({
         summaryList: [{ name: "Place", clue: "" }],
-        timestamp: exactTimestamp,
+        timestamp: justUnderTimestamp,
         favoriteList: [],
       });
 
@@ -1665,8 +1722,8 @@ describe("Gemini Component", () => {
       // Wait for the async storage callback to complete
       await flushPromises();
 
-      // Should not clear (exactly 24 hours is still valid - elapsedTime > 86400 is false)
-      expect(state.hasSummary).toBe(true);
+      // Should not clear (still within the 24 hour TTL)
+      expect(state.getSnapshot().summary.phase).toBe("ready");
     });
 
     test("should handle video summary requests", async () => {

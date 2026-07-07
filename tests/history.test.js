@@ -625,6 +625,72 @@ describe("History Component", () => {
   });
 
   // ============================================================================
+  // Onboarding demo item delegation
+  //
+  // The demo item's swallow-clicks behavior must be delegated on the
+  // container (not attached to the <li> itself), since render() rebuilds the
+  // list from scratch on every unrelated dispatch and would otherwise discard
+  // a listener attached directly to the old node.
+  // ============================================================================
+
+  describe("onboarding demo item delegation", () => {
+    beforeEach(() => {
+      global.onboarding = { next: jest.fn() };
+      historyInstance.addHistoryPageListener();
+    });
+
+    const appendDemoItem = () => {
+      const li = createMockHistoryItem("Eiffel Tower");
+      li.classList.add("onboarding-demo-item");
+      searchHistoryListContainer.appendChild(li);
+      return li;
+    };
+
+    test("clicking the demo item's favorite icon advances onboarding instead of adding a favorite", () => {
+      const li = appendDemoItem();
+      const icon = li.querySelector("i.bi");
+
+      icon.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+
+      expect(global.onboarding.next).toHaveBeenCalledTimes(1);
+      expect(global.favorite.addToFavoriteList).not.toHaveBeenCalled();
+      expect(global.state.buildSearchUrl).not.toHaveBeenCalled();
+    });
+
+    test("still swallows clicks after render() has rebuilt the list (a brand new <li> node)", () => {
+      // Simulate an unrelated dispatch rebuilding the list: the original demo
+      // node is discarded and a new one takes its place.
+      appendDemoItem().remove();
+      const rebuiltLi = appendDemoItem();
+      const icon = rebuiltLi.querySelector("i.bi");
+
+      icon.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+
+      expect(global.onboarding.next).toHaveBeenCalledTimes(1);
+      expect(global.favorite.addToFavoriteList).not.toHaveBeenCalled();
+    });
+
+    test("clicking the demo item body (not the icon) swallows the click without advancing", () => {
+      const li = appendDemoItem();
+      const span = li.querySelector("span");
+
+      span.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+
+      expect(global.onboarding.next).not.toHaveBeenCalled();
+      expect(global.state.buildSearchUrl).not.toHaveBeenCalled();
+    });
+
+    test("suppresses the context menu on the demo item", () => {
+      const li = appendDemoItem();
+      const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+
+      li.dispatchEvent(event);
+
+      expect(global.ContextMenuUtil.createContextMenu).not.toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================================
   // createListItem Tests
   // ============================================================================
 

@@ -48,8 +48,17 @@
     "description": "popup no gemini summary message"
   },
   "geminiLoadMsg": {
-    "message": "Treating the sea as a snack\nmakes waiting romantic... (Est. NaN s)",
-    "description": "popup gemini model loading message"
+    "message": "Treating the sea as a snack\nmakes waiting romantic... (Est. $estimatedSeconds$ s)",
+    "description": "popup gemini model loading message",
+    "placeholders": {
+      "estimatedSeconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "geminiLoadMsgNoEstimate": {
+    "message": "Treating the sea as a snack\nmakes waiting romantic...",
+    "description": "popup gemini model loading message without an estimate"
   },
   "geminiErrorMsg": {
     "message": "Something went wrong!\nPlease refresh the page and try again.\ud83d\udea7",

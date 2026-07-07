@@ -61,6 +61,7 @@ const popupSharedGlobals = {
   searchButtonGroup: "readonly",
   deleteButtonGroup: "readonly",
   exportButtonGroup: "readonly",
+  geminiButtonGroup: "readonly",
   clearButton: "readonly",
   cancelButton: "readonly",
   deleteButton: "readonly",

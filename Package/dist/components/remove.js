@@ -1,4 +1,8 @@
 class Remove {
+  usesStore() {
+    return typeof state?.getSnapshot === "function" && typeof state?.dispatch === "function";
+  }
+
   addRemoveListener() {
     cancelButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("cancel_delete", "cancelButton");
@@ -13,11 +17,20 @@ class Remove {
         this.deleteFromFavoriteList();
       }
       this.backToNormal();
-      measureContentSize();
+      if (!this.usesStore()) measureContentSize();
     });
 
     deleteListButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("delete_mode", "deleteListButton");
+      if (this.usesStore()) {
+        const snapshot = state.getSnapshot();
+        state.dispatch(
+          snapshot.deleteMode.source
+            ? { type: "DELETE_CANCEL" }
+            : { type: "DELETE_ENTER", source: snapshot.activeTab }
+        );
+        return;
+      }
       const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
       const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
 
@@ -66,9 +79,28 @@ class Remove {
         }
       }
     });
+
+    if (this.usesStore()) {
+      [searchHistoryListContainer, favoriteListContainer].forEach((container) => {
+        container.addEventListener("change", (event) => {
+          if (!event.target.classList.contains("form-check-input")) return;
+          const li = event.target.closest("li");
+          if (li) state.dispatch({ type: "DELETE_TOGGLE", value: li.dataset.itemValue || "" });
+        });
+      });
+    }
   }
 
   deleteFromHistoryList() {
+    if (this.usesStore()) {
+      const snapshot = state.getSnapshot();
+      const selected = new Set(snapshot.deleteMode.selectedValues);
+      const items = snapshot.history.items.filter((item) => !selected.has(item));
+      state.dispatch({ type: "HISTORY_SET", items, emptyReason: "cleared" });
+      state.dispatch({ type: "DELETE_CANCEL" });
+      chrome.storage.local.set({ searchHistoryList: items });
+      return;
+    }
     const checkedBoxes = searchHistoryListContainer.querySelectorAll("input:checked");
     const selectedTexts = [];
 
@@ -100,6 +132,15 @@ class Remove {
   }
 
   deleteFromFavoriteList() {
+    if (this.usesStore()) {
+      const snapshot = state.getSnapshot();
+      const selected = new Set(snapshot.deleteMode.selectedValues);
+      const items = snapshot.favorite.items.filter((item) => !selected.has(item));
+      state.dispatch({ type: "FAVORITE_SET", items });
+      state.dispatch({ type: "DELETE_CANCEL" });
+      chrome.storage.local.set({ favoriteList: items });
+      return;
+    }
     const checkedBoxes = favoriteListContainer.querySelectorAll("input:checked");
     const selectedTexts = [];
 
@@ -182,6 +223,10 @@ class Remove {
   }
 
   backToNormal() {
+    if (this.usesStore()) {
+      state.dispatch({ type: "DELETE_CANCEL" });
+      return;
+    }
     deleteListButton.style.pointerEvents = "";
     deleteListButton.classList.remove("active-button");
     deleteButtonGroup.classList.add("d-none");
@@ -201,6 +246,7 @@ class Remove {
 
   // Toggle checkbox display
   updateInput() {
+    if (this.usesStore()) return;
     const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
     const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
 
@@ -222,6 +268,40 @@ class Remove {
       li.classList.remove("delete-list");
       li.classList.add(listType + "-list");
     });
+  }
+
+  render(snapshot) {
+    const deleteModeButton = deleteListButton;
+    const deleteActions = deleteButtonGroup;
+    const historyActions = searchButtonGroup;
+    const favoriteActions = exportButtonGroup;
+    const historyTabButton = searchHistoryButton;
+    const favoriteTabButton = favoriteListButton;
+    const summaryTabButton = geminiSummaryButton;
+    const deleteAction = deleteButton;
+    const deleteLabel = deleteAction?.querySelector("span");
+    if (!deleteModeButton || !deleteActions || !historyActions || !favoriteActions) return;
+
+    const { source, selectedValues } = snapshot.deleteMode;
+    const deleting = Boolean(source);
+    deleteModeButton.classList.toggle("active-button", deleting);
+    deleteActions.classList.toggle("d-none", !deleting);
+    historyActions.classList.toggle("d-none", snapshot.activeTab !== "history" || deleting);
+    favoriteActions.classList.toggle("d-none", snapshot.activeTab !== "favorite" || deleting);
+    geminiButtonGroup?.classList.toggle("d-none", snapshot.activeTab !== "gemini");
+
+    if (historyTabButton) historyTabButton.disabled = deleting && source !== "history";
+    if (favoriteTabButton) favoriteTabButton.disabled = deleting && source !== "favorite";
+    if (summaryTabButton) summaryTabButton.disabled = deleting;
+
+    const count = selectedValues.length;
+    if (deleteLabel) {
+      deleteLabel.textContent = chrome.i18n.getMessage(
+        count ? "deleteBtnText" : "deleteBtnTextEmpty",
+        count ? String(count) : undefined
+      );
+    }
+    deleteAction?.classList.toggle("disabled", count === 0);
   }
 }
 

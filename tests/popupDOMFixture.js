@@ -77,22 +77,34 @@ function createPopupDOM() {
         </div>
       </div>
     </div>
-    <p id="emptyMessage" class="text-muted text-center py-4 page-H" data-locale="historyEmptyMsg">No search history yet</p>
-    <p id="favoriteEmptyMessage" class="text-muted text-center py-4 page-F" data-locale="favoriteEmptyMsg">No favorites yet</p>
-    <p id="geminiEmptyMessage" class="text-muted text-center py-4 page-G" data-locale="geminiEmptyMsg">No summary yet</p>
-    <div id="searchHistoryList" class="overflow-auto mb-4 page-H"></div>
-    <div id="favoriteList" class="overflow-auto mb-4 page-F d-none"></div>
-    <div id="geminiResponse" class="d-none page-G">
-      <textarea class="w-100 d-none" id="response" style="height: 200px" aria-label="Testing Purpose"></textarea>
-      <div id="summaryList" class="overflow-auto mb-4"></div>
+    <div id="historyPanel" class="page-H d-none" data-tab-panel="history">
+      <p id="emptyMessage" class="text-muted text-center py-4">No search history yet</p>
+      <div id="searchHistoryList" class="overflow-auto mb-4"></div>
+      <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3">
+        <button id="clearButton" class="btn btn-light me-3 w-25"><i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span></button>
+        <a id="mapsButton" href="#" target="_blank" class="btn btn-primary btn-maps flex-fill"><i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText">Open Maps</span></a>
+      </div>
     </div>
-    <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3 page-H">
-      <button id="clearButton" class="btn btn-light me-3 w-25">
-        <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span>
-      </button>
-      <a id="mapsButton" href="#" target="_blank" class="btn btn-primary btn-maps flex-fill">
-        <i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText">Open Maps</span>
-      </a>
+    <div id="favoritePanel" class="page-F d-none" data-tab-panel="favorite">
+      <p id="favoriteEmptyMessage" class="text-muted text-center py-4">No favorites yet</p>
+      <div id="favoriteList" class="overflow-auto mb-4"></div>
+      <div id="exportButtonGroup" class="d-flex justify-content-evenly mt-3">
+        <button id="exportButton" class="btn btn-light me-3 w-50"><i class="bi bi-download me-2"></i><span data-locale="exportBtnText">Export</span></button>
+        <button id="importButton" class="btn btn-light w-50"><i class="bi bi-upload me-2"></i><span data-locale="importBtnText">Import</span></button>
+        <input type="file" id="fileInput" style="display: none" accept=".csv" aria-label="Import" />
+      </div>
+    </div>
+    <div id="geminiPanel" class="page-G d-none" data-tab-panel="gemini">
+      <p id="geminiEmptyMessage" class="text-muted text-center py-4">No summary yet</p>
+      <div id="geminiResponse">
+        <textarea class="w-100 d-none" id="response" style="height: 200px" aria-label="Testing Purpose"></textarea>
+        <div id="summaryList" class="overflow-auto mb-4"></div>
+      </div>
+      <div id="geminiButtonGroup" class="d-flex justify-content-evenly mt-3">
+        <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal" data-bs-target="#apiModal"><i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText">API</span></button>
+        <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none"><i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span></button>
+        <button id="sendButton" class="btn btn-send flex-fill"><i class="bi bi-stars me-2"></i><span data-locale="sendBtnText">Send</span></button>
+      </div>
     </div>
     <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-D">
       <button id="cancelButton" class="btn btn-light me-3 w-25">
@@ -101,26 +113,6 @@ function createPopupDOM() {
       <a id="deleteButton" class="btn btn-danger btn-delete flex-fill">
         <i class="bi bi-trash-fill me-2"></i><span></span>
       </a>
-    </div>
-    <div id="exportButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-F">
-      <button id="exportButton" class="btn btn-light me-3 w-50">
-        <i class="bi bi-download me-2"></i><span data-locale="exportBtnText">Export</span>
-      </button>
-      <button id="importButton" class="btn btn-light w-50">
-        <i class="bi bi-upload me-2"></i><span data-locale="importBtnText">Import</span>
-      </button>
-      <input type="file" id="fileInput" style="display: none" accept=".csv" aria-label="Import" />
-    </div>
-    <div id="geminiButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-G">
-      <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal" data-bs-target="#apiModal">
-        <i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText">API</span>
-      </button>
-      <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none">
-        <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span>
-      </button>
-      <button id="sendButton" class="btn btn-send flex-fill">
-        <i class="bi bi-stars me-2"></i><span data-locale="sendBtnText">Send</span>
-      </button>
     </div>
   `;
 

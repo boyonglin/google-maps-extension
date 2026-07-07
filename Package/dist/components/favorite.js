@@ -66,16 +66,22 @@ class Favorite {
             });
             const mergedList = existingList.concat(newNames);
 
-            favoriteEmptyMessage.style.display = mergedList.length ? "none" : "block";
-
             chrome.storage.local.set({ favoriteList: mergedList }, () => {
-              this.updateFavorite(mergedList);
-              this.updateHistoryFavoriteIcons();
+              if (typeof state.dispatch === "function") {
+                state.dispatch({ type: "FAVORITE_SET", items: mergedList });
+              } else {
+                this.updateFavorite(mergedList);
+                this.updateHistoryFavoriteIcons();
+              }
             });
           });
         } catch (error) {
-          favoriteEmptyMessage.style.display = "block";
-          favoriteEmptyMessage.innerText = chrome.i18n.getMessage("importErrorMsg");
+          if (typeof state.dispatch === "function") {
+            state.dispatch({ type: "FAVORITE_ERROR", errorKey: "importErrorMsg" });
+          } else {
+            favoriteEmptyMessage.style.display = "block";
+            favoriteEmptyMessage.innerText = chrome.i18n.getMessage("importErrorMsg");
+          }
         }
       };
 
@@ -89,14 +95,22 @@ class Favorite {
       const liElement = DOMUtils.findClosestListItem(event);
       if (!liElement) return;
 
-      if (liElement.classList.contains("delete-list")) {
+      const storeMode = typeof state.getSnapshot === "function";
+      if (
+        (storeMode && state.getSnapshot().deleteMode.source === "favorite") ||
+        liElement.classList.contains("delete-list")
+      ) {
         if (event.target.classList.contains("form-check-input")) {
           return;
         } else {
-          liElement.classList.toggle("checked-list");
-          const checkbox = liElement.querySelector("input");
-          checkbox.checked = !checkbox.checked;
-          remove.updateDeleteCount();
+          if (storeMode) {
+            state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
+          } else {
+            liElement.classList.toggle("checked-list");
+            const checkbox = liElement.querySelector("input");
+            checkbox.checked = !checkbox.checked;
+            remove.updateDeleteCount();
+          }
         }
       } else {
         const spans = liElement.querySelectorAll("span");
@@ -187,96 +201,142 @@ class Favorite {
     return favoriteIcon;
   }
 
+  // Only reachable from the legacy (non-store) CSV-import fallback below;
+  // store mode updates icons through FAVORITE_SET + gemini/history render().
   updateHistoryFavoriteIcons() {
     chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-      const historyItems = document.querySelectorAll(".history-list");
-      historyItems.forEach((item) => {
+      document.querySelectorAll(".history-list").forEach((item) => {
         const text = item.querySelector("span").textContent;
-        const favoriteIcon = item.querySelector("i");
-        if (favoriteList && !favoriteList.includes(text)) {
-          favoriteIcon.className = "bi bi-patch-plus-fill";
-        } else {
-          favoriteIcon.className = "bi bi-patch-check-fill matched";
-        }
+        const icon = item.querySelector("i");
+        icon.className =
+          favoriteList && !favoriteList.includes(text)
+            ? "bi bi-patch-plus-fill"
+            : "bi bi-patch-check-fill matched";
       });
     });
   }
 
   addToFavoriteList(selectedText) {
     chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
-    exportButton.disabled = false;
+    if (typeof state.dispatch !== "function") exportButton.disabled = false;
   }
 
   // Update the favorite list container
   updateFavorite(favoriteList) {
-    if (state.favoriteListChanged || favoriteListContainer.innerHTML.trim() === "") {
-      favoriteListContainer.innerHTML = "";
+    if (typeof state.dispatch === "function") {
+      state.dispatch({ type: "FAVORITE_SET", items: favoriteList });
+      return;
+    }
+    if (!state.favoriteListChanged && favoriteListContainer.innerHTML.trim() !== "") {
+      delayMeasurement();
+      return;
+    }
+    favoriteListContainer.innerHTML = "";
+    if (favoriteList?.length) {
+      favoriteEmptyMessage.style.display = "none";
+      state.hasFavorite = true;
+      const ul = document.createElement("ul");
+      ul.className = "list-group d-flex flex-column-reverse";
+      const fragment = document.createDocumentFragment();
+      favoriteList.forEach((item) => {
+        const li = document.createElement("li");
+        li.className =
+          "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between align-items-center text-break";
+        const [name, clue] = item.split(" @");
+        const span = document.createElement("span");
+        span.textContent = name;
+        li.appendChild(span);
+        if (clue !== undefined) {
+          const clueSpan = document.createElement("span");
+          clueSpan.className = "d-none";
+          clueSpan.textContent = clue;
+          li.appendChild(clueSpan);
+        }
+        const icon = document.createElement("i");
+        icon.className = "bi bi-patch-check-fill matched";
+        li.appendChild(icon);
+        const checkbox = document.createElement("input");
+        checkbox.className = "form-check-input d-none";
+        checkbox.type = "checkbox";
+        checkbox.value = "delete";
+        checkbox.name = "checkDelete";
+        checkbox.ariaLabel = "Delete";
+        checkbox.style.cursor = "pointer";
+        li.appendChild(checkbox);
+        fragment.appendChild(li);
+      });
+      ul.appendChild(fragment);
+      ul.firstElementChild?.classList.remove("mb-3");
+      favoriteListContainer.appendChild(ul);
+      exportButton.disabled = false;
+      remove.attachCheckboxEventListener(favoriteListContainer);
+    } else {
+      favoriteEmptyMessage.style.display = "block";
+      state.hasFavorite = false;
+      exportButton.disabled = true;
+    }
+    delayMeasurement();
+  }
 
-      if (favoriteList && favoriteList.length > 0) {
-        favoriteEmptyMessage.style.display = "none";
-        state.hasFavorite = true;
+  render(snapshot) {
+    const container = favoriteListContainer;
+    const statusMessage = favoriteEmptyMessage;
+    const exportAction = exportButton;
+    if (!container || !statusMessage || !exportAction) return;
+    const { items, status, errorKey } = snapshot.favorite;
+    const selected = new Set(snapshot.deleteMode.selectedValues);
+    const deleting = snapshot.deleteMode.source === "favorite";
 
-        const ul = document.createElement("ul");
-        ul.className = "list-group d-flex flex-column-reverse";
+    container.replaceChildren();
+    statusMessage.style.whiteSpace = "pre-line";
+    statusMessage.textContent = chrome.i18n.getMessage(
+      status === "error" ? errorKey || "importErrorMsg" : "favoriteEmptyMsg"
+    );
+    statusMessage.classList.toggle("d-none", items.length > 0 && status !== "error");
 
-        // Create list item from new selectedText
-        const fragment = document.createDocumentFragment();
-        favoriteList.forEach((selectedText) => {
-          const li = document.createElement("li");
-          li.className =
-            "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between align-items-center text-break";
+    if (items.length > 0 && status !== "error") {
+      const ul = document.createElement("ul");
+      ul.className = "list-group d-flex flex-column-reverse";
+      items.forEach((selectedText) => {
+        const li = document.createElement("li");
+        li.className =
+          "list-group-item border rounded mb-3 px-3 d-flex justify-content-between align-items-center text-break";
+        li.dataset.itemValue = selectedText;
 
-          const span = document.createElement("span");
-          if (selectedText.includes(" @")) {
-            const name = selectedText.split(" @")[0];
-            const clue = selectedText.split(" @")[1];
-            span.textContent = name;
-            li.appendChild(span);
-
-            const clueSpan = document.createElement("span");
-            clueSpan.className = "d-none";
-            clueSpan.textContent = clue;
-            li.appendChild(clueSpan);
-          } else {
-            span.textContent = selectedText;
-            li.appendChild(span);
-          }
-
-          const favoriteIcon = document.createElement("i");
-          favoriteIcon.className = "bi bi-patch-check-fill matched";
-          li.appendChild(favoriteIcon);
-
-          const checkbox = document.createElement("input");
-          checkbox.className = "form-check-input d-none";
-          checkbox.type = "checkbox";
-          checkbox.value = "delete";
-          checkbox.name = "checkDelete";
-          checkbox.ariaLabel = "Delete";
-          checkbox.style.cursor = "pointer";
-          li.appendChild(checkbox);
-          fragment.appendChild(li);
-        });
-        ul.appendChild(fragment);
-        favoriteListContainer.appendChild(ul);
-
-        exportButton.disabled = false;
-
-        const lastListItem = favoriteListContainer.querySelector(
-          ".list-group .list-group-item:first-child"
-        );
-        if (lastListItem) {
-          lastListItem.classList.remove("mb-3");
+        const [name, clue] = selectedText.split(" @");
+        const span = document.createElement("span");
+        span.textContent = name;
+        li.appendChild(span);
+        if (clue !== undefined) {
+          const clueSpan = document.createElement("span");
+          clueSpan.className = "d-none";
+          clueSpan.textContent = clue;
+          li.appendChild(clueSpan);
         }
 
-        remove.attachCheckboxEventListener(favoriteListContainer);
-      } else {
-        favoriteEmptyMessage.style.display = "block";
-        state.hasFavorite = false;
-        exportButton.disabled = true;
-      }
+        const icon = document.createElement("i");
+        icon.className = "bi bi-patch-check-fill matched";
+        icon.classList.toggle("d-none", deleting);
+        li.appendChild(icon);
+
+        const checkbox = document.createElement("input");
+        checkbox.className = "form-check-input";
+        checkbox.classList.toggle("d-none", !deleting);
+        checkbox.type = "checkbox";
+        checkbox.checked = selected.has(selectedText);
+        checkbox.ariaLabel = "Delete";
+        li.appendChild(checkbox);
+
+        li.classList.toggle("favorite-list", !deleting);
+        li.classList.toggle("delete-list", deleting);
+        li.classList.toggle("checked-list", selected.has(selectedText));
+        ul.appendChild(li);
+      });
+      ul.firstElementChild?.classList.remove("mb-3");
+      container.appendChild(ul);
     }
 
-    delayMeasurement();
+    exportAction.disabled = items.length === 0;
   }
 }
 
