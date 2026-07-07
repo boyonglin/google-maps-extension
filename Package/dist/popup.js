@@ -503,7 +503,6 @@ window.__popupI18nChangedHandler = () => {
       gemini?.fetchAPIKey(apiKey);
     });
   }
-  // Reset buttons to their default width
   [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {
     btn.classList.remove("w-auto");
     btn.classList.add("w-25");
@@ -628,7 +627,6 @@ function measureContentSizeLast() {
   }
 }
 
-// Close by Esc key
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

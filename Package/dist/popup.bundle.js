@@ -985,9 +985,7 @@ class Remove {
     const checkedBoxes = searchHistoryListContainer.querySelectorAll("input:checked");
     const selectedTexts = [];
 
-    // Delete checked items from the lists
     checkedBoxes.forEach((checkbox) => {
-      // Get the corresponding list item (parent element of the checkbox)
       const listItem = checkbox.closest("li");
       const selectedText = listItem.querySelector("span").textContent;
       selectedTexts.push(selectedText);
@@ -998,7 +996,6 @@ class Remove {
     chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
       if (!searchHistoryList) return;
 
-      // Filter out the selected texts from the search history list
       const updatedList = searchHistoryList.filter((item) => !selectedTexts.includes(item));
       chrome.storage.local.set({ searchHistoryList: updatedList });
 
@@ -1085,7 +1082,6 @@ class Remove {
     });
   }
 
-  // Update the delete count based on checked checkboxes
   updateDeleteCount() {
     const historyCheckedCount = searchHistoryListContainer.querySelectorAll("input:checked").length;
     const favoriteCheckedCount = favoriteListContainer.querySelectorAll("input:checked").length;
@@ -1125,7 +1121,6 @@ class Remove {
     this.updateInput();
   }
 
-  // Toggle checkbox display
   updateInput() {
     if (this.usesStore()) return;
     const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
@@ -1214,7 +1209,6 @@ class Favorite {
           type: "text/csv; charset=utf-8;",
         });
 
-        // Create a temporary anchor element and trigger the download
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "TheMapsExpress_FavoriteList.csv";
@@ -1333,7 +1327,6 @@ class Favorite {
       }
     });
 
-    // Add context menu listener for favorite items
     favoriteListContainer.addEventListener("contextmenu", (event) => {
       ContextMenuUtil.createContextMenu(event, favoriteListContainer);
     });
@@ -1414,7 +1407,6 @@ class Favorite {
     if (typeof state.dispatch !== "function") exportButton.disabled = false;
   }
 
-  // Update the favorite list container
   updateFavorite(favoriteList) {
     if (typeof state.dispatch === "function") {
       state.dispatch({ type: "FAVORITE_SET", items: favoriteList });
@@ -1540,7 +1532,6 @@ if (typeof module !== "undefined" && module.exports) {
 // ---- components/history.js ----
 class History {
   addHistoryPageListener() {
-    // Track the click event on li elements
     searchHistoryListContainer.addEventListener("mousedown", (event) => {
       const liElement = DOMUtils.findClosestListItem(event);
       if (!liElement) return;
@@ -1579,7 +1570,6 @@ class History {
         state
           .buildSearchUrl(selectedText)
           .then((searchUrl) => {
-            // Check if the clicked element has the "bi" class (favorite icon)
             if (event.target.classList.contains("bi")) {
               if (window.Analytics)
                 window.Analytics.trackFeatureClick(
@@ -1613,7 +1603,6 @@ class History {
       }
     });
 
-    // Add context menu listener for history items
     searchHistoryListContainer.addEventListener("contextmenu", (event) => {
       const liElement = DOMUtils.findClosestListItem(event);
       if (liElement?.classList.contains("onboarding-demo-item")) {
@@ -1638,7 +1627,6 @@ class History {
         measureContentSize();
       }
 
-      // Send a message to background.js to request clearing of selected text list data
       chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
 
       if (typeof state.dispatch !== "function") measureContentSize();
@@ -1793,14 +1781,12 @@ class Gemini {
       this.getStore().dispatch({ type: "SUMMARY_CLEAR" });
     });
 
-    // Video Summary Button toggle functionality
     videoSummaryButton.addEventListener("click", () => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("video_summary_toggle", "videoSummaryButton");
       const enabled = !this.getStore().getSnapshot().video.enabled;
       this.getStore().dispatch({ type: "VIDEO_TOGGLE", enabled });
 
-      // Save new state to localStorage
       chrome.storage.local.set({ videoSummaryToggle: enabled });
       videoSummaryButton.classList.toggle("no-hover-temp", !enabled);
     });
@@ -1835,7 +1821,6 @@ class Gemini {
     });
   }
 
-  // Check if the API key is defined and valid
   fetchAPIKey(apiKey) {
     apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
     const token = ++this.apiToken;
@@ -1855,7 +1840,6 @@ class Gemini {
     }
   }
 
-  // Check if current tab URL contains "youtube" and show/hide videoSummaryButton
   async checkCurrentTabForYoutube() {
     const token = ++this.videoToken;
     this.getStore().dispatch({ type: "VIDEO_CONTEXT_REQUEST", token });
@@ -1964,7 +1948,6 @@ class Gemini {
     return summaryListContainer.innerHTML;
   }
 
-  // Update only the favorite icons in the summary list without reconstructing the entire list
   updateSummaryFavoriteIcons(favoriteList = []) {
     const summaryItems = summaryListContainer.querySelectorAll(".summary-list");
     const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
@@ -1989,11 +1972,9 @@ class Gemini {
       : `https://www.youtube.com/watch?v=${match[2]}`;
   }
 
-  // Get Gemini response
   summarizeFromGeminiVideoUnderstanding(videoUrl, requestId = null) {
     requestId = requestId || this.beginSummary(null);
 
-    // request background video length
     chrome.storage.local.get("currentVideoInfo", ({ currentVideoInfo }) => {
       if (currentVideoInfo && currentVideoInfo.length) {
         const estTime = Math.ceil(currentVideoInfo.length / 30);
@@ -2005,7 +1986,6 @@ class Gemini {
       }
     });
 
-    // request background summary
     chrome.runtime.sendMessage({ action: "summarizeVideo", text: videoUrl }, (response) => {
       // success when we get a string fragment of <ul>...</ul>
       if (typeof response === "string") {
@@ -2038,19 +2018,16 @@ class Gemini {
           }
         });
 
-        // Check if we're on YouTube and expand description first
         const isYouTube = tabs[0].url && tabs[0].url.toLowerCase().includes("youtube");
 
         if (isYouTube) {
-          // First expand the YouTube description
           chrome.tabs.sendMessage(tabs[0].id, { action: "expandYouTubeDescription" }, () => {
-            // Wait a moment for the expansion to complete, then get content
+            // Wait for the expansion to finish rendering before scraping content
             setTimeout(() => {
               this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
             }, 500);
           });
         } else {
-          // For non-YouTube pages, get content directly
           this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
         }
       });
@@ -2075,7 +2052,6 @@ class Gemini {
     });
   }
 
-  // Check if the content is predominantly Latin characters
   isPredominantlyLatinChars(text) {
     const latinChars = text.match(/[a-zA-Z\u00C0-\u00FF]/g)?.length || 0;
     const squareChars = text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g)?.length || 0;
@@ -2253,16 +2229,12 @@ class Modal {
     this._setupPremiumPanel();
   }
 
-  // ---------------------------------------------------------------------------
   // Private setup helpers (called once from addModalListener)
-  // ---------------------------------------------------------------------------
-
   _setupShortcutsLinks() {
     for (let i = 0; i < configureElements.length; i++) {
       configureElements[i].onclick = function (event) {
         if (window.Analytics)
           window.Analytics.trackFeatureClick("configure_shortcuts", "configureLink");
-        // Detect user browser
         let userAgent = navigator.userAgent;
 
         if (/Chrome/i.test(userAgent)) {
@@ -2498,7 +2470,6 @@ class Modal {
     items.forEach((item) => {
       item.addEventListener("click", async () => {
         const newLang = item.dataset.value;
-        syncDropdownState(newLang, true); // user made a change → go dark
         if (newLang === window.I18nUtils.getCurrentLanguage()) return;
         if (window.Analytics)
           window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
@@ -2527,7 +2498,6 @@ class Modal {
     });
   }
 
-  // Replace text in a locale element with a link or modal trigger
   _replaceTextWithElement(dataLocale, linkText, replacement) {
     const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
     if (pElement) {
@@ -2762,8 +2732,7 @@ class Onboarding {
    * Clicks inside the demo item are swallowed (capture phase) and routed to
    * `next()` so the real history click handler never adds it to favorites.
    */
-  injectDemoHistoryItem() {
-    if (this.store?.dispatch) {
+  injectDemoHistoryItem() {    if (this.store?.dispatch) {
       this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
       // History.render() rebuilds the list on every dispatch, so a listener
       // attached to this specific <li> would be discarded on the next render.
@@ -2817,9 +2786,6 @@ class Onboarding {
     if (empty) empty.style.display = "block";
   }
 
-  /**
-   * Start onboarding only if it has not been completed previously.
-   */
   maybeStart() {
     if (!chrome?.storage?.local?.get) return;
     chrome.storage.local.get(this.STORAGE_KEY, (result) => {
@@ -3583,7 +3549,6 @@ window.__popupI18nChangedHandler = () => {
       gemini?.fetchAPIKey(apiKey);
     });
   }
-  // Reset buttons to their default width
   [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {
     btn.classList.remove("w-auto");
     btn.classList.add("w-25");
@@ -3708,7 +3673,6 @@ function measureContentSizeLast() {
   }
 }
 
-// Close by Esc key
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

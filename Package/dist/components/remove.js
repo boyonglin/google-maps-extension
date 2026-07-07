@@ -104,9 +104,7 @@ class Remove {
     const checkedBoxes = searchHistoryListContainer.querySelectorAll("input:checked");
     const selectedTexts = [];
 
-    // Delete checked items from the lists
     checkedBoxes.forEach((checkbox) => {
-      // Get the corresponding list item (parent element of the checkbox)
       const listItem = checkbox.closest("li");
       const selectedText = listItem.querySelector("span").textContent;
       selectedTexts.push(selectedText);
@@ -117,7 +115,6 @@ class Remove {
     chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
       if (!searchHistoryList) return;
 
-      // Filter out the selected texts from the search history list
       const updatedList = searchHistoryList.filter((item) => !selectedTexts.includes(item));
       chrome.storage.local.set({ searchHistoryList: updatedList });
 
@@ -204,7 +201,6 @@ class Remove {
     });
   }
 
-  // Update the delete count based on checked checkboxes
   updateDeleteCount() {
     const historyCheckedCount = searchHistoryListContainer.querySelectorAll("input:checked").length;
     const favoriteCheckedCount = favoriteListContainer.querySelectorAll("input:checked").length;
@@ -244,7 +240,6 @@ class Remove {
     this.updateInput();
   }
 
-  // Toggle checkbox display
   updateInput() {
     if (this.usesStore()) return;
     const historyLiElements = searchHistoryListContainer.querySelectorAll("li");

@@ -30,16 +30,12 @@ class Modal {
     this._setupPremiumPanel();
   }
 
-  // ---------------------------------------------------------------------------
   // Private setup helpers (called once from addModalListener)
-  // ---------------------------------------------------------------------------
-
   _setupShortcutsLinks() {
     for (let i = 0; i < configureElements.length; i++) {
       configureElements[i].onclick = function (event) {
         if (window.Analytics)
           window.Analytics.trackFeatureClick("configure_shortcuts", "configureLink");
-        // Detect user browser
         let userAgent = navigator.userAgent;
 
         if (/Chrome/i.test(userAgent)) {
@@ -275,7 +271,6 @@ class Modal {
     items.forEach((item) => {
       item.addEventListener("click", async () => {
         const newLang = item.dataset.value;
-        syncDropdownState(newLang, true); // user made a change → go dark
         if (newLang === window.I18nUtils.getCurrentLanguage()) return;
         if (window.Analytics)
           window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
@@ -304,7 +299,6 @@ class Modal {
     });
   }
 
-  // Replace text in a locale element with a link or modal trigger
   _replaceTextWithElement(dataLocale, linkText, replacement) {
     const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
     if (pElement) {

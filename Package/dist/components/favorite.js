@@ -21,7 +21,6 @@ class Favorite {
           type: "text/csv; charset=utf-8;",
         });
 
-        // Create a temporary anchor element and trigger the download
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "TheMapsExpress_FavoriteList.csv";
@@ -140,7 +139,6 @@ class Favorite {
       }
     });
 
-    // Add context menu listener for favorite items
     favoriteListContainer.addEventListener("contextmenu", (event) => {
       ContextMenuUtil.createContextMenu(event, favoriteListContainer);
     });
@@ -221,7 +219,6 @@ class Favorite {
     if (typeof state.dispatch !== "function") exportButton.disabled = false;
   }
 
-  // Update the favorite list container
   updateFavorite(favoriteList) {
     if (typeof state.dispatch === "function") {
       state.dispatch({ type: "FAVORITE_SET", items: favoriteList });

@@ -114,9 +114,6 @@ class Onboarding {
     if (empty) empty.style.display = "block";
   }
 
-  /**
-   * Start onboarding only if it has not been completed previously.
-   */
   maybeStart() {
     if (!chrome?.storage?.local?.get) return;
     chrome.storage.local.get(this.STORAGE_KEY, (result) => {

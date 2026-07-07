@@ -69,14 +69,12 @@ class Gemini {
       this.getStore().dispatch({ type: "SUMMARY_CLEAR" });
     });
 
-    // Video Summary Button toggle functionality
     videoSummaryButton.addEventListener("click", () => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("video_summary_toggle", "videoSummaryButton");
       const enabled = !this.getStore().getSnapshot().video.enabled;
       this.getStore().dispatch({ type: "VIDEO_TOGGLE", enabled });
 
-      // Save new state to localStorage
       chrome.storage.local.set({ videoSummaryToggle: enabled });
       videoSummaryButton.classList.toggle("no-hover-temp", !enabled);
     });
@@ -111,7 +109,6 @@ class Gemini {
     });
   }
 
-  // Check if the API key is defined and valid
   fetchAPIKey(apiKey) {
     apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
     const token = ++this.apiToken;
@@ -131,7 +128,6 @@ class Gemini {
     }
   }
 
-  // Check if current tab URL contains "youtube" and show/hide videoSummaryButton
   async checkCurrentTabForYoutube() {
     const token = ++this.videoToken;
     this.getStore().dispatch({ type: "VIDEO_CONTEXT_REQUEST", token });
@@ -240,7 +236,6 @@ class Gemini {
     return summaryListContainer.innerHTML;
   }
 
-  // Update only the favorite icons in the summary list without reconstructing the entire list
   updateSummaryFavoriteIcons(favoriteList = []) {
     const summaryItems = summaryListContainer.querySelectorAll(".summary-list");
     const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
@@ -265,11 +260,9 @@ class Gemini {
       : `https://www.youtube.com/watch?v=${match[2]}`;
   }
 
-  // Get Gemini response
   summarizeFromGeminiVideoUnderstanding(videoUrl, requestId = null) {
     requestId = requestId || this.beginSummary(null);
 
-    // request background video length
     chrome.storage.local.get("currentVideoInfo", ({ currentVideoInfo }) => {
       if (currentVideoInfo && currentVideoInfo.length) {
         const estTime = Math.ceil(currentVideoInfo.length / 30);
@@ -281,7 +274,6 @@ class Gemini {
       }
     });
 
-    // request background summary
     chrome.runtime.sendMessage({ action: "summarizeVideo", text: videoUrl }, (response) => {
       // success when we get a string fragment of <ul>...</ul>
       if (typeof response === "string") {
@@ -314,19 +306,16 @@ class Gemini {
           }
         });
 
-        // Check if we're on YouTube and expand description first
         const isYouTube = tabs[0].url && tabs[0].url.toLowerCase().includes("youtube");
 
         if (isYouTube) {
-          // First expand the YouTube description
           chrome.tabs.sendMessage(tabs[0].id, { action: "expandYouTubeDescription" }, () => {
-            // Wait a moment for the expansion to complete, then get content
+            // Wait for the expansion to finish rendering before scraping content
             setTimeout(() => {
               this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
             }, 500);
           });
         } else {
-          // For non-YouTube pages, get content directly
           this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
         }
       });
@@ -351,7 +340,6 @@ class Gemini {
     });
   }
 
-  // Check if the content is predominantly Latin characters
   isPredominantlyLatinChars(text) {
     const latinChars = text.match(/[a-zA-Z\u00C0-\u00FF]/g)?.length || 0;
     const squareChars = text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g)?.length || 0;

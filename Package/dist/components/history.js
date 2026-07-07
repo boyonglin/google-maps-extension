@@ -1,6 +1,5 @@
 class History {
   addHistoryPageListener() {
-    // Track the click event on li elements
     searchHistoryListContainer.addEventListener("mousedown", (event) => {
       const liElement = DOMUtils.findClosestListItem(event);
       if (!liElement) return;
@@ -39,7 +38,6 @@ class History {
         state
           .buildSearchUrl(selectedText)
           .then((searchUrl) => {
-            // Check if the clicked element has the "bi" class (favorite icon)
             if (event.target.classList.contains("bi")) {
               if (window.Analytics)
                 window.Analytics.trackFeatureClick(
@@ -73,7 +71,6 @@ class History {
       }
     });
 
-    // Add context menu listener for history items
     searchHistoryListContainer.addEventListener("contextmenu", (event) => {
       const liElement = DOMUtils.findClosestListItem(event);
       if (liElement?.classList.contains("onboarding-demo-item")) {
@@ -98,7 +95,6 @@ class History {
         measureContentSize();
       }
 
-      // Send a message to background.js to request clearing of selected text list data
       chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
 
       if (typeof state.dispatch !== "function") measureContentSize();
