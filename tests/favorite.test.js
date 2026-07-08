@@ -8,22 +8,15 @@ const originalURL = global.URL;
 const originalBlob = global.Blob;
 const originalFileReader = global.FileReader;
 
-global.state = {
-  favoriteListChanged: false,
-  hasFavorite: false,
-  buildSearchUrl: jest.fn(),
-};
-
-global.remove = {
-  updateDeleteCount: jest.fn(),
-  attachCheckboxEventListener: jest.fn(),
-};
+// Use the production store so component tests exercise reducer-driven rendering.
+const State = require("../Package/dist/hooks/popupState.js");
+global.State = State;
+global.state = new State();
+global.state.buildSearchUrl = jest.fn();
 
 global.ContextMenuUtil = {
   createContextMenu: jest.fn(),
 };
-
-global.delayMeasurement = jest.fn();
 
 // Load modules
 const Favorite = require("../Package/dist/components/favorite.js");
@@ -90,16 +83,8 @@ describe("Favorite Component", () => {
     global.fileInput.click = jest.fn();
 
     // Reset state
-    global.state = {
-      favoriteListChanged: false,
-      hasFavorite: false,
-      buildSearchUrl: jest.fn(),
-    };
-
-    global.remove = {
-      updateDeleteCount: jest.fn(),
-      attachCheckboxEventListener: jest.fn(),
-    };
+    global.state = new State();
+    global.state.buildSearchUrl = jest.fn();
 
     global.ContextMenuUtil = {
       createContextMenu: jest.fn(),
@@ -110,11 +95,14 @@ describe("Favorite Component", () => {
     mockI18n({
       plusLabel: "Add to favorites",
       importErrorMsg: "Import failed. Please check file format.",
+      favoriteEmptyMsg: "No favorites yet",
     });
     mockChromeStorage();
 
-    // Create new instance
+    // Create new instance and subscribe it to the store, matching popup.js's
+    // renderPopup wiring (favorite.render(snapshot) on every dispatch).
     favoriteInstance = new Favorite();
+    global.state.subscribe((snapshot) => favoriteInstance.render(snapshot));
   });
 
   afterEach(() => {
@@ -239,9 +227,6 @@ describe("Favorite Component", () => {
       test("should parse CSV and update storage", async () => {
         mockFileUpload(fileInput, "name\nLocation 1,\nLocation 2,\n");
 
-        const updateFavoriteSpy = jest.spyOn(favoriteInstance, "updateFavorite");
-        const updateIconsSpy = jest.spyOn(favoriteInstance, "updateHistoryFavoriteIcons");
-
         const storageSetPromise = new Promise((resolve) => {
           mockChromeStorage({}, (data) => {
             resolve(data);
@@ -252,9 +237,10 @@ describe("Favorite Component", () => {
 
         const data = await storageSetPromise;
         expect(data.favoriteList).toEqual(["Location 1", "Location 2"]);
-        expect(updateFavoriteSpy).toHaveBeenCalledWith(["Location 1", "Location 2"]);
-        expect(updateIconsSpy).toHaveBeenCalled();
-        expect(favoriteEmptyMessage.style.display).toBe("none");
+        expect(state.getSnapshot().favorite.items).toEqual(["Location 1", "Location 2"]);
+        // Dispatch re-renders the favorite list via the store subscription.
+        expect(favoriteListContainer.querySelectorAll(".favorite-list").length).toBe(2);
+        expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(true);
       });
 
       test("should handle empty CSV file", async () => {
@@ -268,7 +254,7 @@ describe("Favorite Component", () => {
 
         const data = await storageSetPromise;
         expect(data.favoriteList).toEqual([]);
-        expect(favoriteEmptyMessage.style.display).toBe("block");
+        expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(false);
       });
 
       test("should handle CSV with only header", async () => {
@@ -282,7 +268,7 @@ describe("Favorite Component", () => {
 
         const data = await storageSetPromise;
         expect(data.favoriteList).toEqual([]);
-        expect(favoriteEmptyMessage.style.display).toBe("block");
+        expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(false);
       });
 
       test("should trim whitespace and remove trailing commas", async () => {
@@ -338,7 +324,7 @@ describe("Favorite Component", () => {
 
         const data = await storageSetPromise;
         expect(data.favoriteList).toEqual(["Existing Place @Tokyo"]);
-        expect(favoriteEmptyMessage.style.display).toBe("none");
+        expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(true);
       });
 
       test("should skip names that already exist (ignoring the @clue suffix) to avoid duplicates", async () => {
@@ -394,8 +380,6 @@ describe("Favorite Component", () => {
           }
         };
 
-        favoriteInstance.addFavoritePageListener();
-
         mockI18n({ importErrorMsg: "Import failed. Please check file format." });
 
         fileInput.dispatchEvent(new Event("change"));
@@ -403,8 +387,9 @@ describe("Favorite Component", () => {
         await wait(100);
 
         // Verify error handling
-        expect(favoriteEmptyMessage.style.display).toBe("block");
-        expect(favoriteEmptyMessage.innerText).toBe("Import failed. Please check file format.");
+        expect(state.getSnapshot().favorite.status).toBe("error");
+        expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(false);
+        expect(favoriteEmptyMessage.textContent).toBe("Import failed. Please check file format.");
 
         // Restore original FileReader
         global.FileReader = OriginalFileReader;
@@ -508,40 +493,34 @@ describe("Favorite Component", () => {
       });
 
       test("should toggle checkbox in delete mode", () => {
-        const li = createMockListItem("Test Location", {
-          className: "favorite-list",
-          favoriteList: ["Test Location"],
-        });
-        li.classList.add("delete-list");
-        li.classList.remove("favorite-list");
-        favoriteListContainer.appendChild(li);
+        state.dispatch({ type: "FAVORITE_SET", items: ["Test Location"] });
+        state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
 
+        const li = favoriteListContainer.querySelector("li");
         const checkbox = li.querySelector("input");
         expect(checkbox.checked).toBe(false);
 
         const mouseEvent = createMouseEvent(li, 0);
         li.dispatchEvent(mouseEvent);
 
-        expect(li.classList.contains("checked-list")).toBe(true);
-        expect(checkbox.checked).toBe(true);
-        expect(global.remove.updateDeleteCount).toHaveBeenCalled();
+        expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["Test Location"]);
+        const updatedLi = favoriteListContainer.querySelector("li");
+        expect(updatedLi.classList.contains("checked-list")).toBe(true);
+        expect(updatedLi.querySelector("input").checked).toBe(true);
       });
 
       test("should not toggle if clicking on checkbox directly in delete mode", () => {
-        const li = createMockListItem("Test Location", {
-          className: "favorite-list",
-          favoriteList: ["Test Location"],
-        });
-        li.classList.add("delete-list");
-        favoriteListContainer.appendChild(li);
+        state.dispatch({ type: "FAVORITE_SET", items: ["Test Location"] });
+        state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
 
+        const li = favoriteListContainer.querySelector("li");
         const checkbox = li.querySelector("input");
         checkbox.classList.remove("d-none");
 
         const mouseEvent = createMouseEvent(checkbox, 0);
         checkbox.dispatchEvent(mouseEvent);
 
-        expect(li.classList.contains("checked-list")).toBe(false);
+        expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
       });
 
       test("should not open URL if clicking on icon", async () => {
@@ -697,128 +676,11 @@ describe("Favorite Component", () => {
   });
 
   // ============================================================================
-  // updateHistoryFavoriteIcons Tests
+  // Note: updateHistoryFavoriteIcons() was a legacy (non-store) fallback and
+  // was deleted along with the CSV-import legacy branch. Store mode updates
+  // history icons through History.render() reacting to FAVORITE_SET - see
+  // history.test.js for that coverage.
   // ============================================================================
-
-  describe("updateHistoryFavoriteIcons", () => {
-    test("should update history icons based on favorite list", async () => {
-      const historyContainer = document.createElement("div");
-      document.body.appendChild(historyContainer);
-
-      const item1 = createMockListItem("Location 1", {
-        className: "history-list",
-        includeCheckbox: false,
-      });
-      const item2 = createMockListItem("Location 2", {
-        className: "history-list",
-        includeCheckbox: false,
-      });
-      const item3 = createMockListItem("Location 3", {
-        className: "history-list",
-        includeCheckbox: false,
-      });
-
-      historyContainer.appendChild(item1);
-      historyContainer.appendChild(item2);
-      historyContainer.appendChild(item3);
-
-      mockChromeStorage({ favoriteList: ["Location 1", "Location 3"] });
-
-      favoriteInstance.updateHistoryFavoriteIcons();
-
-      await wait();
-
-      const icon1 = item1.querySelector("i");
-      const icon2 = item2.querySelector("i");
-      const icon3 = item3.querySelector("i");
-
-      expect(icon1.className).toBe("bi bi-patch-check-fill matched");
-      expect(icon2.className).toBe("bi bi-patch-plus-fill");
-      expect(icon3.className).toBe("bi bi-patch-check-fill matched");
-    });
-
-    test("should set all icons to plus when favoriteList is empty", async () => {
-      const historyContainer = document.createElement("div");
-      document.body.appendChild(historyContainer);
-
-      const item1 = createMockListItem("Location 1", {
-        className: "history-list",
-        includeCheckbox: false,
-      });
-      item1.querySelector("i").className = "bi bi-patch-check-fill matched";
-      historyContainer.appendChild(item1);
-
-      mockChromeStorage({ favoriteList: [] });
-
-      favoriteInstance.updateHistoryFavoriteIcons();
-
-      await wait();
-
-      const icon = item1.querySelector("i");
-      expect(icon.className).toBe("bi bi-patch-plus-fill");
-    });
-
-    test("should set all icons to plus when favoriteList is null", async () => {
-      const historyContainer = document.createElement("div");
-      document.body.appendChild(historyContainer);
-
-      const item1 = createMockListItem("Location 1", {
-        className: "history-list",
-        includeCheckbox: false,
-      });
-      item1.querySelector("i").className = "bi bi-patch-check-fill matched";
-      historyContainer.appendChild(item1);
-
-      mockChromeStorage({ favoriteList: null });
-
-      favoriteInstance.updateHistoryFavoriteIcons();
-
-      await wait();
-
-      const icon = item1.querySelector("i");
-      // When favoriteList is null: if (favoriteList && !favoriteList.includes(text)) is false
-      // So it goes to else branch and sets check icon
-      expect(icon.className).toBe("bi bi-patch-check-fill matched");
-    });
-
-    test("should handle no history items gracefully", () => {
-      mockChromeStorage({ favoriteList: ["Location 1"] });
-
-      expect(() => {
-        favoriteInstance.updateHistoryFavoriteIcons();
-      }).not.toThrow();
-    });
-
-    test("should only update history-list items", async () => {
-      const container = document.createElement("div");
-      document.body.appendChild(container);
-
-      const historyItem = createMockListItem("Location 1", {
-        className: "history-list",
-        includeCheckbox: false,
-      });
-      const otherItem = document.createElement("div");
-      otherItem.className = "other-list";
-      const span = document.createElement("span");
-      span.textContent = "Location 1";
-      const icon = document.createElement("i");
-      icon.className = "bi bi-patch-check-fill matched";
-      otherItem.appendChild(span);
-      otherItem.appendChild(icon);
-
-      container.appendChild(historyItem);
-      container.appendChild(otherItem);
-
-      mockChromeStorage({ favoriteList: [] });
-
-      favoriteInstance.updateHistoryFavoriteIcons();
-
-      await wait();
-
-      expect(historyItem.querySelector("i").className).toBe("bi bi-patch-plus-fill");
-      expect(otherItem.querySelector("i").className).toBe("bi bi-patch-check-fill matched");
-    });
-  });
 
   // ============================================================================
   // addToFavoriteList Tests
@@ -832,14 +694,6 @@ describe("Favorite Component", () => {
         action: "addToFavoriteList",
         selectedText: "New Location",
       });
-    });
-
-    test("should enable export button", () => {
-      exportButton.disabled = true;
-
-      favoriteInstance.addToFavoriteList("New Location");
-
-      expect(exportButton.disabled).toBe(false);
     });
 
     test("should handle empty string", () => {
@@ -868,14 +722,36 @@ describe("Favorite Component", () => {
   // ============================================================================
 
   describe("updateFavorite", () => {
-    beforeEach(() => {
-      global.state.favoriteListChanged = true;
+    test("should dispatch FAVORITE_SET with the given items", () => {
+      favoriteInstance.updateFavorite(["Location 1", "Location 2"]);
+
+      expect(state.getSnapshot().favorite.items).toEqual(["Location 1", "Location 2"]);
     });
 
-    test("should render favorite items without clue", () => {
-      const favoriteList = ["Location 1", "Location 2"];
+    test("should dispatch FAVORITE_SET with an empty list", () => {
+      favoriteInstance.updateFavorite([]);
 
-      favoriteInstance.updateFavorite(favoriteList);
+      expect(state.getSnapshot().favorite.items).toEqual([]);
+      expect(state.getSnapshot().favorite.status).toBe("empty");
+    });
+
+    test("should treat null/undefined as an empty list", () => {
+      favoriteInstance.updateFavorite(null);
+      expect(state.getSnapshot().favorite.items).toEqual([]);
+
+      favoriteInstance.updateFavorite(undefined);
+      expect(state.getSnapshot().favorite.items).toEqual([]);
+    });
+  });
+
+  // ============================================================================
+  // render Tests (store-driven rendering; invoked automatically by the state
+  // subscription set up in the outer beforeEach, mirroring popup.js's wiring)
+  // ============================================================================
+
+  describe("render", () => {
+    test("should render favorite items without clue", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1", "Location 2"] });
 
       const items = favoriteListContainer.querySelectorAll(".favorite-list");
       expect(items.length).toBe(2);
@@ -884,9 +760,10 @@ describe("Favorite Component", () => {
     });
 
     test("should render favorite items with clue", () => {
-      const favoriteList = ["Location 1 @New York", "Location 2 @Los Angeles"];
-
-      favoriteInstance.updateFavorite(favoriteList);
+      state.dispatch({
+        type: "FAVORITE_SET",
+        items: ["Location 1 @New York", "Location 2 @Los Angeles"],
+      });
 
       const items = favoriteListContainer.querySelectorAll(".favorite-list");
       expect(items.length).toBe(2);
@@ -902,31 +779,22 @@ describe("Favorite Component", () => {
     });
 
     test("should hide empty message when favorites exist", () => {
-      favoriteEmptyMessage.style.display = "block";
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1"] });
 
-      favoriteInstance.updateFavorite(["Location 1"]);
-
-      expect(favoriteEmptyMessage.style.display).toBe("none");
+      expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(true);
     });
 
     test("should show empty message when no favorites", () => {
-      favoriteInstance.updateFavorite([]);
+      state.dispatch({ type: "FAVORITE_SET", items: [] });
 
-      expect(favoriteEmptyMessage.style.display).toBe("block");
-    });
-
-    test("should set hasFavorite state correctly", () => {
-      favoriteInstance.updateFavorite(["Location 1"]);
-      expect(global.state.hasFavorite).toBe(true);
-
-      favoriteInstance.updateFavorite([]);
-      expect(global.state.hasFavorite).toBe(false);
+      expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(false);
+      expect(favoriteEmptyMessage.textContent).toBe("No favorites yet");
     });
 
     test("should enable export button when favorites exist", () => {
       exportButton.disabled = true;
 
-      favoriteInstance.updateFavorite(["Location 1"]);
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1"] });
 
       expect(exportButton.disabled).toBe(false);
     });
@@ -934,13 +802,13 @@ describe("Favorite Component", () => {
     test("should disable export button when no favorites", () => {
       exportButton.disabled = false;
 
-      favoriteInstance.updateFavorite([]);
+      state.dispatch({ type: "FAVORITE_SET", items: [] });
 
       expect(exportButton.disabled).toBe(true);
     });
 
     test("should add all required classes to list items", () => {
-      favoriteInstance.updateFavorite(["Location 1", "Location 2"]);
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1", "Location 2"] });
 
       const items = favoriteListContainer.querySelectorAll(".favorite-list");
       const firstItem = items[0];
@@ -948,11 +816,11 @@ describe("Favorite Component", () => {
       expect(firstItem.classList.contains("border")).toBe(true);
       expect(firstItem.classList.contains("rounded")).toBe(true);
       expect(firstItem.classList.contains("px-3")).toBe(true);
-      // mb-3 is added but then removed from the last item
+      // mb-3 is added but then removed from the first item
     });
 
     test("should add favorite icon to each item", () => {
-      favoriteInstance.updateFavorite(["Location 1", "Location 2"]);
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1", "Location 2"] });
 
       const items = favoriteListContainer.querySelectorAll(".favorite-list");
       items.forEach((item) => {
@@ -962,109 +830,57 @@ describe("Favorite Component", () => {
       });
     });
 
-    test("should add checkbox to each item", () => {
-      favoriteInstance.updateFavorite(["Location 1"]);
+    test("should add a checkbox to each item, hidden outside delete mode", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1"] });
 
       const checkbox = favoriteListContainer.querySelector('input[type="checkbox"]');
       expect(checkbox).toBeTruthy();
       expect(checkbox.classList.contains("form-check-input")).toBe(true);
       expect(checkbox.classList.contains("d-none")).toBe(true);
-      expect(checkbox.value).toBe("delete");
-      expect(checkbox.name).toBe("checkDelete");
     });
 
-    test("should remove mb-3 from first item (due to flex-column-reverse)", () => {
-      favoriteInstance.updateFavorite(["Location 1", "Location 2", "Location 3"]);
+    test("should show checkboxes and hide icons while in delete mode", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+
+      const li = favoriteListContainer.querySelector("li");
+      expect(li.classList.contains("delete-list")).toBe(true);
+      expect(li.classList.contains("favorite-list")).toBe(false);
+      expect(li.querySelector("input").classList.contains("d-none")).toBe(false);
+      expect(li.querySelector("i").classList.contains("d-none")).toBe(true);
+    });
+
+    test("should remove mb-3 from the first item (due to flex-column-reverse)", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1", "Location 2", "Location 3"] });
 
       const items = favoriteListContainer.querySelectorAll(".favorite-list");
-      // The first item in DOM (last in visual order due to flex-column-reverse)
-      const firstItem = items[0];
-
-      // The code removes mb-3 from first-child, which is visually the last item
-      expect(firstItem.classList.contains("mb-3")).toBe(false);
-    });
-
-    test("should call attachCheckboxEventListener", () => {
-      favoriteInstance.updateFavorite(["Location 1"]);
-
-      expect(global.remove.attachCheckboxEventListener).toHaveBeenCalledWith(favoriteListContainer);
-    });
-
-    test("should call delayMeasurement", () => {
-      favoriteInstance.updateFavorite(["Location 1"]);
-
-      expect(global.delayMeasurement).toHaveBeenCalled();
+      expect(items[0].classList.contains("mb-3")).toBe(false);
     });
 
     test("should clear existing content before rendering", () => {
       favoriteListContainer.innerHTML = "<div>Old content</div>";
 
-      favoriteInstance.updateFavorite(["Location 1"]);
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1"] });
 
       expect(favoriteListContainer.innerHTML).not.toContain("Old content");
     });
 
-    test("should not re-render if favoriteListChanged is false and container has content", () => {
-      global.state.favoriteListChanged = false;
-      favoriteListContainer.innerHTML = "<ul><li>Existing</li></ul>";
-
-      favoriteInstance.updateFavorite(["Location 1"]);
-
-      expect(favoriteListContainer.innerHTML).toContain("Existing");
-    });
-
-    test("should render if container is empty even when favoriteListChanged is false", () => {
-      global.state.favoriteListChanged = false;
-      favoriteListContainer.innerHTML = "";
-
-      favoriteInstance.updateFavorite(["Location 1"]);
-
-      const items = favoriteListContainer.querySelectorAll(".favorite-list");
-      expect(items.length).toBe(1);
-    });
-
     test("should render items in reverse order (flex-column-reverse)", () => {
-      favoriteInstance.updateFavorite(["First", "Second", "Third"]);
+      state.dispatch({ type: "FAVORITE_SET", items: ["First", "Second", "Third"] });
 
       const ul = favoriteListContainer.querySelector("ul");
       expect(ul.className).toContain("flex-column-reverse");
 
-      // Items should be in DOM in original order, but display reversed via CSS
       const items = Array.from(favoriteListContainer.querySelectorAll(".favorite-list"));
       expect(items[0].querySelector("span").textContent).toBe("First");
       expect(items[2].querySelector("span").textContent).toBe("Third");
-    });
-
-    test("should handle null favoriteList", () => {
-      favoriteInstance.updateFavorite(null);
-
-      expect(favoriteEmptyMessage.style.display).toBe("block");
-      expect(global.state.hasFavorite).toBe(false);
-    });
-
-    test("should handle undefined favoriteList", () => {
-      favoriteInstance.updateFavorite(undefined);
-
-      expect(favoriteEmptyMessage.style.display).toBe("block");
-      expect(global.state.hasFavorite).toBe(false);
-    });
-
-    test("should use DocumentFragment for performance", () => {
-      // This test verifies the pattern but cannot directly test fragment usage
-      const createFragmentSpy = jest.spyOn(document, "createDocumentFragment");
-
-      favoriteInstance.updateFavorite(["Location 1", "Location 2", "Location 3"]);
-
-      expect(createFragmentSpy).toHaveBeenCalled();
-
-      createFragmentSpy.mockRestore();
     });
 
     test("should handle very long favorite lists", () => {
       const longList = Array.from({ length: 100 }, (_, i) => `Location ${i + 1}`);
 
       expect(() => {
-        favoriteInstance.updateFavorite(longList);
+        state.dispatch({ type: "FAVORITE_SET", items: longList });
       }).not.toThrow();
 
       const items = favoriteListContainer.querySelectorAll(".favorite-list");
@@ -1074,7 +890,7 @@ describe("Favorite Component", () => {
     test("should handle items with special characters", () => {
       const specialList = ["!@#$%^&*()", '<script>alert("xss")</script>', "Normal Location"];
 
-      favoriteInstance.updateFavorite(specialList);
+      state.dispatch({ type: "FAVORITE_SET", items: specialList });
 
       const items = favoriteListContainer.querySelectorAll(".favorite-list");
       expect(items.length).toBe(3);
@@ -1082,9 +898,7 @@ describe("Favorite Component", () => {
     });
 
     test("should handle items with multiple @ symbols", () => {
-      const favoriteList = ["Location @Clue1 @Clue2"];
-
-      favoriteInstance.updateFavorite(favoriteList);
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location @Clue1 @Clue2"] });
 
       const item = favoriteListContainer.querySelector(".favorite-list");
       const spans = item.querySelectorAll("span");
@@ -1093,6 +907,13 @@ describe("Favorite Component", () => {
       // split(" @")[1] gets the second element: "Clue1"
       expect(spans[0].textContent).toBe("Location");
       expect(spans[1].textContent).toBe("Clue1");
+    });
+
+    test("should show the import-error message when status is error", () => {
+      state.dispatch({ type: "FAVORITE_ERROR", errorKey: "importErrorMsg" });
+
+      expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(false);
+      expect(favoriteEmptyMessage.textContent).toBe("Import failed. Please check file format.");
     });
   });
 
@@ -1119,9 +940,6 @@ describe("Favorite Component", () => {
 
       mockFileUpload(fileInput, "name\nLocation 1,\nLocation 2,\n");
 
-      const updateFavoriteSpy = jest.spyOn(favoriteInstance, "updateFavorite");
-      const updateIconsSpy = jest.spyOn(favoriteInstance, "updateHistoryFavoriteIcons");
-
       const storageSetPromise = new Promise((resolve) => {
         mockChromeStorage({}, (data) => resolve(data));
       });
@@ -1130,25 +948,22 @@ describe("Favorite Component", () => {
 
       await storageSetPromise;
 
-      // Verify the workflow completed
-      expect(updateFavoriteSpy).toHaveBeenCalled();
-      expect(updateIconsSpy).toHaveBeenCalled();
+      // Verify the store was updated and the list re-rendered
+      expect(state.getSnapshot().favorite.items).toEqual(["Location 1", "Location 2"]);
+      expect(favoriteListContainer.querySelectorAll(".favorite-list").length).toBe(2);
     });
 
-    test("add to favorite and update UI", () => {
-      exportButton.disabled = true;
-
+    test("add to favorite sends a runtime message", () => {
       favoriteInstance.addToFavoriteList("New Place");
 
       expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
         action: "addToFavoriteList",
         selectedText: "New Place",
       });
-      expect(exportButton.disabled).toBe(false);
     });
 
     test("render favorites and setup event listeners", () => {
-      favoriteInstance.updateFavorite(["Location 1", "Location 2"]);
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1", "Location 2"] });
       favoriteInstance.addFavoritePageListener();
 
       const items = favoriteListContainer.querySelectorAll(".favorite-list");
@@ -1205,14 +1020,8 @@ describe("Favorite Component", () => {
     });
 
     test("should handle rapid consecutive updates", () => {
-      global.state.favoriteListChanged = true;
-
       favoriteInstance.updateFavorite(["Location 1"]);
-
-      global.state.favoriteListChanged = true;
       favoriteInstance.updateFavorite(["Location 2"]);
-
-      global.state.favoriteListChanged = true;
       favoriteInstance.updateFavorite(["Location 3"]);
 
       const items = favoriteListContainer.querySelectorAll(".favorite-list");
@@ -1226,18 +1035,6 @@ describe("Favorite Component", () => {
       const icon = favoriteInstance.createFavoriteIcon("Place 1", []);
 
       expect(icon.title).toBe("");
-    });
-
-    test("should handle storage get failure gracefully", async () => {
-      chrome.storage.local.get.mockImplementation((key, callback) => {
-        callback({});
-      });
-
-      favoriteInstance.updateHistoryFavoriteIcons();
-
-      await wait();
-
-      // Should not throw
     });
 
     test("should handle items with @ but no clue", () => {

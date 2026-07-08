@@ -207,6 +207,10 @@ describe("Modal Component - Full Coverage", () => {
     // Create fresh instance WITH DEPENDENCY INJECTION
     // This allows us to test without the dynamic import!
     modalInstance = new Modal(mockEncryptApiKey);
+    // Popup production flow always wires this up (popup.js:
+    // `modal.onApiKeyChange = (apiKey) => gemini.fetchAPIKey(apiKey);`) right
+    // after construction, so tests mirror that instead of leaving it unset.
+    modalInstance.onApiKeyChange = jest.fn();
 
     jest.clearAllMocks();
     mockEncryptApiKey.mockResolvedValue("encrypted_key_data");
@@ -249,16 +253,12 @@ describe("Modal Component - Full Coverage", () => {
   });
 
   // ============================================================================
-  // Test: addModalListener - API Form Submission (NOW WORKING!)
+  // Test: addModalListener - API Form Submission
   // ============================================================================
 
   describe("addModalListener - API Form Submission", () => {
-    test("should encrypt and store valid API key", async () => {
+    test("should encrypt and store valid API key, then delegate to onApiKeyChange", async () => {
       await modalInstance.addModalListener();
-
-      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback({ valid: true });
-      });
 
       const form = document.getElementById("apiForm");
       submitForm(form, apiInput, "test-api-key-12345");
@@ -273,17 +273,9 @@ describe("Modal Component - Full Coverage", () => {
         geminiApiKey: "encrypted_key_data",
       });
 
-      // Should verify key
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
-        { action: "verifyApiKey", apiKey: "test-api-key-12345" },
-        expect.any(Function)
-      );
-
-      await wait(10);
-
-      // Should show last 4 chars in placeholder
-      expect(apiInput.placeholder).toBe("............2345");
-      expect(sendButton.disabled).toBe(false);
+      // Should delegate verification/UI feedback to the Gemini controller/store
+      // (production wires this to gemini.fetchAPIKey - see gemini.test.js)
+      expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("test-api-key-12345");
     });
 
     test("should handle empty API key", async () => {
@@ -300,46 +292,7 @@ describe("Modal Component - Full Coverage", () => {
       // Should store empty string
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ geminiApiKey: "" });
 
-      // Should not verify
-      expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
-
-      // Should update UI
-      expect(apiInput.placeholder).toBe("Enter your API key");
-      expect(geminiEmptyMessage.innerText).toBe("Please enter API key");
-      expect(sendButton.disabled).toBe(true);
-    });
-
-    test("should handle invalid API key response", async () => {
-      await modalInstance.addModalListener();
-
-      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback({ valid: false });
-      });
-
-      const form = document.getElementById("apiForm");
-      submitForm(form, apiInput, "invalid-key");
-
-      await wait(50);
-
-      expect(geminiEmptyMessage.classList.contains("d-none")).toBe(false);
-      expect(apiInput.placeholder).toBe("Enter your API key");
-      expect(geminiEmptyMessage.innerText).toBe("Invalid API key");
-      expect(sendButton.disabled).toBe(true);
-    });
-
-    test("should handle API verification error", async () => {
-      await modalInstance.addModalListener();
-
-      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback({ error: "Network error" });
-      });
-
-      const form = document.getElementById("apiForm");
-      submitForm(form, apiInput, "test-key");
-
-      await wait(50);
-
-      expect(sendButton.disabled).toBe(true);
+      expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("");
     });
   });
 
@@ -1103,7 +1056,7 @@ describe("Modal Component - Full Coverage", () => {
       delete window.Analytics;
     });
 
-    test("should reset API input placeholder and disable sendButton when API reset is clicked", async () => {
+    test("should reset API input placeholder and delegate to onApiKeyChange when API reset is clicked", async () => {
       chrome.storage.local.get.mockImplementation((keys, callback) => {
         callback({ geminiApiKey: "encrypted_key" });
       });
@@ -1112,8 +1065,6 @@ describe("Modal Component - Full Coverage", () => {
 
       // Set up a custom placeholder that would be there after saving an API key
       apiInput.placeholder = "............1234";
-      sendButton.disabled = false;
-      geminiEmptyMessage.innerText = "Some message";
 
       const apiResetButton = apiInput.parentElement.querySelector(".btn-reset");
       apiResetButton.classList.remove("d-none");
@@ -1126,11 +1077,9 @@ describe("Modal Component - Full Coverage", () => {
       // Should reset the placeholder
       expect(apiInput.placeholder).toBe("Enter your API key");
 
-      // Should reset the gemini message
-      expect(geminiEmptyMessage.innerText).toBe("Please enter API key");
-
-      // Should disable send button
-      expect(sendButton.disabled).toBe(true);
+      // Should delegate to the Gemini controller/store (production wires this
+      // to gemini.fetchAPIKey("") - see gemini.test.js)
+      expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("");
 
       // Should hide the reset button
       expect(apiResetButton.classList.contains("d-none")).toBe(true);
@@ -1639,58 +1588,34 @@ describe("Modal Component - Full Coverage", () => {
      */
 
     describe("API Key Management Flow", () => {
-      test("user saves API key, closes modal, reopens - should see masked key in placeholder", async () => {
-        // Arrange: Set up a scenario where user has previously saved an API key
+      test("user saves API key - should encrypt, persist, and delegate to onApiKeyChange", async () => {
+        // Arrange
         await modalInstance.addModalListener();
-
-        chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-          if (callback) callback({ valid: true });
-        });
 
         // Act: User enters and saves API key
         const form = document.getElementById("apiForm");
         submitForm(form, apiInput, "sk-abc123xyz789");
         await wait(50);
 
-        // Assert: Placeholder should show masked key (last 4 chars)
-        expect(apiInput.placeholder).toBe("............z789");
-        expect(sendButton.disabled).toBe(false);
+        // Assert: modal's own responsibility is encrypt + persist + delegate;
+        // verification/UI feedback is the Gemini controller/store's job
+        // (production wires onApiKeyChange to gemini.fetchAPIKey).
+        expect(mockEncryptApiKey).toHaveBeenCalledWith("sk-abc123xyz789");
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({
+          geminiApiKey: "encrypted_key_data",
+        });
+        expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("sk-abc123xyz789");
 
-        // Act: User closes modal (value should clear but placeholder stays)
+        // Act: User closes modal (value should clear)
         const apiModal = document.getElementById("apiModal");
         apiModal.dispatchEvent(new Event("hidden.bs.modal"));
 
-        // Assert: Input cleared but placeholder preserved
         expect(apiInput.value).toBe("");
-        // Note: placeholder persistence depends on re-opening modal
       });
 
-      test("user enters invalid API key - should see error and cannot send messages", async () => {
-        // Arrange
-        await modalInstance.addModalListener();
-
-        chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-          if (callback) callback({ valid: false, error: "Invalid API key" });
-        });
-
-        // Act: User enters invalid key
-        const form = document.getElementById("apiForm");
-        submitForm(form, apiInput, "invalid-key");
-        await wait(50);
-
-        // Assert: User should see error feedback
-        expect(geminiEmptyMessage.innerText).toBe("Invalid API key");
-        expect(sendButton.disabled).toBe(true);
-        expect(geminiEmptyMessage.classList.contains("d-none")).toBe(false);
-      });
-
-      test("user clears API key - should reset to initial state", async () => {
+      test("user clears API key - should persist empty string and delegate", async () => {
         // Arrange: User has a valid API key
         await modalInstance.addModalListener();
-
-        chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-          if (callback) callback({ valid: true });
-        });
 
         const form = document.getElementById("apiForm");
         submitForm(form, apiInput, "valid-key-1234");
@@ -1702,28 +1627,9 @@ describe("Modal Component - Full Coverage", () => {
         submitForm(form, apiInput, "");
         await wait(50);
 
-        // Assert: Should reset to initial state
+        // Assert
         expect(chrome.storage.local.set).toHaveBeenCalledWith({ geminiApiKey: "" });
-        expect(sendButton.disabled).toBe(true);
-        expect(geminiEmptyMessage.innerText).toBe("Please enter API key");
-      });
-
-      test("network error during API verification - should handle gracefully", async () => {
-        // Arrange
-        await modalInstance.addModalListener();
-
-        chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-          // Simulate network error
-          if (callback) callback({ error: "Network error", valid: false });
-        });
-
-        // Act
-        const form = document.getElementById("apiForm");
-        submitForm(form, apiInput, "test-key");
-        await wait(50);
-
-        // Assert: Should handle error gracefully
-        expect(sendButton.disabled).toBe(true);
+        expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("");
       });
     });
 
@@ -2041,20 +1947,15 @@ describe("Modal Component - Full Coverage", () => {
       await modalInstance.addModalListener();
       mockEncryptApiKey.mockResolvedValue("encrypted_long_key");
 
-      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback({ valid: true });
-      });
-
       // Act
       const form = document.getElementById("apiForm");
       const longKey = "a".repeat(500);
       submitForm(form, apiInput, longKey);
       await wait(50);
 
-      // Assert: Should encrypt the full key
+      // Assert: Should encrypt the full key and delegate it unmodified
       expect(mockEncryptApiKey).toHaveBeenCalledWith(longKey);
-      // Placeholder should show last 4 chars
-      expect(apiInput.placeholder).toBe("............aaaa");
+      expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith(longKey);
     });
 
     // NOTE: Storage error handling test removed because:

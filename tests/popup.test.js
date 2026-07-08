@@ -40,9 +40,6 @@ describe("popup.js", () => {
 
     // Mock their methods
     jest.spyOn(mockRemove, "addRemoveListener").mockImplementation(() => {});
-    jest.spyOn(mockRemove, "updateInput").mockImplementation(() => {});
-    jest.spyOn(mockRemove, "updateDeleteCount").mockImplementation(() => {});
-    jest.spyOn(mockRemove, "attachCheckboxEventListener").mockImplementation(() => {});
     jest.spyOn(mockFavorite, "addFavoritePageListener").mockImplementation(() => {});
     jest.spyOn(mockFavorite, "updateFavorite").mockImplementation(() => {});
     jest.spyOn(mockHistory, "addHistoryPageListener").mockImplementation(() => {});

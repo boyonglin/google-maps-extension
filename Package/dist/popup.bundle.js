@@ -880,10 +880,6 @@ if (typeof module !== "undefined" && module.exports) {
 
 // ---- components/remove.js ----
 class Remove {
-  usesStore() {
-    return typeof state?.getSnapshot === "function" && typeof state?.dispatch === "function";
-  }
-
   addRemoveListener() {
     cancelButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("cancel_delete", "cancelButton");
@@ -898,252 +894,47 @@ class Remove {
         this.deleteFromFavoriteList();
       }
       this.backToNormal();
-      if (!this.usesStore()) measureContentSize();
     });
 
     deleteListButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("delete_mode", "deleteListButton");
-      if (this.usesStore()) {
-        const snapshot = state.getSnapshot();
-        state.dispatch(
-          snapshot.deleteMode.source
-            ? { type: "DELETE_CANCEL" }
-            : { type: "DELETE_ENTER", source: snapshot.activeTab }
-        );
-        return;
-      }
-      const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
-      const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
-
-      if (deleteListButton.classList.contains("active-button")) {
-        this.backToNormal();
-      } else {
-        deleteListButton.classList.add("active-button");
-        deleteListButton.style.pointerEvents = "auto";
-
-        searchButtonGroup.classList.add("d-none");
-        exportButtonGroup.classList.add("d-none");
-        deleteButtonGroup.classList.remove("d-none");
-
-        checkTextOverflow();
-
-        historyLiElements.forEach((li) => {
-          const checkbox = li.querySelector("input");
-          const favoriteIcon = li.querySelector("i");
-
-          checkbox.classList.remove("d-none");
-          favoriteIcon.classList.add("d-none");
-
-          li.classList.add("delete-list");
-          li.classList.remove("history-list");
-        });
-
-        favoriteLiElements.forEach((li) => {
-          const checkbox = li.querySelector("input");
-          const favoriteIcon = li.querySelector("i");
-
-          checkbox.classList.remove("d-none");
-          favoriteIcon.classList.add("d-none");
-
-          li.classList.add("delete-list");
-          li.classList.remove("favorite-list");
-        });
-
-        if (searchHistoryButton.classList.contains("active-button")) {
-          favoriteListButton.disabled = true;
-          geminiSummaryButton.disabled = true;
-          this.updateDeleteCount();
-        } else {
-          searchHistoryButton.disabled = true;
-          geminiSummaryButton.disabled = true;
-          this.updateDeleteCount();
-        }
-      }
+      const snapshot = state.getSnapshot();
+      state.dispatch(
+        snapshot.deleteMode.source
+          ? { type: "DELETE_CANCEL" }
+          : { type: "DELETE_ENTER", source: snapshot.activeTab }
+      );
     });
 
-    if (this.usesStore()) {
-      [searchHistoryListContainer, favoriteListContainer].forEach((container) => {
-        container.addEventListener("change", (event) => {
-          if (!event.target.classList.contains("form-check-input")) return;
-          const li = event.target.closest("li");
-          if (li) state.dispatch({ type: "DELETE_TOGGLE", value: li.dataset.itemValue || "" });
-        });
+    [searchHistoryListContainer, favoriteListContainer].forEach((container) => {
+      container.addEventListener("change", (event) => {
+        if (!event.target.classList.contains("form-check-input")) return;
+        const li = event.target.closest("li");
+        if (li) state.dispatch({ type: "DELETE_TOGGLE", value: li.dataset.itemValue || "" });
       });
-    }
+    });
   }
 
   deleteFromHistoryList() {
-    if (this.usesStore()) {
-      const snapshot = state.getSnapshot();
-      const selected = new Set(snapshot.deleteMode.selectedValues);
-      const items = snapshot.history.items.filter((item) => !selected.has(item));
-      state.dispatch({ type: "HISTORY_SET", items, emptyReason: "cleared" });
-      state.dispatch({ type: "DELETE_CANCEL" });
-      chrome.storage.local.set({ searchHistoryList: items });
-      return;
-    }
-    const checkedBoxes = searchHistoryListContainer.querySelectorAll("input:checked");
-    const selectedTexts = [];
-
-    checkedBoxes.forEach((checkbox) => {
-      const listItem = checkbox.closest("li");
-      const selectedText = listItem.querySelector("span").textContent;
-      selectedTexts.push(selectedText);
-
-      listItem.remove();
-    });
-
-    chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
-      if (!searchHistoryList) return;
-
-      const updatedList = searchHistoryList.filter((item) => !selectedTexts.includes(item));
-      chrome.storage.local.set({ searchHistoryList: updatedList });
-
-      if (updatedList.length === 0) {
-        state.hasHistory = false;
-        clearButton.disabled = true;
-        searchHistoryUl[0].classList.add("d-none");
-        emptyMessage.style.display = "block";
-        emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg").replace(/\n/g, "<br>");
-      }
-    });
+    const snapshot = state.getSnapshot();
+    const selected = new Set(snapshot.deleteMode.selectedValues);
+    const items = snapshot.history.items.filter((item) => !selected.has(item));
+    state.dispatch({ type: "HISTORY_SET", items, emptyReason: "cleared" });
+    state.dispatch({ type: "DELETE_CANCEL" });
+    chrome.storage.local.set({ searchHistoryList: items });
   }
 
   deleteFromFavoriteList() {
-    if (this.usesStore()) {
-      const snapshot = state.getSnapshot();
-      const selected = new Set(snapshot.deleteMode.selectedValues);
-      const items = snapshot.favorite.items.filter((item) => !selected.has(item));
-      state.dispatch({ type: "FAVORITE_SET", items });
-      state.dispatch({ type: "DELETE_CANCEL" });
-      chrome.storage.local.set({ favoriteList: items });
-      return;
-    }
-    const checkedBoxes = favoriteListContainer.querySelectorAll("input:checked");
-    const selectedTexts = [];
-
-    checkedBoxes.forEach((checkbox) => {
-      const listItem = checkbox.closest("li");
-      const spanItem = listItem.querySelectorAll("span");
-      const selectedText = spanItem[0].textContent;
-      if (spanItem.length > 1) {
-        const clueText = spanItem[1].textContent;
-        selectedTexts.push(selectedText + " @" + clueText);
-      } else {
-        selectedTexts.push(selectedText);
-      }
-
-      listItem.remove();
-
-      const historyIElements = searchHistoryListContainer.querySelectorAll("i");
-
-      historyIElements.forEach((icon) => {
-        const parentSpan = icon.parentElement?.querySelector("span");
-        if (parentSpan && selectedText === parentSpan.textContent) {
-          icon.className = "bi bi-patch-plus-fill";
-        }
-      });
-    });
-
-    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-      if (!favoriteList) return;
-
-      const updatedList = favoriteList.filter((item) => !selectedTexts.includes(item));
-      chrome.storage.local.set({ favoriteList: updatedList });
-
-      if (updatedList.length === 0) {
-        state.hasFavorite = false;
-        exportButton.disabled = true;
-        favoriteUl[0].classList.add("d-none");
-        favoriteEmptyMessage.style.display = "block";
-        favoriteEmptyMessage.innerHTML = chrome.i18n
-          .getMessage("clearedUpMsg")
-          .replace(/\n/g, "<br>");
-      }
-    });
-  }
-
-  attachCheckboxEventListener(container) {
-    const checkboxes = container.querySelectorAll("input");
-    const liElements = container.querySelectorAll("li");
-
-    checkboxes.forEach((checkbox, index) => {
-      checkbox.addEventListener("click", () => {
-        const li = liElements[index];
-
-        if (checkbox.checked) {
-          li.classList.add("checked-list");
-        } else {
-          li.classList.remove("checked-list");
-        }
-
-        this.updateDeleteCount();
-      });
-    });
-  }
-
-  updateDeleteCount() {
-    const historyCheckedCount = searchHistoryListContainer.querySelectorAll("input:checked").length;
-    const favoriteCheckedCount = favoriteListContainer.querySelectorAll("input:checked").length;
-
-    const checkedCount = searchHistoryButton.classList.contains("active-button")
-      ? historyCheckedCount
-      : favoriteCheckedCount;
-
-    if (checkedCount > 0) {
-      deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnText", String(checkedCount));
-      deleteButton.classList.remove("disabled");
-    } else {
-      deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnTextEmpty");
-      deleteButton.classList.add("disabled");
-    }
+    const snapshot = state.getSnapshot();
+    const selected = new Set(snapshot.deleteMode.selectedValues);
+    const items = snapshot.favorite.items.filter((item) => !selected.has(item));
+    state.dispatch({ type: "FAVORITE_SET", items });
+    state.dispatch({ type: "DELETE_CANCEL" });
+    chrome.storage.local.set({ favoriteList: items });
   }
 
   backToNormal() {
-    if (this.usesStore()) {
-      state.dispatch({ type: "DELETE_CANCEL" });
-      return;
-    }
-    deleteListButton.style.pointerEvents = "";
-    deleteListButton.classList.remove("active-button");
-    deleteButtonGroup.classList.add("d-none");
-
-    if (searchHistoryButton.classList.contains("active-button")) {
-      searchButtonGroup.classList.remove("d-none");
-      favoriteListButton.disabled = false;
-      geminiSummaryButton.disabled = false;
-    } else {
-      exportButtonGroup.classList.remove("d-none");
-      searchHistoryButton.disabled = false;
-      geminiSummaryButton.disabled = false;
-    }
-
-    this.updateInput();
-  }
-
-  updateInput() {
-    if (this.usesStore()) return;
-    const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
-    const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
-
-    this.updateListElements(historyLiElements, "history");
-    this.updateListElements(favoriteLiElements, "favorite");
-  }
-
-  updateListElements(liElements, listType) {
-    liElements.forEach((li) => {
-      const checkbox = li.querySelector("input");
-      const favoriteIcon = li.querySelector("i");
-
-      checkbox.classList.add("d-none");
-      favoriteIcon.classList.remove("d-none");
-
-      li.classList.remove("checked-list");
-      checkbox.checked = false;
-
-      li.classList.remove("delete-list");
-      li.classList.add(listType + "-list");
-    });
+    state.dispatch({ type: "DELETE_CANCEL" });
   }
 
   render(snapshot) {
@@ -1254,21 +1045,11 @@ class Favorite {
             const mergedList = existingList.concat(newNames);
 
             chrome.storage.local.set({ favoriteList: mergedList }, () => {
-              if (typeof state.dispatch === "function") {
-                state.dispatch({ type: "FAVORITE_SET", items: mergedList });
-              } else {
-                this.updateFavorite(mergedList);
-                this.updateHistoryFavoriteIcons();
-              }
+              state.dispatch({ type: "FAVORITE_SET", items: mergedList });
             });
           });
         } catch (error) {
-          if (typeof state.dispatch === "function") {
-            state.dispatch({ type: "FAVORITE_ERROR", errorKey: "importErrorMsg" });
-          } else {
-            favoriteEmptyMessage.style.display = "block";
-            favoriteEmptyMessage.innerText = chrome.i18n.getMessage("importErrorMsg");
-          }
+          state.dispatch({ type: "FAVORITE_ERROR", errorKey: "importErrorMsg" });
         }
       };
 
@@ -1282,22 +1063,14 @@ class Favorite {
       const liElement = DOMUtils.findClosestListItem(event);
       if (!liElement) return;
 
-      const storeMode = typeof state.getSnapshot === "function";
       if (
-        (storeMode && state.getSnapshot().deleteMode.source === "favorite") ||
+        state.getSnapshot().deleteMode.source === "favorite" ||
         liElement.classList.contains("delete-list")
       ) {
         if (event.target.classList.contains("form-check-input")) {
           return;
         } else {
-          if (storeMode) {
-            state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
-          } else {
-            liElement.classList.toggle("checked-list");
-            const checkbox = liElement.querySelector("input");
-            checkbox.checked = !checkbox.checked;
-            remove.updateDeleteCount();
-          }
+          state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
         }
       } else {
         const spans = liElement.querySelectorAll("span");
@@ -1387,80 +1160,12 @@ class Favorite {
     return favoriteIcon;
   }
 
-  // Only reachable from the legacy (non-store) CSV-import fallback below;
-  // store mode updates icons through FAVORITE_SET + gemini/history render().
-  updateHistoryFavoriteIcons() {
-    chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-      document.querySelectorAll(".history-list").forEach((item) => {
-        const text = item.querySelector("span").textContent;
-        const icon = item.querySelector("i");
-        icon.className =
-          favoriteList && !favoriteList.includes(text)
-            ? "bi bi-patch-plus-fill"
-            : "bi bi-patch-check-fill matched";
-      });
-    });
-  }
-
   addToFavoriteList(selectedText) {
     chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
-    if (typeof state.dispatch !== "function") exportButton.disabled = false;
   }
 
   updateFavorite(favoriteList) {
-    if (typeof state.dispatch === "function") {
-      state.dispatch({ type: "FAVORITE_SET", items: favoriteList });
-      return;
-    }
-    if (!state.favoriteListChanged && favoriteListContainer.innerHTML.trim() !== "") {
-      delayMeasurement();
-      return;
-    }
-    favoriteListContainer.innerHTML = "";
-    if (favoriteList?.length) {
-      favoriteEmptyMessage.style.display = "none";
-      state.hasFavorite = true;
-      const ul = document.createElement("ul");
-      ul.className = "list-group d-flex flex-column-reverse";
-      const fragment = document.createDocumentFragment();
-      favoriteList.forEach((item) => {
-        const li = document.createElement("li");
-        li.className =
-          "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between align-items-center text-break";
-        const [name, clue] = item.split(" @");
-        const span = document.createElement("span");
-        span.textContent = name;
-        li.appendChild(span);
-        if (clue !== undefined) {
-          const clueSpan = document.createElement("span");
-          clueSpan.className = "d-none";
-          clueSpan.textContent = clue;
-          li.appendChild(clueSpan);
-        }
-        const icon = document.createElement("i");
-        icon.className = "bi bi-patch-check-fill matched";
-        li.appendChild(icon);
-        const checkbox = document.createElement("input");
-        checkbox.className = "form-check-input d-none";
-        checkbox.type = "checkbox";
-        checkbox.value = "delete";
-        checkbox.name = "checkDelete";
-        checkbox.ariaLabel = "Delete";
-        checkbox.style.cursor = "pointer";
-        li.appendChild(checkbox);
-        fragment.appendChild(li);
-      });
-      ul.appendChild(fragment);
-      ul.firstElementChild?.classList.remove("mb-3");
-      favoriteListContainer.appendChild(ul);
-      exportButton.disabled = false;
-      remove.attachCheckboxEventListener(favoriteListContainer);
-    } else {
-      favoriteEmptyMessage.style.display = "block";
-      state.hasFavorite = false;
-      exportButton.disabled = true;
-    }
-    delayMeasurement();
+    state.dispatch({ type: "FAVORITE_SET", items: favoriteList });
   }
 
   render(snapshot) {
@@ -1547,22 +1252,14 @@ class History {
         return;
       }
 
-      const storeMode = typeof state.getSnapshot === "function";
       if (
-        (storeMode && state.getSnapshot().deleteMode.source === "history") ||
+        state.getSnapshot().deleteMode.source === "history" ||
         liElement.classList.contains("delete-list")
       ) {
         if (event.target.classList.contains("form-check-input")) {
           return;
         } else {
-          if (storeMode) {
-            state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
-          } else {
-            liElement.classList.toggle("checked-list");
-            const checkbox = liElement.querySelector("input");
-            checkbox.checked = !checkbox.checked;
-            remove.updateDeleteCount();
-          }
+          state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
         }
       } else {
         const selectedText = liElement.querySelector("span")?.textContent;
@@ -1615,21 +1312,9 @@ class History {
     clearButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
       chrome.storage.local.set({ searchHistoryList: [] });
-      if (typeof state.dispatch === "function") {
-        state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
-      } else {
-        clearButton.disabled = true;
-        searchHistoryListContainer.innerHTML = "";
-        emptyMessage.style.display = "block";
-        emptyMessage.style.whiteSpace = "pre-line";
-        emptyMessage.textContent = chrome.i18n.getMessage("clearedUpMsg") || "";
-        state.hasHistory = false;
-        measureContentSize();
-      }
+      state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
 
       chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
-
-      if (typeof state.dispatch !== "function") measureContentSize();
     });
   }
 
@@ -2257,35 +1942,10 @@ class Modal {
       const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
       chrome.storage.local.set({ geminiApiKey: encrypted });
 
-      // Popup production flow delegates API state to the Gemini controller/store.
-      // Standalone component consumers keep the legacy fallback below.
-      if (this.onApiKeyChange) {
-        this.onApiKeyChange(apiKey);
-        return;
-      }
-
-      if (!apiKey) {
-        apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-        sendButton.disabled = true;
-        return;
-      }
-
-      chrome.runtime.sendMessage(
-        { action: "verifyApiKey", apiKey: apiKey },
-        ({ valid, error } = {}) => {
-          if (error || !valid) {
-            geminiEmptyMessage.classList.remove("d-none");
-            apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-            geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
-            sendButton.disabled = true;
-          } else {
-            apiInput.placeholder = "............" + apiKey.slice(-4);
-            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-            sendButton.disabled = false;
-          }
-        }
-      );
+      // Popup production flow always wires up onApiKeyChange (delegates to the
+      // Gemini controller/store); it is set unconditionally in popup.js right
+      // after construction, so this callback is always present here.
+      this.onApiKeyChange(apiKey);
     });
 
     this.text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
@@ -2305,12 +1965,7 @@ class Modal {
 
     this._setupResetButton(apiInput, "geminiApiKey", () => {
       apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-      if (this.onApiKeyChange) {
-        this.onApiKeyChange("");
-        return;
-      }
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-      sendButton.disabled = true;
+      this.onApiKeyChange("");
     });
   }
 
@@ -2690,7 +2345,6 @@ const DEMO_ITEM_CLASS = "onboarding-demo-item";
 class Onboarding {
   constructor() {
     this.STORAGE_KEY = "onboardingDone";
-    this.DEMO_ITEM_CLASS = DEMO_ITEM_CLASS;
     this.steps = [
       {
         targetSelector: '.footer-li[data-bs-target="#tipsModal"]',
@@ -2732,58 +2386,16 @@ class Onboarding {
    * Clicks inside the demo item are swallowed (capture phase) and routed to
    * `next()` so the real history click handler never adds it to favorites.
    */
-  injectDemoHistoryItem() {    if (this.store?.dispatch) {
-      this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
-      // History.render() rebuilds the list on every dispatch, so a listener
-      // attached to this specific <li> would be discarded on the next render.
-      // History's own container-level mousedown/contextmenu listeners swallow
-      // clicks on .onboarding-demo-item instead (see history.js).
-      return;
-    }
-
-    const container = document.getElementById("searchHistoryList");
-    if (!container) return;
-    let ul = container.querySelector("ul");
-    if (!ul) {
-      ul = document.createElement("ul");
-      ul.className = "list-group d-flex flex-column-reverse";
-      ul.dataset.onboardingCreated = "true";
-      container.appendChild(ul);
-    }
-    const placeName = chrome?.i18n?.getMessage?.("onboardingDemoPlace") || "Eiffel Tower";
-    const li = document.createElement("li");
-    li.className = `${this.DEMO_ITEM_CLASS} list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center text-break`;
-    const span = document.createElement("span");
-    span.textContent = placeName;
-    const icon = document.createElement("i");
-    icon.className = "bi bi-patch-plus-fill";
-    li.append(span, icon);
-    ul.appendChild(li);
-    const empty = document.getElementById("emptyMessage");
-    if (empty) empty.style.display = "none";
-
-    // Swallow real clicks so the existing history listener does not persist
-    // the demo item to chrome.storage favorites. Clicking the icon advances.
-    const swallow = (event) => {
-      event.stopPropagation();
-      event.preventDefault();
-      if (event.target.classList.contains("bi")) this.next();
-    };
-    ["mousedown", "click", "contextmenu"].forEach((evt) => li.addEventListener(evt, swallow, true));
+  injectDemoHistoryItem() {
+    this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
+    // History.render() rebuilds the list on every dispatch, so a listener
+    // attached to this specific <li> would be discarded on the next render.
+    // History's own container-level mousedown/contextmenu listeners swallow
+    // clicks on .onboarding-demo-item instead (see history.js).
   }
 
   removeDemoHistoryItem() {
-    if (this.store?.dispatch) {
-      this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: false });
-      return;
-    }
-    const container = document.getElementById("searchHistoryList");
-    if (!container) return;
-    container.querySelectorAll(`.${this.DEMO_ITEM_CLASS}`).forEach((el) => el.remove());
-    const ul = container.querySelector("ul[data-onboarding-created='true']");
-    if (ul && ul.children.length === 0) ul.remove();
-    const empty = document.getElementById("emptyMessage");
-    if (empty) empty.style.display = "block";
+    this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: false });
   }
 
   maybeStart() {

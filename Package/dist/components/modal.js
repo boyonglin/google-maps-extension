@@ -58,35 +58,10 @@ class Modal {
       const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
       chrome.storage.local.set({ geminiApiKey: encrypted });
 
-      // Popup production flow delegates API state to the Gemini controller/store.
-      // Standalone component consumers keep the legacy fallback below.
-      if (this.onApiKeyChange) {
-        this.onApiKeyChange(apiKey);
-        return;
-      }
-
-      if (!apiKey) {
-        apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-        sendButton.disabled = true;
-        return;
-      }
-
-      chrome.runtime.sendMessage(
-        { action: "verifyApiKey", apiKey: apiKey },
-        ({ valid, error } = {}) => {
-          if (error || !valid) {
-            geminiEmptyMessage.classList.remove("d-none");
-            apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-            geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
-            sendButton.disabled = true;
-          } else {
-            apiInput.placeholder = "............" + apiKey.slice(-4);
-            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-            sendButton.disabled = false;
-          }
-        }
-      );
+      // Popup production flow always wires up onApiKeyChange (delegates to the
+      // Gemini controller/store); it is set unconditionally in popup.js right
+      // after construction, so this callback is always present here.
+      this.onApiKeyChange(apiKey);
     });
 
     this.text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
@@ -106,12 +81,7 @@ class Modal {
 
     this._setupResetButton(apiInput, "geminiApiKey", () => {
       apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-      if (this.onApiKeyChange) {
-        this.onApiKeyChange("");
-        return;
-      }
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-      sendButton.disabled = true;
+      this.onApiKeyChange("");
     });
   }
 

@@ -15,22 +15,14 @@ class History {
         return;
       }
 
-      const storeMode = typeof state.getSnapshot === "function";
       if (
-        (storeMode && state.getSnapshot().deleteMode.source === "history") ||
+        state.getSnapshot().deleteMode.source === "history" ||
         liElement.classList.contains("delete-list")
       ) {
         if (event.target.classList.contains("form-check-input")) {
           return;
         } else {
-          if (storeMode) {
-            state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
-          } else {
-            liElement.classList.toggle("checked-list");
-            const checkbox = liElement.querySelector("input");
-            checkbox.checked = !checkbox.checked;
-            remove.updateDeleteCount();
-          }
+          state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
         }
       } else {
         const selectedText = liElement.querySelector("span")?.textContent;
@@ -83,21 +75,9 @@ class History {
     clearButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
       chrome.storage.local.set({ searchHistoryList: [] });
-      if (typeof state.dispatch === "function") {
-        state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
-      } else {
-        clearButton.disabled = true;
-        searchHistoryListContainer.innerHTML = "";
-        emptyMessage.style.display = "block";
-        emptyMessage.style.whiteSpace = "pre-line";
-        emptyMessage.textContent = chrome.i18n.getMessage("clearedUpMsg") || "";
-        state.hasHistory = false;
-        measureContentSize();
-      }
+      state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
 
       chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
-
-      if (typeof state.dispatch !== "function") measureContentSize();
     });
   }
 

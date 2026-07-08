@@ -4,16 +4,11 @@
  * Following TDD principles: bugs are identified, explained, and fixed in the original code
  */
 
-// Mock global functions and objects before requiring module
-global.state = {
-  hasHistory: false,
-  buildSearchUrl: jest.fn(),
-};
-
-global.remove = {
-  updateDeleteCount: jest.fn(),
-  attachCheckboxEventListener: jest.fn(),
-};
+// Use the production store so component tests exercise reducer-driven rendering.
+const State = require("../Package/dist/hooks/popupState.js");
+global.State = State;
+global.state = new State();
+global.state.buildSearchUrl = jest.fn();
 
 global.favorite = {
   createFavoriteIcon: jest.fn(),
@@ -24,8 +19,6 @@ global.favorite = {
 global.ContextMenuUtil = {
   createContextMenu: jest.fn(),
 };
-
-global.measureContentSize = jest.fn();
 
 // Load modules
 const History = require("../Package/dist/components/history.js");
@@ -73,15 +66,8 @@ describe("History Component", () => {
     global.emptyMessage = document.getElementById("emptyMessage");
 
     // Reset state
-    global.state = {
-      hasHistory: false,
-      buildSearchUrl: jest.fn(),
-    };
-
-    global.remove = {
-      updateDeleteCount: jest.fn(),
-      attachCheckboxEventListener: jest.fn(),
-    };
+    global.state = new State();
+    global.state.buildSearchUrl = jest.fn();
 
     global.favorite = {
       createFavoriteIcon: jest.fn((itemName, favoriteList) => {
@@ -99,18 +85,19 @@ describe("History Component", () => {
       createContextMenu: jest.fn(),
     };
 
-    global.measureContentSize = jest.fn();
-
     // Reset mocks
     jest.clearAllMocks();
     mockI18n({
       clearedUpMsg: "All cleared up!\nNothing to see here.",
+      historyEmptyMsg: "No history yet",
       plusLabel: "Add to favorites",
     });
     mockChromeStorage();
 
-    // Create new instance
+    // Create new instance and subscribe it to the store, matching popup.js's
+    // renderPopup wiring (history.render(snapshot) on every dispatch).
     historyInstance = new History();
+    global.state.subscribe((snapshot) => historyInstance.render(snapshot));
   });
 
   afterEach(() => {
@@ -242,43 +229,44 @@ describe("History Component", () => {
       // --------------------------------------------------------------------
 
       test("should toggle checkbox in delete mode when clicking on LI", () => {
-        const li = createMockHistoryItem("Test Location");
-        li.classList.add("delete-list");
-        li.classList.remove("history-list");
-        searchHistoryListContainer.appendChild(li);
+        state.dispatch({ type: "HISTORY_SET", items: ["Test Location"] });
+        state.dispatch({ type: "DELETE_ENTER", source: "history" });
 
+        const li = searchHistoryListContainer.querySelector("li");
         const checkbox = li.querySelector("input");
         expect(checkbox.checked).toBe(false);
 
         const mouseEvent = createMouseEvent(li, 0);
         li.dispatchEvent(mouseEvent);
 
-        expect(li.classList.contains("checked-list")).toBe(true);
-        expect(checkbox.checked).toBe(true);
-        expect(global.remove.updateDeleteCount).toHaveBeenCalled();
+        expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["Test Location"]);
+        const updatedLi = searchHistoryListContainer.querySelector("li");
+        expect(updatedLi.classList.contains("checked-list")).toBe(true);
+        expect(updatedLi.querySelector("input").checked).toBe(true);
       });
 
       test("should toggle off checkbox in delete mode when clicking again", () => {
-        const li = createMockHistoryItem("Test Location", [], true);
-        li.classList.add("delete-list", "checked-list");
-        searchHistoryListContainer.appendChild(li);
+        state.dispatch({ type: "HISTORY_SET", items: ["Test Location"] });
+        state.dispatch({ type: "DELETE_ENTER", source: "history" });
+        state.dispatch({ type: "DELETE_TOGGLE", value: "Test Location" });
 
-        const checkbox = li.querySelector("input");
-        checkbox.checked = true;
+        const li = searchHistoryListContainer.querySelector("li");
+        expect(li.classList.contains("checked-list")).toBe(true);
 
         const mouseEvent = createMouseEvent(li, 0);
         li.dispatchEvent(mouseEvent);
 
-        expect(li.classList.contains("checked-list")).toBe(false);
-        expect(checkbox.checked).toBe(false);
-        expect(global.remove.updateDeleteCount).toHaveBeenCalled();
+        expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
+        const updatedLi = searchHistoryListContainer.querySelector("li");
+        expect(updatedLi.classList.contains("checked-list")).toBe(false);
+        expect(updatedLi.querySelector("input").checked).toBe(false);
       });
 
       test("should return early if clicking checkbox directly in delete mode", () => {
-        const li = createMockHistoryItem("Test Location");
-        li.classList.add("delete-list");
-        searchHistoryListContainer.appendChild(li);
+        state.dispatch({ type: "HISTORY_SET", items: ["Test Location"] });
+        state.dispatch({ type: "DELETE_ENTER", source: "history" });
 
+        const li = searchHistoryListContainer.querySelector("li");
         const checkbox = li.querySelector("input");
         checkbox.classList.remove("d-none");
 
@@ -286,8 +274,7 @@ describe("History Component", () => {
         checkbox.dispatchEvent(mouseEvent);
 
         // Should return early without toggling
-        expect(li.classList.contains("checked-list")).toBe(false);
-        expect(global.remove.updateDeleteCount).not.toHaveBeenCalled();
+        expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
       });
 
       // --------------------------------------------------------------------
@@ -560,17 +547,15 @@ describe("History Component", () => {
       });
 
       test("should clear history and update storage", () => {
-        clearButton.disabled = false;
-        global.state.hasHistory = true;
-        searchHistoryListContainer.innerHTML = "<ul><li>Item 1</li></ul>";
+        state.dispatch({ type: "HISTORY_SET", items: ["Item 1"] });
 
         clearButton.dispatchEvent(new Event("click"));
 
         expect(chrome.storage.local.set).toHaveBeenCalledWith({ searchHistoryList: [] });
         expect(clearButton.disabled).toBe(true);
-        expect(searchHistoryListContainer.innerHTML).toBe("");
-        expect(emptyMessage.style.display).toBe("block");
-        expect(global.state.hasHistory).toBe(false);
+        expect(searchHistoryListContainer.querySelectorAll("li").length).toBe(0);
+        expect(emptyMessage.classList.contains("d-none")).toBe(false);
+        expect(state.getSnapshot().history.items).toEqual([]);
       });
 
       test("should send message to background to clear history", () => {
@@ -597,20 +582,11 @@ describe("History Component", () => {
         expect(emptyMessage.style.whiteSpace).toBe("pre-line");
       });
 
-      test("should call measureContentSize after clearing", () => {
-        clearButton.dispatchEvent(new Event("click"));
-
-        expect(global.measureContentSize).toHaveBeenCalled();
-      });
-
       test("should clear history even when already empty", () => {
-        searchHistoryListContainer.innerHTML = "";
-        global.state.hasHistory = false;
-
         clearButton.dispatchEvent(new Event("click"));
 
         expect(chrome.storage.local.set).toHaveBeenCalledWith({ searchHistoryList: [] });
-        expect(global.state.hasHistory).toBe(false);
+        expect(state.getSnapshot().history.items).toEqual([]);
       });
 
       test("should handle multiple rapid clicks", () => {
@@ -858,6 +834,110 @@ describe("History Component", () => {
   });
 
   // ============================================================================
+  // render Tests (store-driven rendering; invoked automatically by the state
+  // subscription set up in the outer beforeEach, mirroring popup.js's wiring)
+  // ============================================================================
+
+  describe("render", () => {
+    test("should render history items", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
+
+      const items = searchHistoryListContainer.querySelectorAll(".history-list");
+      expect(items.length).toBe(2);
+      expect(items[0].querySelector("span").textContent).toBe("Location 1");
+      expect(items[1].querySelector("span").textContent).toBe("Location 2");
+    });
+
+    test("should hide empty message when history exists", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+
+      expect(emptyMessage.classList.contains("d-none")).toBe(true);
+    });
+
+    test("should show empty message when history is empty", () => {
+      state.dispatch({ type: "HISTORY_SET", items: [] });
+
+      expect(emptyMessage.classList.contains("d-none")).toBe(false);
+      expect(emptyMessage.textContent).toBe("No history yet");
+    });
+
+    test("should show the cleared message when emptyReason is cleared", () => {
+      state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
+
+      expect(emptyMessage.textContent).toBe("All cleared up!\nNothing to see here.");
+    });
+
+    test("should enable clearButton when history exists", () => {
+      clearButton.disabled = true;
+
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+
+      expect(clearButton.disabled).toBe(false);
+    });
+
+    test("should disable clearButton when history is empty", () => {
+      clearButton.disabled = false;
+
+      state.dispatch({ type: "HISTORY_SET", items: [] });
+
+      expect(clearButton.disabled).toBe(true);
+    });
+
+    test("should reflect favorite status on each item's icon", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1"] });
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
+
+      expect(global.favorite.createFavoriteIcon).toHaveBeenCalledWith("Location 1", ["Location 1"]);
+      expect(global.favorite.createFavoriteIcon).toHaveBeenCalledWith("Location 2", ["Location 1"]);
+    });
+
+    test("should show checkboxes and hide icons while in delete mode", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+
+      const li = searchHistoryListContainer.querySelector("li");
+      expect(li.classList.contains("delete-list")).toBe(true);
+      expect(li.classList.contains("history-list")).toBe(false);
+      expect(li.querySelector("input").classList.contains("d-none")).toBe(false);
+      expect(li.querySelector("i").classList.contains("d-none")).toBe(true);
+    });
+
+    test("should remove mb-3 from the first item (due to flex-column-reverse)", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2", "Location 3"] });
+
+      const items = searchHistoryListContainer.querySelectorAll(".history-list");
+      expect(items[0].classList.contains("mb-3")).toBe(false);
+    });
+
+    test("should clear existing content before rendering", () => {
+      searchHistoryListContainer.innerHTML = "<div>Old content</div>";
+
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+
+      expect(searchHistoryListContainer.innerHTML).not.toContain("Old content");
+    });
+
+    test("should render the onboarding demo item when demoHistoryVisible is true", () => {
+      state.dispatch({ type: "HISTORY_SET", items: [] });
+      state.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
+
+      const demoItem = searchHistoryListContainer.querySelector(".onboarding-demo-item");
+      expect(demoItem).toBeTruthy();
+      // The demo item counts toward "has content", so the empty message stays hidden.
+      expect(emptyMessage.classList.contains("d-none")).toBe(true);
+    });
+
+    test("should remove the onboarding demo item when demoHistoryVisible is false", () => {
+      state.dispatch({ type: "HISTORY_SET", items: [] });
+      state.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
+      state.dispatch({ type: "ONBOARDING_DEMO_SET", visible: false });
+
+      expect(searchHistoryListContainer.querySelector(".onboarding-demo-item")).toBeNull();
+      expect(emptyMessage.classList.contains("d-none")).toBe(false);
+    });
+  });
+
+  // ============================================================================
   // Integration Tests
   // ============================================================================
 
@@ -908,22 +988,16 @@ describe("History Component", () => {
     });
 
     test("complete workflow: create items, clear all, verify state", () => {
-      const li1 = historyInstance.createListItem("Location 1", []);
-      const li2 = historyInstance.createListItem("Location 2", []);
-      searchHistoryListContainer.appendChild(li1);
-      searchHistoryListContainer.appendChild(li2);
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
 
       historyInstance.addHistoryPageListener();
 
-      global.state.hasHistory = true;
-      clearButton.disabled = false;
-
       clearButton.click();
 
-      expect(searchHistoryListContainer.innerHTML).toBe("");
+      expect(searchHistoryListContainer.querySelectorAll("li").length).toBe(0);
       expect(clearButton.disabled).toBe(true);
-      expect(emptyMessage.style.display).toBe("block");
-      expect(global.state.hasHistory).toBe(false);
+      expect(emptyMessage.classList.contains("d-none")).toBe(false);
+      expect(state.getSnapshot().history.items).toEqual([]);
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ searchHistoryList: [] });
       expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
         action: "clearSearchHistoryList",
@@ -931,32 +1005,26 @@ describe("History Component", () => {
     });
 
     test("complete workflow: toggle delete mode and check items", () => {
-      const li1 = historyInstance.createListItem("Location 1", []);
-      const li2 = historyInstance.createListItem("Location 2", []);
-
-      li1.classList.remove("history-list");
-      li1.classList.add("delete-list");
-      li2.classList.remove("history-list");
-      li2.classList.add("delete-list");
-
-      searchHistoryListContainer.appendChild(li1);
-      searchHistoryListContainer.appendChild(li2);
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
 
       historyInstance.addHistoryPageListener();
 
-      const mouseEvent1 = createMouseEvent(li1, 0);
-      li1.dispatchEvent(mouseEvent1);
+      const [li1] = searchHistoryListContainer.querySelectorAll("li");
+      li1.dispatchEvent(createMouseEvent(li1, 0));
 
-      expect(li1.classList.contains("checked-list")).toBe(true);
-      expect(li1.querySelector("input").checked).toBe(true);
-      expect(global.remove.updateDeleteCount).toHaveBeenCalledTimes(1);
+      expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["Location 1"]);
+      const [updatedLi1] = searchHistoryListContainer.querySelectorAll("li");
+      expect(updatedLi1.classList.contains("checked-list")).toBe(true);
+      expect(updatedLi1.querySelector("input").checked).toBe(true);
 
-      const mouseEvent2 = createMouseEvent(li2, 0);
-      li2.dispatchEvent(mouseEvent2);
+      const [, li2] = searchHistoryListContainer.querySelectorAll("li");
+      li2.dispatchEvent(createMouseEvent(li2, 0));
 
-      expect(li2.classList.contains("checked-list")).toBe(true);
-      expect(li2.querySelector("input").checked).toBe(true);
-      expect(global.remove.updateDeleteCount).toHaveBeenCalledTimes(2);
+      expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["Location 1", "Location 2"]);
+      const [, updatedLi2] = searchHistoryListContainer.querySelectorAll("li");
+      expect(updatedLi2.classList.contains("checked-list")).toBe(true);
+      expect(updatedLi2.querySelector("input").checked).toBe(true);
     });
 
     test("complete workflow: middle click multiple items to open in background tabs", async () => {

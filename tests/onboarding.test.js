@@ -14,6 +14,12 @@
 
 const { mockI18n, cleanupDOM } = require("./testHelpers");
 
+// Use the production store so the favorite step's demo-item dispatch is
+// exercised end-to-end: onboarding dispatches ONBOARDING_DEMO_SET, and the
+// real History component (subscribed below, matching popup.js's wiring)
+// renders/removes the demo <li> that onboarding's own tooltip then targets.
+const State = require("../Package/dist/hooks/popupState.js");
+const History = require("../Package/dist/components/history.js");
 const Onboarding = require("../Package/dist/components/onboarding.js");
 
 // Build the DOM that the onboarding targets (mirrors popup.html selectors)
@@ -22,6 +28,7 @@ const setupOnboardingDOM = () => {
     <div id="geminiSummaryButton" style="position:absolute; top:20px; left:30px; width:40px; height:40px;"></div>
     <div id="searchHistoryList"></div>
     <p id="emptyMessage" style="display:block;">No history</p>
+    <button id="clearButton"></button>
     <ul>
       <li class="footer-li" data-bs-toggle="modal" data-bs-target="#tipsModal" style="position:absolute; top:300px; left:50px; width:60px; height:24px;"></li>
       <li class="footer-li" data-bs-toggle="modal" data-bs-target="#premiumModal" style="position:absolute; top:300px; left:130px; width:60px; height:24px;"></li>
@@ -113,7 +120,27 @@ describe("Onboarding Component", () => {
     chrome.storage.local.get.mockImplementation((key, cb) => cb({}));
     chrome.storage.local.set.mockImplementation((data, cb) => cb && cb());
 
+    // Wire up the real store + History component the same way popup.js does,
+    // so the favorite step's demo-item dispatch renders/removes a real <li>
+    // that onboarding's own tooltip positioning can then find.
+    global.searchHistoryListContainer = document.getElementById("searchHistoryList");
+    global.emptyMessage = document.getElementById("emptyMessage");
+    global.clearButton = document.getElementById("clearButton");
+    global.favorite = {
+      createFavoriteIcon: jest.fn((itemName, favoriteList) => {
+        const icon = document.createElement("i");
+        icon.className = favoriteList?.includes(itemName)
+          ? "bi bi-patch-check-fill matched"
+          : "bi bi-patch-plus-fill";
+        return icon;
+      }),
+    };
+    global.state = new State();
+    const historyInstance = new History();
+    global.state.subscribe((snapshot) => historyInstance.render(snapshot));
+
     onboarding = new Onboarding();
+    onboarding.store = global.state;
   });
 
   afterEach(() => {
@@ -312,9 +339,17 @@ describe("Onboarding Component", () => {
       onboarding.next(); // -> step 2 (favorite)
     };
 
+    test("should dispatch ONBOARDING_DEMO_SET(visible: true) when entering the step", () => {
+      advanceToFavoriteStep();
+
+      expect(state.getSnapshot().onboarding.demoHistoryVisible).toBe(true);
+    });
+
     test("should inject a demo history item with the favorite icon when entering the step", () => {
       advanceToFavoriteStep();
 
+      // Rendered by History reacting to the store dispatch above (see history.test.js
+      // for direct render() coverage; this asserts the end-to-end wiring instead).
       const demo = document.querySelector(".onboarding-demo-item");
       expect(demo).not.toBeNull();
       expect(demo.querySelector("span").textContent).toBe("Eiffel Tower");
@@ -325,7 +360,7 @@ describe("Onboarding Component", () => {
 
     test("should hide the empty-history message while the demo item is shown", () => {
       advanceToFavoriteStep();
-      expect(document.getElementById("emptyMessage").style.display).toBe("none");
+      expect(document.getElementById("emptyMessage").classList.contains("d-none")).toBe(true);
     });
 
     test("should remove the demo item when advancing to the next step", () => {
@@ -334,6 +369,7 @@ describe("Onboarding Component", () => {
 
       onboarding.next();
 
+      expect(state.getSnapshot().onboarding.demoHistoryVisible).toBe(false);
       expect(document.querySelector(".onboarding-demo-item")).toBeNull();
     });
 
@@ -341,31 +377,21 @@ describe("Onboarding Component", () => {
       advanceToFavoriteStep();
       onboarding.next();
 
-      expect(document.getElementById("emptyMessage").style.display).toBe("block");
+      expect(document.getElementById("emptyMessage").classList.contains("d-none")).toBe(false);
     });
 
     test("should remove the demo item when the tour is skipped mid-step", () => {
       advanceToFavoriteStep();
       onboarding.finish();
 
+      expect(state.getSnapshot().onboarding.demoHistoryVisible).toBe(false);
       expect(document.querySelector(".onboarding-demo-item")).toBeNull();
-      expect(document.getElementById("emptyMessage").style.display).toBe("block");
+      expect(document.getElementById("emptyMessage").classList.contains("d-none")).toBe(false);
     });
 
-    test("clicking the demo favorite icon should advance to the next step without persisting a real favorite", () => {
-      advanceToFavoriteStep();
-      const icon = document.querySelector(".onboarding-demo-item .bi");
-
-      icon.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
-
-      expect(onboarding.currentStep).toBe(2);
-      // Demo item should be cleaned up after leaving the step
-      expect(document.querySelector(".onboarding-demo-item")).toBeNull();
-      // chrome.storage.set should only ever be called for onboardingDone, never for favoriteList
-      const setCalls = chrome.storage.local.set.mock.calls.map((c) => c[0]);
-      const favoriteCalls = setCalls.filter((arg) => arg && "favoriteList" in arg);
-      expect(favoriteCalls).toHaveLength(0);
-    });
+    // Clicking the demo item's favorite icon (container-level swallow +
+    // advance) is History's responsibility, not onboarding's - see
+    // history.test.js's "onboarding demo item delegation" describe block.
 
     test("should be a no-op when the search history container is missing", () => {
       document.getElementById("searchHistoryList").remove();

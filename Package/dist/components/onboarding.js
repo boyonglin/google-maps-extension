@@ -17,7 +17,6 @@ const DEMO_ITEM_CLASS = "onboarding-demo-item";
 class Onboarding {
   constructor() {
     this.STORAGE_KEY = "onboardingDone";
-    this.DEMO_ITEM_CLASS = DEMO_ITEM_CLASS;
     this.steps = [
       {
         targetSelector: '.footer-li[data-bs-target="#tipsModal"]',
@@ -60,58 +59,15 @@ class Onboarding {
    * `next()` so the real history click handler never adds it to favorites.
    */
   injectDemoHistoryItem() {
-    if (this.store?.dispatch) {
-      this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
-      // History.render() rebuilds the list on every dispatch, so a listener
-      // attached to this specific <li> would be discarded on the next render.
-      // History's own container-level mousedown/contextmenu listeners swallow
-      // clicks on .onboarding-demo-item instead (see history.js).
-      return;
-    }
-
-    const container = document.getElementById("searchHistoryList");
-    if (!container) return;
-    let ul = container.querySelector("ul");
-    if (!ul) {
-      ul = document.createElement("ul");
-      ul.className = "list-group d-flex flex-column-reverse";
-      ul.dataset.onboardingCreated = "true";
-      container.appendChild(ul);
-    }
-    const placeName = chrome?.i18n?.getMessage?.("onboardingDemoPlace") || "Eiffel Tower";
-    const li = document.createElement("li");
-    li.className = `${this.DEMO_ITEM_CLASS} list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center text-break`;
-    const span = document.createElement("span");
-    span.textContent = placeName;
-    const icon = document.createElement("i");
-    icon.className = "bi bi-patch-plus-fill";
-    li.append(span, icon);
-    ul.appendChild(li);
-    const empty = document.getElementById("emptyMessage");
-    if (empty) empty.style.display = "none";
-
-    // Swallow real clicks so the existing history listener does not persist
-    // the demo item to chrome.storage favorites. Clicking the icon advances.
-    const swallow = (event) => {
-      event.stopPropagation();
-      event.preventDefault();
-      if (event.target.classList.contains("bi")) this.next();
-    };
-    ["mousedown", "click", "contextmenu"].forEach((evt) => li.addEventListener(evt, swallow, true));
+    this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
+    // History.render() rebuilds the list on every dispatch, so a listener
+    // attached to this specific <li> would be discarded on the next render.
+    // History's own container-level mousedown/contextmenu listeners swallow
+    // clicks on .onboarding-demo-item instead (see history.js).
   }
 
   removeDemoHistoryItem() {
-    if (this.store?.dispatch) {
-      this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: false });
-      return;
-    }
-    const container = document.getElementById("searchHistoryList");
-    if (!container) return;
-    container.querySelectorAll(`.${this.DEMO_ITEM_CLASS}`).forEach((el) => el.remove());
-    const ul = container.querySelector("ul[data-onboarding-created='true']");
-    if (ul && ul.children.length === 0) ul.remove();
-    const empty = document.getElementById("emptyMessage");
-    if (empty) empty.style.display = "block";
+    this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: false });
   }
 
   maybeStart() {

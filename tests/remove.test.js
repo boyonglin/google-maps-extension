@@ -6,23 +6,16 @@
  * 1. addRemoveListener() - cancelButton listener loses 'this' context
  *    - Original: cancelButton.addEventListener("click", this.backToNormal);
  *    - Fixed: cancelButton.addEventListener("click", () => this.backToNormal());
- *
- * 2. deleteFromFavoriteList() - Potential null reference when history items don't exist
- *    - Issue: Assumes history icons exist for all favorite items being deleted
- *    - Fixed: Added null check for icon.parentElement.querySelector("span")
  */
 
-// Mock global functions and state before requiring module
-global.measureContentSize = jest.fn();
-global.checkTextOverflow = jest.fn();
-global.state = {
-  hasHistory: false,
-  hasFavorite: false,
-};
+// Use the production store so component tests exercise reducer-driven rendering.
+const State = require("../Package/dist/hooks/popupState.js");
+global.State = State;
+global.state = new State();
 
 // Load modules
 const Remove = require("../Package/dist/components/remove.js");
-const { mockChromeStorage, mockI18n, createMockListItem } = require("./testHelpers");
+const { mockChromeStorage, mockI18n } = require("./testHelpers");
 const { setupPopupDOM, teardownPopupDOM } = require("./popupDOMFixture");
 
 describe("Remove Component", () => {
@@ -47,7 +40,6 @@ describe("Remove Component", () => {
     global.exportButtonGroup = document.getElementById("exportButtonGroup");
     global.deleteButtonGroup = document.getElementById("deleteButtonGroup");
     global.geminiButtonGroup = document.getElementById("geminiButtonGroup");
-    global.deleteButtonSpan = document.querySelector("#deleteButton span");
     global.searchHistoryListContainer = document.getElementById("searchHistoryList");
     global.favoriteListContainer = document.getElementById("favoriteList");
     global.clearButton = document.getElementById("clearButton");
@@ -55,20 +47,9 @@ describe("Remove Component", () => {
     global.emptyMessage = document.getElementById("emptyMessage");
     global.favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
 
-    // Create UL arrays for the component (it expects arrays)
-    const historyUl = document.createElement("ul");
-    global.searchHistoryListContainer.appendChild(historyUl);
-    global.searchHistoryUl = [historyUl];
-
-    const favoriteUl = document.createElement("ul");
-    global.favoriteListContainer.appendChild(favoriteUl);
-    global.favoriteUl = [favoriteUl];
-
-    // Reset state
-    global.state = {
-      hasHistory: false,
-      hasFavorite: false,
-    };
+    // Reset state and subscribe the instance to it, matching popup.js's
+    // renderPopup wiring (remove.render(snapshot) on every dispatch).
+    global.state = new State();
 
     // Reset mocks
     jest.clearAllMocks();
@@ -77,6 +58,7 @@ describe("Remove Component", () => {
 
     // Create new instance
     removeInstance = new Remove();
+    global.state.subscribe((snapshot) => removeInstance.render(snapshot));
   });
 
   afterEach(() => {
@@ -127,111 +109,85 @@ describe("Remove Component", () => {
         expect(spy).toHaveBeenCalled();
         expect(backSpy).toHaveBeenCalled();
       });
-
-      test("should call measureContentSize after deletion", () => {
-        jest.spyOn(removeInstance, "deleteFromHistoryList").mockImplementation(() => {});
-        jest.spyOn(removeInstance, "backToNormal").mockImplementation(() => {});
-
-        deleteButton.click();
-
-        expect(global.measureContentSize).toHaveBeenCalled();
-      });
     });
 
     describe("deleteListButton click handler", () => {
       beforeEach(() => {
-        const li1 = createMockListItem("Location 1");
-        const li2 = createMockListItem("Location 2");
-        searchHistoryListContainer.appendChild(li1);
-        searchHistoryListContainer.appendChild(li2);
-
-        const fli1 = createMockListItem("Favorite 1");
-        favoriteListContainer.appendChild(fli1);
-        fli1.className = "favorite-list";
-
         removeInstance.addRemoveListener();
       });
 
-      test("should call backToNormal if deleteListButton is already active", () => {
-        const spy = jest.spyOn(removeInstance, "backToNormal");
-        deleteListButton.classList.add("active-button");
+      test("should dispatch DELETE_CANCEL if already in delete mode", () => {
+        state.dispatch({ type: "DELETE_ENTER", source: "history" });
 
         deleteListButton.click();
 
-        expect(spy).toHaveBeenCalled();
+        expect(state.getSnapshot().deleteMode.source).toBeNull();
       });
 
-      test("should activate delete mode when clicked", () => {
+      test("should enter delete mode for the active tab when clicked", () => {
+        state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
+
+        deleteListButton.click();
+
+        expect(state.getSnapshot().deleteMode.source).toBe("favorite");
+      });
+
+      test("should activate delete mode styling when clicked", () => {
         deleteListButton.click();
 
         expect(deleteListButton.classList.contains("active-button")).toBe(true);
-        expect(deleteListButton.style.pointerEvents).toBe("auto");
       });
 
       test("should show delete button group and hide search button group", () => {
         deleteListButton.click();
 
         expect(searchButtonGroup.classList.contains("d-none")).toBe(true);
-        expect(exportButtonGroup.classList.contains("d-none")).toBe(true);
         expect(deleteButtonGroup.classList.contains("d-none")).toBe(false);
       });
 
-      test("should call checkTextOverflow", () => {
-        deleteListButton.click();
-
-        expect(global.checkTextOverflow).toHaveBeenCalled();
-      });
-
-      test("should show checkboxes and hide favorite icons for history items", () => {
-        deleteListButton.click();
-
-        const li = searchHistoryListContainer.querySelector("li");
-        const checkbox = li.querySelector("input");
-        const icon = li.querySelector("i");
-
-        expect(checkbox.classList.contains("d-none")).toBe(false);
-        expect(icon.classList.contains("d-none")).toBe(true);
-      });
-
-      test("should convert history-list items to delete-list", () => {
-        deleteListButton.click();
-
-        const li = searchHistoryListContainer.querySelector("li");
-
-        expect(li.classList.contains("delete-list")).toBe(true);
-        expect(li.classList.contains("history-list")).toBe(false);
-      });
-
-      test("should convert favorite-list items to delete-list", () => {
-        deleteListButton.click();
-
-        const li = favoriteListContainer.querySelector("li");
-
-        expect(li.classList.contains("delete-list")).toBe(true);
-        expect(li.classList.contains("favorite-list")).toBe(false);
-      });
-
-      test("should disable favoriteListButton when search history is active", () => {
-        searchHistoryButton.classList.add("active-button");
+      test("should disable favoriteListButton when history is the active tab", () => {
         deleteListButton.click();
 
         expect(favoriteListButton.disabled).toBe(true);
         expect(geminiSummaryButton.disabled).toBe(true);
       });
 
-      test("should disable searchHistoryButton when favorite list is active", () => {
-        searchHistoryButton.classList.remove("active-button");
+      test("should disable searchHistoryButton when favorite is the active tab", () => {
+        state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
+
         deleteListButton.click();
 
         expect(searchHistoryButton.disabled).toBe(true);
         expect(geminiSummaryButton.disabled).toBe(true);
       });
 
-      test("should call updateDeleteCount", () => {
-        const spy = jest.spyOn(removeInstance, "updateDeleteCount");
+      test("should toggle a checked item via the container change listener", () => {
+        state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
         deleteListButton.click();
 
-        expect(spy).toHaveBeenCalled();
+        const li = document.createElement("li");
+        li.dataset.itemValue = "Location 1";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "form-check-input";
+        li.appendChild(checkbox);
+        searchHistoryListContainer.appendChild(li);
+
+        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+
+        expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["Location 1"]);
+      });
+
+      test("should ignore change events from elements that are not checkboxes", () => {
+        deleteListButton.click();
+
+        const li = document.createElement("li");
+        li.dataset.itemValue = "Location 1";
+        searchHistoryListContainer.appendChild(li);
+
+        li.dispatchEvent(new Event("change", { bubbles: true }));
+
+        expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
       });
     });
   });
@@ -241,98 +197,64 @@ describe("Remove Component", () => {
   // ============================================================================
 
   describe("deleteFromHistoryList", () => {
-    beforeEach(() => {
-      global.state.hasHistory = true;
-    });
-
-    test("should remove checked items from DOM", () => {
-      const li1 = createMockListItem("Location 1", { isChecked: true });
-      const li2 = createMockListItem("Location 2", { isChecked: false });
-      const li3 = createMockListItem("Location 3", { isChecked: true });
-
-      searchHistoryListContainer.appendChild(li1);
-      searchHistoryListContainer.appendChild(li2);
-      searchHistoryListContainer.appendChild(li3);
-
-      mockChromeStorage({ searchHistoryList: ["Location 1", "Location 2", "Location 3"] });
+    test("should filter selected items out of the store", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2", "Location 3"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Location 1" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Location 3" });
 
       removeInstance.deleteFromHistoryList();
 
-      const remainingItems = searchHistoryListContainer.querySelectorAll("li");
-      expect(remainingItems.length).toBe(1);
-      expect(remainingItems[0].querySelector("span").textContent).toBe("Location 2");
+      expect(state.getSnapshot().history.items).toEqual(["Location 2"]);
     });
 
     test("should update chrome storage with filtered list", () => {
-      const li1 = createMockListItem("Location 1", { isChecked: true });
-      const li2 = createMockListItem("Location 2", { isChecked: false });
-
-      searchHistoryListContainer.appendChild(li1);
-      searchHistoryListContainer.appendChild(li2);
-
-      mockChromeStorage({ searchHistoryList: ["Location 1", "Location 2"] });
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Location 1" });
 
       removeInstance.deleteFromHistoryList();
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         searchHistoryList: ["Location 2"],
       });
+      expect(state.getSnapshot().history.items).toEqual(["Location 2"]);
     });
 
-    test("should set hasHistory to false when all items deleted", () => {
-      const li1 = createMockListItem("Location 1", { isChecked: true });
-      searchHistoryListContainer.appendChild(li1);
-
-      mockChromeStorage({ searchHistoryList: ["Location 1"] });
+    test("should cancel delete mode after deleting", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Location 1" });
 
       removeInstance.deleteFromHistoryList();
 
-      expect(global.state.hasHistory).toBe(false);
+      expect(state.getSnapshot().deleteMode.source).toBeNull();
     });
 
-    test("should disable clearButton when all items deleted", () => {
-      const li1 = createMockListItem("Location 1", { isChecked: true });
-      searchHistoryListContainer.appendChild(li1);
-
-      mockChromeStorage({ searchHistoryList: ["Location 1"] });
+    test("should reset delete mode when all items deleted", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Location 1" });
 
       removeInstance.deleteFromHistoryList();
 
-      expect(clearButton.disabled).toBe(true);
+      expect(state.getSnapshot().history.items).toEqual([]);
+      expect(state.getSnapshot().deleteMode.source).toBeNull();
     });
 
-    test("should hide history ul and show empty message when all items deleted", () => {
-      const li1 = createMockListItem("Location 1", { isChecked: true });
-      searchHistoryListContainer.appendChild(li1);
-
-      mockChromeStorage({ searchHistoryList: ["Location 1"] });
+    test("should not change remaining items when only some are selected", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Location 1" });
 
       removeInstance.deleteFromHistoryList();
 
-      expect(searchHistoryUl[0].classList.contains("d-none")).toBe(true);
-      expect(emptyMessage.style.display).toBe("block");
-      expect(emptyMessage.innerHTML).toContain("All cleared up!");
+      expect(state.getSnapshot().history.items).toEqual(["Location 2"]);
     });
 
-    test("should not change hasHistory when some items remain", () => {
-      const li1 = createMockListItem("Location 1", { isChecked: true });
-      const li2 = createMockListItem("Location 2", { isChecked: false });
-
-      searchHistoryListContainer.appendChild(li1);
-      searchHistoryListContainer.appendChild(li2);
-
-      mockChromeStorage({ searchHistoryList: ["Location 1", "Location 2"] });
-
-      removeInstance.deleteFromHistoryList();
-
-      expect(global.state.hasHistory).toBe(true);
-    });
-
-    test("should handle items with no checked boxes", () => {
-      const li1 = createMockListItem("Location 1", { isChecked: false });
-      searchHistoryListContainer.appendChild(li1);
-
-      mockChromeStorage({ searchHistoryList: ["Location 1"] });
+    test("should keep the full list when nothing is selected", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
 
       removeInstance.deleteFromHistoryList();
 
@@ -347,299 +269,136 @@ describe("Remove Component", () => {
   // ============================================================================
 
   describe("deleteFromFavoriteList", () => {
-    beforeEach(() => {
-      global.state.hasFavorite = true;
-    });
-
-    test("should remove checked items from DOM", () => {
-      const li1 = createMockListItem("Favorite 1", { isChecked: true });
-      const li2 = createMockListItem("Favorite 2", { isChecked: false });
-
-      li1.className = "favorite-list";
-      li2.className = "favorite-list";
-
-      favoriteListContainer.appendChild(li1);
-      favoriteListContainer.appendChild(li2);
-
-      mockChromeStorage({ favoriteList: ["Favorite 1", "Favorite 2"] });
-
-      removeInstance.deleteFromFavoriteList();
-
-      const remainingItems = favoriteListContainer.querySelectorAll("li");
-      expect(remainingItems.length).toBe(1);
-      expect(remainingItems[0].querySelector("span").textContent).toBe("Favorite 2");
-    });
-
-    test("should handle items with clue text", () => {
-      const li1 = createMockListItem("Favorite 1", { clueText: "Clue 1", isChecked: true });
-      li1.className = "favorite-list";
-      favoriteListContainer.appendChild(li1);
-
-      mockChromeStorage({ favoriteList: ["Favorite 1 @Clue 1"] });
-
-      removeInstance.deleteFromFavoriteList();
-
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        favoriteList: [],
-      });
-    });
-
-    test("should update history icons when favorite is deleted", () => {
-      // Create history item
-      const historyLi = createMockListItem("Location 1");
-      const historyIcon = historyLi.querySelector("i");
-      historyIcon.className = "bi bi-patch-check-fill";
-      searchHistoryListContainer.appendChild(historyLi);
-
-      // Create favorite item with same name
-      const favoriteLi = createMockListItem("Location 1", { isChecked: true });
-      favoriteLi.className = "favorite-list";
-      favoriteListContainer.appendChild(favoriteLi);
-
-      mockChromeStorage({ favoriteList: ["Location 1"] });
-
-      removeInstance.deleteFromFavoriteList();
-
-      expect(historyIcon.className).toBe("bi bi-patch-plus-fill");
-    });
-
     test("should update chrome storage with filtered list", () => {
-      const li1 = createMockListItem("Favorite 1", { isChecked: true });
-      const li2 = createMockListItem("Favorite 2", { isChecked: false });
-
-      li1.className = "favorite-list";
-      li2.className = "favorite-list";
-
-      favoriteListContainer.appendChild(li1);
-      favoriteListContainer.appendChild(li2);
-
-      mockChromeStorage({ favoriteList: ["Favorite 1", "Favorite 2"] });
+      state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1", "Favorite 2"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1" });
 
       removeInstance.deleteFromFavoriteList();
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         favoriteList: ["Favorite 2"],
       });
+      expect(state.getSnapshot().favorite.items).toEqual(["Favorite 2"]);
     });
 
-    test("should set hasFavorite to false when all items deleted", () => {
-      const li1 = createMockListItem("Favorite 1", { isChecked: true });
-      li1.className = "favorite-list";
-      favoriteListContainer.appendChild(li1);
-
-      mockChromeStorage({ favoriteList: ["Favorite 1"] });
+    test("should handle items with clue text", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1 @Clue 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1 @Clue 1" });
 
       removeInstance.deleteFromFavoriteList();
 
-      expect(global.state.hasFavorite).toBe(false);
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ favoriteList: [] });
     });
 
-    test("should disable exportButton when all items deleted", () => {
-      const li1 = createMockListItem("Favorite 1", { isChecked: true });
-      li1.className = "favorite-list";
-      favoriteListContainer.appendChild(li1);
-
-      mockChromeStorage({ favoriteList: ["Favorite 1"] });
+    test("should cancel delete mode after deleting", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1" });
 
       removeInstance.deleteFromFavoriteList();
 
-      expect(exportButton.disabled).toBe(true);
+      expect(state.getSnapshot().deleteMode.source).toBeNull();
     });
 
-    test("should hide favorite ul and show empty message when all items deleted", () => {
-      const li1 = createMockListItem("Favorite 1", { isChecked: true });
-      li1.className = "favorite-list";
-      favoriteListContainer.appendChild(li1);
-
-      mockChromeStorage({ favoriteList: ["Favorite 1"] });
+    test("should reset delete mode when all items deleted", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1" });
 
       removeInstance.deleteFromFavoriteList();
 
-      expect(favoriteUl[0].classList.contains("d-none")).toBe(true);
-      expect(favoriteEmptyMessage.style.display).toBe("block");
-      expect(favoriteEmptyMessage.innerHTML).toContain("All cleared up!");
+      expect(state.getSnapshot().favorite.items).toEqual([]);
+      expect(state.getSnapshot().deleteMode.source).toBeNull();
     });
 
-    test("should not change hasFavorite when some items remain", () => {
-      const li1 = createMockListItem("Favorite 1", { isChecked: true });
-      const li2 = createMockListItem("Favorite 2", { isChecked: false });
-
-      li1.className = "favorite-list";
-      li2.className = "favorite-list";
-
-      favoriteListContainer.appendChild(li1);
-      favoriteListContainer.appendChild(li2);
-
-      mockChromeStorage({ favoriteList: ["Favorite 1", "Favorite 2"] });
+    test("should not change remaining items when only some are selected", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1", "Favorite 2"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1" });
 
       removeInstance.deleteFromFavoriteList();
 
-      expect(global.state.hasFavorite).toBe(true);
+      expect(state.getSnapshot().favorite.items).toEqual(["Favorite 2"]);
     });
 
-    test("should handle history icon update when parent element is null", () => {
-      // Create favorite item without corresponding history item
-      const favoriteLi = createMockListItem("Favorite 1", { isChecked: true });
-      favoriteLi.className = "favorite-list";
-      favoriteListContainer.appendChild(favoriteLi);
+    test("should keep the full list when nothing is selected", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
 
-      // Create orphan icon (not properly attached to DOM)
-      const orphanIcon = document.createElement("i");
-      searchHistoryListContainer.appendChild(orphanIcon);
+      removeInstance.deleteFromFavoriteList();
 
-      mockChromeStorage({ favoriteList: ["Favorite 1"] });
-
-      // Should not throw error
-      expect(() => {
-        removeInstance.deleteFromFavoriteList();
-      }).not.toThrow();
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        favoriteList: ["Favorite 1"],
+      });
     });
   });
 
   // ============================================================================
-  // attachCheckboxEventListener Tests
+  // render Tests (store-driven rendering; invoked automatically by the state
+  // subscription set up in the outer beforeEach, mirroring popup.js's wiring)
   // ============================================================================
 
-  describe("attachCheckboxEventListener", () => {
-    test("should add checked-list class when checkbox is checked", () => {
-      const li = createMockListItem("Location 1");
-      const checkbox = li.querySelector("input");
-      searchHistoryListContainer.appendChild(li);
+  describe("render", () => {
+    test("should toggle active-button on deleteListButton based on deleteMode", () => {
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      expect(deleteListButton.classList.contains("active-button")).toBe(true);
 
-      removeInstance.attachCheckboxEventListener(searchHistoryListContainer);
-
-      // Programmatically set checked before clicking (simulates user checking)
-      checkbox.checked = false; // Start unchecked
-      checkbox.click(); // This will make it checked
-
-      expect(li.classList.contains("checked-list")).toBe(true);
+      state.dispatch({ type: "DELETE_CANCEL" });
+      expect(deleteListButton.classList.contains("active-button")).toBe(false);
     });
 
-    test("should remove checked-list class when checkbox is unchecked", () => {
-      const li = createMockListItem("Location 1", { isChecked: true });
-      li.classList.add("checked-list");
-      const checkbox = li.querySelector("input");
-      searchHistoryListContainer.appendChild(li);
+    test("should show deleteButtonGroup and hide the tab's action group while deleting", () => {
+      state.dispatch({ type: "SET_ACTIVE_TAB", tab: "history" });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
 
-      removeInstance.attachCheckboxEventListener(searchHistoryListContainer);
-
-      // Start checked, click to uncheck
-      checkbox.checked = true; // Ensure it starts checked
-      checkbox.click(); // This will make it unchecked
-
-      expect(li.classList.contains("checked-list")).toBe(false);
+      expect(deleteButtonGroup.classList.contains("d-none")).toBe(false);
+      expect(searchButtonGroup.classList.contains("d-none")).toBe(true);
     });
 
-    test("should call updateDeleteCount when checkbox state changes", () => {
-      const li = createMockListItem("Location 1");
-      const checkbox = li.querySelector("input");
-      searchHistoryListContainer.appendChild(li);
+    test("should restore the tab's action group and hide deleteButtonGroup after cancel", () => {
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_CANCEL" });
 
-      const spy = jest.spyOn(removeInstance, "updateDeleteCount");
-      removeInstance.attachCheckboxEventListener(searchHistoryListContainer);
-
-      checkbox.click();
-
-      expect(spy).toHaveBeenCalled();
+      expect(deleteButtonGroup.classList.contains("d-none")).toBe(true);
+      expect(searchButtonGroup.classList.contains("d-none")).toBe(false);
     });
 
-    test("should attach listeners to multiple checkboxes", () => {
-      const li1 = createMockListItem("Location 1");
-      const li2 = createMockListItem("Location 2");
-      searchHistoryListContainer.appendChild(li1);
-      searchHistoryListContainer.appendChild(li2);
+    test("should disable the other tab buttons while deleting, and re-enable after cancel", () => {
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      expect(favoriteListButton.disabled).toBe(true);
+      expect(geminiSummaryButton.disabled).toBe(true);
+      expect(searchHistoryButton.disabled).toBe(false);
 
-      const spy = jest.spyOn(removeInstance, "updateDeleteCount");
-      removeInstance.attachCheckboxEventListener(searchHistoryListContainer);
-
-      li1.querySelector("input").click();
-      li2.querySelector("input").click();
-
-      expect(spy).toHaveBeenCalledTimes(2);
+      state.dispatch({ type: "DELETE_CANCEL" });
+      expect(favoriteListButton.disabled).toBe(false);
+      expect(geminiSummaryButton.disabled).toBe(false);
     });
 
-    test("should handle empty container", () => {
-      expect(() => {
-        removeInstance.attachCheckboxEventListener(searchHistoryListContainer);
-      }).not.toThrow();
-    });
-  });
+    test("should show the empty delete label when nothing is selected", () => {
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
 
-  // ============================================================================
-  // updateDeleteCount Tests
-  // ============================================================================
-
-  describe("updateDeleteCount", () => {
-    test("should enable delete button when items are checked", () => {
-      const li = createMockListItem("Location 1", { isChecked: true });
-      searchHistoryListContainer.appendChild(li);
-      searchHistoryButton.classList.add("active-button");
-
-      removeInstance.updateDeleteCount();
-
-      expect(deleteButton.classList.contains("disabled")).toBe(false);
-    });
-
-    test("should disable delete button when no items are checked", () => {
-      const li = createMockListItem("Location 1", { isChecked: false });
-      searchHistoryListContainer.appendChild(li);
-      searchHistoryButton.classList.add("active-button");
-
-      removeInstance.updateDeleteCount();
-
+      expect(chrome.i18n.getMessage).toHaveBeenCalledWith("deleteBtnTextEmpty", undefined);
       expect(deleteButton.classList.contains("disabled")).toBe(true);
     });
 
-    test("should update button text with count for history list", () => {
-      const li1 = createMockListItem("Location 1", { isChecked: true });
-      const li2 = createMockListItem("Location 2", { isChecked: true });
-      searchHistoryListContainer.appendChild(li1);
-      searchHistoryListContainer.appendChild(li2);
-      searchHistoryButton.classList.add("active-button");
-
-      removeInstance.updateDeleteCount();
-
-      expect(deleteButtonSpan.textContent).toBe("Delete (2)");
-    });
-
-    test("should update button text with count for favorite list", () => {
-      const li1 = createMockListItem("Favorite 1", { isChecked: true });
-      const li2 = createMockListItem("Favorite 2", { isChecked: true });
-      const li3 = createMockListItem("Favorite 3", { isChecked: true });
-      favoriteListContainer.appendChild(li1);
-      favoriteListContainer.appendChild(li2);
-      favoriteListContainer.appendChild(li3);
-      searchHistoryButton.classList.remove("active-button");
-
-      removeInstance.updateDeleteCount();
-
-      expect(deleteButtonSpan.textContent).toBe("Delete (3)");
-    });
-
-    test("should show empty delete text when no items checked", () => {
-      searchHistoryButton.classList.add("active-button");
-
-      removeInstance.updateDeleteCount();
-
-      expect(deleteButtonSpan.textContent).toBe("Delete");
-    });
-
-    test("should use i18n for delete button text", () => {
-      const li = createMockListItem("Location 1", { isChecked: true });
-      searchHistoryListContainer.appendChild(li);
-      searchHistoryButton.classList.add("active-button");
-
-      removeInstance.updateDeleteCount();
+    test("should show the count in the delete label once items are selected", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Location 1" });
 
       expect(chrome.i18n.getMessage).toHaveBeenCalledWith("deleteBtnText", "1");
+      expect(deleteButton.querySelector("span").textContent).toBe("Delete (1)");
+      expect(deleteButton.classList.contains("disabled")).toBe(false);
     });
 
-    test("should use i18n for empty delete button text", () => {
-      searchHistoryButton.classList.add("active-button");
+    test("should hide the gemini button group only while the gemini tab is not active", () => {
+      state.dispatch({ type: "SET_ACTIVE_TAB", tab: "gemini" });
+      expect(geminiButtonGroup.classList.contains("d-none")).toBe(false);
 
-      removeInstance.updateDeleteCount();
-
-      expect(chrome.i18n.getMessage).toHaveBeenCalledWith("deleteBtnTextEmpty");
+      state.dispatch({ type: "SET_ACTIVE_TAB", tab: "history" });
+      expect(geminiButtonGroup.classList.contains("d-none")).toBe(true);
     });
   });
 
@@ -649,28 +408,22 @@ describe("Remove Component", () => {
 
   describe("backToNormal", () => {
     beforeEach(() => {
-      deleteListButton.classList.add("active-button");
-      deleteListButton.style.pointerEvents = "auto";
-      deleteButtonGroup.classList.remove("d-none");
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
     });
 
-    test("should reset deleteListButton styles", () => {
+    test("should dispatch DELETE_CANCEL", () => {
       removeInstance.backToNormal();
 
-      expect(deleteListButton.style.pointerEvents).toBe("");
+      expect(state.getSnapshot().deleteMode.source).toBeNull();
+    });
+
+    test("should reset deleteListButton styling via re-render", () => {
+      removeInstance.backToNormal();
+
       expect(deleteListButton.classList.contains("active-button")).toBe(false);
     });
 
-    test("should hide delete button group", () => {
-      removeInstance.backToNormal();
-
-      expect(deleteButtonGroup.classList.contains("d-none")).toBe(true);
-    });
-
-    test("should show search button group when history is active", () => {
-      searchHistoryButton.classList.add("active-button");
-      searchButtonGroup.classList.add("d-none");
-
+    test("should show search button group again when history was active", () => {
       removeInstance.backToNormal();
 
       expect(searchButtonGroup.classList.contains("d-none")).toBe(false);
@@ -678,127 +431,16 @@ describe("Remove Component", () => {
       expect(geminiSummaryButton.disabled).toBe(false);
     });
 
-    test("should show export button group when favorite is active", () => {
-      searchHistoryButton.classList.remove("active-button");
+    test("should show export button group again when favorite was active", () => {
+      state.dispatch({ type: "DELETE_CANCEL" });
+      state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
 
       removeInstance.backToNormal();
 
       expect(exportButtonGroup.classList.contains("d-none")).toBe(false);
       expect(searchHistoryButton.disabled).toBe(false);
       expect(geminiSummaryButton.disabled).toBe(false);
-    });
-
-    test("should call updateInput", () => {
-      const spy = jest.spyOn(removeInstance, "updateInput");
-
-      removeInstance.backToNormal();
-
-      expect(spy).toHaveBeenCalled();
-    });
-  });
-
-  // ============================================================================
-  // updateInput Tests
-  // ============================================================================
-
-  describe("updateInput", () => {
-    test("should call updateListElements for history items", () => {
-      const li = createMockListItem("Location 1");
-      searchHistoryListContainer.appendChild(li);
-
-      const spy = jest.spyOn(removeInstance, "updateListElements");
-
-      removeInstance.updateInput();
-
-      expect(spy).toHaveBeenCalledWith(expect.any(NodeList), "history");
-    });
-
-    test("should call updateListElements for favorite items", () => {
-      const li = createMockListItem("Favorite 1");
-      li.className = "favorite-list";
-      favoriteListContainer.appendChild(li);
-
-      const spy = jest.spyOn(removeInstance, "updateListElements");
-
-      removeInstance.updateInput();
-
-      expect(spy).toHaveBeenCalledWith(expect.any(NodeList), "favorite");
-    });
-  });
-
-  // ============================================================================
-  // updateListElements Tests
-  // ============================================================================
-
-  describe("updateListElements", () => {
-    test("should hide checkboxes and show icons", () => {
-      const li = createMockListItem("Location 1");
-      const checkbox = li.querySelector("input");
-      const icon = li.querySelector("i");
-
-      checkbox.classList.remove("d-none");
-      icon.classList.add("d-none");
-
-      removeInstance.updateListElements([li], "history");
-
-      expect(checkbox.classList.contains("d-none")).toBe(true);
-      expect(icon.classList.contains("d-none")).toBe(false);
-    });
-
-    test("should remove checked-list class", () => {
-      const li = createMockListItem("Location 1");
-      li.classList.add("checked-list");
-
-      removeInstance.updateListElements([li], "history");
-
-      expect(li.classList.contains("checked-list")).toBe(false);
-    });
-
-    test("should uncheck checkboxes", () => {
-      const li = createMockListItem("Location 1", { isChecked: true });
-
-      removeInstance.updateListElements([li], "history");
-
-      expect(li.querySelector("input").checked).toBe(false);
-    });
-
-    test("should remove delete-list class and add list-type class", () => {
-      const li = createMockListItem("Location 1");
-      li.classList.add("delete-list");
-      li.classList.remove("history-list");
-
-      removeInstance.updateListElements([li], "history");
-
-      expect(li.classList.contains("delete-list")).toBe(false);
-      expect(li.classList.contains("history-list")).toBe(true);
-    });
-
-    test("should add favorite-list class when type is favorite", () => {
-      const li = createMockListItem("Favorite 1");
-      li.className = "delete-list";
-
-      removeInstance.updateListElements([li], "favorite");
-
-      expect(li.classList.contains("favorite-list")).toBe(true);
-      expect(li.classList.contains("delete-list")).toBe(false);
-    });
-
-    test("should handle multiple items", () => {
-      const li1 = createMockListItem("Location 1");
-      const li2 = createMockListItem("Location 2");
-      li1.classList.add("delete-list");
-      li2.classList.add("delete-list");
-
-      removeInstance.updateListElements([li1, li2], "history");
-
-      expect(li1.classList.contains("history-list")).toBe(true);
-      expect(li2.classList.contains("history-list")).toBe(true);
-    });
-
-    test("should handle empty array", () => {
-      expect(() => {
-        removeInstance.updateListElements([], "history");
-      }).not.toThrow();
     });
   });
 
@@ -807,66 +449,68 @@ describe("Remove Component", () => {
   // ============================================================================
 
   describe("Integration Tests", () => {
-    test("complete deletion workflow for history items", () => {
-      const li1 = createMockListItem("Location 1");
-      const li2 = createMockListItem("Location 2");
-      searchHistoryListContainer.appendChild(li1);
-      searchHistoryListContainer.appendChild(li2);
+    const appendItem = (container, className, itemValue) => {
+      const li = document.createElement("li");
+      li.className = className;
+      li.dataset.itemValue = itemValue;
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "form-check-input d-none";
+      li.appendChild(checkbox);
+      container.appendChild(li);
+      return li;
+    };
 
+    test("complete deletion workflow for history items", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
       removeInstance.addRemoveListener();
-      mockChromeStorage({ searchHistoryList: ["Location 1", "Location 2"] });
+
+      const li1 = appendItem(searchHistoryListContainer, "history-list", "Location 1");
+      appendItem(searchHistoryListContainer, "history-list", "Location 2");
 
       // Enter delete mode
+      searchHistoryButton.classList.add("active-button");
       deleteListButton.click();
       expect(deleteListButton.classList.contains("active-button")).toBe(true);
 
-      // Check items
-      li1.querySelector("input").checked = true;
+      // Check "Location 1"
+      li1.querySelector("input").dispatchEvent(new Event("change", { bubbles: true }));
 
       // Delete
-      searchHistoryButton.classList.add("active-button");
       deleteButton.click();
 
-      expect(searchHistoryListContainer.querySelectorAll("li").length).toBe(1);
+      expect(state.getSnapshot().history.items).toEqual(["Location 2"]);
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ searchHistoryList: ["Location 2"] });
+      expect(state.getSnapshot().deleteMode.source).toBeNull();
     });
 
     test("complete deletion workflow for favorite items", () => {
-      const li1 = createMockListItem("Favorite 1");
-      const li2 = createMockListItem("Favorite 2");
-      li1.className = "favorite-list";
-      li2.className = "favorite-list";
-      favoriteListContainer.appendChild(li1);
-      favoriteListContainer.appendChild(li2);
-
+      state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1", "Favorite 2"] });
+      state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
       removeInstance.addRemoveListener();
-      mockChromeStorage({ favoriteList: ["Favorite 1", "Favorite 2"] });
 
-      // Enter delete mode
+      const li1 = appendItem(favoriteListContainer, "favorite-list", "Favorite 1");
+      appendItem(favoriteListContainer, "favorite-list", "Favorite 2");
+
       searchHistoryButton.classList.remove("active-button");
       deleteListButton.click();
 
-      // Check items
-      li1.querySelector("input").checked = true;
+      li1.querySelector("input").dispatchEvent(new Event("change", { bubbles: true }));
 
-      // Delete
       deleteButton.click();
 
-      expect(favoriteListContainer.querySelectorAll("li").length).toBe(1);
+      expect(state.getSnapshot().favorite.items).toEqual(["Favorite 2"]);
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ favoriteList: ["Favorite 2"] });
     });
 
     test("cancel deletion workflow", () => {
-      const li = createMockListItem("Location 1");
-      searchHistoryListContainer.appendChild(li);
-
       removeInstance.addRemoveListener();
 
-      // Enter delete mode
       deleteListButton.click();
-      expect(li.querySelector("input").classList.contains("d-none")).toBe(false);
+      expect(state.getSnapshot().deleteMode.source).toBe("history");
 
-      // Cancel
       cancelButton.click();
-      expect(li.querySelector("input").classList.contains("d-none")).toBe(true);
+      expect(state.getSnapshot().deleteMode.source).toBeNull();
     });
 
     test("toggle delete mode on and off", () => {
@@ -887,103 +531,56 @@ describe("Remove Component", () => {
   // ============================================================================
 
   describe("Edge Cases", () => {
-    test("should handle empty search history list", () => {
-      mockChromeStorage({ searchHistoryList: [] });
+    test("should handle deleting from an empty history list", () => {
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
 
       expect(() => {
         removeInstance.deleteFromHistoryList();
       }).not.toThrow();
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ searchHistoryList: [] });
     });
 
-    test("should handle empty favorite list", () => {
-      mockChromeStorage({ favoriteList: [] });
+    test("should handle deleting from an empty favorite list", () => {
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
 
       expect(() => {
         removeInstance.deleteFromFavoriteList();
       }).not.toThrow();
-    });
-
-    test("should handle undefined favorite list in storage", () => {
-      const li = createMockListItem("Favorite 1", { isChecked: true });
-      li.className = "favorite-list";
-      favoriteListContainer.appendChild(li);
-
-      mockChromeStorage({});
-
-      // Should not crash when favoriteList is undefined
-      expect(() => {
-        removeInstance.deleteFromFavoriteList();
-      }).not.toThrow();
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ favoriteList: [] });
     });
 
     test("should handle items with special characters in text", () => {
-      const li = createMockListItem("!@#$%^&*()");
-      searchHistoryListContainer.appendChild(li);
-      li.querySelector("input").checked = true;
-
-      mockChromeStorage({ searchHistoryList: ["!@#$%^&*()"] });
+      state.dispatch({ type: "HISTORY_SET", items: ["!@#$%^&*()"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "!@#$%^&*()" });
 
       expect(() => {
         removeInstance.deleteFromHistoryList();
       }).not.toThrow();
+      expect(state.getSnapshot().history.items).toEqual([]);
     });
 
     test("should handle items with very long text", () => {
       const longText = "A".repeat(10000);
-      const li = createMockListItem(longText);
-      searchHistoryListContainer.appendChild(li);
-      li.querySelector("input").checked = true;
-
-      mockChromeStorage({ searchHistoryList: [longText] });
+      state.dispatch({ type: "HISTORY_SET", items: [longText] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: longText });
 
       expect(() => {
         removeInstance.deleteFromHistoryList();
       }).not.toThrow();
+      expect(state.getSnapshot().history.items).toEqual([]);
     });
 
-    test("should handle missing storage data", () => {
-      const li = createMockListItem("Location 1", { isChecked: true });
-      searchHistoryListContainer.appendChild(li);
+    test("should handle favorite items whose clue text contains @ symbols", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location @Clue 1"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Location @Clue 1" });
 
-      mockChromeStorage({});
-
-      // Should not crash, though storage callback won't execute properly
-      expect(() => {
-        removeInstance.deleteFromHistoryList();
-      }).not.toThrow();
-    });
-
-    test("should handle items with multiple clue spans", () => {
-      const li = document.createElement("li");
-      li.className = "favorite-list";
-
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = true;
-
-      const icon = document.createElement("i");
-
-      const span1 = document.createElement("span");
-      span1.textContent = "Location";
-      const span2 = document.createElement("span");
-      span2.textContent = "Clue 1";
-      const span3 = document.createElement("span");
-      span3.textContent = "Clue 2";
-
-      li.appendChild(checkbox);
-      li.appendChild(icon);
-      li.appendChild(span1);
-      li.appendChild(span2);
-      li.appendChild(span3);
-
-      favoriteListContainer.appendChild(li);
-
-      mockChromeStorage({ favoriteList: ["Location @Clue 1"] });
-
-      // Should handle extra spans gracefully
       expect(() => {
         removeInstance.deleteFromFavoriteList();
       }).not.toThrow();
+      expect(state.getSnapshot().favorite.items).toEqual([]);
     });
 
     test("should handle rapid button clicks", () => {
@@ -994,21 +591,20 @@ describe("Remove Component", () => {
       deleteListButton.click(); // Off
       deleteListButton.click(); // On again
 
-      // Should end in active mode (clicked 3 times: on, off, on)
       expect(deleteListButton.classList.contains("active-button")).toBe(true);
+      expect(state.getSnapshot().deleteMode.source).toBe("history");
     });
 
-    test("should handle checkbox events when not in delete mode", () => {
-      const li = createMockListItem("Location 1");
+    test("should ignore change events from elements that are not checkboxes", () => {
+      removeInstance.addRemoveListener();
+      deleteListButton.click();
+
+      const li = document.createElement("li");
+      li.dataset.itemValue = "Location 1";
       searchHistoryListContainer.appendChild(li);
+      li.dispatchEvent(new Event("change", { bubbles: true }));
 
-      removeInstance.attachCheckboxEventListener(searchHistoryListContainer);
-
-      // Click checkbox (though it should be hidden in normal mode)
-      const spy = jest.spyOn(removeInstance, "updateDeleteCount");
-      li.querySelector("input").click();
-
-      expect(spy).toHaveBeenCalled();
+      expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
     });
   });
 });
