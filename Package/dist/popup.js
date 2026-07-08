@@ -374,7 +374,7 @@ function renderPopup(snapshot = state.getSnapshot(), action = null, force = fals
   const activeTabChanged = first || snapshot.activeTab !== prev.activeTab;
 
   if (historyChanged || deleteModeChanged || favoriteChanged || onboardingChanged) {
-    history.render(snapshot);
+    history.render(snapshot, { historyChanged, deleteModeChanged, onboardingChanged });
   }
   if (favoriteChanged || deleteModeChanged) {
     favorite.render(snapshot);
@@ -445,15 +445,17 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     state.dispatch({ type: "VIDEO_TOGGLE", enabled: changes.videoSummaryToggle.newValue });
   }
 
-  if (changes.geminiApiKey) {
-    if (!changes.geminiApiKey.newValue) {
-      gemini.fetchAPIKey("");
-    } else {
-      chrome.runtime.sendMessage({ action: "getApiKey" }, ({ apiKey = "" } = {}) => {
-        gemini.fetchAPIKey(apiKey);
-      });
-    }
-  }
+  // Deliberately not reacting to changes.geminiApiKey here: every writer of
+  // this key (modal.js's save and reset handlers) already calls
+  // modal.onApiKeyChange -> gemini.fetchAPIKey directly and synchronously
+  // with the known plaintext key. Also reacting to the storage event fired
+  // two concurrent fetchAPIKey() calls per save - one direct, one via this
+  // listener's extra getApiKey round trip - racing on gemini.js's api.token
+  // guard. If the round-trip call's key read landed stale (e.g. background's
+  // in-memory cache still mid-decrypt), it could win the race with an empty
+  // key, permanently leaving api.status at "missing" (Send button stuck
+  // disabled, no error shown) even though the direct call's verification had
+  // actually just succeeded.
 
   if (incognitoChange) {
     modal.updateIncognitoModal(!!incognitoChange.newValue);

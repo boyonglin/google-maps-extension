@@ -149,8 +149,6 @@ function hydrateSnapshot(current, payload = {}) {
 
 function reducePopupState(current, action = {}) {
   switch (action.type) {
-    case "REFRESH":
-      return { ...current };
     case "HYDRATE":
       return hydrateSnapshot(current, action.payload);
     case "SET_ACTIVE_TAB":
@@ -1342,7 +1340,7 @@ class History {
     return li;
   }
 
-  render(snapshot) {
+  render(snapshot, meta = {}) {
     const container = searchHistoryListContainer;
     const statusMessage = emptyMessage;
     const clearAction = clearButton;
@@ -1350,14 +1348,44 @@ class History {
     const { items, emptyReason } = snapshot.history;
     const selected = new Set(snapshot.deleteMode.selectedValues);
     const deleting = snapshot.deleteMode.source === "history";
+    const showDemo = snapshot.onboarding.demoHistoryVisible;
 
-    container.replaceChildren();
     statusMessage.style.whiteSpace = "pre-line";
     statusMessage.textContent = chrome.i18n.getMessage(
       emptyReason === "cleared" ? "clearedUpMsg" : "historyEmptyMsg"
     );
-    const showDemo = snapshot.onboarding.demoHistoryVisible;
     statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
+    clearAction.disabled = items.length === 0;
+
+    // Only tear down and rebuild the list when the items, delete mode, or
+    // onboarding demo visibility changed; a favorite-only update patches each
+    // icon's className in place (skipping any icon mid spring-animation) so
+    // it doesn't cut off the animation - mirrors gemini.js's summary list.
+    const structuralChange =
+      meta.historyChanged !== false ||
+      meta.deleteModeChanged !== false ||
+      meta.onboardingChanged !== false;
+    const existingItems = structuralChange
+      ? []
+      : container.querySelectorAll("li[data-item-value]");
+
+    if (!structuralChange && existingItems.length > 0) {
+      existingItems.forEach((li) => {
+        const icon = li.querySelector("i");
+        if (!icon || icon.classList.contains("spring-animation")) return;
+        const newClassName = (this.favoriteComponent || favorite).createFavoriteIcon(
+          li.dataset.itemValue,
+          snapshot.favorite.items
+        ).className;
+        if (icon.className !== newClassName) {
+          icon.className = newClassName;
+          icon.classList.toggle("d-none", deleting);
+        }
+      });
+      return;
+    }
+
+    container.replaceChildren();
 
     if (items.length > 0 || showDemo) {
       const ul = document.createElement("ul");
@@ -1385,8 +1413,6 @@ class History {
       ul.firstElementChild?.classList.remove("mb-3");
       container.appendChild(ul);
     }
-
-    clearAction.disabled = items.length === 0;
   }
 }
 
@@ -3032,7 +3058,7 @@ function renderPopup(snapshot = state.getSnapshot(), action = null, force = fals
   const activeTabChanged = first || snapshot.activeTab !== prev.activeTab;
 
   if (historyChanged || deleteModeChanged || favoriteChanged || onboardingChanged) {
-    history.render(snapshot);
+    history.render(snapshot, { historyChanged, deleteModeChanged, onboardingChanged });
   }
   if (favoriteChanged || deleteModeChanged) {
     favorite.render(snapshot);
@@ -3103,15 +3129,17 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     state.dispatch({ type: "VIDEO_TOGGLE", enabled: changes.videoSummaryToggle.newValue });
   }
 
-  if (changes.geminiApiKey) {
-    if (!changes.geminiApiKey.newValue) {
-      gemini.fetchAPIKey("");
-    } else {
-      chrome.runtime.sendMessage({ action: "getApiKey" }, ({ apiKey = "" } = {}) => {
-        gemini.fetchAPIKey(apiKey);
-      });
-    }
-  }
+  // Deliberately not reacting to changes.geminiApiKey here: every writer of
+  // this key (modal.js's save and reset handlers) already calls
+  // modal.onApiKeyChange -> gemini.fetchAPIKey directly and synchronously
+  // with the known plaintext key. Also reacting to the storage event fired
+  // two concurrent fetchAPIKey() calls per save - one direct, one via this
+  // listener's extra getApiKey round trip - racing on gemini.js's api.token
+  // guard. If the round-trip call's key read landed stale (e.g. background's
+  // in-memory cache still mid-decrypt), it could win the race with an empty
+  // key, permanently leaving api.status at "missing" (Send button stuck
+  // disabled, no error shown) even though the direct call's verification had
+  // actually just succeeded.
 
   if (incognitoChange) {
     modal.updateIncognitoModal(!!incognitoChange.newValue);

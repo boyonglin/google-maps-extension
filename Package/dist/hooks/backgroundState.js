@@ -80,7 +80,14 @@ export async function getApiKey() {
 
 export async function applyStorageChanges(changes, area) {
   if (area !== "local") return;
-  if (!cache) cache = { ...DEFAULTS };
+  // A storage write can reach here before this (possibly just-woken) service
+  // worker has ever populated the cache - e.g. another popup instance, or a
+  // background-initiated write, racing ahead of the first getWarmState()
+  // round trip. Defaulting to `{ ...DEFAULTS }` in that case would silently
+  // discard every already-persisted field not present in `changes` (history,
+  // favorites, API key, ...). Do a real read instead so the cache reflects
+  // actual storage.
+  if (!cache) await ensureWarm();
   for (const [k, { newValue }] of Object.entries(changes)) {
     if (k === "geminiApiKey") {
       try {

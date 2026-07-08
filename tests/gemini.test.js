@@ -523,6 +523,44 @@ describe("Gemini Component", () => {
       expect(geminiEmptyMessage.innerText).toBe("Enter API key first");
     });
 
+    test("BUG REPRO: a slower-resolving fetchAPIKey call started earlier gets its result silently dropped by a faster, later call - even when the later call's key turns out empty", async () => {
+      // Mirrors production: modal.onApiKeyChange(apiKey) fires fetchAPIKey
+      // directly with the freshly-typed key (Call A, slow network verify),
+      // while the chrome.storage.onChanged listener's indirect
+      // getApiKey-then-fetchAPIKey round trip (Call B) can resolve first and,
+      // due to a decrypt-in-flight race in the background cache, read back an
+      // empty key.
+      let resolveCallAVerify;
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        if (msg.action === "verifyApiKey") {
+          // Call A's network verification never settles until we say so.
+          resolveCallAVerify = () => callback({ valid: true });
+        }
+      });
+
+      geminiInstance.fetchAPIKey("real-typed-key"); // Call A: token 1, verify in flight
+
+      // Call B lands before Call A's verify resolves, with a stale/empty key.
+      geminiInstance.fetchAPIKey(""); // Call B: token 2, hasKey:false -> no verify sent, status "missing"
+
+      expect(global.state.getSnapshot().api.status).toBe("missing");
+      expect(sendButton.disabled).toBe(true);
+
+      // Call A's verify now resolves successfully...
+      resolveCallAVerify();
+      await wait(50);
+
+      // ...but its result carries the stale token (1), so the reducer's
+      // token guard discards it. The UI placeholder still updates (that side
+      // effect isn't token-gated), giving the illusion the key was saved,
+      // while the store - and therefore the disabled Send button - never
+      // recovers. This is the reproduction of the "API 送出去了、沒有錯誤、
+      // placeholder 有記到、但 Gemini 按鈕還是 disable" report.
+      expect(apiInput.placeholder).toBe("............-key");
+      expect(global.state.getSnapshot().api.status).toBe("missing");
+      expect(sendButton.disabled).toBe(true);
+    });
+
     test("should set default placeholder message initially", async () => {
       chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
         if (callback) callback({ valid: true });

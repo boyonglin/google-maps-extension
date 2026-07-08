@@ -1437,6 +1437,22 @@ describe("background.js", () => {
       expect(sendResponse).toHaveBeenCalledWith({ apiKey: "my-api-key" });
     });
 
+    test("should respond (not throw unhandled rejection) when getApiKey rejects", async () => {
+      const { getApiKey } = require("../Package/dist/hooks/backgroundState.js");
+      const sendResponse = jest.fn();
+      const request = { action: "getApiKey" };
+
+      getApiKey.mockRejectedValueOnce(new Error("No API key found. Please provide one."));
+
+      const result = listeners.onMessage[STATE_QUERIES_LISTENER](request, {}, sendResponse);
+
+      expect(result).toBe(true);
+
+      await flushPromises();
+
+      expect(sendResponse).toHaveBeenCalledWith({ apiKey: "", error: expect.any(String) });
+    });
+
     test("should handle buildSearchUrl action", async () => {
       const { buildSearchUrl } = require("../Package/dist/hooks/backgroundState.js");
       const sendResponse = jest.fn();

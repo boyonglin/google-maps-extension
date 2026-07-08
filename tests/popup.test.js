@@ -952,24 +952,23 @@ describe("popup.js", () => {
       expect(mockState.buildMapsButtonUrl).toHaveBeenCalled();
     });
 
-    test("API storage change requests only the decrypted key, not the full warm snapshot", () => {
-      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
-        if (message.action === "getApiKey") callback({ apiKey: "decrypted-key" });
-        return true;
-      });
+    test("does not react to geminiApiKey storage changes (avoids racing modal.onApiKeyChange's direct call)", () => {
+      // modal.js's save/reset handlers always call onApiKeyChange directly
+      // and synchronously with the known plaintext key. Reacting here too
+      // used to fire a second, redundant fetchAPIKey() via an extra
+      // getApiKey round trip, which could race the direct call and leave
+      // the store's api.token/status permanently stuck (Send button
+      // disabled with no error) if the round trip read a stale key.
+      chrome.runtime.sendMessage.mockClear();
       const listener = chrome.storage.onChanged.addListener.mock.calls[0][0];
 
       listener({ geminiApiKey: { newValue: "encrypted-key" } }, "local");
 
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith(
         { action: "getApiKey" },
         expect.any(Function)
       );
-      expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith(
-        { action: "getWarmState" },
-        expect.any(Function)
-      );
-      expect(mockGemini.fetchAPIKey).toHaveBeenCalledWith("decrypted-key");
+      expect(mockGemini.fetchAPIKey).not.toHaveBeenCalled();
     });
   });
 

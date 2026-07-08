@@ -935,6 +935,56 @@ describe("History Component", () => {
       expect(searchHistoryListContainer.querySelector(".onboarding-demo-item")).toBeNull();
       expect(emptyMessage.classList.contains("d-none")).toBe(false);
     });
+
+    test("should not tear down an in-flight spring-animation icon on a favorite-only re-render", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+
+      const li = searchHistoryListContainer.querySelector("li");
+      const icon = li.querySelector("i");
+      icon.classList.add("spring-animation");
+
+      // Simulate popup.js's renderPopup: only favorite changed, so it calls
+      // history.render with historyChanged/deleteModeChanged/onboardingChanged
+      // all false (matches popup.js's actual meta payload shape).
+      historyInstance.render(state.getSnapshot(), {
+        historyChanged: false,
+        deleteModeChanged: false,
+        onboardingChanged: false,
+      });
+
+      const liAfter = searchHistoryListContainer.querySelector("li");
+      expect(liAfter).toBe(li);
+      expect(liAfter.querySelector("i")).toBe(icon);
+      expect(icon.classList.contains("spring-animation")).toBe(true);
+    });
+
+    test("should patch a non-animating icon's favorite className in place on a favorite-only re-render", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+
+      const li = searchHistoryListContainer.querySelector("li");
+      const iconBefore = li.querySelector("i");
+      expect(iconBefore.classList.contains("matched")).toBe(false);
+
+      // Build the post-favorite-change snapshot directly (bypassing dispatch,
+      // whose test-only subscribe wiring always re-renders with meta={} /
+      // full rebuild) so this exercises the exact single render() call
+      // popup.js's renderPopup makes when only `favorite` changed.
+      const favoriteSnapshot = {
+        ...state.getSnapshot(),
+        favorite: { ...state.getSnapshot().favorite, items: ["Location 1"] },
+      };
+      historyInstance.render(favoriteSnapshot, {
+        historyChanged: false,
+        deleteModeChanged: false,
+        onboardingChanged: false,
+      });
+
+      const liAfter = searchHistoryListContainer.querySelector("li");
+      expect(liAfter).toBe(li);
+      const iconAfter = liAfter.querySelector("i");
+      expect(iconAfter).toBe(iconBefore);
+      expect(iconAfter.classList.contains("matched")).toBe(true);
+    });
   });
 
   // ============================================================================

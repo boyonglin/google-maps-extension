@@ -703,7 +703,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     });
     return true;
   } else if (request.action === "getApiKey") {
-    getApiKey().then((apiKey) => sendResponse({ apiKey }));
+    getApiKey()
+      .then((apiKey) => sendResponse({ apiKey }))
+      .catch((err) => sendResponse({ apiKey: "", error: err.message }));
     return true;
   } else if (request.action === "buildSearchUrl") {
     ensureWarm().then(() => sendResponse({ url: buildSearchUrl(request.query) }));

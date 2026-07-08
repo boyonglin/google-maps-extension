@@ -609,6 +609,27 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
       expect(cache.searchHistoryList).toEqual(["New Item"]);
     });
 
+    test("should preserve real persisted fields (not reset to DEFAULTS) when a storage write races ahead of the first ensureWarm() read", async () => {
+      // Simulates a cold-started service worker: real data from a previous
+      // session already sits in chrome.storage.local, but ensureWarm() has
+      // not run yet in this worker instance, so the in-memory cache is null.
+      const freshBackgroundState = require("../Package/dist/hooks/backgroundState.js");
+      if (freshBackgroundState.__resetCacheForTesting) {
+        freshBackgroundState.__resetCacheForTesting();
+      }
+      setupMockStorage({ searchHistoryList: ["Old Trip", "Home"] });
+
+      // An unrelated write (e.g. another popup instance, or the background's
+      // own historyMax trim) reaches applyStorageChanges before anything has
+      // triggered a real ensureWarm() read.
+      const changes = { favoriteList: { newValue: ["New Fav"] } };
+      await freshBackgroundState.applyStorageChanges(changes, "local");
+
+      const cache = freshBackgroundState.getCache();
+      expect(cache.favoriteList).toEqual(["New Fav"]);
+      expect(cache.searchHistoryList).toEqual(["Old Trip", "Home"]);
+    });
+
     test("should handle empty changes object", async () => {
       const changes = {};
 

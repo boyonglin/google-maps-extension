@@ -105,7 +105,7 @@ class History {
     return li;
   }
 
-  render(snapshot) {
+  render(snapshot, meta = {}) {
     const container = searchHistoryListContainer;
     const statusMessage = emptyMessage;
     const clearAction = clearButton;
@@ -113,14 +113,42 @@ class History {
     const { items, emptyReason } = snapshot.history;
     const selected = new Set(snapshot.deleteMode.selectedValues);
     const deleting = snapshot.deleteMode.source === "history";
+    const showDemo = snapshot.onboarding.demoHistoryVisible;
 
-    container.replaceChildren();
     statusMessage.style.whiteSpace = "pre-line";
     statusMessage.textContent = chrome.i18n.getMessage(
       emptyReason === "cleared" ? "clearedUpMsg" : "historyEmptyMsg"
     );
-    const showDemo = snapshot.onboarding.demoHistoryVisible;
     statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
+    clearAction.disabled = items.length === 0;
+
+    // Only tear down and rebuild the list when the items, delete mode, or
+    // onboarding demo visibility changed; a favorite-only update patches each
+    // icon's className in place (skipping any icon mid spring-animation) so
+    // it doesn't cut off the animation - mirrors gemini.js's summary list.
+    const structuralChange =
+      meta.historyChanged !== false ||
+      meta.deleteModeChanged !== false ||
+      meta.onboardingChanged !== false;
+    const existingItems = structuralChange ? [] : container.querySelectorAll("li[data-item-value]");
+
+    if (!structuralChange && existingItems.length > 0) {
+      existingItems.forEach((li) => {
+        const icon = li.querySelector("i");
+        if (!icon || icon.classList.contains("spring-animation")) return;
+        const newClassName = (this.favoriteComponent || favorite).createFavoriteIcon(
+          li.dataset.itemValue,
+          snapshot.favorite.items
+        ).className;
+        if (icon.className !== newClassName) {
+          icon.className = newClassName;
+          icon.classList.toggle("d-none", deleting);
+        }
+      });
+      return;
+    }
+
+    container.replaceChildren();
 
     if (items.length > 0 || showDemo) {
       const ul = document.createElement("ul");
@@ -148,8 +176,6 @@ class History {
       ul.firstElementChild?.classList.remove("mb-3");
       container.appendChild(ul);
     }
-
-    clearAction.disabled = items.length === 0;
   }
 }
 

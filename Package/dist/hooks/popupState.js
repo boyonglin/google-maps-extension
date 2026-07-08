@@ -94,8 +94,6 @@ function hydrateSnapshot(current, payload = {}) {
 
 function reducePopupState(current, action = {}) {
   switch (action.type) {
-    case "REFRESH":
-      return { ...current };
     case "HYDRATE":
       return hydrateSnapshot(current, action.payload);
     case "SET_ACTIVE_TAB":
