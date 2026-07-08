@@ -60,8 +60,7 @@ function hydrateSnapshot(current, payload = {}) {
   return {
     ...current,
     boot: "ready",
-    // If the user already picked a tab while hydration was in flight, keep it
-    // instead of snapping back to the persisted lastActiveTab.
+    // Don't snap back to lastActiveTab if the user already picked a tab.
     activeTab: current.activeTabTouched
       ? current.activeTab
       : POPUP_TABS.has(payload.lastActiveTab)
@@ -111,7 +110,9 @@ function reducePopupState(current, action = {}) {
         ...current,
         history: {
           items,
-          emptyReason: items.length ? "initial" : action.emptyReason || "initial",
+          emptyReason: items.length
+            ? "initial"
+            : action.emptyReason || current.history.emptyReason || "initial",
         },
         deleteMode:
           current.deleteMode.source === "history" && items.length === 0

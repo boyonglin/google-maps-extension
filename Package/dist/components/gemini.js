@@ -49,7 +49,6 @@ class Gemini {
               favorite.addToFavoriteList(nameSpan);
             }
             DOMUtils.animateFavoriteIcon(event.target);
-            DOMUtils.refreshFavoriteList();
           } else {
             if (window.Analytics)
               window.Analytics.trackFeatureClick("click_summary_item", "summaryListContainer");
@@ -433,7 +432,9 @@ class Gemini {
       }
     } else if (summary.phase === "error") {
       messageKey = summary.errorKey || "geminiErrorMsg";
-    } else if (api.status === "missing" || api.status === "invalid") {
+    } else if (api.status === "invalid") {
+      messageKey = "apiInvalidMsg";
+    } else if (api.status === "missing") {
       messageKey = "geminiFirstMsg";
     }
 
@@ -444,9 +445,7 @@ class Gemini {
     statusMessage.classList.toggle("d-none", ready);
     statusMessage.classList.toggle("shineText", generating);
 
-    // Only tear down and rebuild the list when the summary itself changed;
-    // a favorite-only update patches icon classNames on the existing nodes so
-    // it doesn't cut off an in-flight favorite-icon animation.
+    // Favorite-only updates patch icon classNames in place instead.
     const summaryChanged = meta.summaryChanged !== false;
     if (!ready) {
       listContainer.replaceChildren();

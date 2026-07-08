@@ -38,7 +38,6 @@ class History {
                 );
               favorite.addToFavoriteList(selectedText);
               DOMUtils.animateFavoriteIcon(event.target);
-              DOMUtils.refreshFavoriteList();
             } else if (event.target.classList.contains("form-check-input")) {
               return;
             } else {
@@ -122,10 +121,8 @@ class History {
     statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
     clearAction.disabled = items.length === 0;
 
-    // Only tear down and rebuild the list when the items, delete mode, or
-    // onboarding demo visibility changed; a favorite-only update patches each
-    // icon's className in place (skipping any icon mid spring-animation) so
-    // it doesn't cut off the animation - mirrors gemini.js's summary list.
+    // Patch icon classNames in place on favorite-only updates, so an
+    // in-flight spring-animation icon survives (mirrors gemini.js).
     const structuralChange =
       meta.historyChanged !== false ||
       meta.deleteModeChanged !== false ||

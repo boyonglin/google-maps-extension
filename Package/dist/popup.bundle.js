@@ -30,18 +30,6 @@ const DOMUtils = {
       iconElement.classList.remove("spring-animation");
     }, 500);
   },
-
-  /**
-   * Refresh favorite list after adding an item
-   * Common pattern used after animating favorite icon
-   */
-  refreshFavoriteList() {
-    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-      if (typeof favorite !== "undefined" && favorite.updateFavorite) {
-        favorite.updateFavorite(favoriteList);
-      }
-    });
-  },
 };
 
 if (typeof window !== "undefined") {
@@ -115,8 +103,7 @@ function hydrateSnapshot(current, payload = {}) {
   return {
     ...current,
     boot: "ready",
-    // If the user already picked a tab while hydration was in flight, keep it
-    // instead of snapping back to the persisted lastActiveTab.
+    // Don't snap back to lastActiveTab if the user already picked a tab.
     activeTab: current.activeTabTouched
       ? current.activeTab
       : POPUP_TABS.has(payload.lastActiveTab)
@@ -166,7 +153,9 @@ function reducePopupState(current, action = {}) {
         ...current,
         history: {
           items,
-          emptyReason: items.length ? "initial" : action.emptyReason || "initial",
+          emptyReason: items.length
+            ? "initial"
+            : action.emptyReason || current.history.emptyReason || "initial",
         },
         deleteMode:
           current.deleteMode.source === "history" && items.length === 0
@@ -1273,7 +1262,6 @@ class History {
                 );
               favorite.addToFavoriteList(selectedText);
               DOMUtils.animateFavoriteIcon(event.target);
-              DOMUtils.refreshFavoriteList();
             } else if (event.target.classList.contains("form-check-input")) {
               return;
             } else {
@@ -1357,17 +1345,13 @@ class History {
     statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
     clearAction.disabled = items.length === 0;
 
-    // Only tear down and rebuild the list when the items, delete mode, or
-    // onboarding demo visibility changed; a favorite-only update patches each
-    // icon's className in place (skipping any icon mid spring-animation) so
-    // it doesn't cut off the animation - mirrors gemini.js's summary list.
+    // Patch icon classNames in place on favorite-only updates, so an
+    // in-flight spring-animation icon survives (mirrors gemini.js).
     const structuralChange =
       meta.historyChanged !== false ||
       meta.deleteModeChanged !== false ||
       meta.onboardingChanged !== false;
-    const existingItems = structuralChange
-      ? []
-      : container.querySelectorAll("li[data-item-value]");
+    const existingItems = structuralChange ? [] : container.querySelectorAll("li[data-item-value]");
 
     if (!structuralChange && existingItems.length > 0) {
       existingItems.forEach((li) => {
@@ -1472,7 +1456,6 @@ class Gemini {
               favorite.addToFavoriteList(nameSpan);
             }
             DOMUtils.animateFavoriteIcon(event.target);
-            DOMUtils.refreshFavoriteList();
           } else {
             if (window.Analytics)
               window.Analytics.trackFeatureClick("click_summary_item", "summaryListContainer");
@@ -1856,7 +1839,9 @@ class Gemini {
       }
     } else if (summary.phase === "error") {
       messageKey = summary.errorKey || "geminiErrorMsg";
-    } else if (api.status === "missing" || api.status === "invalid") {
+    } else if (api.status === "invalid") {
+      messageKey = "apiInvalidMsg";
+    } else if (api.status === "missing") {
       messageKey = "geminiFirstMsg";
     }
 
@@ -1867,9 +1852,7 @@ class Gemini {
     statusMessage.classList.toggle("d-none", ready);
     statusMessage.classList.toggle("shineText", generating);
 
-    // Only tear down and rebuild the list when the summary itself changed;
-    // a favorite-only update patches icon classNames on the existing nodes so
-    // it doesn't cut off an in-flight favorite-icon animation.
+    // Favorite-only updates patch icon classNames in place instead.
     const summaryChanged = meta.summaryChanged !== false;
     if (!ready) {
       listContainer.replaceChildren();
@@ -1968,9 +1951,7 @@ class Modal {
       const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
       chrome.storage.local.set({ geminiApiKey: encrypted });
 
-      // Popup production flow always wires up onApiKeyChange (delegates to the
-      // Gemini controller/store); it is set unconditionally in popup.js right
-      // after construction, so this callback is always present here.
+      // Always wired by popup.js in production.
       this.onApiKeyChange(apiKey);
     });
 
@@ -2414,10 +2395,8 @@ class Onboarding {
    */
   injectDemoHistoryItem() {
     this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
-    // History.render() rebuilds the list on every dispatch, so a listener
-    // attached to this specific <li> would be discarded on the next render.
-    // History's own container-level mousedown/contextmenu listeners swallow
-    // clicks on .onboarding-demo-item instead (see history.js).
+    // Click handling for the demo item lives in history.js (container-level
+    // listener), since render() would discard a listener bound here.
   }
 
   removeDemoHistoryItem() {
@@ -2768,15 +2747,10 @@ function initializeDependencies(deps = {}) {
   history.favoriteComponent = favorite;
   gemini.favoriteComponent = favorite;
   gemini.store = state;
-  // Let Modal delegate directly to the Gemini controller instead of relying
-  // solely on the storage.onChanged round-trip to update the API-key UI.
   modal.onApiKeyChange = (apiKey) => gemini.fetchAPIKey(apiKey);
   if (onboarding) onboarding.store = state;
 
-  // renderPopup must be subscribed to whichever `state` is active. Re-running
-  // this wires it to a newly-provided state instance instead of leaving a
-  // stale subscription on the previous one. Guarded since callers may pass a
-  // minimal/mock state object with no subscribe() method.
+  // Re-subscribe renderPopup to the new state instance, not the old one.
   if (unsubscribeState) unsubscribeState();
   if (typeof state.subscribe === "function") {
     unsubscribeState = state.subscribe(renderPopup);
@@ -3019,9 +2993,7 @@ mapsButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackFeatureClick("open_maps", "mapsButton");
 });
 
-// Tracks the last snapshot renderPopup saw, so a dispatch that only touches
-// one slice of state (e.g. VIDEO_CONTEXT_REQUEST) doesn't force every
-// component to tear down and rebuild its DOM.
+// Diffed against the next snapshot so unrelated components skip re-render.
 let previousPopupSnapshot = null;
 
 function renderPopup(snapshot = state.getSnapshot(), action = null, force = false) {
@@ -3129,17 +3101,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     state.dispatch({ type: "VIDEO_TOGGLE", enabled: changes.videoSummaryToggle.newValue });
   }
 
-  // Deliberately not reacting to changes.geminiApiKey here: every writer of
-  // this key (modal.js's save and reset handlers) already calls
-  // modal.onApiKeyChange -> gemini.fetchAPIKey directly and synchronously
-  // with the known plaintext key. Also reacting to the storage event fired
-  // two concurrent fetchAPIKey() calls per save - one direct, one via this
-  // listener's extra getApiKey round trip - racing on gemini.js's api.token
-  // guard. If the round-trip call's key read landed stale (e.g. background's
-  // in-memory cache still mid-decrypt), it could win the race with an empty
-  // key, permanently leaving api.status at "missing" (Send button stuck
-  // disabled, no error shown) even though the direct call's verification had
-  // actually just succeeded.
+  // No changes.geminiApiKey handler: modal.js already calls fetchAPIKey
+  // directly, and also reacting here raced it (stuck disabled Send button).
 
   if (incognitoChange) {
     modal.updateIncognitoModal(!!incognitoChange.newValue);
@@ -3172,11 +3135,8 @@ function applyI18n(root = document) {
 window.applyI18n = applyI18n;
 applyI18n();
 
-// Refresh dynamic strings (set imperatively, not via [data-locale])
-// after an in-place language swap from the settings modal.
-// Tracked on window (not a module-scope const) so re-requiring this script
-// (e.g. across Jest tests) replaces the previous listener instead of
-// stacking a new one on top of it every time.
+// On window, not a module-scope const, so re-requiring this file (tests)
+// replaces the old listener instead of stacking another one.
 if (window.__popupI18nChangedHandler) {
   window.removeEventListener("i18n:changed", window.__popupI18nChangedHandler);
 }

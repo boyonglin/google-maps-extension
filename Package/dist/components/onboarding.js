@@ -60,10 +60,8 @@ class Onboarding {
    */
   injectDemoHistoryItem() {
     this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
-    // History.render() rebuilds the list on every dispatch, so a listener
-    // attached to this specific <li> would be discarded on the next render.
-    // History's own container-level mousedown/contextmenu listeners swallow
-    // clicks on .onboarding-demo-item instead (see history.js).
+    // Click handling for the demo item lives in history.js (container-level
+    // listener), since render() would discard a listener bound here.
   }
 
   removeDemoHistoryItem() {

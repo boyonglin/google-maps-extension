@@ -85,6 +85,7 @@ describe("Gemini Component", () => {
     mockI18n({
       geminiEmptyMsg: "No summaries yet",
       geminiFirstMsg: "Enter API key first",
+      apiInvalidMsg: "The API key is invalid",
       geminiLoadMsg: "Loading... ~$1 seconds",
       geminiLoadMsgNoEstimate: "Loading...",
       geminiOverloadMsg: "Server overloaded",
@@ -239,7 +240,7 @@ describe("Gemini Component", () => {
       jest.useRealTimers();
     });
 
-    test("should update favorite list after adding favorite", async () => {
+    test("should add favorite without a redundant refreshFavoriteList call", async () => {
       const mockItem = createMockSummaryItem("Restaurant");
       summaryListContainer.appendChild(mockItem);
       const icon = mockItem.querySelector("i");
@@ -255,7 +256,8 @@ describe("Gemini Component", () => {
 
       await wait(50);
 
-      expect(DOMUtils.refreshFavoriteList).toHaveBeenCalled();
+      expect(global.favorite.addToFavoriteList).toHaveBeenCalled();
+      expect(DOMUtils.refreshFavoriteList).toBeUndefined();
     });
 
     test("should ignore click on non-LI, non-span elements", () => {
@@ -500,7 +502,7 @@ describe("Gemini Component", () => {
       await wait(50);
 
       expect(sendButton.disabled).toBe(true);
-      expect(geminiEmptyMessage.innerText).toBe("Enter API key first");
+      expect(geminiEmptyMessage.innerText).toBe("The API key is invalid");
     });
 
     test("should handle API key verification error", async () => {
@@ -513,7 +515,7 @@ describe("Gemini Component", () => {
       await wait(50);
 
       expect(sendButton.disabled).toBe(true);
-      expect(geminiEmptyMessage.innerText).toBe("Enter API key first");
+      expect(geminiEmptyMessage.innerText).toBe("The API key is invalid");
     });
 
     test("should disable send button when no API key provided", () => {
@@ -523,39 +525,23 @@ describe("Gemini Component", () => {
       expect(geminiEmptyMessage.innerText).toBe("Enter API key first");
     });
 
-    test("BUG REPRO: a slower-resolving fetchAPIKey call started earlier gets its result silently dropped by a faster, later call - even when the later call's key turns out empty", async () => {
-      // Mirrors production: modal.onApiKeyChange(apiKey) fires fetchAPIKey
-      // directly with the freshly-typed key (Call A, slow network verify),
-      // while the chrome.storage.onChanged listener's indirect
-      // getApiKey-then-fetchAPIKey round trip (Call B) can resolve first and,
-      // due to a decrypt-in-flight race in the background cache, read back an
-      // empty key.
+    test("a concurrent fetchAPIKey call with an empty key can strand an earlier valid verification (token race)", async () => {
       let resolveCallAVerify;
       chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
         if (msg.action === "verifyApiKey") {
-          // Call A's network verification never settles until we say so.
           resolveCallAVerify = () => callback({ valid: true });
         }
       });
 
-      geminiInstance.fetchAPIKey("real-typed-key"); // Call A: token 1, verify in flight
-
-      // Call B lands before Call A's verify resolves, with a stale/empty key.
-      geminiInstance.fetchAPIKey(""); // Call B: token 2, hasKey:false -> no verify sent, status "missing"
+      geminiInstance.fetchAPIKey("real-typed-key"); // token 1, verify in flight
+      geminiInstance.fetchAPIKey(""); // token 2, no key -> status "missing", no verify sent
 
       expect(global.state.getSnapshot().api.status).toBe("missing");
       expect(sendButton.disabled).toBe(true);
 
-      // Call A's verify now resolves successfully...
-      resolveCallAVerify();
+      resolveCallAVerify(); // resolves with the stale token 1; reducer discards it
       await wait(50);
 
-      // ...but its result carries the stale token (1), so the reducer's
-      // token guard discards it. The UI placeholder still updates (that side
-      // effect isn't token-gated), giving the illusion the key was saved,
-      // while the store - and therefore the disabled Send button - never
-      // recovers. This is the reproduction of the "API 送出去了、沒有錯誤、
-      // placeholder 有記到、但 Gemini 按鈕還是 disable" report.
       expect(apiInput.placeholder).toBe("............-key");
       expect(global.state.getSnapshot().api.status).toBe("missing");
       expect(sendButton.disabled).toBe(true);

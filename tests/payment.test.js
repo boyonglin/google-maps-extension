@@ -65,7 +65,6 @@ describe("Payment Component - Full Coverage", () => {
       trialNote: "Trial ends on $1",
       remindNote: "Enjoy premium features during trial!",
       premiumNote: "Thank you for being a premium user! 回饋 feedback フィードバック",
-      freeNote: "Upgrade to premium via ExtensionPay",
     });
 
     // Reset state and mocks

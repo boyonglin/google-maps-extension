@@ -84,15 +84,10 @@ function initializeDependencies(deps = {}) {
   history.favoriteComponent = favorite;
   gemini.favoriteComponent = favorite;
   gemini.store = state;
-  // Let Modal delegate directly to the Gemini controller instead of relying
-  // solely on the storage.onChanged round-trip to update the API-key UI.
   modal.onApiKeyChange = (apiKey) => gemini.fetchAPIKey(apiKey);
   if (onboarding) onboarding.store = state;
 
-  // renderPopup must be subscribed to whichever `state` is active. Re-running
-  // this wires it to a newly-provided state instance instead of leaving a
-  // stale subscription on the previous one. Guarded since callers may pass a
-  // minimal/mock state object with no subscribe() method.
+  // Re-subscribe renderPopup to the new state instance, not the old one.
   if (unsubscribeState) unsubscribeState();
   if (typeof state.subscribe === "function") {
     unsubscribeState = state.subscribe(renderPopup);
@@ -335,9 +330,7 @@ mapsButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackFeatureClick("open_maps", "mapsButton");
 });
 
-// Tracks the last snapshot renderPopup saw, so a dispatch that only touches
-// one slice of state (e.g. VIDEO_CONTEXT_REQUEST) doesn't force every
-// component to tear down and rebuild its DOM.
+// Diffed against the next snapshot so unrelated components skip re-render.
 let previousPopupSnapshot = null;
 
 function renderPopup(snapshot = state.getSnapshot(), action = null, force = false) {
@@ -445,17 +438,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     state.dispatch({ type: "VIDEO_TOGGLE", enabled: changes.videoSummaryToggle.newValue });
   }
 
-  // Deliberately not reacting to changes.geminiApiKey here: every writer of
-  // this key (modal.js's save and reset handlers) already calls
-  // modal.onApiKeyChange -> gemini.fetchAPIKey directly and synchronously
-  // with the known plaintext key. Also reacting to the storage event fired
-  // two concurrent fetchAPIKey() calls per save - one direct, one via this
-  // listener's extra getApiKey round trip - racing on gemini.js's api.token
-  // guard. If the round-trip call's key read landed stale (e.g. background's
-  // in-memory cache still mid-decrypt), it could win the race with an empty
-  // key, permanently leaving api.status at "missing" (Send button stuck
-  // disabled, no error shown) even though the direct call's verification had
-  // actually just succeeded.
+  // No changes.geminiApiKey handler: modal.js already calls fetchAPIKey
+  // directly, and also reacting here raced it (stuck disabled Send button).
 
   if (incognitoChange) {
     modal.updateIncognitoModal(!!incognitoChange.newValue);
@@ -488,11 +472,8 @@ function applyI18n(root = document) {
 window.applyI18n = applyI18n;
 applyI18n();
 
-// Refresh dynamic strings (set imperatively, not via [data-locale])
-// after an in-place language swap from the settings modal.
-// Tracked on window (not a module-scope const) so re-requiring this script
-// (e.g. across Jest tests) replaces the previous listener instead of
-// stacking a new one on top of it every time.
+// On window, not a module-scope const, so re-requiring this file (tests)
+// replaces the old listener instead of stacking another one.
 if (window.__popupI18nChangedHandler) {
   window.removeEventListener("i18n:changed", window.__popupI18nChangedHandler);
 }

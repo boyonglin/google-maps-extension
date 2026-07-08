@@ -233,9 +233,6 @@
   "premiumNote": {
     "message": "どうも、魔法使いの友よ\ud83e\uddd9ぜひフィードバックを気軽に共有して、もっと良くしよう。"
   },
-  "freeNote": {
-    "message": "ExtensionPay で安全に支払い、The Maps Express をあなたの導きの鍵にしましょう。"
-  },
   "apiTitle": {
     "message": "API キーの設定"
   },

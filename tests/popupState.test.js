@@ -397,6 +397,14 @@ describe("State Class", () => {
       });
     });
 
+    test("BUG REPRO: an echo HISTORY_SET without emptyReason must not clobber a prior 'cleared' reason", () => {
+      // The storage.onChanged echo dispatch carries no emptyReason.
+      state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
+      state.dispatch({ type: "HISTORY_SET", items: [] });
+
+      expect(state.getSnapshot().history.emptyReason).toBe("cleared");
+    });
+
     test("should manage video summary mode state transitions", () => {
       expect(state.getSnapshot().video).toMatchObject({ available: null, enabled: false });
       expect(state.summarizedTabId).toBeUndefined();

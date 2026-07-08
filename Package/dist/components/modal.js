@@ -58,9 +58,7 @@ class Modal {
       const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
       chrome.storage.local.set({ geminiApiKey: encrypted });
 
-      // Popup production flow always wires up onApiKeyChange (delegates to the
-      // Gemini controller/store); it is set unconditionally in popup.js right
-      // after construction, so this callback is always present here.
+      // Always wired by popup.js in production.
       this.onApiKeyChange(apiKey);
     });
 

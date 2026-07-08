@@ -311,7 +311,7 @@ describe("History Component", () => {
         expect(icon.classList.contains("spring-animation")).toBe(false);
       });
 
-      test("should update favorite storage after adding to favorites", async () => {
+      test("should add to favorites without a redundant refreshFavoriteList call", async () => {
         const li = createMockHistoryItem("Test Location");
         searchHistoryListContainer.appendChild(li);
 
@@ -328,7 +328,8 @@ describe("History Component", () => {
 
         await wait();
 
-        expect(DOMUtils.refreshFavoriteList).toHaveBeenCalled();
+        expect(global.favorite.addToFavoriteList).toHaveBeenCalledWith("Test Location");
+        expect(DOMUtils.refreshFavoriteList).toBeUndefined();
       });
 
       test("should not open URL when clicking favorite icon", async () => {

@@ -308,10 +308,6 @@
     "message": "Hello there, wizard friend\ud83e\uddd9Feel free to share your feedback to help us make things better.",
     "description": "modal premium note"
   },
-  "freeNote": {
-    "message": "Pay securely with ExtensionPay, and let The Maps Express be your guiding key.",
-    "description": "modal free note"
-  },
   "apiTitle": {
     "message": "Set up your API key",
     "description": "modal api title"

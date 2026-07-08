@@ -22,18 +22,6 @@ const DOMUtils = {
       iconElement.classList.remove("spring-animation");
     }, 500);
   },
-
-  /**
-   * Refresh favorite list after adding an item
-   * Common pattern used after animating favorite icon
-   */
-  refreshFavoriteList() {
-    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-      if (typeof favorite !== "undefined" && favorite.updateFavorite) {
-        favorite.updateFavorite(favoriteList);
-      }
-    });
-  },
 };
 
 if (typeof window !== "undefined") {

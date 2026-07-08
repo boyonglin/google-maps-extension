@@ -179,7 +179,6 @@ global.chrome = {
         firstNote: "First time note",
         trialNote: `Trial ends on ${substitutions}`,
         remindNote: "Trial reminder",
-        freeNote: "Free version note",
       };
       return messages[key] || key;
     }),
@@ -210,7 +209,6 @@ global.DOMUtils = {
       iconElement.classList.remove("spring-animation");
     }, 500);
   }),
-  refreshFavoriteList: jest.fn(),
 };
 
 // Mock requestAnimationFrame and requestIdleCallback
