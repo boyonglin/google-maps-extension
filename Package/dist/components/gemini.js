@@ -325,7 +325,7 @@ class Gemini {
     requestId = requestId || this.beginSummary(tabId);
     chrome.tabs.sendMessage(tabId, { action: "getContent" }, (response) => {
       if (response && response.content) {
-        const divisor = this.isPredominantlyLatinChars(response.content) ? 1500 : 750;
+        const divisor = this.isPredominantlyLatinChars(response.content) ? 3000 : 1500;
         this.getStore().dispatch({
           type: "SUMMARY_ESTIMATE",
           requestId,

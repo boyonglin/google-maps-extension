@@ -1289,7 +1289,7 @@ describe("Gemini Component", () => {
       // content length (response.content.length), not response.length
       // (which is undefined on the { content } response object and produces NaN).
       const { estimateSeconds } = global.state.getSnapshot().summary;
-      expect(estimateSeconds).toBe(Math.ceil(mockContent.length / 1500));
+      expect(estimateSeconds).toBe(Math.ceil(mockContent.length / 3000));
     });
 
     test("should use different divisors for Latin vs non-Latin characters", async () => {
