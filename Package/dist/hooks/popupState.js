@@ -15,8 +15,7 @@ function summaryItems(value) {
     }));
 }
 
-// Shared by hydrateSnapshot, the SUMMARY_STORAGE_SET reducer case, and callers
-// outside the reducer (gemini.js, popup.js) that need the same TTL check.
+// Shared TTL check for hydrateSnapshot, reducer, and external callers
 function isSummaryFresh(items, timestamp, now) {
   return (
     Array.isArray(items) &&
@@ -60,7 +59,7 @@ function hydrateSnapshot(current, payload = {}) {
   return {
     ...current,
     boot: "ready",
-    // Don't snap back to lastActiveTab if the user already picked a tab.
+    // Preserve user tab selection
     activeTab: current.activeTabTouched
       ? current.activeTab
       : POPUP_TABS.has(payload.lastActiveTab)
@@ -250,7 +249,7 @@ class State {
     this.snapshot = initialPopupSnapshot();
     this.listeners = new Set();
 
-    // User and layout state not owned by the tab reducer.
+    // State not owned by tab reducer
     this.paymentStage = null;
     this.previousWidth = 0;
     this.previousHeight = 0;

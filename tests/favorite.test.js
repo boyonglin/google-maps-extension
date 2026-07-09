@@ -122,7 +122,6 @@ describe("Favorite Component", () => {
       test("should export favorite list as CSV", async () => {
         mockChromeStorage({ favoriteList: ["Place 1", "Place 2 @Clue"] });
 
-        // Just verify no error is thrown - export functionality works
         expect(() => {
           exportButton.click();
         }).not.toThrow();
@@ -133,7 +132,6 @@ describe("Favorite Component", () => {
       test("should trim clue text from exported favorites", async () => {
         mockChromeStorage({ favoriteList: ["Place 1 @Clue 1", "Place 2", "Place 3 @Clue 3"] });
 
-        // Verify export completes without error
         expect(() => {
           exportButton.click();
         }).not.toThrow();
@@ -142,10 +140,8 @@ describe("Favorite Component", () => {
       });
 
       test("should handle null/undefined favoriteList gracefully", () => {
-        // Fixed: favorite.js now checks if favoriteList exists before mapping
         mockChromeStorage({ favoriteList: null });
 
-        // Should not throw an error
         expect(() => {
           exportButton.click();
         }).not.toThrow();
@@ -154,7 +150,6 @@ describe("Favorite Component", () => {
       test("should create CSV with correct format", async () => {
         mockChromeStorage({ favoriteList: ["Location A", "Location B"] });
 
-        // Verify export completes without error
         expect(() => {
           exportButton.click();
         }).not.toThrow();
@@ -176,7 +171,6 @@ describe("Favorite Component", () => {
       test("should escape commas in location names for CSV export", async () => {
         mockChromeStorage({ favoriteList: ["New York, NY", "Location B"] });
 
-        // Verify export completes without error - escaping is handled internally
         expect(() => {
           exportButton.click();
         }).not.toThrow();
@@ -187,7 +181,6 @@ describe("Favorite Component", () => {
       test("should escape quotes in location names for CSV export", async () => {
         mockChromeStorage({ favoriteList: ['The "Best" Place', "Normal Place"] });
 
-        // Verify export completes without error - escaping is handled internally
         expect(() => {
           exportButton.click();
         }).not.toThrow();
@@ -198,7 +191,6 @@ describe("Favorite Component", () => {
       test("should escape newlines in location names for CSV export", async () => {
         mockChromeStorage({ favoriteList: ["Place with\nnewline", "Normal"] });
 
-        // Verify export completes without error - escaping is handled internally
         expect(() => {
           exportButton.click();
         }).not.toThrow();
@@ -238,7 +230,6 @@ describe("Favorite Component", () => {
         const data = await storageSetPromise;
         expect(data.favoriteList).toEqual(["Location 1", "Location 2"]);
         expect(state.getSnapshot().favorite.items).toEqual(["Location 1", "Location 2"]);
-        // Dispatch re-renders the favorite list via the store subscription.
         expect(favoriteListContainer.querySelectorAll(".favorite-list").length).toBe(2);
         expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(true);
       });
@@ -348,7 +339,6 @@ describe("Favorite Component", () => {
 
         fileInput.dispatchEvent(new Event("change"));
 
-        // Should not call storage
         expect(chrome.storage.local.set).not.toHaveBeenCalled();
       });
 
@@ -386,7 +376,6 @@ describe("Favorite Component", () => {
 
         await wait(100);
 
-        // Verify error handling
         expect(state.getSnapshot().favorite.status).toBe("error");
         expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(false);
         expect(favoriteEmptyMessage.textContent).toBe("Import failed. Please check file format.");
@@ -408,7 +397,6 @@ describe("Favorite Component", () => {
 
         await storageSetPromise;
 
-        // File was processed successfully
         expect(chrome.storage.local.set).toHaveBeenCalled();
       });
     });
@@ -556,7 +544,7 @@ describe("Favorite Component", () => {
 
         await withWindowOpenSpy(async (openSpy) => {
           const checkbox = li.querySelector("input.form-check-input");
-          checkbox.classList.remove("d-none"); // Make it visible
+          checkbox.classList.remove("d-none");
 
           const mouseEvent = createMouseEvent(checkbox, 0);
           checkbox.dispatchEvent(mouseEvent);

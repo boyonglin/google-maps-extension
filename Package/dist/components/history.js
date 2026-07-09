@@ -4,10 +4,7 @@ class History {
       const liElement = DOMUtils.findClosestListItem(event);
       if (!liElement) return;
 
-      // The onboarding tour's demo item is fake data; swallow clicks here
-      // (delegated on the container, not the <li>) so the click-through logic
-      // below never persists it, regardless of how many times render()
-      // has rebuilt the list since the item was injected.
+      // Swallow clicks on fake onboarding demo item to prevent persistence
       if (liElement.classList.contains("onboarding-demo-item")) {
         event.stopPropagation();
         event.preventDefault();
@@ -47,11 +44,9 @@ class History {
                   "searchHistoryListContainer"
                 );
               if (event.button === 1) {
-                // Middle click
                 event.preventDefault();
                 chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
               } else if (event.button === 0) {
-                // Left click
                 window.open(searchUrl, "_blank");
               }
             }
@@ -121,8 +116,7 @@ class History {
     statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
     clearAction.disabled = items.length === 0;
 
-    // Patch icon classNames in place on favorite-only updates, so an
-    // in-flight spring-animation icon survives (mirrors gemini.js).
+    // Patch icon classNames in place to preserve animation
     const structuralChange =
       meta.historyChanged !== false ||
       meta.deleteModeChanged !== false ||

@@ -1,6 +1,5 @@
 /**
- * GA4 Analytics ES Module wrapper for Service Worker
- * Re-exports Analytics for use in ES module context (background.js)
+ * GA4 Analytics ES Module wrapper
  */
 
 const Analytics = {
@@ -8,12 +7,10 @@ const Analytics = {
   GA_API_SECRET: "wTbbWhL3RiCdQfQcoIZhwA",
   SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes
 
-  // Page view tracking state
   _currentPage: null,
   _pageStartTime: null,
   _lastPage: null,
 
-  // Get or create anonymous Client ID
   getOrCreateClientId() {
     return new Promise((resolve) => {
       chrome.storage.local.get("ga_client_id", (result) => {
@@ -28,7 +25,6 @@ const Analytics = {
     });
   },
 
-  // Get or create Session ID (expires after 30 min inactivity)
   getOrCreateSessionId() {
     return new Promise((resolve) => {
       chrome.storage.local.get(["ga_session_id", "ga_session_timestamp"], (result) => {
@@ -54,7 +50,6 @@ const Analytics = {
     });
   },
 
-  // Send event to GA4
   async trackEvent(eventName, eventParams = {}) {
     try {
       const clientId = await this.getOrCreateClientId();
@@ -85,21 +80,18 @@ const Analytics = {
     }
   },
 
-  // Track extension opened
   trackExtensionOpened() {
     this.trackEvent("extension_opened", {
       source: "popup",
     });
   },
 
-  // Track search action
   trackSearch() {
     this.trackEvent("search_performed", {
       feature_name: "search",
     });
   },
 
-  // Track feature button click
   trackFeatureClick(featureName, buttonId) {
     this.trackEvent("feature_click", {
       feature_name: featureName,
@@ -107,7 +99,6 @@ const Analytics = {
     });
   },
 
-  // Track page view
   trackPageView(pageName) {
     // Send dwell time for previous page before tracking new page
     if (this._currentPage && this._pageStartTime) {
@@ -136,7 +127,6 @@ const Analytics = {
     });
   },
 
-  // Handle visibility change - called when tab becomes hidden/visible
   handleVisibilityChange(isVisible) {
     if (!isVisible) {
       // Tab became hidden - end current tracking
@@ -148,14 +138,12 @@ const Analytics = {
     }
   },
 
-  // Track keyboard shortcut usage (service worker only)
   trackShortcut(shortcutName) {
     this.trackEvent("shortcut_used", {
       shortcut_name: shortcutName,
     });
   },
 
-  // Track context menu action (service worker only)
   trackContextMenu(menuAction) {
     this.trackEvent("context_menu_action", {
       menu_action: menuAction,

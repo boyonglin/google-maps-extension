@@ -293,7 +293,6 @@ describe("background.js", () => {
 
       listeners.onInstalled({ reason: "update", previousVersion: "1.11.3" });
 
-      // Should only call create for context menus, not for tab
       const tabCreateCalls = chrome.tabs.create.mock.calls.filter(
         (call) => call[0].url && call[0].url.includes("notion.site")
       );
@@ -390,7 +389,6 @@ describe("background.js", () => {
 
       await flushPromises();
 
-      // Should handle the error gracefully
       expect(chrome.tabs.sendMessage).toHaveBeenCalled();
     });
 
@@ -431,7 +429,6 @@ describe("background.js", () => {
         "searchHistoryList",
         expect.any(Function)
       );
-      // Should not call set since list is already within limit
       expect(chrome.storage.local.set).not.toHaveBeenCalledWith(
         expect.objectContaining({ searchHistoryList: expect.any(Array) })
       );
@@ -448,7 +445,6 @@ describe("background.js", () => {
       invalidValues.forEach((changes) => {
         chrome.storage.local.get.mockClear();
         listeners.onStorageChanged(changes, "local");
-        // Should not attempt to get history list for invalid values
         expect(chrome.storage.local.get).not.toHaveBeenCalledWith(
           "searchHistoryList",
           expect.any(Function)
@@ -467,7 +463,6 @@ describe("background.js", () => {
 
       listeners.onStorageChanged(changes, "local");
 
-      // Should not call set when list is null
       expect(chrome.storage.local.set).not.toHaveBeenCalledWith(
         expect.objectContaining({ searchHistoryList: expect.any(Array) })
       );
@@ -688,7 +683,6 @@ describe("background.js", () => {
       mockAutoAttachContentFlow();
       await runAutoAttachCommand();
 
-      // Check that consoleQuote was sent with trial stage
       expectConsoleQuoteStage("trial");
     });
 
@@ -705,7 +699,6 @@ describe("background.js", () => {
       mockAutoAttachContentFlow();
       await runAutoAttachCommand();
 
-      // Expired trial users still get trial access - no restrictions enforced
       expectConsoleQuoteStage("trial");
     });
 
@@ -744,10 +737,7 @@ describe("background.js", () => {
 
       await flushPromises();
 
-      // Should call scripting.executeScript (for meow function)
       expect(chrome.scripting.executeScript).toHaveBeenCalled();
-
-      // Should also try to notify about missing address
       expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
         { action: "addrNotify" },
         expect.any(Function)

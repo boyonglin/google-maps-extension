@@ -1,23 +1,10 @@
 /**
- * Jest Tests for Onboarding Component (onboarding.js)
- *
- * Covers:
- * - First-time gating via chrome.storage.local.onboardingDone
- * - 4-step flow (Hints -> Favorite -> API -> Premium)
- * - DOM construction (overlay, spotlight, tooltip)
- * - Demo search-history item injection + cleanup
- * - Next / Skip / Finish behaviors and persistence
- * - i18n labels (Next vs Got it on final step)
- * - Tooltip positioning (placement: top/bottom + viewport clamp)
- * - Graceful no-op when target element is missing
+ * Tests for Onboarding Component (onboarding.js)
  */
 
 const { mockI18n, cleanupDOM } = require("./testHelpers");
 
-// Use the production store so the favorite step's demo-item dispatch is
-// exercised end-to-end: onboarding dispatches ONBOARDING_DEMO_SET, and the
-// real History component (subscribed below, matching popup.js's wiring)
-// renders/removes the demo <li> that onboarding's own tooltip then targets.
+// Use production store for end-to-end demo-item dispatch
 const State = require("../Package/dist/hooks/popupState.js");
 const History = require("../Package/dist/components/history.js");
 const Onboarding = require("../Package/dist/components/onboarding.js");
@@ -36,7 +23,7 @@ const setupOnboardingDOM = () => {
   `;
 };
 
-// JSDOM does not implement layout — fake getBoundingClientRect using inline style
+// Fake getBoundingClientRect using inline style
 const stubBoundingRects = () => {
   const elements = document.querySelectorAll("[style]");
   elements.forEach((el) => {
@@ -59,7 +46,7 @@ const stubBoundingRects = () => {
   });
 };
 
-// Force tooltip to a known measured size so positionTooltip math is deterministic
+// Force tooltip to known size
 const stubTooltipSize = (instance, width = 200, height = 100) => {
   const original = instance.tooltip.getBoundingClientRect.bind(instance.tooltip);
   instance.tooltip.getBoundingClientRect = () => ({
@@ -116,13 +103,10 @@ describe("Onboarding Component", () => {
       plusLabel: "Add to favorites",
     });
 
-    // Default: onboarding NOT done
     chrome.storage.local.get.mockImplementation((key, cb) => cb({}));
     chrome.storage.local.set.mockImplementation((data, cb) => cb && cb());
 
-    // Wire up the real store + History component the same way popup.js does,
-    // so the favorite step's demo-item dispatch renders/removes a real <li>
-    // that onboarding's own tooltip positioning can then find.
+    // Wire up store and History component
     global.searchHistoryListContainer = document.getElementById("searchHistoryList");
     global.emptyMessage = document.getElementById("emptyMessage");
     global.clearButton = document.getElementById("clearButton");
@@ -149,9 +133,7 @@ describe("Onboarding Component", () => {
     jest.clearAllMocks();
   });
 
-  // ==========================================================================
   // Construction
-  // ==========================================================================
 
   describe("constructor", () => {
     test("should expose 4 ordered steps (hints -> favorite -> api -> premium)", () => {
@@ -179,9 +161,7 @@ describe("Onboarding Component", () => {
     });
   });
 
-  // ==========================================================================
-  // maybeStart: gating via chrome.storage.local
-  // ==========================================================================
+  // maybeStart
 
   describe("maybeStart", () => {
     test("should start tour when onboardingDone is not set", () => {
@@ -215,9 +195,7 @@ describe("Onboarding Component", () => {
     });
   });
 
-  // ==========================================================================
   // start: builds DOM and renders first step
-  // ==========================================================================
 
   describe("start", () => {
     test("should build overlay, spotlight and tooltip", () => {
@@ -263,9 +241,7 @@ describe("Onboarding Component", () => {
     });
   });
 
-  // ==========================================================================
-  // next: progressing through steps
-  // ==========================================================================
+  // next
 
   describe("next", () => {
     test("should advance to step 2 (Favorite / demo history item)", () => {
@@ -313,10 +289,10 @@ describe("Onboarding Component", () => {
 
     test("should finish tour after the final step", () => {
       onboarding.start();
-      onboarding.next(); // -> 2 (favorite)
-      onboarding.next(); // -> 3 (api)
-      onboarding.next(); // -> 4 (premium)
-      onboarding.next(); // -> finish
+      onboarding.next();
+      onboarding.next();
+      onboarding.next();
+      onboarding.next();
 
       expectTourFinished();
     });
@@ -329,14 +305,12 @@ describe("Onboarding Component", () => {
     });
   });
 
-  // ==========================================================================
-  // Favorite step: demo history item injection + cleanup
-  // ==========================================================================
+  // Favorite step
 
   describe("favorite step (demo history item)", () => {
     const advanceToFavoriteStep = () => {
       onboarding.start();
-      onboarding.next(); // -> step 2 (favorite)
+      onboarding.next();
     };
 
     test("should dispatch ONBOARDING_DEMO_SET(visible: true) when entering the step", () => {
@@ -348,13 +322,11 @@ describe("Onboarding Component", () => {
     test("should inject a demo history item with the favorite icon when entering the step", () => {
       advanceToFavoriteStep();
 
-      // Rendered by History reacting to the store dispatch above (see history.test.js
-      // for direct render() coverage; this asserts the end-to-end wiring instead).
+      // Rendered by History reacting to store dispatch
       const demo = document.querySelector(".onboarding-demo-item");
       expect(demo).not.toBeNull();
       expect(demo.querySelector("span").textContent).toBe("Eiffel Tower");
       expect(demo.querySelector("i.bi-patch-plus-fill")).not.toBeNull();
-      // Demo item must be inside the real search history container
       expect(document.getElementById("searchHistoryList").contains(demo)).toBe(true);
     });
 
@@ -389,14 +361,8 @@ describe("Onboarding Component", () => {
       expect(document.getElementById("emptyMessage").classList.contains("d-none")).toBe(false);
     });
 
-    // Clicking the demo item's favorite icon (container-level swallow +
-    // advance) is History's responsibility, not onboarding's - see
-    // history.test.js's "onboarding demo item delegation" describe block.
-
     test("should be a no-op when the search history container is missing", () => {
       document.getElementById("searchHistoryList").remove();
-      // Should still complete without throwing — the favorite step's target won't
-      // be found, so the tour finishes early.
       expect(() => {
         onboarding.start();
         onboarding.next();
@@ -404,9 +370,7 @@ describe("Onboarding Component", () => {
     });
   });
 
-  // ==========================================================================
   // finish / skip
-  // ==========================================================================
 
   describe("finish", () => {
     test("should remove overlay and persist onboardingDone=true", () => {
@@ -437,13 +401,11 @@ describe("Onboarding Component", () => {
     });
   });
 
-  // ==========================================================================
-  // Missing target -> graceful skip
-  // ==========================================================================
+  // Missing target
 
   describe("missing target element", () => {
     test("should finish without throwing when target is missing", () => {
-      document.body.innerHTML = ""; // wipe targets
+      document.body.innerHTML = "";
       onboarding.start();
 
       // No tooltip should remain because render() finished early
@@ -451,15 +413,13 @@ describe("Onboarding Component", () => {
     });
   });
 
-  // ==========================================================================
   // Tooltip positioning
-  // ==========================================================================
 
   describe("positionTooltip", () => {
     test("placement 'top' should place tooltip above the target with margin", () => {
       setDocumentViewport(400, 600);
 
-      onboarding.start(); // step 1, placement "top", target top:300
+      onboarding.start();
       stubTooltipSize(onboarding, 200, 100);
 
       const targetRect = document
@@ -467,14 +427,12 @@ describe("Onboarding Component", () => {
         .getBoundingClientRect();
       onboarding.positionTooltip(targetRect, "top");
 
-      // expected top = 300 - 100 - 12 = 188
       expect(parseInt(onboarding.tooltip.style.top, 10)).toBe(188);
     });
 
     test("placement 'top' should flip below target when there is no room above", () => {
       setDocumentViewport(400, 600);
 
-      // Move target to the very top
       const target = document.querySelector('.footer-li[data-bs-target="#tipsModal"]');
       target.getBoundingClientRect = () => ({
         top: 4,
@@ -493,18 +451,15 @@ describe("Onboarding Component", () => {
 
       onboarding.positionTooltip(target.getBoundingClientRect(), "top");
 
-      // Flipped: top = 28 + 12 = 40
       expect(parseInt(onboarding.tooltip.style.top, 10)).toBe(40);
     });
 
     test("should clamp tooltip horizontally inside the viewport", () => {
-      // Force a narrow viewport via documentElement.clientWidth
       setDocumentViewport(300, 600);
 
       onboarding.start();
       stubTooltipSize(onboarding, 200, 100);
 
-      // Target far to the right
       const targetRect = {
         top: 100,
         left: 280,
@@ -519,7 +474,6 @@ describe("Onboarding Component", () => {
       onboarding.positionTooltip(targetRect, "bottom");
 
       const left = parseInt(onboarding.tooltip.style.left, 10);
-      // viewportW(300) - tooltipW(200) - 8 = 92
       expect(left).toBeLessThanOrEqual(92);
       expect(left).toBeGreaterThanOrEqual(8);
     });

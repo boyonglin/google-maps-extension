@@ -198,9 +198,7 @@ describe("contentScript.js - getContent Action", () => {
     messageListener(request, {}, sendResponse);
 
     const response = sendResponse.mock.calls[0][0];
-    // Header text should be removed from body content
     expect(response.content).toContain("Main content to keep");
-    // The body text should not contain the header text duplicated
     const bodySection = response.content.split("Page body content: ")[1];
     expect(bodySection).not.toContain("Header content to remove");
   });
@@ -454,7 +452,7 @@ describe("contentScript.js - expandYouTubeDescription Action", () => {
 
     expect(expandButton.click).toHaveBeenCalled();
     expect(sendResponse).toHaveBeenCalledWith({ expanded: true });
-    expect(result).toBe(true); // Should keep message channel open
+    expect(result).toBe(true);
   });
 
   test("should not click primary button when aria-disabled is true, tries alternatives", () => {
@@ -470,9 +468,7 @@ describe("contentScript.js - expandYouTubeDescription Action", () => {
 
     const result = messageListener(request, {}, sendResponse);
 
-    // Primary button should not be clicked when disabled
     expect(expandButton.click).not.toHaveBeenCalled();
-    // Should try alternatives and send response (no expand button found since no alternatives exist)
     expect(sendResponse).toHaveBeenCalledWith({
       expanded: false,
       message: "No expand button found",
@@ -558,7 +554,6 @@ describe("contentScript.js - expandYouTubeDescription Action", () => {
   });
 
   test("should handle errors and return error message", () => {
-    // Mock querySelector to throw an error
     const originalQuerySelector = document.querySelector;
     document.querySelector = jest.fn(() => {
       throw new Error("DOM error");
@@ -574,7 +569,6 @@ describe("contentScript.js - expandYouTubeDescription Action", () => {
       error: "DOM error",
     });
 
-    // Restore original
     document.querySelector = originalQuerySelector;
   });
 
@@ -614,7 +608,7 @@ describe("contentScript.js - updateIframeSize Action", () => {
     messageListener(request, {}, sendResponse);
 
     expect(iframe.style.width).toBe("400px");
-    expect(iframe.style.height).toBe("335px"); // height + 32 + 3
+    expect(iframe.style.height).toBe("335px");
   });
 
   test("should handle zero width and height", () => {
@@ -748,7 +742,7 @@ describe("contentScript.js - finishIframe Action", () => {
 
     expect(() => {
       messageListener(request, {}, sendResponse);
-    }).not.toThrow(); // After bug fix, should handle gracefully
+    }).not.toThrow();
   });
 });
 

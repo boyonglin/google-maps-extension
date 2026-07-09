@@ -1,10 +1,8 @@
-// Page
 const loadingMessage = document.getElementById("loadingMessage");
 const historyPanel = document.getElementById("historyPanel");
 const favoritePanel = document.getElementById("favoritePanel");
 const geminiPanel = document.getElementById("geminiPanel");
 
-// Context
 const searchInput = document.getElementById("searchInput");
 const apiInput = document.getElementById("apiInput");
 const subtitleElement = document.getElementById("subtitle");
@@ -18,19 +16,16 @@ const incognitoToggle = document.getElementById("incognitoToggle");
 const darkModeToggle = document.getElementById("darkModeToggle");
 const responseField = document.getElementById("response");
 
-// Lists
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
 const favoriteListContainer = document.getElementById("favoriteList");
 const summaryListContainer = document.getElementById("summaryList");
 
-// Page Buttons
 const searchHistoryButton = document.getElementById("searchHistoryButton");
 const favoriteListButton = document.getElementById("favoriteListButton");
 const deleteListButton = document.getElementById("deleteListButton");
 const geminiSummaryButton = document.getElementById("geminiSummaryButton");
 const videoSummaryButton = document.getElementById("videoSummaryButton");
 
-// Buttons
 const searchButtonGroup = document.getElementById("searchButtonGroup");
 const deleteButtonGroup = document.getElementById("deleteButtonGroup");
 const exportButtonGroup = document.getElementById("exportButtonGroup");
@@ -50,13 +45,11 @@ const closeButton = premiumModal.parentElement.querySelector(".btn-close");
 const optionalButton = document.getElementById("optionalButton");
 const mapsButton = document.getElementById("mapsButton");
 
-// ExtensionPay
 const paymentButton = document.getElementById("paymentButton");
 const restoreButton = document.getElementById("restoreButton");
 const shortcutTip = document.getElementsByClassName("premium-only");
 const premiumNoteElement = document.querySelector(`p[data-locale="premiumNote"]`);
 
-// Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
 const cancelButtonSpan = document.querySelector("#cancelButton > span");
 const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
@@ -65,7 +58,6 @@ const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i +
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
 
-// Import Scripts
 let state, remove, favorite, history, gemini, modal, payment, onboarding;
 let unsubscribeState = null;
 let hydrationPromise = null;
@@ -175,7 +167,6 @@ function popupLayout() {
   return hydratePopup();
 }
 
-// Check if the text overflows the button since locale
 function checkTextOverflow() {
   const mapsButtonHeight = mapsButtonSpan.offsetHeight;
   const clearButtonHeight = clearButtonSpan.offsetHeight;
@@ -334,7 +325,6 @@ mapsButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackFeatureClick("open_maps", "mapsButton");
 });
 
-// Diffed against the next snapshot so unrelated components skip re-render.
 let previousPopupSnapshot = null;
 
 function renderPopup(snapshot = state.getSnapshot(), action = null, force = false) {
@@ -464,7 +454,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
-// Exposed on window so modal.js can re-apply i18n after a language change.
 function applyI18n(root = document) {
   root.querySelectorAll("[data-locale]").forEach((el) => {
     const v = chrome.i18n.getMessage(el.dataset.locale);
@@ -486,8 +475,7 @@ function applyI18n(root = document) {
 window.applyI18n = applyI18n;
 applyI18n();
 
-// On window, not a module-scope const, so re-requiring this file (tests)
-// replaces the old listener instead of stacking another one.
+// Prevent stacking listeners on re-require (e.g. in tests)
 if (window.__popupI18nChangedHandler) {
   window.removeEventListener("i18n:changed", window.__popupI18nChangedHandler);
 }
@@ -511,7 +499,6 @@ window.__popupI18nChangedHandler = () => {
 };
 window.addEventListener("i18n:changed", window.__popupI18nChangedHandler);
 
-// Handle IME composition for CJK input
 let isComposing = false;
 
 searchInput.addEventListener("compositionstart", () => {
@@ -531,10 +518,8 @@ document.addEventListener(
   true
 );
 
-// configureElements is consumed by modal.js for the shortcuts click handler.
 const configureElements = document.querySelectorAll(".modal-body p");
 
-// Resize utils
 const body = document.body;
 let measurementFrame = null;
 let measurementTargetTabId = null;
@@ -565,7 +550,6 @@ function sendUpdateIframeSize(id, width, height) {
   });
 }
 
-// Prevent layout glitch
 function delayMeasurement() {
   setTimeout(() => {
     measureContentSize();

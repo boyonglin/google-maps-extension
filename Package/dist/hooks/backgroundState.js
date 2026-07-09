@@ -1,11 +1,9 @@
 import { decryptApiKey } from "../utils/crypto.js";
 
-// URLs
 export let queryUrl = "https://www.google.com/maps?authuser=0&";
 export let routeUrl = "https://www.google.com/maps/dir/?authuser=0&";
 
 export function updateUserUrls(authUser) {
-  // Treat arrays/objects as 0
   if (Array.isArray(authUser) || (typeof authUser === "object" && authUser !== null)) authUser = 0;
   const n = Number(authUser);
   const au = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
@@ -25,7 +23,6 @@ export function buildMapsUrl() {
   return queryUrl.slice(0, -1);
 }
 
-// Cache
 export const DEFAULTS = Object.freeze({
   searchHistoryList: [],
   favoriteList: [],
@@ -74,7 +71,7 @@ export function getCache() {
 
 export async function getApiKey() {
   await ensureWarm();
-  // Avoid reading cache while an applyStorageChanges decrypt is in flight.
+  // Avoid reading cache during decrypt
   if (applying) await applying;
   const k = cache?.geminiApiKey;
   if (!k) throw new Error("No API key found. Please provide one.");
@@ -83,7 +80,7 @@ export async function getApiKey() {
 
 export async function applyStorageChanges(changes, area) {
   if (area !== "local") return;
-  // A real read, not DEFAULTS, or an early write would wipe unrelated fields.
+  // Real read prevents wiping unrelated fields
   if (!cache) await ensureWarm();
   applying = (async () => {
     for (const [k, { newValue }] of Object.entries(changes)) {
@@ -103,7 +100,6 @@ export async function applyStorageChanges(changes, area) {
   applying = null;
 }
 
-// Test helpers
 if (typeof module !== "undefined" && module.exports) {
   exports.__resetCacheForTesting = function () {
     cache = null;

@@ -1,11 +1,6 @@
 /**
  * Shared Test Helper Functions
- * Common utilities to reduce code duplication across test files
  */
-
-// ============================================================================
-// Chrome API Mocking Utilities
-// ============================================================================
 
 /**
  * Mock chrome.runtime.sendMessage with action-based routing
@@ -48,9 +43,6 @@ const mockChromeStorage = (getResponse = {}, setCallback = null) => {
 
 /**
  * Setup mock storage data with default values
- * Pattern from backgroundState.test.js
- * @param {Object} overrides - Override default storage values
- * @returns {Object} The complete mock storage data
  */
 const setupMockStorage = (overrides = {}) => {
   const mockStorageData = {
@@ -158,10 +150,6 @@ const captureEventListeners = (eventPaths) => {
   return captured;
 };
 
-// ============================================================================
-// Async Utilities
-// ============================================================================
-
 /**
  * Create a promise that resolves after a delay
  * @param {number} ms - Milliseconds to wait
@@ -171,13 +159,6 @@ const wait = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Flush all pending promises in the microtask queue
- * This is the preferred way to wait for async operations in tests
- * as it's deterministic and doesn't rely on arbitrary timeouts.
- * Uses process.nextTick for Node.js compatibility or setTimeout(0) as fallback.
- * @returns {Promise<void>}
- * @example
- * // Instead of: await new Promise(resolve => setTimeout(resolve, 100));
- * // Use: await flushPromises();
  */
 const flushPromises = () => {
   if (typeof process !== "undefined" && process.nextTick) {
@@ -185,10 +166,6 @@ const flushPromises = () => {
   }
   return new Promise((resolve) => setTimeout(resolve, 0));
 };
-
-// ============================================================================
-// DOM Utilities
-// ============================================================================
 
 /**
  * Create mock list items for testing (pattern from menu.test.js)
@@ -247,10 +224,6 @@ const cleanupDOM = () => {
   document.body.innerHTML = "";
 };
 
-// ============================================================================
-// Jest Assertion Helpers
-// ============================================================================
-
 /**
  * Assert that a function was called with partial object matching
  * @param {Function} mockFn - Jest mock function
@@ -282,10 +255,6 @@ const withWindowOpenSpy = async (testFn) => {
     openSpy.mockRestore();
   }
 };
-
-// ============================================================================
-// Event and Interaction Utilities
-// ============================================================================
 
 /**
  * Create and dispatch a mouse event
@@ -414,10 +383,6 @@ const mockTabsSendMessage = (response, hasError = false) => {
   });
 };
 
-// ============================================================================
-// Test Data Constants
-// ============================================================================
-
 /**
  * Test constants for common test data
  */
@@ -429,10 +394,6 @@ const TEST_CONSTANTS = {
   WHITESPACE: "   ",
   URL: "http://maps.test/search",
 };
-
-// ============================================================================
-// Module Exports
-// ============================================================================
 
 module.exports = {
   // Chrome API Mocking

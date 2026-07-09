@@ -427,41 +427,32 @@ describe("State Class", () => {
     });
 
     test("should manage payment stage lifecycle", () => {
-      // Default state: no payment stage
       expect(state.paymentStage).toBeNull();
 
-      // User subscribes
       state.paymentStage = "trial";
       expect(state.paymentStage).toBe("trial");
 
-      // Upgrades to premium
       state.paymentStage = "premium";
       expect(state.paymentStage).toBe("premium");
 
-      // Downgrade or cancellation
       state.paymentStage = null;
       expect(state.paymentStage).toBeNull();
     });
 
     test("should preserve dimensions cache through operations", async () => {
-      // Initial state
       expect(state.previousWidth).toBe(0);
       expect(state.previousHeight).toBe(0);
 
-      // First render
       state.updateDimensions(800, 600);
       expect(state.previousWidth).toBe(800);
       expect(state.previousHeight).toBe(600);
 
-      // Perform operations that might affect state
       mockChromeRuntimeMessage({ buildSearchUrl: { url: "https://maps.google.com" } });
       await state.buildSearchUrl("test");
 
-      // Dimensions should persist
       expect(state.previousWidth).toBe(800);
       expect(state.previousHeight).toBe(600);
 
-      // Window resize
       state.updateDimensions(1024, 768);
       expect(state.previousWidth).toBe(1024);
       expect(state.previousHeight).toBe(768);
@@ -599,7 +590,6 @@ describe("Integration Tests", () => {
     state.dispatch({ type: "HYDRATE", payload: {} });
     expect(state.getSnapshot().boot).toBe("ready");
 
-    // Search
     chrome.runtime.sendMessage.mockImplementation((message, callback) => {
       callback({ url: "https://www.google.com/maps/search/test" });
     });
@@ -607,7 +597,6 @@ describe("Integration Tests", () => {
     const searchUrl = await state.buildSearchUrl("test");
     expect(searchUrl).toBe("https://www.google.com/maps/search/test");
 
-    // Update dimensions
     state.updateDimensions(1920, 1080);
     expect(state.previousWidth).toBe(1920);
     expect(state.previousHeight).toBe(1080);
@@ -634,7 +623,6 @@ describe("Integration Tests", () => {
     await state.buildDirectionsUrl("origin", "dest");
     state.buildMapsButtonUrl();
 
-    // Verify state is maintained
     expect(state.getSnapshot().history.items).toEqual(["H"]);
     expect(state.getSnapshot().favorite.items).toEqual(["F"]);
     expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(3);
@@ -749,8 +737,7 @@ describe("Popup reducer architecture", () => {
 
   test("a tab switch before HYDRATE resolves is not clobbered by the persisted lastActiveTab", () => {
     const state = new State();
-    // Simulates the user clicking a tab while hydratePopup()'s getWarmState()
-    // is still in flight.
+    // User clicks a tab before hydratePopup() completes
     state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
     state.dispatch({
       type: "HYDRATE",

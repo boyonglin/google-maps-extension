@@ -11,7 +11,6 @@ describe("DOMUtils", () => {
     jest.clearAllMocks();
     mockChromeStorage({ favoriteList: ["Tokyo", "Paris"] });
 
-    // Mock global favorite object
     global.favorite = {
       updateFavorite: jest.fn(),
     };
@@ -70,7 +69,6 @@ describe("DOMUtils", () => {
       div.appendChild(span);
       const event = { target: span };
 
-      // Only checks immediate parent, not grandparent
       const result = DOMUtils.findClosestListItem(event);
 
       expect(result).toBeNull();

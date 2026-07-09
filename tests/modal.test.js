@@ -1,8 +1,6 @@
 /**
- * Comprehensive Jest Unit Tests for Modal Component (modal.js)
- *
- * This version properly mocks the dynamic import() by intercepting it at the global level.
- * The key insight: we need to mock before the module loads and handle the dynamic import.
+ * Tests for Modal Component (modal.js)
+ * Tests dynamic import() mock
  */
 
 // Mock crypto module FIRST, before anything else
@@ -133,13 +131,10 @@ const cleanupGlobalDOMElements = () => {
   });
 };
 
-// ============================================================================
-// Test-Specific Helper Functions
-// ============================================================================
+// Helper Functions
 
 /**
  * Helper: Create and dispatch form submit event
- * Standardizes form testing across multiple test cases
  */
 const submitForm = (form, inputElement, value) => {
   inputElement.value = value;
@@ -150,7 +145,6 @@ const submitForm = (form, inputElement, value) => {
 
 /**
  * Helper: Setup incognito mode storage
- * Used in multiple incognito toggle tests
  */
 const setupIncognitoStorage = (isIncognito = false) => {
   chrome.storage.local.get.mockImplementation((key, callback) => {
@@ -220,9 +214,7 @@ describe("Modal Component - Full Coverage", () => {
     cleanupDOM();
   });
 
-  // ============================================================================
-  // Test: addModalListener - Configure Shortcuts
-  // ============================================================================
+  // addModalListener - Configure Shortcuts
 
   describe("addModalListener - Configure Shortcuts", () => {
     test("should open Chrome shortcuts page when configure element clicked (Chrome browser)", async () => {
@@ -252,9 +244,7 @@ describe("Modal Component - Full Coverage", () => {
     // browser detection logic that's better tested in E2E tests.
   });
 
-  // ============================================================================
-  // Test: addModalListener - API Form Submission
-  // ============================================================================
+  // addModalListener - API Form Submission
 
   describe("addModalListener - API Form Submission", () => {
     test("should encrypt and store valid API key, then delegate to onApiKeyChange", async () => {
@@ -265,16 +255,13 @@ describe("Modal Component - Full Coverage", () => {
 
       await wait(50);
 
-      // Should call encryption
       expect(mockEncryptApiKey).toHaveBeenCalledWith("test-api-key-12345");
 
-      // Should store encrypted key
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         geminiApiKey: "encrypted_key_data",
       });
 
-      // Should delegate verification/UI feedback to the Gemini controller/store
-      // (production wires this to gemini.fetchAPIKey - see gemini.test.js)
+      // Delegate to gemini store
       expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("test-api-key-12345");
     });
 
@@ -286,19 +273,15 @@ describe("Modal Component - Full Coverage", () => {
 
       await wait(50);
 
-      // Should not encrypt empty string
       expect(mockEncryptApiKey).not.toHaveBeenCalled();
 
-      // Should store empty string
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ geminiApiKey: "" });
 
       expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("");
     });
   });
 
-  // ============================================================================
-  // Test: addModalListener - Modal Close Events
-  // ============================================================================
+  // addModalListener - Modal Close Events
 
   describe("addModalListener - Modal Close Events", () => {
     test("should clear apiInput when apiModal is hidden", async () => {
@@ -326,9 +309,7 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
-  // Test: addModalListener - Starting Address Form
-  // ============================================================================
+  // addModalListener - Starting Address Form
 
   describe("addModalListener - Starting Address Form", () => {
     test("should save starting address", async () => {
@@ -353,9 +334,7 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
-  // Test: addModalListener - Auth User Form
-  // ============================================================================
+  // addModalListener - Auth User Form
 
   describe("addModalListener - Auth User Form", () => {
     test("should save valid authUser number", async () => {
@@ -375,9 +354,7 @@ describe("Modal Component - Full Coverage", () => {
       const form = document.getElementById("authUserForm");
       submitForm(form, authUserInput, "-5");
 
-      // The code doesn't have logic to reject negative numbers!
-      // It only checks > 0 in the else if, but negative parseInt fails /^\d+$/ test
-      // So it falls through and does nothing - this is a BUG
+      // Negative numbers are ignored
       expect(chrome.storage.local.set).not.toHaveBeenCalled();
     });
 
@@ -421,7 +398,6 @@ describe("Modal Component - Full Coverage", () => {
       const form = document.getElementById("authUserForm");
       submitForm(form, authUserInput, "10");
 
-      // This covers line 108-109: /^\d+$/.test(authUser) && authUser > 0
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         authUser: 10,
       });
@@ -429,14 +405,12 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
-  // Test: addModalListener - Incognito Toggle
-  // ============================================================================
+  // addModalListener - Incognito Toggle
 
   describe("addModalListener - Incognito Toggle", () => {
     test("should toggle incognito from false to true", async () => {
       setupIncognitoStorage(false);
-      mockChromeStorage({}, () => {}); // Setup storage.set mock
+      mockChromeStorage({}, () => {});
 
       const updateSpy = jest.spyOn(modalInstance, "updateIncognitoModal");
 
@@ -454,9 +428,7 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
-  // Test: addModalListener - Dark Mode Toggle
-  // ============================================================================
+  // addModalListener - Dark Mode Toggle
 
   describe("addModalListener - Dark Mode Toggle", () => {
     test("should toggle dark mode from false to true", async () => {
@@ -513,9 +485,7 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
-  // Test: addModalListener - Payment Buttons
-  // ============================================================================
+  // addModalListener - Payment Buttons
 
   describe("addModalListener - Payment Buttons", () => {
     test("should send extPay message when payment button clicked", async () => {
@@ -547,10 +517,7 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
-  // Test: text2Link, text2Modal, updateOptionalModal, updateIncognitoModal
-  // (Same as before - these don't require addModalListener)
-  // ============================================================================
+  // text2Link, text2Modal, updateOptionalModal, updateIncognitoModal
 
   describe("text2Link", () => {
     test("should replace text with link", () => {
@@ -598,7 +565,6 @@ describe("Modal Component - Full Coverage", () => {
     });
 
     test("should handle missing element", () => {
-      // This covers the else branch (line 158)
       expect(() => {
         modalInstance.text2Modal("nonexistent", "Text", "modalId");
       }).not.toThrow();
@@ -637,110 +603,55 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
-  // Test: loadCrypto - Verifying Dynamic Import Logic
-  // ============================================================================
-  //
-  // NOTE ON TESTING DYNAMIC IMPORTS:
-  // Testing the real dynamic import() path in Jest is inherently limited because:
-  // 1. Jest transforms import() to require() at compile time
-  // 2. Chrome extension URLs (chrome-extension://) aren't resolvable in Node.js
-  // 3. The jest.mock at the top of this file already ensures crypto.js loads correctly
-  //
-  // The tests below verify the loadCrypto logic and chrome.runtime.getURL usage.
-  // E2E tests in a real browser extension environment are needed to fully test
-  // the dynamic import path with actual chrome-extension:// URLs.
-  //
-  // What IS covered:
-  // - The conditional logic (skip import if already injected)
-  // - The chrome.runtime.getURL call with correct parameters
-  // - Integration with addModalListener
-  // - That the module loads and functions correctly (via jest.mock)
-  //
-  // What is NOT fully covered (requires E2E):
-  // - Actual dynamic import() in browser with chrome-extension:// URLs
-  // - Module loading failures in production environment
-  // ============================================================================
+  // loadCrypto - Dynamic Import Logic
 
   describe("loadCrypto - Dynamic Import Logic", () => {
     test("should not reload crypto module if already loaded via dependency injection", async () => {
-      // Create instance with dependency injection
       const injectedFn = jest.fn().mockResolvedValue("injected_key");
       const modalWithInjection = new Modal(injectedFn);
 
-      // encryptApiKey should already be set
       expect(modalWithInjection.encryptApiKey).toBe(injectedFn);
 
-      // Mock chrome.runtime.getURL to track if it's called
       chrome.runtime.getURL.mockClear();
 
-      // Call loadCrypto
       await modalWithInjection.loadCrypto();
 
-      // chrome.runtime.getURL should NOT have been called since function already exists
       expect(chrome.runtime.getURL).not.toHaveBeenCalled();
 
-      // encryptApiKey should still be the injected function
       expect(modalWithInjection.encryptApiKey).toBe(injectedFn);
     });
 
     test("should verify constructor correctly accepts null for dynamic loading", () => {
-      // Create instance without dependency injection
       const modalWithoutInjection = new Modal();
 
-      // Verify encryptApiKey is null (will be loaded dynamically)
       expect(modalWithoutInjection.encryptApiKey).toBeNull();
 
-      // Create another instance explicitly with null
       const modalExplicitNull = new Modal(null);
       expect(modalExplicitNull.encryptApiKey).toBeNull();
     });
 
     test("should document expected chrome.runtime.getURL behavior", () => {
-      // In a real Chrome extension, chrome.runtime.getURL converts relative
-      // paths to absolute chrome-extension:// URLs
-
-      // Example of expected production behavior:
       chrome.runtime.getURL.mockReturnValue("chrome-extension://abcdef123456/dist/utils/crypto.js");
 
       const result = chrome.runtime.getURL("dist/utils/crypto.js");
 
       expect(result).toContain("chrome-extension://");
       expect(result).toContain("dist/utils/crypto.js");
-
-      // This URL would then be used by import() in the browser
     });
 
     test("should ensure jest.mock covers the crypto module", () => {
-      // The jest.mock at the top of this file ensures that when
-      // loadCrypto() tries to import crypto.js (either dynamically or via require),
-      // it gets our mocked version
-
-      // Verify the mocked functions exist
       expect(mockEncryptApiKey).toBeDefined();
       expect(mockDecryptApiKey).toBeDefined();
 
-      // Verify they're jest mocks
       expect(jest.isMockFunction(mockEncryptApiKey)).toBe(true);
       expect(jest.isMockFunction(mockDecryptApiKey)).toBe(true);
     });
 
     test("should work when instantiated without dependency injection in addModalListener", async () => {
-      // This simulates the real production usage: new Modal() with no parameters
-      // Note: We can't actually test the import() because Jest transforms it,
-      // but we can verify the overall flow works with our mocked module
-
       const modalWithoutInjection = new Modal();
 
-      // Initial state
       expect(modalWithoutInjection.encryptApiKey).toBeNull();
 
-      // Note: We're NOT calling loadCrypto directly because the import would fail.
-      // Instead, we verify that with dependency injection (which is how we test),
-      // the same code paths work correctly. The jest.mock ensures the module
-      // is available when import() is called in production.
-
-      // What we CAN test: that the constructor allows null and the structure is correct
       expect(modalWithoutInjection).toBeInstanceOf(Modal);
       expect(modalWithoutInjection).toHaveProperty("encryptApiKey");
       expect(modalWithoutInjection).toHaveProperty("loadCrypto");
@@ -748,33 +659,19 @@ describe("Modal Component - Full Coverage", () => {
     });
 
     test("should demonstrate equivalent behavior between dependency injection and dynamic import", async () => {
-      // This test shows that dependency injection (used in tests) provides
-      // the same interface as dynamic import (used in production)
-
-      // Test with dependency injection
       const modalInjected = new Modal(mockEncryptApiKey);
       await modalInjected.loadCrypto();
 
-      // Should have encryptApiKey function
       expect(modalInjected.encryptApiKey).toBe(mockEncryptApiKey);
       expect(typeof modalInjected.encryptApiKey).toBe("function");
 
-      // Call it
       mockEncryptApiKey.mockResolvedValue("test_encrypted");
       const result = await modalInjected.encryptApiKey("test_key");
       expect(result).toBe("test_encrypted");
-
-      // This is functionally equivalent to what would happen with dynamic import:
-      // 1. loadCrypto() runs
-      // 2. encryptApiKey is set to a function
-      // 3. That function can be called to encrypt data
-      // The only difference is HOW the function is obtained (injection vs import)
     });
   });
 
-  // ============================================================================
   // Input Button Toggle Tests (Search Bar Behavior)
-  // ============================================================================
   describe("_setupInputButtonToggle", () => {
     test("should show submit button when input has value", async () => {
       await modalInstance.addModalListener();
@@ -976,7 +873,7 @@ describe("Modal Component - Full Coverage", () => {
       await modalInstance.addModalListener();
 
       const dirResetButton = dirInput.parentElement.querySelector(".btn-reset");
-      dirResetButton.classList.remove("d-none"); // Simulate button being visible
+      dirResetButton.classList.remove("d-none");
 
       dirResetButton.click();
 
@@ -993,7 +890,7 @@ describe("Modal Component - Full Coverage", () => {
       await modalInstance.addModalListener();
 
       const authResetButton = authUserInput.parentElement.querySelector(".btn-reset");
-      authResetButton.classList.remove("d-none"); // Simulate button being visible
+      authResetButton.classList.remove("d-none");
 
       authResetButton.click();
 
@@ -1063,7 +960,7 @@ describe("Modal Component - Full Coverage", () => {
 
       await modalInstance.addModalListener();
 
-      // Set up a custom placeholder that would be there after saving an API key
+      // Simulate custom placeholder
       apiInput.placeholder = "............1234";
 
       const apiResetButton = apiInput.parentElement.querySelector(".btn-reset");
@@ -1071,17 +968,9 @@ describe("Modal Component - Full Coverage", () => {
 
       apiResetButton.click();
 
-      // Should remove the API key from storage
       expect(chrome.storage.local.remove).toHaveBeenCalledWith("geminiApiKey");
-
-      // Should reset the placeholder
       expect(apiInput.placeholder).toBe("Enter your API key");
-
-      // Should delegate to the Gemini controller/store (production wires this
-      // to gemini.fetchAPIKey("") - see gemini.test.js)
       expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("");
-
-      // Should hide the reset button
       expect(apiResetButton.classList.contains("d-none")).toBe(true);
     });
 
@@ -1091,19 +980,15 @@ describe("Modal Component - Full Coverage", () => {
       const dirResetButton = dirInput.parentElement.querySelector(".btn-reset");
       dirResetButton.classList.remove("d-none");
 
-      // Manually trigger the event handler
       dirResetButton.dispatchEvent(
         Object.assign(new Event("click", { bubbles: true, cancelable: true }))
       );
 
-      // The click event was handled - verify storage was called
       expect(chrome.storage.local.remove).toHaveBeenCalledWith("startAddr");
     });
   });
 
-  // ============================================================================
   // Input Button Toggle with Reset Button Tests
-  // ============================================================================
   describe("_setupInputButtonToggle with Reset Button", () => {
     beforeEach(() => {
       // Add reset buttons to the DOM
@@ -1163,9 +1048,7 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
   // Analytics Tracking Tests
-  // ============================================================================
   describe("Analytics Tracking", () => {
     beforeEach(() => {
       window.Analytics = { trackFeatureClick: jest.fn() };
@@ -1314,36 +1197,23 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
   // loadCrypto Dynamic Import Tests
-  // ============================================================================
   describe("loadCrypto - Dynamic Import Branch", () => {
     test("should call chrome.runtime.getURL and set encryptApiKey when not injected", async () => {
       // Create instance without dependency injection
       const modalWithoutInjection = new Modal(null);
 
-      // Verify initial state
       expect(modalWithoutInjection.encryptApiKey).toBeNull();
 
-      // Mock the dynamic import - this tests lines 10-11
-      // Note: Jest's module system transforms dynamic imports, but we can verify the chrome.runtime.getURL call
       chrome.runtime.getURL.mockReturnValue("chrome-extension://test/dist/utils/crypto.js");
-
-      // The actual import() won't work in Jest, but we can verify the path is correct
-      // For full coverage of lines 10-11, we need to mock import at module level
-      // which is already done via jest.mock at the top
     });
   });
 
-  // ============================================================================
   // Opera Browser Detection Test
-  // ============================================================================
   describe("Opera Browser Detection", () => {
     test("should open Opera shortcuts page when configure element clicked (Opera browser)", async () => {
-      // Create a fresh Modal instance for this test
       const freshModalInstance = new Modal(mockEncryptApiKey);
 
-      // We need to set up the onclick handler with Opera user agent
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Opera/91.0",
         configurable: true,
@@ -1380,31 +1250,27 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
   // History Max Stepper - Edge Cases
-  // ============================================================================
   describe("History Max Stepper - Edge Cases", () => {
     test("should clamp value above 100 before decrementing", async () => {
       await modalInstance.addModalListener();
 
-      historyMaxInput.value = "150"; // Above max
+      historyMaxInput.value = "150";
       const decrementBtn = document.getElementById("historyMaxDecrement");
 
       decrementBtn.click();
 
-      // Should clamp to 100 first, then decrement to 99
       expect(historyMaxInput.value).toBe("99");
     });
 
     test("should clamp value below 1 before incrementing", async () => {
       await modalInstance.addModalListener();
 
-      historyMaxInput.value = "-5"; // Below min
+      historyMaxInput.value = "-5";
       const incrementBtn = document.getElementById("historyMaxIncrement");
 
       incrementBtn.click();
 
-      // Should clamp to 1 first, then increment to 2
       expect(historyMaxInput.value).toBe("2");
     });
 
@@ -1417,7 +1283,6 @@ describe("Modal Component - Full Coverage", () => {
 
       incrementBtn.click();
 
-      // NaN || 10 = 10, then clamp, then increment
       expect(historyMaxInput.value).toBe("11");
     });
 
@@ -1441,14 +1306,11 @@ describe("Modal Component - Full Coverage", () => {
 
       optionalModal.dispatchEvent(new Event("hidden.bs.modal"));
 
-      // 0 is <= 0, so it goes to the NaN/invalid branch and sets default 10
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 10 });
     });
   });
 
-  // ============================================================================
   // updateOptionalModal with historyMax parameter
-  // ============================================================================
   describe("updateOptionalModal - historyMax parameter", () => {
     test("should set historyMax placeholder when provided", () => {
       modalInstance.updateOptionalModal("New York", 5, 25);
@@ -1478,9 +1340,7 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
   // History Max Stepper Tests
-  // ============================================================================
   describe("History Max Stepper", () => {
     test("should increment value when + button is clicked using placeholder", async () => {
       await modalInstance.addModalListener();
@@ -1577,36 +1437,24 @@ describe("Modal Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
   // Behavior-Driven Tests: Real User Scenarios
-  // ============================================================================
   describe("User Scenarios - Behavior-Driven Tests", () => {
-    /**
-     * These tests focus on real user behaviors and edge cases that could
-     * cause bugs, not just code coverage. They follow AAA pattern and
-     * test from the user's perspective.
-     */
+    // Behavior-Driven Tests
 
     describe("API Key Management Flow", () => {
       test("user saves API key - should encrypt, persist, and delegate to onApiKeyChange", async () => {
-        // Arrange
         await modalInstance.addModalListener();
 
-        // Act: User enters and saves API key
         const form = document.getElementById("apiForm");
         submitForm(form, apiInput, "sk-abc123xyz789");
         await wait(50);
 
-        // Assert: modal's own responsibility is encrypt + persist + delegate;
-        // verification/UI feedback is the Gemini controller/store's job
-        // (production wires onApiKeyChange to gemini.fetchAPIKey).
         expect(mockEncryptApiKey).toHaveBeenCalledWith("sk-abc123xyz789");
         expect(chrome.storage.local.set).toHaveBeenCalledWith({
           geminiApiKey: "encrypted_key_data",
         });
         expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("sk-abc123xyz789");
 
-        // Act: User closes modal (value should clear)
         const apiModal = document.getElementById("apiModal");
         apiModal.dispatchEvent(new Event("hidden.bs.modal"));
 
@@ -1614,7 +1462,6 @@ describe("Modal Component - Full Coverage", () => {
       });
 
       test("user clears API key - should persist empty string and delegate", async () => {
-        // Arrange: User has a valid API key
         await modalInstance.addModalListener();
 
         const form = document.getElementById("apiForm");
@@ -1623,11 +1470,8 @@ describe("Modal Component - Full Coverage", () => {
 
         jest.clearAllMocks();
 
-        // Act: User clears the input and submits
         submitForm(form, apiInput, "");
         await wait(50);
-
-        // Assert
         expect(chrome.storage.local.set).toHaveBeenCalledWith({ geminiApiKey: "" });
         expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith("");
       });
@@ -1635,15 +1479,11 @@ describe("Modal Component - Full Coverage", () => {
 
     describe("Starting Address Management", () => {
       test("user saves address with special characters - should preserve exactly", async () => {
-        // Arrange
         await modalInstance.addModalListener();
 
-        // Act: User enters address with special chars
         const form = document.getElementById("dirForm");
         const specialAddress = "123 Main St., Apt #4B (Near Park)";
         submitForm(form, dirInput, specialAddress);
-
-        // Assert: Should preserve special characters
         expect(chrome.storage.local.set).toHaveBeenCalledWith({
           startAddr: specialAddress,
         });
@@ -1651,30 +1491,21 @@ describe("Modal Component - Full Coverage", () => {
       });
 
       test("user enters whitespace-only address - should treat as empty", async () => {
-        // Arrange
         await modalInstance.addModalListener();
 
-        // Act
         const form = document.getElementById("dirForm");
         submitForm(form, dirInput, "   ");
-
-        // Assert: Whitespace-only should be treated as empty
         expect(chrome.storage.local.remove).toHaveBeenCalledWith("startAddr");
       });
 
       test("user updates existing address - should overwrite previous value", async () => {
-        // Arrange
         await modalInstance.addModalListener();
         const form = document.getElementById("dirForm");
 
-        // First save
         submitForm(form, dirInput, "Old Address");
         jest.clearAllMocks();
 
-        // Act: Update to new address
         submitForm(form, dirInput, "New Address");
-
-        // Assert
         expect(chrome.storage.local.set).toHaveBeenCalledWith({
           startAddr: "New Address",
         });
@@ -1684,95 +1515,69 @@ describe("Modal Component - Full Coverage", () => {
 
     describe("Auth User Input Validation", () => {
       test("user enters floating point number - should truncate to integer", async () => {
-        // Arrange
         await modalInstance.addModalListener();
 
-        // Act
         const form = document.getElementById("authUserForm");
         submitForm(form, authUserInput, "3.7");
-
-        // Assert: parseInt should truncate
         expect(chrome.storage.local.set).toHaveBeenCalledWith({ authUser: 3 });
         expect(authUserInput.placeholder).toBe("authuser=3");
       });
 
       test("user enters very large number - should still save (no max limit in code)", async () => {
-        // Arrange
         await modalInstance.addModalListener();
 
-        // Act
         const form = document.getElementById("authUserForm");
         submitForm(form, authUserInput, "999999");
-
-        // Assert: Code doesn't have max limit - potential issue!
         expect(chrome.storage.local.set).toHaveBeenCalledWith({ authUser: 999999 });
       });
 
       test("user enters string with leading zeros - should parse correctly", async () => {
-        // Arrange
         await modalInstance.addModalListener();
 
-        // Act
         const form = document.getElementById("authUserForm");
         submitForm(form, authUserInput, "007");
-
-        // Assert: Should parse as 7
         expect(chrome.storage.local.set).toHaveBeenCalledWith({ authUser: 7 });
       });
     });
 
-    describe("History Max - User Interaction Edge Cases", () => {
+    describe("History Max - User Interaction", () => {
       test("rapid increment clicks - should not exceed 100", async () => {
-        // Arrange
         await modalInstance.addModalListener();
         historyMaxInput.value = "98";
         const incrementBtn = document.getElementById("historyMaxIncrement");
 
-        // Act: Rapid clicks
         incrementBtn.click();
         incrementBtn.click();
         incrementBtn.click();
         incrementBtn.click();
         incrementBtn.click();
-
-        // Assert: Should cap at 100
         expect(historyMaxInput.value).toBe("100");
       });
 
       test("rapid decrement clicks - should not go below 1", async () => {
-        // Arrange
         await modalInstance.addModalListener();
         historyMaxInput.value = "3";
         const decrementBtn = document.getElementById("historyMaxDecrement");
 
-        // Act: Rapid clicks
         decrementBtn.click();
         decrementBtn.click();
         decrementBtn.click();
         decrementBtn.click();
         decrementBtn.click();
-
-        // Assert: Should stop at 1
         expect(historyMaxInput.value).toBe("1");
       });
 
       test("user manually enters invalid value then uses stepper - should recover", async () => {
-        // Arrange
         await modalInstance.addModalListener();
 
-        // User manually types invalid value
         historyMaxInput.value = "abc";
 
-        // Act: User clicks increment
         const incrementBtn = document.getElementById("historyMaxIncrement");
         incrementBtn.click();
-
-        // Assert: Should recover with default (10) + 1 = 11
         expect(historyMaxInput.value).toBe("11");
       });
 
       test("modal close with unsaved stepper value - should persist to storage", async () => {
-        // Arrange
         await modalInstance.addModalListener();
         const optionalModal = document.getElementById("optionalModal");
         const incrementBtn = document.getElementById("historyMaxIncrement");
@@ -1780,17 +1585,13 @@ describe("Modal Component - Full Coverage", () => {
         historyMaxInput.placeholder = "10";
         historyMaxInput.value = "";
 
-        // User uses stepper
         incrementBtn.click();
         incrementBtn.click();
         expect(historyMaxInput.value).toBe("12");
 
-        // Act: Modal closes
         optionalModal.dispatchEvent(new Event("hidden.bs.modal"));
 
-        // Assert: Value should be saved
         expect(chrome.storage.local.set).toHaveBeenCalledWith({ historyMax: 12 });
-        // Value should clear after save, showing as placeholder
         expect(historyMaxInput.value).toBe("");
         expect(historyMaxInput.placeholder).toBe("12");
       });
@@ -1798,7 +1599,6 @@ describe("Modal Component - Full Coverage", () => {
 
     describe("Toggle State Consistency", () => {
       test("incognito toggle - UI should reflect storage state after toggle", async () => {
-        // Arrange
         let storedValue = false;
         chrome.storage.local.get.mockImplementation((key, callback) => {
           callback({ isIncognito: storedValue });
@@ -1810,22 +1610,17 @@ describe("Modal Component - Full Coverage", () => {
 
         await modalInstance.addModalListener();
 
-        // Act: Toggle twice
         incognitoToggle.click();
         await wait(50);
-
-        // Assert: Should be true
         expect(incognitoToggle.classList.contains("toggle-active")).toBe(true);
 
         incognitoToggle.click();
         await wait(50);
 
-        // Assert: Should be false again
         expect(incognitoToggle.classList.contains("toggle-active")).toBe(false);
       });
 
       test("dark mode toggle - should call applyTheme with correct value", async () => {
-        // Arrange
         let storedValue = false;
         chrome.storage.local.get.mockImplementation((key, callback) => {
           callback({ isDarkMode: storedValue });
@@ -1837,12 +1632,10 @@ describe("Modal Component - Full Coverage", () => {
 
         await modalInstance.addModalListener();
 
-        // Act & Assert: Toggle to dark
         darkModeToggle.click();
         await wait(50);
         expect(global.applyTheme).toHaveBeenLastCalledWith(true);
 
-        // Act & Assert: Toggle back to light
         darkModeToggle.click();
         await wait(50);
         expect(global.applyTheme).toHaveBeenLastCalledWith(false);
@@ -1851,16 +1644,12 @@ describe("Modal Component - Full Coverage", () => {
 
     describe("Concurrent Operations", () => {
       test("multiple form submissions in quick succession - should handle last value", async () => {
-        // Arrange
         await modalInstance.addModalListener();
         const form = document.getElementById("dirForm");
 
-        // Act: Rapid submissions
         submitForm(form, dirInput, "Address 1");
         submitForm(form, dirInput, "Address 2");
         submitForm(form, dirInput, "Address 3");
-
-        // Assert: All should be called, last one should be the final state
         expect(chrome.storage.local.set).toHaveBeenCalledTimes(3);
         expect(dirInput.placeholder).toBe("Address 3");
       });
@@ -1868,74 +1657,53 @@ describe("Modal Component - Full Coverage", () => {
 
     describe("Modal State Cleanup", () => {
       test("closing optional modal should clear all temporary input values", async () => {
-        // Arrange
         await modalInstance.addModalListener();
         const optionalModal = document.getElementById("optionalModal");
 
-        // User enters values but doesn't submit
         dirInput.value = "Unsaved Address";
         authUserInput.value = "5";
         historyMaxInput.value = "20";
 
-        // Act: Close modal without submitting
         optionalModal.dispatchEvent(new Event("hidden.bs.modal"));
 
-        // Assert: Values should be cleared
         expect(dirInput.value).toBe("");
         expect(authUserInput.value).toBe("");
-        // historyMaxInput gets saved on close, so it will also be cleared
         expect(historyMaxInput.value).toBe("");
       });
 
       test("closing API modal should clear input but preserve saved placeholder", async () => {
-        // Arrange
         await modalInstance.addModalListener();
         const apiModal = document.getElementById("apiModal");
 
-        // Simulate user having a saved API key
         apiInput.placeholder = "............1234";
         apiInput.value = "new-key-being-typed";
 
-        // Act: Close modal
         apiModal.dispatchEvent(new Event("hidden.bs.modal"));
 
-        // Assert: Value cleared but placeholder preserved
         expect(apiInput.value).toBe("");
-        // Note: placeholder is managed elsewhere, this tests the input clearing
       });
     });
   });
 
-  // ============================================================================
-  // Edge Case Tests - Potential Bug Discovery
-  // ============================================================================
+  // Edge Case Tests
   describe("Edge Cases - Potential Bug Discovery", () => {
     test("XSS prevention - address with HTML tags should be stored as-is", async () => {
-      // Arrange
       await modalInstance.addModalListener();
 
-      // Act: User enters potentially malicious input
       const form = document.getElementById("dirForm");
       const xssAttempt = '<script>alert("xss")</script>123 Main St';
       submitForm(form, dirInput, xssAttempt);
-
-      // Assert: Should store exactly as entered
-      // Note: Placeholder attributes are text-only (no HTML rendering), making them inherently XSS-safe
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         startAddr: xssAttempt,
       });
     });
 
     test("Unicode characters in address - should handle correctly", async () => {
-      // Arrange
       await modalInstance.addModalListener();
 
-      // Act
       const form = document.getElementById("dirForm");
       const unicodeAddress = "東京都渋谷区 🏠 123番地";
       submitForm(form, dirInput, unicodeAddress);
-
-      // Assert
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         startAddr: unicodeAddress,
       });
@@ -1943,26 +1711,15 @@ describe("Modal Component - Full Coverage", () => {
     });
 
     test("extremely long API key - should handle without truncation", async () => {
-      // Arrange
       await modalInstance.addModalListener();
       mockEncryptApiKey.mockResolvedValue("encrypted_long_key");
 
-      // Act
       const form = document.getElementById("apiForm");
       const longKey = "a".repeat(500);
       submitForm(form, apiInput, longKey);
       await wait(50);
-
-      // Assert: Should encrypt the full key and delegate it unmodified
       expect(mockEncryptApiKey).toHaveBeenCalledWith(longKey);
       expect(modalInstance.onApiKeyChange).toHaveBeenCalledWith(longKey);
     });
-
-    // NOTE: Storage error handling test removed because:
-    // 1. jsdom's event listener behavior makes it hard to properly test thrown errors
-    // 2. This is better tested in E2E tests with real browser
-    // 3. The code currently has no try-catch around storage operations
-    //    - This is a known limitation that could be improved
-    //    - Errors in storage.set would silently fail in event handlers
   });
 });

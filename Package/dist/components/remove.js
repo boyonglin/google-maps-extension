@@ -40,7 +40,7 @@ class Remove {
     const items = snapshot.history.items.filter((item) => !selected.has(item));
     state.dispatch({ type: "HISTORY_SET", items, emptyReason: "cleared" });
     state.dispatch({ type: "DELETE_CANCEL" });
-    // Re-read so a concurrent write from another context isn't clobbered.
+    // Re-read to avoid clobbering concurrent writes
     chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
       const latest = Array.isArray(searchHistoryList) ? searchHistoryList : [];
       chrome.storage.local.set({ searchHistoryList: latest.filter((item) => !selected.has(item)) });
@@ -53,7 +53,6 @@ class Remove {
     const items = snapshot.favorite.items.filter((item) => !selected.has(item));
     state.dispatch({ type: "FAVORITE_SET", items });
     state.dispatch({ type: "DELETE_CANCEL" });
-    // See deleteFromHistoryList.
     chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
       const latest = Array.isArray(favoriteList) ? favoriteList : [];
       chrome.storage.local.set({ favoriteList: latest.filter((item) => !selected.has(item)) });

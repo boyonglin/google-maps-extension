@@ -1,16 +1,8 @@
 /**
  * Tests for Package/dist/utils/i18n.js
  *
- * The module is an IIFE with side effects at load time:
- *   1. captures chrome.i18n.getMessage as `originalGetMessage`
- *   2. wraps chrome.i18n.getMessage
- *   3. reads localStorage userLanguage and applies the override
- *      (synchronously from the cache, via async fetch on a miss)
- *   4. registers a chrome.storage.onChanged listener
- *   5. publishes window.I18nUtils
- *
- * Each test re-loads the module via jest.isolateModules() so the IIFE re-runs
- * against fresh state.
+ * The module is an IIFE with side effects.
+ * Each test re-loads the module via jest.isolateModules() to re-run against fresh state.
  */
 
 const path = require("path");
@@ -27,7 +19,7 @@ const EN_MESSAGES = {
 };
 const FALLBACK_MESSAGE_KEY = "searchInputPlaceholder";
 
-/** Install a fake fetch that returns the queued response. */
+// Install fake fetch
 function installFakeFetch({ status = 200, body = JA_MESSAGES, throwOnSend = false } = {}) {
   const fakeFetch = jest.fn((url) => {
     fakeFetch.lastUrl = url;
@@ -45,13 +37,11 @@ function installFakeFetch({ status = 200, body = JA_MESSAGES, throwOnSend = fals
   return fakeFetch;
 }
 
-/** Reset all chrome mocks + storage shims before each load. */
+// Reset environment
 function resetEnvironment() {
   jest.resetModules();
   localStorage.clear();
-  // Re-create the chrome.i18n.getMessage mock so each load captures a fresh
-  // "original". Otherwise the second load would capture the previous wrapper
-  // and we'd build up a chain of wrappers.
+  // Re-create mock to capture fresh "original" and prevent wrapper chaining.
   global.chrome.i18n.getMessage = jest.fn((key) => `BROWSER:${key}`);
   global.chrome.storage.local.set = jest.fn((_obj, cb) => cb && cb());
   global.chrome.storage.local.remove = jest.fn((_key, cb) => cb && cb());
@@ -108,7 +98,6 @@ describe("i18n.js", () => {
 
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
       expectBrowserFallbackMessage();
-      // No fetch should have been issued.
       expect(global.fetch.callCount).toBe(0);
     });
   });
@@ -182,7 +171,6 @@ describe("i18n.js", () => {
 
       expect(global.fetch.callCount).toBe(0);
       expect(I18nUtils.getCurrentLanguage()).toBe("ja");
-      // Message comes from the cache, not a fresh fetch.
       expect(chrome.i18n.getMessage("searchInputPlaceholder")).toBe("Google マップを検索");
     });
 
@@ -208,10 +196,8 @@ describe("i18n.js", () => {
 
   describe("setLanguage", () => {
     test("writes both localStorage and chrome.storage.local, pre-caches messages", async () => {
-      installFakeFetch({ body: JA_MESSAGES });
       const I18nUtils = loadI18n();
 
-      // setLanguage awaits the bundle fetch to pre-cache.
       installFakeFetch({ body: JA_MESSAGES });
       await I18nUtils.setLanguage("ja");
 
@@ -280,8 +266,7 @@ describe("i18n.js", () => {
       const I18nUtils = loadI18n();
       expect(I18nUtils.getCurrentLanguage()).toBe("auto");
 
-      // Simulate setLanguage having written localStorage (we bypass the
-      // setLanguage fetch by writing directly + seeding a versioned cache).
+      // Simulate setLanguage by writing localStorage directly.
       seedJaPreferenceAndCache();
 
       const result = I18nUtils.reloadOverride();

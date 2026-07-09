@@ -1,19 +1,11 @@
 /**
  * Jest Unit Tests for Remove Component (remove.js)
- * Tests cover all methods with comprehensive mocking of Chrome APIs and DOM manipulation
- *
- * BUGS FOUND AND FIXED:
- * 1. addRemoveListener() - cancelButton listener loses 'this' context
- *    - Original: cancelButton.addEventListener("click", this.backToNormal);
- *    - Fixed: cancelButton.addEventListener("click", () => this.backToNormal());
  */
 
-// Use the production store so component tests exercise reducer-driven rendering.
 const State = require("../Package/dist/hooks/popupState.js");
 global.State = State;
 global.state = new State();
 
-// Load modules
 const Remove = require("../Package/dist/components/remove.js");
 const { mockChromeStorage, mockI18n } = require("./testHelpers");
 const { setupPopupDOM, teardownPopupDOM } = require("./popupDOMFixture");
@@ -21,15 +13,9 @@ const { setupPopupDOM, teardownPopupDOM } = require("./popupDOMFixture");
 describe("Remove Component", () => {
   let removeInstance;
 
-  // ============================================================================
-  // Test Setup/Teardown
-  // ============================================================================
-
   beforeEach(() => {
-    // Setup popup DOM (provides all required elements)
     setupPopupDOM();
 
-    // Get references to DOM elements (now provided by popup fixture)
     global.cancelButton = document.getElementById("cancelButton");
     global.deleteButton = document.querySelector("#deleteButton");
     global.deleteListButton = document.getElementById("deleteListButton");
@@ -47,16 +33,12 @@ describe("Remove Component", () => {
     global.emptyMessage = document.getElementById("emptyMessage");
     global.favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
 
-    // Reset state and subscribe the instance to it, matching popup.js's
-    // renderPopup wiring (remove.render(snapshot) on every dispatch).
     global.state = new State();
 
-    // Reset mocks
     jest.clearAllMocks();
     mockI18n();
     mockChromeStorage();
 
-    // Create new instance
     removeInstance = new Remove();
     global.state.subscribe((snapshot) => removeInstance.render(snapshot));
   });
@@ -64,10 +46,6 @@ describe("Remove Component", () => {
   afterEach(() => {
     teardownPopupDOM();
   });
-
-  // ============================================================================
-  // addRemoveListener Tests
-  // ============================================================================
 
   describe("addRemoveListener", () => {
     describe("cancelButton click handler", () => {
@@ -192,10 +170,6 @@ describe("Remove Component", () => {
     });
   });
 
-  // ============================================================================
-  // deleteFromHistoryList Tests
-  // ============================================================================
-
   describe("deleteFromHistoryList", () => {
     test("should filter selected items out of the store", () => {
       state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2", "Location 3"] });
@@ -269,9 +243,7 @@ describe("Remove Component", () => {
       state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
       state.dispatch({ type: "DELETE_ENTER", source: "history" });
       state.dispatch({ type: "DELETE_TOGGLE", value: "Location 1" });
-      // Simulates another popup instance (e.g. the page-injected iframe)
-      // having added "Location 3" to storage after this snapshot was taken,
-      // but before the storage.onChanged echo reached this instance.
+      // Simulates another instance updating storage before onChanged event
       mockChromeStorage({ searchHistoryList: ["Location 1", "Location 2", "Location 3"] });
 
       removeInstance.deleteFromHistoryList();
@@ -281,10 +253,6 @@ describe("Remove Component", () => {
       });
     });
   });
-
-  // ============================================================================
-  // deleteFromFavoriteList Tests
-  // ============================================================================
 
   describe("deleteFromFavoriteList", () => {
     test("should update chrome storage with filtered list", () => {
@@ -359,8 +327,7 @@ describe("Remove Component", () => {
       state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1", "Favorite 2"] });
       state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
       state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1" });
-      // Simulates another popup instance having added "Favorite 3" after
-      // this snapshot was taken but before the onChanged echo arrived here.
+      // Simulates another instance updating storage before onChanged event
       mockChromeStorage({ favoriteList: ["Favorite 1", "Favorite 2", "Favorite 3"] });
 
       removeInstance.deleteFromFavoriteList();
@@ -370,11 +337,6 @@ describe("Remove Component", () => {
       });
     });
   });
-
-  // ============================================================================
-  // render Tests (store-driven rendering; invoked automatically by the state
-  // subscription set up in the outer beforeEach, mirroring popup.js's wiring)
-  // ============================================================================
 
   describe("render", () => {
     test("should toggle active-button on deleteListButton based on deleteMode", () => {
@@ -386,9 +348,7 @@ describe("Remove Component", () => {
     });
 
     test("keeps the toggle-active-button marker class through the active-button toggle", () => {
-      // scss/popup.scss relies on this class to exempt deleteListButton from
-      // `.active-button { pointer-events: none }` so it stays clickable
-      // (toggle-off) while delete mode is on. Losing it re-blocks the click.
+      // Verify toggle-active-button class is preserved for proper styling
       expect(deleteListButton.classList.contains("toggle-active-button")).toBe(true);
 
       state.dispatch({ type: "DELETE_ENTER", source: "history" });
@@ -451,10 +411,6 @@ describe("Remove Component", () => {
     });
   });
 
-  // ============================================================================
-  // backToNormal Tests
-  // ============================================================================
-
   describe("backToNormal", () => {
     beforeEach(() => {
       state.dispatch({ type: "DELETE_ENTER", source: "history" });
@@ -492,10 +448,6 @@ describe("Remove Component", () => {
       expect(geminiSummaryButton.disabled).toBe(false);
     });
   });
-
-  // ============================================================================
-  // Integration Tests
-  // ============================================================================
 
   describe("Integration Tests", () => {
     const appendItem = (container, className, itemValue) => {
@@ -576,10 +528,6 @@ describe("Remove Component", () => {
       expect(deleteListButton.classList.contains("active-button")).toBe(false);
     });
   });
-
-  // ============================================================================
-  // Edge Cases
-  // ============================================================================
 
   describe("Edge Cases", () => {
     test("should handle deleting from an empty history list", () => {

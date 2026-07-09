@@ -1,11 +1,9 @@
 /**
- * Comprehensive Unit Tests for ThemeUtils module
- * Tests centralized dark mode management for the extension
+ * Unit Tests for ThemeUtils module
  */
 
 const { createMockThemeUtils } = require("./testHelpers");
 
-// Store original ThemeUtils mock before requiring the actual module
 const originalThemeUtils = global.ThemeUtils;
 
 describe("ThemeUtils Module", () => {
@@ -15,7 +13,6 @@ describe("ThemeUtils Module", () => {
     jest.clearAllMocks();
     jest.resetModules();
 
-    // Reset chrome storage mock
     chrome.storage.local.get.mockImplementation((key, callback) => {
       callback({});
     });
@@ -23,7 +20,6 @@ describe("ThemeUtils Module", () => {
       if (callback) callback();
     });
 
-    // Mock window.matchMedia
     Object.defineProperty(window, "matchMedia", {
       writable: true,
       value: jest.fn().mockImplementation((query) => ({
@@ -38,18 +34,12 @@ describe("ThemeUtils Module", () => {
       })),
     });
 
-    // Load actual ThemeUtils module
     ThemeUtils = require("../Package/dist/utils/theme.js");
   });
 
   afterAll(() => {
-    // Restore original mock for other tests
     global.ThemeUtils = originalThemeUtils;
   });
-
-  // ============================================================================
-  // Test: Constants
-  // ============================================================================
 
   describe("Constants", () => {
     test("should have correct STORAGE_KEY", () => {
@@ -73,10 +63,6 @@ describe("ThemeUtils Module", () => {
     });
   });
 
-  // ============================================================================
-  // Test: getSystemPreference
-  // ============================================================================
-
   describe("getSystemPreference", () => {
     test("should return true when system prefers dark mode", () => {
       window.matchMedia = jest.fn().mockReturnValue({ matches: true });
@@ -92,10 +78,6 @@ describe("ThemeUtils Module", () => {
       expect(window.matchMedia).toHaveBeenCalledWith("(prefers-color-scheme: dark)");
     });
   });
-
-  // ============================================================================
-  // Test: getStoredPreference
-  // ============================================================================
 
   describe("getStoredPreference", () => {
     test("should return stored dark mode value (true)", async () => {
@@ -130,10 +112,6 @@ describe("ThemeUtils Module", () => {
     });
   });
 
-  // ============================================================================
-  // Test: savePreference
-  // ============================================================================
-
   describe("savePreference", () => {
     test("should save dark mode preference as true", async () => {
       await ThemeUtils.savePreference(true);
@@ -159,10 +137,6 @@ describe("ThemeUtils Module", () => {
       await expect(promise).resolves.toBeUndefined();
     });
   });
-
-  // ============================================================================
-  // Test: applyToElement
-  // ============================================================================
 
   describe("applyToElement", () => {
     let element;
@@ -214,10 +188,6 @@ describe("ThemeUtils Module", () => {
       expect(() => ThemeUtils.applyToElement(undefined, true)).not.toThrow();
     });
   });
-
-  // ============================================================================
-  // Test: initialize
-  // ============================================================================
 
   describe("initialize", () => {
     let element;
@@ -294,10 +264,6 @@ describe("ThemeUtils Module", () => {
     });
   });
 
-  // ============================================================================
-  // Test: toggle
-  // ============================================================================
-
   describe("toggle", () => {
     let element;
 
@@ -367,10 +333,6 @@ describe("ThemeUtils Module", () => {
     });
   });
 
-  // ============================================================================
-  // Test: notifyContentScript
-  // ============================================================================
-
   describe("notifyContentScript", () => {
     test("should send message to active tab with dark mode", () => {
       chrome.tabs.query.mockImplementation((query, callback) => {
@@ -424,10 +386,6 @@ describe("ThemeUtils Module", () => {
     });
   });
 });
-
-// ============================================================================
-// Test: contentScript updateTheme action
-// ============================================================================
 
 describe("contentScript.js - updateTheme Action", () => {
   let messageListener;
@@ -509,10 +467,6 @@ describe("contentScript.js - updateTheme Action", () => {
     expect(iframe.getAttribute("data-theme")).toBe("dark");
   });
 });
-
-// ============================================================================
-// Test: inject.js Theme Functions
-// ============================================================================
 
 describe("inject.js - Theme Functions", () => {
   let TME;
@@ -616,10 +570,6 @@ describe("inject.js - Theme Functions", () => {
     });
   });
 });
-
-// ============================================================================
-// Test: popup.js Theme Integration
-// ============================================================================
 
 describe("popup.js - Theme Integration", () => {
   beforeEach(() => {

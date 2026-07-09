@@ -1,13 +1,5 @@
 /**
  * Unit Tests for popup.js
- *
- * Tests cover:
- * - Initialization and DOM setup
- * - Page navigation and switching
- * - Event handlers (search, clear, buttons)
- * - Chrome storage integration
- * - Dimension tracking and iframe communication
- * - Edge cases and error handling
  */
 
 const { setupPopupDOM, teardownPopupDOM } = require("./popupDOMFixture");
@@ -20,16 +12,13 @@ const Gemini = require("../Package/dist/components/gemini");
 const Modal = require("../Package/dist/components/modal");
 const Payment = require("../Package/dist/utils/payment");
 
-// Mock module dependencies for popup.js
 let popup;
 let mockState, mockRemove, mockFavorite, mockHistory, mockGemini, mockModal, mockPayment;
 
 describe("popup.js", () => {
   beforeEach(() => {
-    // Setup DOM FIRST
     setupPopupDOM();
 
-    // Create mocked instances
     mockState = new State();
     mockRemove = new Remove();
     mockFavorite = new Favorite();
@@ -38,7 +27,6 @@ describe("popup.js", () => {
     mockModal = new Modal();
     mockPayment = new Payment();
 
-    // Mock their methods
     jest.spyOn(mockRemove, "addRemoveListener").mockImplementation(() => {});
     jest.spyOn(mockFavorite, "addFavoritePageListener").mockImplementation(() => {});
     jest.spyOn(mockFavorite, "updateFavorite").mockImplementation(() => {});
@@ -53,7 +41,6 @@ describe("popup.js", () => {
     jest.spyOn(mockPayment, "checkPay").mockImplementation(() => {});
     jest.spyOn(mockState, "buildMapsButtonUrl").mockImplementation(() => {});
 
-    // Setup chrome.runtime.sendMessage to resolve with warm state
     chrome.runtime.sendMessage.mockImplementation((message, callback) => {
       if (message.action === "getWarmState") {
         callback?.({
@@ -71,8 +58,7 @@ describe("popup.js", () => {
       return true;
     });
 
-    // Provide the component constructors popup.js resolves as globals in
-    // the browser (top-level class declarations from the other scripts)
+    // Provide globals for browser environment
     global.State = State;
     global.Remove = Remove;
     global.Favorite = Favorite;
@@ -81,8 +67,7 @@ describe("popup.js", () => {
     global.Modal = Modal;
     global.Payment = Payment;
 
-    // History/Favorite/Remove's render() read these as bare globals too (the
-    // browser shares one script scope; Jest needs the bridge made explicit).
+    // Mock DOM globals required by render methods
     global.searchHistoryListContainer = document.getElementById("searchHistoryList");
     global.emptyMessage = document.getElementById("emptyMessage");
     global.clearButton = document.getElementById("clearButton");
@@ -99,7 +84,6 @@ describe("popup.js", () => {
     global.geminiSummaryButton = document.getElementById("geminiSummaryButton");
     global.deleteButton = document.getElementById("deleteButton");
 
-    // Load popup module AFTER DOM is set up
     popup = require("../Package/dist/popup");
   });
 
@@ -108,8 +92,7 @@ describe("popup.js", () => {
     jest.resetModules();
     jest.clearAllMocks();
 
-    // Clean up the component constructor globals set in beforeEach to keep
-    // the test environment isolated between tests.
+    // Clean up globals
     delete global.State;
     delete global.Remove;
     delete global.Favorite;
@@ -145,7 +128,6 @@ describe("popup.js", () => {
     });
 
     test("initializePopup sets up event listeners and calls initialization methods", async () => {
-      // Initialize with mocked dependencies
       popup.initializeDependencies({
         state: mockState,
         remove: mockRemove,
@@ -158,7 +140,6 @@ describe("popup.js", () => {
 
       popup.initializePopup();
 
-      // Wait for async operations
       await flushPromises();
 
       expect(mockRemove.addRemoveListener).toHaveBeenCalled();
@@ -291,7 +272,6 @@ describe("popup.js", () => {
     });
 
     test("popupLayout re-checks YouTube state after restoring the gemini tab", async () => {
-      // Must re-run since checkCurrentTabForYoutube() ran before this tab became active
       popup.initializeDependencies({
         state: mockState,
         gemini: mockGemini,
@@ -328,7 +308,6 @@ describe("popup.js", () => {
         callback({});
       });
 
-      // Should not throw
       await expect(popup.popupLayout()).resolves.toBeDefined();
     });
   });
@@ -429,7 +408,6 @@ describe("popup.js", () => {
 
       const clearButton = document.getElementById("clearButton");
 
-      // Mock offsetHeight to simulate overflow
       const mapsButtonSpan = document.getElementById("mapsButtonSpan");
       const clearButtonSpan = clearButton.querySelector("span");
 

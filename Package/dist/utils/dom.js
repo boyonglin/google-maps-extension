@@ -1,8 +1,5 @@
 const DOMUtils = {
-  /**
-   * Find the closest LI element from an event target
-   * Used by list click handlers in history, favorite, and gemini components
-   */
+  // Find closest LI element
   findClosestListItem(event) {
     if (event.target.tagName === "LI") {
       return event.target;
@@ -12,10 +9,7 @@ const DOMUtils = {
     return null;
   },
 
-  /**
-   * Animate a favorite icon with spring animation effect
-   * Used when adding items to favorites from history or summary lists
-   */
+  // Spring animate favorite icon
   animateFavoriteIcon(iconElement) {
     iconElement.className = "bi bi-patch-check-fill matched spring-animation";
     setTimeout(() => {

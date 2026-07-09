@@ -1,14 +1,11 @@
 /**
  * DOM Fixture Helper for popup.js testing
- * Creates a minimal but complete DOM structure based on popup.html
  */
 
 function createPopupDOM() {
-  // Create main container
   const container = document.createElement("div");
   container.className = "mx-4 mt-4 mb-3 w-100";
 
-  // Create header with search input
   const header = document.createElement("header");
   header.className = "d-flex align-items-center border-bottom pb-4";
   header.innerHTML = `
@@ -26,7 +23,6 @@ function createPopupDOM() {
     </div>
   `;
 
-  // Create main section
   const section = document.createElement("section");
   section.className = "pt-3 pb-4";
   section.innerHTML = `
@@ -117,7 +113,6 @@ function createPopupDOM() {
     </div>
   `;
 
-  // Create footer
   const footer = document.createElement("footer");
   footer.innerHTML = `
     <ul class="nav justify-content-center border-top">
@@ -136,7 +131,6 @@ function createPopupDOM() {
     </ul>
   `;
 
-  // Create modals
   const modals = document.createElement("div");
   modals.innerHTML = `
     <div class="modal fade" id="tipsModal" tabindex="-1" aria-label="Tips Modal">
@@ -287,7 +281,6 @@ function createPopupDOM() {
     </div>
   `;
 
-  // Assemble everything
   container.appendChild(header);
   container.appendChild(section);
   container.appendChild(footer);
@@ -297,17 +290,14 @@ function createPopupDOM() {
 }
 
 /**
- * Initialize the complete popup DOM in the document body
+ * Initialize popup DOM in body
  */
 function setupPopupDOM() {
-  // Clear existing body content
   document.body.innerHTML = "";
 
-  // Add popup DOM to body
   const popupDOM = createPopupDOM();
   document.body.appendChild(popupDOM);
 
-  // Set body dimensions for measurement tests
   Object.defineProperty(document.body, "offsetWidth", {
     configurable: true,
     value: 400,
@@ -320,7 +310,7 @@ function setupPopupDOM() {
 }
 
 /**
- * Clean up DOM after test
+ * Clean up DOM
  */
 function teardownPopupDOM() {
   document.body.innerHTML = "";

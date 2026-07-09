@@ -1,4 +1,4 @@
-// uses the AES key to protect geminiApiKey
+// Protect geminiApiKey with AES
 function bufToB64(buf) {
   return btoa(String.fromCharCode(...new Uint8Array(buf)));
 }

@@ -1,6 +1,5 @@
 /**
- * Jest Unit Tests for inject.js
- * Tests for the floating iframe UI, drag functionality, theme handling, and cleanup
+ * Tests for inject.js (floating iframe UI, drag, theme, cleanup)
  */
 
 const { mockChromeStorage, mockI18n, flushPromises } = require("./testHelpers");
@@ -64,9 +63,7 @@ describe("inject.js - TME Module", () => {
     document.onmouseup = null;
   });
 
-  // ============================================================================
   // TME Object Structure Tests
-  // ============================================================================
 
   describe("TME Object Structure", () => {
     test("should expose TME object on window", () => {
@@ -91,9 +88,7 @@ describe("inject.js - TME Module", () => {
     });
   });
 
-  // ============================================================================
   // applyTheme Tests
-  // ============================================================================
 
   describe("applyTheme", () => {
     test('should set data-theme="dark" when isDarkMode is true', () => {
@@ -114,14 +109,12 @@ describe("inject.js - TME Module", () => {
     });
 
     test("should handle null element gracefully", () => {
-      // This tests defensive programming - it may throw, which is acceptable
+      // May throw
       expect(() => TME.applyTheme(null, true)).toThrow();
     });
   });
 
-  // ============================================================================
   // getSystemPreference Tests
-  // ============================================================================
 
   describe("getSystemPreference", () => {
     test("should return true when system prefers dark mode", () => {
@@ -149,13 +142,10 @@ describe("inject.js - TME Module", () => {
     });
   });
 
-  // ============================================================================
   // setup Tests
-  // ============================================================================
 
   describe("setup", () => {
     test("should create iframe container with id TMEiframe", () => {
-      // Setup already ran in beforeEach via module load
       const container = document.getElementById("TMEiframe");
 
       expect(container).not.toBeNull();
@@ -199,7 +189,6 @@ describe("inject.js - TME Module", () => {
       const container = document.getElementById("TMEiframe");
 
       expect(container.style.top).toBe("50px");
-      // Left position depends on window.innerWidth
     });
 
     test("should apply dark theme from storage when isDarkMode is true", async () => {
@@ -232,10 +221,10 @@ describe("inject.js - TME Module", () => {
       document.getElementById("TMEiframe")?.remove();
       delete window.TME;
 
-      mockChromeStorage({}); // No isDarkMode key
+      mockChromeStorage({});
 
       window.matchMedia = jest.fn().mockImplementation((query) => ({
-        matches: true, // System prefers dark
+        matches: true,
         media: query,
       }));
 
@@ -245,14 +234,11 @@ describe("inject.js - TME Module", () => {
 
       await flushPromises();
 
-      // Should set storage with system preference
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ isDarkMode: true });
     });
   });
 
-  // ============================================================================
-  // Pre-sizing from persisted height (inject.js:29-53)
-  // ============================================================================
+  // Pre-sizing from persisted height
 
   describe("Pre-sizing from persisted height", () => {
     function setupWithStorage(storageData) {
@@ -279,8 +265,7 @@ describe("inject.js - TME Module", () => {
     });
 
     test("falls back to the history tab height when lastActiveTab is an unrecognized value", async () => {
-      // Regression guard: a corrupted/unexpected storage value must not be
-      // trusted as a tab name (would read the wrong popupHeight_* key).
+      // Regression guard: invalid lastActiveTab defaults to history height
       setupWithStorage({ lastActiveTab: "corrupted", popupHeight_history: 480 });
       await flushPromises();
 
@@ -318,16 +303,13 @@ describe("inject.js - TME Module", () => {
     });
   });
 
-  // ============================================================================
   // Drag Functionality Tests
-  // ============================================================================
 
   describe("Drag Functionality", () => {
     test("should allow dragging via mouse events on drag bar", () => {
       const container = document.getElementById("TMEiframe");
       const dragBar = document.getElementById("TMEdrag");
 
-      // Mock getBoundingClientRect for the container
       container.getBoundingClientRect = jest.fn().mockReturnValue({
         left: 100,
         top: 50,
@@ -335,7 +317,6 @@ describe("inject.js - TME Module", () => {
         height: 500,
       });
 
-      // Simulate mousedown on drag bar
       const mousedownEvent = new MouseEvent("mousedown", {
         bubbles: true,
         clientX: 120,
@@ -343,7 +324,6 @@ describe("inject.js - TME Module", () => {
       });
       dragBar.onmousedown(mousedownEvent);
 
-      // Simulate mousemove
       const mousemoveEvent = new MouseEvent("mousemove", {
         bubbles: true,
         clientX: 220,
@@ -351,7 +331,6 @@ describe("inject.js - TME Module", () => {
       });
       document.onmousemove(mousemoveEvent);
 
-      // Position should have changed - moved 100px right and 100px down
       expect(container.style.left).toBe("200px");
       expect(container.style.top).toBe("150px");
     });
@@ -367,7 +346,6 @@ describe("inject.js - TME Module", () => {
         height: 500,
       });
 
-      // Start drag
       const mousedownEvent = new MouseEvent("mousedown", {
         bubbles: true,
         clientX: 100,
@@ -375,18 +353,14 @@ describe("inject.js - TME Module", () => {
       });
       dragBar.onmousedown(mousedownEvent);
 
-      // Release
       const mouseupEvent = new MouseEvent("mouseup", { bubbles: true });
       document.onmouseup(mouseupEvent);
 
-      // Store position
       const leftAfterRelease = container.style.left;
       const topAfterRelease = container.style.top;
 
-      // onmousemove should now be null
       expect(document.onmousemove).toBeNull();
 
-      // Position should not change after mouseup
       expect(container.style.left).toBe(leftAfterRelease);
       expect(container.style.top).toBe(topAfterRelease);
     });
@@ -398,9 +372,7 @@ describe("inject.js - TME Module", () => {
     });
   });
 
-  // ============================================================================
   // Close Button Tests
-  // ============================================================================
 
   describe("Close Button", () => {
     test("should call eject when close button is clicked", () => {
@@ -426,9 +398,7 @@ describe("inject.js - TME Module", () => {
     });
   });
 
-  // ============================================================================
   // Escape Key Handler Tests
-  // ============================================================================
 
   describe("Escape Key Handler", () => {
     test("should call eject when Escape key is pressed", () => {
@@ -456,9 +426,7 @@ describe("inject.js - TME Module", () => {
     });
   });
 
-  // ============================================================================
   // eject Tests
-  // ============================================================================
 
   describe("eject", () => {
     test("should remove iframe container from DOM", () => {
@@ -487,10 +455,8 @@ describe("inject.js - TME Module", () => {
     });
 
     test("should handle being called when container does not exist", () => {
-      // Remove it first
       document.getElementById("TMEiframe")?.remove();
 
-      // Should not throw
       expect(() => TME.eject()).not.toThrow();
     });
 
@@ -504,38 +470,29 @@ describe("inject.js - TME Module", () => {
       });
       document.dispatchEvent(escapeEvent);
 
-      // The Escape listener registered by setup() must be gone after eject()
       expect(ejectSpy).not.toHaveBeenCalled();
     });
   });
 
-  // ============================================================================
   // Window Resize Handler Tests
-  // ============================================================================
 
   describe("Window Resize Handler", () => {
     test("should adjust iframe position when window becomes smaller", () => {
       const container = document.getElementById("TMEiframe");
 
-      // Set container far to the right
       container.style.left = "2000px";
 
-      // Mock container width
       Object.defineProperty(container, "offsetWidth", { value: 400, configurable: true });
 
-      // Simulate resize
       const resizeEvent = new Event("resize");
       window.dispatchEvent(resizeEvent);
 
-      // Container should be repositioned
       const newLeft = parseInt(container.style.left, 10);
       expect(newLeft).toBeLessThan(2000);
     });
   });
 
-  // ============================================================================
   // Resizer Functionality Tests
-  // ============================================================================
 
   describe("Resizer Functionality", () => {
     test("should have a resizer element", () => {
@@ -549,7 +506,6 @@ describe("inject.js - TME Module", () => {
       const container = document.getElementById("TMEiframe");
       const resizer = container.querySelector('[style*="cursor: ns-resize"]');
 
-      // Mock getBoundingClientRect
       container.getBoundingClientRect = jest.fn().mockReturnValue({
         top: 50,
         left: 100,
@@ -557,7 +513,6 @@ describe("inject.js - TME Module", () => {
         height: 500,
       });
 
-      // Start resize
       const mousedownEvent = new MouseEvent("mousedown", {
         bubbles: true,
         clientX: 300,
@@ -565,7 +520,6 @@ describe("inject.js - TME Module", () => {
       });
       resizer.dispatchEvent(mousedownEvent);
 
-      // Move mouse down to resize
       const mousemoveEvent = new MouseEvent("mousemove", {
         bubbles: true,
         clientX: 300,
@@ -573,7 +527,6 @@ describe("inject.js - TME Module", () => {
       });
       document.dispatchEvent(mousemoveEvent);
 
-      // Height should have changed
       expect(container.style.height).toBe("550px");
     });
 
@@ -588,7 +541,6 @@ describe("inject.js - TME Module", () => {
         height: 500,
       });
 
-      // Start resize
       const mousedownEvent = new MouseEvent("mousedown", {
         bubbles: true,
         clientX: 300,
@@ -596,7 +548,6 @@ describe("inject.js - TME Module", () => {
       });
       resizer.dispatchEvent(mousedownEvent);
 
-      // Move mouse
       const mousemoveEvent = new MouseEvent("mousemove", {
         bubbles: true,
         clientX: 300,
@@ -615,22 +566,18 @@ describe("inject.js - TME Module", () => {
     test("should enforce minimum height of 452px", async () => {
       const container = document.getElementById("TMEiframe");
 
-      // Just verify the container has proper structure
       expect(container).not.toBeNull();
       expect(container.querySelector("#TMEdrag")).not.toBeNull();
       expect(container.querySelector("#TMEmain")).not.toBeNull();
     });
   });
 
-  // ============================================================================
   // Console Logging Tests
-  // ============================================================================
 
   describe("Console Output", () => {
     test("should log ASCII art on activation", () => {
       const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
-      // Re-run module to see console output
       document.getElementById("TMEiframe")?.remove();
       delete window.TME;
 
@@ -638,14 +585,11 @@ describe("inject.js - TME Module", () => {
         require("../Package/dist/inject.js");
       });
 
-      // The ASCII art contains styled text with %c prefix for CSS styling
-      // The ASCII art spells out "THE MAPS EXPRESS" in stylized characters
+      // Check ASCII art styling and content
       const firstCall = consoleSpy.mock.calls[0];
       expect(firstCall[0]).toContain("%c");
-      // The ASCII art contains characters like | and _ to form letters
       expect(firstCall[0]).toContain("|");
       expect(firstCall[0]).toContain("_");
-      // Check for the monospace font CSS
       expect(firstCall[1]).toContain("font-family");
       consoleSpy.mockRestore();
     });
@@ -653,7 +597,6 @@ describe("inject.js - TME Module", () => {
     test("should log activation message with timestamp", () => {
       const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
-      // Re-run module
       document.getElementById("TMEiframe")?.remove();
       delete window.TME;
 

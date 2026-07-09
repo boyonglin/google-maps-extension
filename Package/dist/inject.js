@@ -53,7 +53,6 @@ window.TME = {
         }
       }
     );
-    // iframeContainer.style.resize = "vertical";
 
     const draggableBar = document.createElement("div");
     draggableBar.id = "TMEdrag";
@@ -77,12 +76,10 @@ window.TME = {
         </svg>
         `;
 
-    // Close by button click
     closeButton.addEventListener("click", () => {
       TME.eject();
     });
 
-    // Close by Esc key
     document.addEventListener(
       "keydown",
       (event) => {
@@ -100,12 +97,10 @@ window.TME = {
     iframe.id = "TMEmain";
     iframe.src = chrome.runtime.getURL("popup.html");
 
-    // Append the iframe elements
     iframeContainer.appendChild(draggableBar);
     iframeContainer.appendChild(iframe);
     document.body.appendChild(iframeContainer);
 
-    // Make the iframe draggable
     draggableBar.onmousedown = function (event) {
       event.preventDefault();
       const shiftX = event.clientX - iframeContainer.getBoundingClientRect().left;
@@ -126,7 +121,6 @@ window.TME = {
       return false;
     };
 
-    // Adjust iframe left position when the document width becomes smaller
     window.addEventListener(
       "resize",
       () => {
@@ -138,7 +132,6 @@ window.TME = {
       { signal }
     );
 
-    // Create a custom resizer
     const resizer = document.createElement("div");
     resizer.style.width = "100%";
     resizer.style.height = "0";
@@ -169,7 +162,6 @@ window.TME = {
         const maxAllowedHeight = window.innerHeight - 100;
         const mouseUpEvent = new MouseEvent("mouseup");
 
-        // upper and lower height limits
         if (newHeight <= 452 && mouseDirection === "up") {
           newHeight = 452;
           document.dispatchEvent(mouseUpEvent);

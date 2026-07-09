@@ -1,13 +1,4 @@
-/**
- * Unit Tests for attachMapLink.js
- * Tests the map link attachment functionality for web pages
- *
- * This module is responsible for:
- * 1. Parsing candidate location names from text content
- * 2. Finding those names in the DOM
- * 3. Inserting clickable map pins (📌) next to place names
- * 4. Handling special cases like YouTube descriptions
- */
+// Unit Tests for attachMapLink.js
 
 // Import DOMPurify for safe HTML sanitization
 const createDOMPurify = require("isomorphic-dompurify");

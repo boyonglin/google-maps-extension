@@ -554,10 +554,8 @@ describe("Gemini Component", () => {
 
       geminiInstance.fetchAPIKey("test-key");
 
-      // First, it sets to the default message
       expect(chrome.i18n.getMessage).toHaveBeenCalledWith("apiPlaceholder");
 
-      // After validation, it will update to show last 4 chars
       await wait(50);
       expect(apiInput.placeholder).toBe("............-key");
     });
@@ -617,7 +615,6 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      // When gemini is active and video mode is set, button visibility is toggled
       expect(videoSummaryButton.classList.contains("d-none")).toBe(false);
     });
 
@@ -652,7 +649,6 @@ describe("Gemini Component", () => {
 
       await geminiInstance.checkCurrentTabForYoutube();
 
-      // Toggle should already be visible even though scrapeLen hasn't resolved yet
       expect(videoSummaryButton.classList.contains("d-none")).toBe(false);
 
       resolveScrapeLen(600);

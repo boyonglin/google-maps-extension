@@ -78,7 +78,7 @@ class Gemini {
       videoSummaryButton.classList.toggle("no-hover-temp", !enabled);
     });
 
-    // One time hover disable effect for videoSummaryButton
+    // Hover disable effect for videoSummaryButton
     videoSummaryButton.addEventListener("mouseleave", () => {
       if (videoSummaryButton.classList.contains("no-hover-temp")) {
         videoSummaryButton.classList.remove("no-hover-temp");
@@ -155,7 +155,7 @@ class Gemini {
       chrome.storage.local.remove("currentVideoInfo");
     }
 
-    // Visibility is derived by render(); the token protects against stale tab callbacks.
+    // Token prevents stale tab callbacks
   }
 
   async scrapeLen(id) {
@@ -171,7 +171,7 @@ class Gemini {
     }
   }
 
-  // Clear summary data if it's stale (older than State.SUMMARY_TTL_MS)
+  // Clear stale summary data
   clearExpiredSummary() {
     chrome.storage.local.get(["summaryList", "timestamp", "favoriteList"], (result) => {
       const items = Array.isArray(result.summaryList) ? result.summaryList : [];
@@ -188,7 +188,7 @@ class Gemini {
     });
   }
 
-  // Parse LLM output into plain-text items to prevent prompt injection.
+  // Parse LLM output to prevent prompt injection
   parseSummaryItems(response) {
     const doc = new DOMParser().parseFromString(response, "text/html");
     const normalize = (text) => text.replace(/\s+/g, " ").trim();
@@ -250,7 +250,7 @@ class Gemini {
     });
   }
 
-  // Strip decorative query params so Gemini gets a canonical YouTube URL
+  // Strip query params for canonical YouTube URL
   normalizeYoutubeUrl(url) {
     const match = url.match(/youtube\.com\/(watch\?v=|shorts\/)(.{11})/);
     if (!match) return url;
@@ -274,7 +274,7 @@ class Gemini {
     });
 
     chrome.runtime.sendMessage({ action: "summarizeVideo", text: videoUrl }, (response) => {
-      // success when we get a string fragment of <ul>...</ul>
+      // Success on <ul> fragment
       if (typeof response === "string") {
         try {
           this.createSummaryList(response, requestId);
@@ -309,7 +309,7 @@ class Gemini {
 
         if (isYouTube) {
           chrome.tabs.sendMessage(tabs[0].id, { action: "expandYouTubeDescription" }, () => {
-            // Wait for the expansion to finish rendering before scraping content
+            // Wait for expansion before scraping
             setTimeout(() => {
               this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
             }, 500);
@@ -352,8 +352,7 @@ class Gemini {
     chrome.runtime.sendMessage(
       { action: "summarizeApi", text: content, apiKey: apiKey, url: url },
       (response) => {
-        // response is undefined if the channel closed early (e.g. SW killed);
-        // treat as an error so the send button gets re-enabled
+        // Treat early close as error
         if (!response || response.error) {
           responseField.value = `API Error: ${response?.error || "No response from background"}`;
           this.ResponseErrorMsg(response, requestId);
@@ -383,7 +382,7 @@ class Gemini {
       items: summaryItems,
       timestamp,
     });
-    // Respect incognito mode: do not persist summaries when enabled
+    // Don't persist summaries in incognito mode
     chrome.storage.local.get("isIncognito", ({ isIncognito = false }) => {
       if (!isIncognito) {
         chrome.storage.local.set({
@@ -445,7 +444,7 @@ class Gemini {
     statusMessage.classList.toggle("d-none", ready);
     statusMessage.classList.toggle("shineText", generating);
 
-    // Favorite-only updates patch icon classNames in place instead.
+    // Patch favorite icon classNames in place
     const summaryChanged = meta.summaryChanged !== false;
     if (!ready) {
       listContainer.replaceChildren();

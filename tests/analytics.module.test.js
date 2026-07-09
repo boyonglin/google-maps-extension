@@ -1,7 +1,4 @@
-/**
- * Jest Unit Tests for analytics.module.js
- * Tests for GA4 Analytics ES Module: service worker specific tracking methods
- */
+// Tests for analytics.module.js
 
 const { flushPromises } = require("./testHelpers");
 
@@ -36,10 +33,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
     Analytics = require("../Package/dist/utils/analytics.module.js").Analytics;
   });
 
-  // ============================================================================
-  // Module Structure Tests
-  // ============================================================================
-
   describe("Module Structure", () => {
     test("should export Analytics object", () => {
       expect(Analytics).toBeDefined();
@@ -72,10 +65,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
       expect(typeof Analytics.trackContextMenu).toBe("function");
     });
   });
-
-  // ============================================================================
-  // trackShortcut Tests
-  // ============================================================================
 
   describe("trackShortcut", () => {
     test("should track shortcut_used event", async () => {
@@ -120,10 +109,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
     });
   });
 
-  // ============================================================================
-  // trackContextMenu Tests
-  // ============================================================================
-
   describe("trackContextMenu", () => {
     test("should track context_menu_action event", async () => {
       Analytics.trackContextMenu("search");
@@ -157,10 +142,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
     });
   });
 
-  // ============================================================================
-  // trackExtensionOpened Tests
-  // ============================================================================
-
   describe("trackExtensionOpened", () => {
     test("should track extension_opened event", async () => {
       Analytics.trackExtensionOpened();
@@ -183,10 +164,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
       expect(requestBody.events[0].params.source).toBe("popup");
     });
   });
-
-  // ============================================================================
-  // trackFeatureClick Tests
-  // ============================================================================
 
   describe("trackFeatureClick", () => {
     test("should track feature_click event", async () => {
@@ -221,10 +198,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
     });
   });
 
-  // ============================================================================
-  // trackSearch Tests
-  // ============================================================================
-
   describe("trackSearch", () => {
     test("should track search_performed event", async () => {
       Analytics.trackSearch();
@@ -247,10 +220,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
       expect(requestBody.events[0].params.feature_name).toBe("search");
     });
   });
-
-  // ============================================================================
-  // trackPageView Tests
-  // ============================================================================
 
   describe("trackPageView", () => {
     beforeEach(() => {
@@ -355,10 +324,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
     });
   });
 
-  // ============================================================================
-  // handleVisibilityChange Tests
-  // ============================================================================
-
   describe("handleVisibilityChange", () => {
     beforeEach(() => {
       // Reset page tracking state before each test
@@ -455,10 +420,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
       expect(Analytics._currentPage).toBeNull();
     });
   });
-
-  // ============================================================================
-  // Core Method Tests (getOrCreateClientId, getOrCreateSessionId, trackEvent)
-  // ============================================================================
 
   describe("getOrCreateClientId", () => {
     test("should return existing client ID from storage", async () => {
@@ -595,10 +556,6 @@ describe("analytics.module.js - Analytics ES Module", () => {
       expect(requestBody.events[0].name).toBe("test_event");
     });
   });
-
-  // ============================================================================
-  // ES Module Export Tests
-  // ============================================================================
 
   describe("ES Module Exports", () => {
     test("should export Analytics as named export", () => {

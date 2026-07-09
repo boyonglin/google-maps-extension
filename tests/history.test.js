@@ -1,7 +1,5 @@
 /**
- * Jest Unit Tests for History Component (history.js)
- * Tests cover all methods with comprehensive mocking of Chrome APIs and DOM manipulation
- * Following TDD principles: bugs are identified, explained, and fixed in the original code
+ * Tests for History Component (history.js)
  */
 
 // Use the production store so component tests exercise reducer-driven rendering.
@@ -36,14 +34,9 @@ const { setupPopupDOM, teardownPopupDOM } = require("./popupDOMFixture");
 describe("History Component", () => {
   let historyInstance;
 
-  // ============================================================================
-  // Helper Functions - Test-Specific
-  // ============================================================================
+  // Helper Functions
 
-  /**
-   * Helper: Create mock history list item (using shared helper)
-   * Note: Keep this for edge case testing where we need specific structures
-   */
+  // Create mock history list item for edge case testing
   const createMockHistoryItem = (text, favoriteList = [], isChecked = false) => {
     return createMockListItem(text, {
       favoriteList,
@@ -52,20 +45,15 @@ describe("History Component", () => {
     });
   };
 
-  // ============================================================================
   // Test Setup/Teardown
-  // ============================================================================
 
   beforeEach(() => {
-    // Setup popup DOM (provides all required elements)
     setupPopupDOM();
 
-    // Get references to DOM elements (now provided by popup fixture)
     global.searchHistoryListContainer = document.getElementById("searchHistoryList");
     global.clearButton = document.getElementById("clearButton");
     global.emptyMessage = document.getElementById("emptyMessage");
 
-    // Reset state
     global.state = new State();
     global.state.buildSearchUrl = jest.fn();
 
@@ -85,7 +73,6 @@ describe("History Component", () => {
       createContextMenu: jest.fn(),
     };
 
-    // Reset mocks
     jest.clearAllMocks();
     mockI18n({
       clearedUpMsg: "All cleared up!\nNothing to see here.",
@@ -94,8 +81,7 @@ describe("History Component", () => {
     });
     mockChromeStorage();
 
-    // Create new instance and subscribe it to the store, matching popup.js's
-    // renderPopup wiring (history.render(snapshot) on every dispatch).
+    // Subscribe new instance to store, matching popup.js wiring
     historyInstance = new History();
     global.state.subscribe((snapshot) => historyInstance.render(snapshot));
   });
@@ -105,9 +91,7 @@ describe("History Component", () => {
     jest.useRealTimers();
   });
 
-  // ============================================================================
   // addHistoryPageListener Tests
-  // ============================================================================
 
   describe("addHistoryPageListener", () => {
     describe("searchHistoryListContainer mousedown handler", () => {
@@ -115,9 +99,7 @@ describe("History Component", () => {
         historyInstance.addHistoryPageListener();
       });
 
-      // --------------------------------------------------------------------
       // Basic Click Handling
-      // --------------------------------------------------------------------
 
       test("should handle left click on LI element to open URL", async () => {
         const li = createMockHistoryItem(TEST_CONSTANTS.LOCATION);
@@ -131,12 +113,10 @@ describe("History Component", () => {
 
           await wait();
 
-          // FIXED: Now uses querySelector('span')?.textContent to extract only span text
-          // instead of all text content including icon classes and other elements
+          // Extracts only span text
           expect(global.state.buildSearchUrl).toHaveBeenCalled();
           const callArg = global.state.buildSearchUrl.mock.calls[0][0];
 
-          // After fix, extracts only span text
           expect(callArg).toBe(TEST_CONSTANTS.LOCATION);
           expect(openSpy).toHaveBeenCalledWith(TEST_CONSTANTS.URL, "_blank");
         });
@@ -183,9 +163,7 @@ describe("History Component", () => {
         expect(global.state.buildSearchUrl).not.toHaveBeenCalled();
       });
 
-      // --------------------------------------------------------------------
       // Middle Click Handling
-      // --------------------------------------------------------------------
 
       test("should handle middle click to open in new tab via runtime message", async () => {
         const li = createMockHistoryItem("Test Location");
@@ -224,9 +202,7 @@ describe("History Component", () => {
         });
       });
 
-      // --------------------------------------------------------------------
       // Delete Mode Handling
-      // --------------------------------------------------------------------
 
       test("should toggle checkbox in delete mode when clicking on LI", () => {
         state.dispatch({ type: "HISTORY_SET", items: ["Test Location"] });
@@ -273,13 +249,10 @@ describe("History Component", () => {
         const mouseEvent = createMouseEvent(checkbox, 0);
         checkbox.dispatchEvent(mouseEvent);
 
-        // Should return early without toggling
         expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
       });
 
-      // --------------------------------------------------------------------
       // Favorite Icon Click Handling
-      // --------------------------------------------------------------------
 
       test("should add to favorites when clicking icon with bi class", async () => {
         const li = createMockHistoryItem("Test Location");
@@ -300,12 +273,11 @@ describe("History Component", () => {
         const callArg = global.favorite.addToFavoriteList.mock.calls[0][0];
         expect(callArg).toBe(TEST_CONSTANTS.LOCATION);
 
-        // Verify icon class change
         expect(icon.className).toContain("bi-patch-check-fill");
         expect(icon.className).toContain("matched");
         expect(icon.className).toContain("spring-animation");
 
-        // Wait for the animation timeout to complete (500ms)
+        // Wait for animation (500ms)
         await wait(500);
 
         expect(icon.classList.contains("spring-animation")).toBe(false);
@@ -351,9 +323,7 @@ describe("History Component", () => {
         });
       });
 
-      // --------------------------------------------------------------------
       // Checkbox Click in Non-Delete Mode
-      // --------------------------------------------------------------------
 
       test("should return early if clicking checkbox in normal mode", async () => {
         const li = createMockHistoryItem("Test Location");
@@ -373,9 +343,7 @@ describe("History Component", () => {
         });
       });
 
-      // --------------------------------------------------------------------
       // Edge Cases and Error Handling
-      // --------------------------------------------------------------------
 
       test("should handle buildSearchUrl returning undefined", async () => {
         const li = createMockHistoryItem("Test Location");
@@ -389,7 +357,6 @@ describe("History Component", () => {
 
           await wait();
 
-          // Should still attempt to open, but with undefined URL
           expect(openSpy).toHaveBeenCalledWith(undefined, "_blank");
         });
       });
@@ -402,13 +369,11 @@ describe("History Component", () => {
 
         global.state.buildSearchUrl.mockRejectedValue(new Error("Network error"));
 
-        // FIXED: Now has error handling for buildSearchUrl failures
         const mouseEvent = createMouseEvent(li, 0);
         li.dispatchEvent(mouseEvent);
 
         await wait();
 
-        // Verify error was caught and logged
         expect(consoleErrorSpy).toHaveBeenCalledWith(
           "Failed to build search URL:",
           expect.any(Error)
@@ -492,18 +457,13 @@ describe("History Component", () => {
 
           await wait();
 
-          // FIXED: Right-click still builds URL (promise executes) but doesn't open window
-          // The buildSearchUrl is called but window.open is not
+          // Right-click builds URL but doesn't open window
           expect(openSpy).not.toHaveBeenCalled();
-          // Note: buildSearchUrl may still be called since the promise starts,
-          // but no action is taken with button 2
         });
       });
     });
 
-    // --------------------------------------------------------------------
     // Context Menu Handler
-    // --------------------------------------------------------------------
 
     describe("searchHistoryListContainer contextmenu handler", () => {
       beforeEach(() => {
@@ -538,9 +498,7 @@ describe("History Component", () => {
       });
     });
 
-    // --------------------------------------------------------------------
     // Clear Button Handler
-    // --------------------------------------------------------------------
 
     describe("clearButton click handler", () => {
       beforeEach(() => {
@@ -601,14 +559,8 @@ describe("History Component", () => {
     });
   });
 
-  // ============================================================================
   // Onboarding demo item delegation
-  //
-  // The demo item's swallow-clicks behavior must be delegated on the
-  // container (not attached to the <li> itself), since render() rebuilds the
-  // list from scratch on every unrelated dispatch and would otherwise discard
-  // a listener attached directly to the old node.
-  // ============================================================================
+  // Delegate swallow-clicks behavior on the container to persist across render() re-builds.
 
   describe("onboarding demo item delegation", () => {
     beforeEach(() => {
@@ -635,8 +587,7 @@ describe("History Component", () => {
     });
 
     test("still swallows clicks after render() has rebuilt the list (a brand new <li> node)", () => {
-      // Simulate an unrelated dispatch rebuilding the list: the original demo
-      // node is discarded and a new one takes its place.
+      // Simulate dispatch rebuilding the list
       appendDemoItem().remove();
       const rebuiltLi = appendDemoItem();
       const icon = rebuiltLi.querySelector("i.bi");
@@ -667,9 +618,7 @@ describe("History Component", () => {
     });
   });
 
-  // ============================================================================
   // createListItem Tests
-  // ============================================================================
 
   describe("createListItem", () => {
     test("should create list item with correct structure", () => {
@@ -834,10 +783,7 @@ describe("History Component", () => {
     });
   });
 
-  // ============================================================================
-  // render Tests (store-driven rendering; invoked automatically by the state
-  // subscription set up in the outer beforeEach, mirroring popup.js's wiring)
-  // ============================================================================
+  // render Tests (store-driven rendering)
 
   describe("render", () => {
     test("should render history items", () => {
@@ -924,7 +870,7 @@ describe("History Component", () => {
 
       const demoItem = searchHistoryListContainer.querySelector(".onboarding-demo-item");
       expect(demoItem).toBeTruthy();
-      // The demo item counts toward "has content", so the empty message stays hidden.
+      // Demo item keeps empty message hidden.
       expect(emptyMessage.classList.contains("d-none")).toBe(true);
     });
 
@@ -944,9 +890,7 @@ describe("History Component", () => {
       const icon = li.querySelector("i");
       icon.classList.add("spring-animation");
 
-      // Simulate popup.js's renderPopup: only favorite changed, so it calls
-      // history.render with historyChanged/deleteModeChanged/onboardingChanged
-      // all false (matches popup.js's actual meta payload shape).
+      // Simulate popup.js renderPopup for favorite change only
       historyInstance.render(state.getSnapshot(), {
         historyChanged: false,
         deleteModeChanged: false,
@@ -966,10 +910,7 @@ describe("History Component", () => {
       const iconBefore = li.querySelector("i");
       expect(iconBefore.classList.contains("matched")).toBe(false);
 
-      // Build the post-favorite-change snapshot directly (bypassing dispatch,
-      // whose test-only subscribe wiring always re-renders with meta={} /
-      // full rebuild) so this exercises the exact single render() call
-      // popup.js's renderPopup makes when only `favorite` changed.
+      // Build snapshot for favorite change to test single render() call
       const favoriteSnapshot = {
         ...state.getSnapshot(),
         favorite: { ...state.getSnapshot().favorite, items: ["Location 1"] },
@@ -988,9 +929,7 @@ describe("History Component", () => {
     });
   });
 
-  // ============================================================================
   // Integration Tests
-  // ============================================================================
 
   describe("Integration Tests", () => {
     test("complete workflow: create item, add listeners, click to open", async () => {
@@ -1032,7 +971,7 @@ describe("History Component", () => {
       expect(global.favorite.addToFavoriteList).toHaveBeenCalled();
       expect(icon.className).toContain("spring-animation");
 
-      // Wait for the animation timeout to complete (500ms)
+      // Wait for animation (500ms)
       await wait(500);
 
       expect(icon.classList.contains("spring-animation")).toBe(false);
@@ -1134,15 +1073,12 @@ describe("History Component", () => {
       const endTime = Date.now();
       const duration = endTime - startTime;
 
-      // Should complete in reasonable time
       expect(duration).toBeLessThan(1000);
       expect(items.length).toBe(100);
     });
   });
 
-  // ============================================================================
   // Edge Cases and Error Handling
-  // ============================================================================
 
   describe("Edge Cases and Boundary Conditions", () => {
     test("should handle empty container when adding listeners", () => {
@@ -1155,8 +1091,8 @@ describe("History Component", () => {
       historyInstance.addHistoryPageListener();
       historyInstance.addHistoryPageListener();
       historyInstance.addHistoryPageListener();
+      historyInstance.addHistoryPageListener();
 
-      // Should not throw, but listeners may be duplicated
       expect(true).toBe(true);
     });
 
@@ -1195,38 +1131,31 @@ describe("History Component", () => {
       const icon = li.querySelector("i");
       icon.classList.add("bi");
 
-      // Click icon to add to favorites
       const iconEvent = createMouseEvent(icon, 0);
       icon.dispatchEvent(iconEvent);
 
       await wait();
 
-      // Verify favorite was added
       expect(global.favorite.addToFavoriteList).toHaveBeenCalled();
     });
 
     test("should handle null chrome.i18n.getMessage", () => {
-      // Fixed: history.js now checks if getMessage returns null before calling replace()
       historyInstance.addHistoryPageListener();
       chrome.i18n.getMessage.mockReturnValue(null);
 
-      // Should not throw an error
       expect(() => {
         clearButton.click();
       }).not.toThrow();
 
-      // Should still clear the list and disable button
       expect(clearButton.disabled).toBe(true);
       expect(emptyMessage.innerHTML).toBe("");
     });
 
     test("should handle detached DOM elements", () => {
       const li = historyInstance.createListItem("Test Location", []);
-      // Don't append to container
 
       historyInstance.addHistoryPageListener();
 
-      // Should not throw even though element is detached
       expect(() => {
         const mouseEvent = createMouseEvent(li, 0);
         li.dispatchEvent(mouseEvent);
@@ -1240,7 +1169,6 @@ describe("History Component", () => {
       historyInstance.addHistoryPageListener();
 
       global.state.buildSearchUrl.mockImplementation(() => {
-        // Modify DOM during promise execution
         searchHistoryListContainer.innerHTML = "";
         return Promise.resolve("http://maps.test/search");
       });
@@ -1250,14 +1178,11 @@ describe("History Component", () => {
 
       await wait();
 
-      // Should complete without error
       expect(searchHistoryListContainer.innerHTML).toBe("");
     });
   });
 
-  // ============================================================================
   // Module Export Tests
-  // ============================================================================
 
   describe("Module Export", () => {
     test("should export History class", () => {

@@ -16,7 +16,7 @@ class Favorite {
         const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
         const csv = "name\n" + trimmedFavorite.map((item) => `${escapeCSV(item)}`).join("\n");
 
-        // UTF-8 BOM so Excel renders non-ASCII names (e.g. Chinese/Japanese) correctly
+        // UTF-8 BOM for Excel non-ASCII support
         const blob = new Blob(["\uFEFF" + csv], {
           type: "text/csv; charset=utf-8;",
         });
@@ -47,14 +47,13 @@ class Favorite {
           if (fileContent && fileContent.length > 0) {
             const rows = this.parseCSV(fileContent);
             importedData = rows
-              .slice(1) // drop the "name" header row
+              .slice(1)
               .map((row) => (row[0] || "").trim())
               .filter((name) => name.length > 0);
           }
 
           chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-            // Merge with the existing list (don't overwrite); dedupe by name,
-            // ignoring the " @clue" suffix
+            // Merge without overwrite, dedupe by name ignoring "@clue"
             const existingList = Array.isArray(favoriteList) ? favoriteList : [];
             const existingNames = new Set(existingList.map((item) => item.split(" @")[0]));
             const newNames = [];
@@ -76,7 +75,7 @@ class Favorite {
 
       reader.readAsText(file);
 
-      // Reset the file input value to allow re-selecting the same file
+      // Allow re-selecting same file
       event.target.value = "";
     });
 
@@ -109,11 +108,9 @@ class Favorite {
             if (window.Analytics)
               window.Analytics.trackFeatureClick("click_favorite_item", "favoriteListContainer");
             if (event.button === 1) {
-              // Middle click
               event.preventDefault();
               chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
             } else if (event.button === 0) {
-              // Left click
               window.open(searchUrl, "_blank");
             }
           }
@@ -126,7 +123,7 @@ class Favorite {
     });
   }
 
-  // Minimal RFC 4180-style parser matching what escapeCSV produces on export
+  // Minimal RFC 4180 parser matching export format
   parseCSV(content) {
     const rows = [];
     let row = [];
