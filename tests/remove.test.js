@@ -86,11 +86,11 @@ describe("Remove Component", () => {
         removeInstance.addRemoveListener();
       });
 
-      test("should call deleteFromHistoryList when search history is active", () => {
+      test("should call deleteFromHistoryList when deleteMode.source is history", () => {
         const spy = jest.spyOn(removeInstance, "deleteFromHistoryList");
         const backSpy = jest.spyOn(removeInstance, "backToNormal");
 
-        searchHistoryButton.classList.add("active-button");
+        state.dispatch({ type: "DELETE_ENTER", source: "history" });
 
         deleteButton.click();
 
@@ -98,11 +98,11 @@ describe("Remove Component", () => {
         expect(backSpy).toHaveBeenCalled();
       });
 
-      test("should call deleteFromFavoriteList when favorite list is active", () => {
+      test("should call deleteFromFavoriteList when deleteMode.source is favorite", () => {
         const spy = jest.spyOn(removeInstance, "deleteFromFavoriteList");
         const backSpy = jest.spyOn(removeInstance, "backToNormal");
 
-        searchHistoryButton.classList.remove("active-button");
+        state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
 
         deleteButton.click();
 
@@ -212,6 +212,7 @@ describe("Remove Component", () => {
       state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
       state.dispatch({ type: "DELETE_ENTER", source: "history" });
       state.dispatch({ type: "DELETE_TOGGLE", value: "Location 1" });
+      mockChromeStorage({ searchHistoryList: ["Location 1", "Location 2"] });
 
       removeInstance.deleteFromHistoryList();
 
@@ -255,11 +256,28 @@ describe("Remove Component", () => {
     test("should keep the full list when nothing is selected", () => {
       state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
       state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      mockChromeStorage({ searchHistoryList: ["Location 1"] });
 
       removeInstance.deleteFromHistoryList();
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         searchHistoryList: ["Location 1"],
+      });
+    });
+
+    test("BUG REPRO: must not clobber an item another context wrote to storage after this snapshot was taken", () => {
+      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Location 1" });
+      // Simulates another popup instance (e.g. the page-injected iframe)
+      // having added "Location 3" to storage after this snapshot was taken,
+      // but before the storage.onChanged echo reached this instance.
+      mockChromeStorage({ searchHistoryList: ["Location 1", "Location 2", "Location 3"] });
+
+      removeInstance.deleteFromHistoryList();
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        searchHistoryList: ["Location 2", "Location 3"],
       });
     });
   });
@@ -273,6 +291,7 @@ describe("Remove Component", () => {
       state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1", "Favorite 2"] });
       state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
       state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1" });
+      mockChromeStorage({ favoriteList: ["Favorite 1", "Favorite 2"] });
 
       removeInstance.deleteFromFavoriteList();
 
@@ -286,6 +305,7 @@ describe("Remove Component", () => {
       state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1 @Clue 1"] });
       state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
       state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1 @Clue 1" });
+      mockChromeStorage({ favoriteList: ["Favorite 1 @Clue 1"] });
 
       removeInstance.deleteFromFavoriteList();
 
@@ -326,11 +346,27 @@ describe("Remove Component", () => {
     test("should keep the full list when nothing is selected", () => {
       state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1"] });
       state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+      mockChromeStorage({ favoriteList: ["Favorite 1"] });
 
       removeInstance.deleteFromFavoriteList();
 
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
         favoriteList: ["Favorite 1"],
+      });
+    });
+
+    test("BUG REPRO: must not clobber an item another context wrote to storage after this snapshot was taken", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1", "Favorite 2"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1" });
+      // Simulates another popup instance having added "Favorite 3" after
+      // this snapshot was taken but before the onChanged echo arrived here.
+      mockChromeStorage({ favoriteList: ["Favorite 1", "Favorite 2", "Favorite 3"] });
+
+      removeInstance.deleteFromFavoriteList();
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        favoriteList: ["Favorite 2", "Favorite 3"],
       });
     });
   });
@@ -477,6 +513,7 @@ describe("Remove Component", () => {
       li1.querySelector("input").dispatchEvent(new Event("change", { bubbles: true }));
 
       // Delete
+      mockChromeStorage({ searchHistoryList: ["Location 1", "Location 2"] });
       deleteButton.click();
 
       expect(state.getSnapshot().history.items).toEqual(["Location 2"]);
@@ -497,6 +534,7 @@ describe("Remove Component", () => {
 
       li1.querySelector("input").dispatchEvent(new Event("change", { bubbles: true }));
 
+      mockChromeStorage({ favoriteList: ["Favorite 1", "Favorite 2"] });
       deleteButton.click();
 
       expect(state.getSnapshot().favorite.items).toEqual(["Favorite 2"]);

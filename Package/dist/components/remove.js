@@ -7,7 +7,7 @@ class Remove {
 
     deleteButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("delete_items", "deleteButton");
-      if (searchHistoryButton.classList.contains("active-button")) {
+      if (state.getSnapshot().deleteMode.source === "history") {
         this.deleteFromHistoryList();
       } else {
         this.deleteFromFavoriteList();
@@ -40,7 +40,11 @@ class Remove {
     const items = snapshot.history.items.filter((item) => !selected.has(item));
     state.dispatch({ type: "HISTORY_SET", items, emptyReason: "cleared" });
     state.dispatch({ type: "DELETE_CANCEL" });
-    chrome.storage.local.set({ searchHistoryList: items });
+    // Re-read so a concurrent write from another context isn't clobbered.
+    chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
+      const latest = Array.isArray(searchHistoryList) ? searchHistoryList : [];
+      chrome.storage.local.set({ searchHistoryList: latest.filter((item) => !selected.has(item)) });
+    });
   }
 
   deleteFromFavoriteList() {
@@ -49,7 +53,11 @@ class Remove {
     const items = snapshot.favorite.items.filter((item) => !selected.has(item));
     state.dispatch({ type: "FAVORITE_SET", items });
     state.dispatch({ type: "DELETE_CANCEL" });
-    chrome.storage.local.set({ favoriteList: items });
+    // See deleteFromHistoryList.
+    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+      const latest = Array.isArray(favoriteList) ? favoriteList : [];
+      chrome.storage.local.set({ favoriteList: latest.filter((item) => !selected.has(item)) });
+    });
   }
 
   backToNormal() {
