@@ -71,6 +71,7 @@ let state, remove, favorite, history, gemini, modal, payment, onboarding;
 let unsubscribeState = null;
 let hydrationPromise = null;
 let iframeRevealed = false;
+let skipNextApiKeyEcho = false;
 
 function initializeDependencies(deps = {}) {
   state = deps.state || new State();
@@ -84,7 +85,11 @@ function initializeDependencies(deps = {}) {
   history.favoriteComponent = favorite;
   gemini.favoriteComponent = favorite;
   gemini.store = state;
-  modal.onApiKeyChange = (apiKey) => gemini.fetchAPIKey(apiKey);
+  // Flags the echo below to skip re-verifying the same key.
+  modal.onApiKeyChange = (apiKey) => {
+    skipNextApiKeyEcho = true;
+    gemini.fetchAPIKey(apiKey);
+  };
   if (onboarding) onboarding.store = state;
 
   // Re-subscribe renderPopup to the new state instance, not the old one.
@@ -438,8 +443,17 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     state.dispatch({ type: "VIDEO_TOGGLE", enabled: changes.videoSummaryToggle.newValue });
   }
 
-  // No changes.geminiApiKey handler: modal.js already calls fetchAPIKey
-  // directly, and also reacting here raced it (stuck disabled Send button).
+  if (changes.geminiApiKey) {
+    if (skipNextApiKeyEcho) {
+      skipNextApiKeyEcho = false;
+    } else if (!changes.geminiApiKey.newValue) {
+      gemini.fetchAPIKey("");
+    } else {
+      chrome.runtime.sendMessage({ action: "getApiKey" }, ({ apiKey = "" } = {}) => {
+        gemini.fetchAPIKey(apiKey);
+      });
+    }
+  }
 
   if (incognitoChange) {
     modal.updateIncognitoModal(!!incognitoChange.newValue);

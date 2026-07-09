@@ -43,6 +43,7 @@ export const DEFAULTS = Object.freeze({
 
 let cache = null;
 let loading = null;
+let applying = null;
 
 export async function ensureWarm() {
   if (cache) return cache;
@@ -73,6 +74,8 @@ export function getCache() {
 
 export async function getApiKey() {
   await ensureWarm();
+  // Avoid reading cache while an applyStorageChanges decrypt is in flight.
+  if (applying) await applying;
   const k = cache?.geminiApiKey;
   if (!k) throw new Error("No API key found. Please provide one.");
   return k;
@@ -82,18 +85,22 @@ export async function applyStorageChanges(changes, area) {
   if (area !== "local") return;
   // A real read, not DEFAULTS, or an early write would wipe unrelated fields.
   if (!cache) await ensureWarm();
-  for (const [k, { newValue }] of Object.entries(changes)) {
-    if (k === "geminiApiKey") {
-      try {
-        cache[k] = await decryptApiKey(newValue);
-      } catch (_e) {
-        cache[k] = "";
+  applying = (async () => {
+    for (const [k, { newValue }] of Object.entries(changes)) {
+      if (k === "geminiApiKey") {
+        try {
+          cache[k] = await decryptApiKey(newValue);
+        } catch (_e) {
+          cache[k] = "";
+        }
+      } else {
+        cache[k] = newValue;
+        if (k === "authUser") updateUserUrls(newValue);
       }
-    } else {
-      cache[k] = newValue;
-      if (k === "authUser") updateUserUrls(newValue);
     }
-  }
+  })();
+  await applying;
+  applying = null;
 }
 
 // Test helpers
@@ -101,6 +108,7 @@ if (typeof module !== "undefined" && module.exports) {
   exports.__resetCacheForTesting = function () {
     cache = null;
     loading = null;
+    applying = null;
     queryUrl = "https://www.google.com/maps?authuser=0&";
     routeUrl = "https://www.google.com/maps/dir/?authuser=0&";
   };

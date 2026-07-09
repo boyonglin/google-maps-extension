@@ -494,6 +494,30 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
       expect(chrome.storage.local.get).toHaveBeenCalled();
       expect(apiKey).toBe("my-api-key");
     });
+
+    test("BUG REPRO: must wait for an in-flight applyStorageChanges decrypt instead of reading stale cache", async () => {
+      setupMockStorageWithDecryption("", { geminiApiKey: "" });
+      await ensureWarm();
+
+      let resolveDecrypt;
+      decryptApiKey.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveDecrypt = resolve;
+          })
+      );
+
+      const applyPromise = applyStorageChanges(
+        { geminiApiKey: { newValue: "new-encrypted-key" } },
+        "local"
+      );
+
+      const getApiKeyPromise = getApiKey();
+      resolveDecrypt("new-decrypted-key");
+      await applyPromise;
+
+      await expect(getApiKeyPromise).resolves.toBe("new-decrypted-key");
+    });
   });
 
   describe("applyStorageChanges", () => {

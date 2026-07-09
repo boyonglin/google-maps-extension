@@ -952,23 +952,42 @@ describe("popup.js", () => {
       expect(mockState.buildMapsButtonUrl).toHaveBeenCalled();
     });
 
-    test("does not react to geminiApiKey storage changes (avoids racing modal.onApiKeyChange's direct call)", () => {
-      // modal.js's save/reset handlers always call onApiKeyChange directly
-      // and synchronously with the known plaintext key. Reacting here too
-      // used to fire a second, redundant fetchAPIKey() via an extra
-      // getApiKey round trip, which could race the direct call and leave
-      // the store's api.token/status permanently stuck (Send button
-      // disabled with no error) if the round trip read a stale key.
+    test("does not double-react to the storage echo of its own onApiKeyChange call", () => {
       chrome.runtime.sendMessage.mockClear();
+      mockGemini.fetchAPIKey.mockClear();
       const listener = chrome.storage.onChanged.addListener.mock.calls[0][0];
 
+      // Mirrors modal.js: onApiKeyChange fires fetchAPIKey directly, then
+      // the resulting storage write's onChanged echo arrives right after.
+      mockModal.onApiKeyChange("plain-key");
       listener({ geminiApiKey: { newValue: "encrypted-key" } }, "local");
 
+      expect(mockGemini.fetchAPIKey).toHaveBeenCalledTimes(1);
+      expect(mockGemini.fetchAPIKey).toHaveBeenCalledWith("plain-key");
       expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith(
         { action: "getApiKey" },
         expect.any(Function)
       );
-      expect(mockGemini.fetchAPIKey).not.toHaveBeenCalled();
+    });
+
+    test("reacts to a geminiApiKey change from another context", () => {
+      chrome.runtime.sendMessage.mockClear();
+      mockGemini.fetchAPIKey.mockClear();
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getApiKey") callback({ apiKey: "decrypted-key" });
+        return true;
+      });
+      const listener = chrome.storage.onChanged.addListener.mock.calls[0][0];
+
+      // No preceding onApiKeyChange call - this key change came from
+      // elsewhere (e.g. a second popup instance).
+      listener({ geminiApiKey: { newValue: "encrypted-key" } }, "local");
+
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        { action: "getApiKey" },
+        expect.any(Function)
+      );
+      expect(mockGemini.fetchAPIKey).toHaveBeenCalledWith("decrypted-key");
     });
   });
 
