@@ -200,7 +200,7 @@ function reducePopupState(current, action = {}) {
         summary: { ...current.summary, estimateSeconds: action.estimateSeconds ?? null },
       };
     case "SUMMARY_SUCCESS":
-      if (action.requestId && action.requestId !== current.summary.requestId) return current;
+      if (action.requestId !== current.summary.requestId) return current;
       return {
         ...current,
         summary: {
@@ -214,7 +214,7 @@ function reducePopupState(current, action = {}) {
         },
       };
     case "SUMMARY_ERROR":
-      if (action.requestId && action.requestId !== current.summary.requestId) return current;
+      if (action.requestId !== current.summary.requestId) return current;
       return {
         ...current,
         summary: {
@@ -875,7 +875,7 @@ class Remove {
 
     deleteButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("delete_items", "deleteButton");
-      if (searchHistoryButton.classList.contains("active-button")) {
+      if (state.getSnapshot().deleteMode.source === "history") {
         this.deleteFromHistoryList();
       } else {
         this.deleteFromFavoriteList();
@@ -908,7 +908,11 @@ class Remove {
     const items = snapshot.history.items.filter((item) => !selected.has(item));
     state.dispatch({ type: "HISTORY_SET", items, emptyReason: "cleared" });
     state.dispatch({ type: "DELETE_CANCEL" });
-    chrome.storage.local.set({ searchHistoryList: items });
+    // Re-read so a concurrent write from another context isn't clobbered.
+    chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
+      const latest = Array.isArray(searchHistoryList) ? searchHistoryList : [];
+      chrome.storage.local.set({ searchHistoryList: latest.filter((item) => !selected.has(item)) });
+    });
   }
 
   deleteFromFavoriteList() {
@@ -917,7 +921,11 @@ class Remove {
     const items = snapshot.favorite.items.filter((item) => !selected.has(item));
     state.dispatch({ type: "FAVORITE_SET", items });
     state.dispatch({ type: "DELETE_CANCEL" });
-    chrome.storage.local.set({ favoriteList: items });
+    // See deleteFromHistoryList.
+    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+      const latest = Array.isArray(favoriteList) ? favoriteList : [];
+      chrome.storage.local.set({ favoriteList: latest.filter((item) => !selected.has(item)) });
+    });
   }
 
   backToNormal() {
@@ -2662,6 +2670,7 @@ if (typeof module !== "undefined" && module.exports) {
 
 // ---- popup.js ----
 // Page
+const loadingMessage = document.getElementById("loadingMessage");
 const historyPanel = document.getElementById("historyPanel");
 const favoritePanel = document.getElementById("favoritePanel");
 const geminiPanel = document.getElementById("geminiPanel");
@@ -2684,8 +2693,6 @@ const responseField = document.getElementById("response");
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
 const favoriteListContainer = document.getElementById("favoriteList");
 const summaryListContainer = document.getElementById("summaryList");
-const searchHistoryUl = searchHistoryListContainer.getElementsByTagName("ul");
-const favoriteUl = favoriteListContainer.getElementsByTagName("ul");
 
 // Page Buttons
 const searchHistoryButton = document.getElementById("searchHistoryButton");
@@ -2734,6 +2741,7 @@ let state, remove, favorite, history, gemini, modal, payment, onboarding;
 let unsubscribeState = null;
 let hydrationPromise = null;
 let iframeRevealed = false;
+let skipNextApiKeyEcho = false;
 
 function initializeDependencies(deps = {}) {
   state = deps.state || new State();
@@ -2747,7 +2755,11 @@ function initializeDependencies(deps = {}) {
   history.favoriteComponent = favorite;
   gemini.favoriteComponent = favorite;
   gemini.store = state;
-  modal.onApiKeyChange = (apiKey) => gemini.fetchAPIKey(apiKey);
+  // Flags the echo below to skip re-verifying the same key.
+  modal.onApiKeyChange = (apiKey) => {
+    skipNextApiKeyEcho = true;
+    gemini.fetchAPIKey(apiKey);
+  };
   if (onboarding) onboarding.store = state;
 
   // Re-subscribe renderPopup to the new state instance, not the old one.
@@ -3005,6 +3017,7 @@ function renderPopup(snapshot = state.getSnapshot(), action = null, force = fals
   const tab = snapshot.activeTab;
   const panels = { history: historyPanel, favorite: favoritePanel, gemini: geminiPanel };
 
+  if (loadingMessage) loadingMessage.classList.toggle("d-none", ready);
   Object.entries(panels).forEach(([name, panel]) => {
     if (panel) panel.classList.toggle("d-none", !ready || name !== tab);
   });
@@ -3101,8 +3114,17 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     state.dispatch({ type: "VIDEO_TOGGLE", enabled: changes.videoSummaryToggle.newValue });
   }
 
-  // No changes.geminiApiKey handler: modal.js already calls fetchAPIKey
-  // directly, and also reacting here raced it (stuck disabled Send button).
+  if (changes.geminiApiKey) {
+    if (skipNextApiKeyEcho) {
+      skipNextApiKeyEcho = false;
+    } else if (!changes.geminiApiKey.newValue) {
+      gemini.fetchAPIKey("");
+    } else {
+      chrome.runtime.sendMessage({ action: "getApiKey" }, ({ apiKey = "" } = {}) => {
+        gemini.fetchAPIKey(apiKey);
+      });
+    }
+  }
 
   if (incognitoChange) {
     modal.updateIncognitoModal(!!incognitoChange.newValue);
