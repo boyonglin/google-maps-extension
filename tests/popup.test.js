@@ -211,6 +211,19 @@ describe("popup.js", () => {
   });
 
   describe("popupLayout", () => {
+    test("shows the loading message before hydration and hides it once ready", async () => {
+      const loadingMessage = document.getElementById("loadingMessage");
+      expect(loadingMessage.classList.contains("d-none")).toBe(false);
+
+      popup.initializeDependencies({ state: mockState });
+      chrome.storage.local.get.mockImplementation((key, callback) => callback({}));
+
+      await popup.popupLayout();
+
+      expect(mockState.getSnapshot().boot).toBe("ready");
+      expect(loadingMessage.classList.contains("d-none")).toBe(true);
+    });
+
     test("popupLayout defaults to history page when no lastActiveTab saved", async () => {
       popup.initializeDependencies({ state: mockState });
 

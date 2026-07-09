@@ -77,6 +77,7 @@ function createPopupDOM() {
         </div>
       </div>
     </div>
+    <p id="loadingMessage" class="text-muted text-center py-4">Loading, please wait...</p>
     <div id="historyPanel" class="d-none" data-tab-panel="history">
       <p id="emptyMessage" class="text-muted text-center py-4">No search history yet</p>
       <div id="searchHistoryList" class="overflow-auto mb-4"></div>

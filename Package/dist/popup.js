@@ -1,4 +1,5 @@
 // Page
+const loadingMessage = document.getElementById("loadingMessage");
 const historyPanel = document.getElementById("historyPanel");
 const favoritePanel = document.getElementById("favoritePanel");
 const geminiPanel = document.getElementById("geminiPanel");
@@ -345,6 +346,7 @@ function renderPopup(snapshot = state.getSnapshot(), action = null, force = fals
   const tab = snapshot.activeTab;
   const panels = { history: historyPanel, favorite: favoritePanel, gemini: geminiPanel };
 
+  if (loadingMessage) loadingMessage.classList.toggle("d-none", ready);
   Object.entries(panels).forEach(([name, panel]) => {
     if (panel) panel.classList.toggle("d-none", !ready || name !== tab);
   });

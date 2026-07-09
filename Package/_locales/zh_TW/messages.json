@@ -11,6 +11,9 @@
   "searchHistorySubtitle": {
     "message": "搜尋記錄"
   },
+  "loadingMsg": {
+    "message": "載入中，請稍候..."
+  },
   "favoriteListSubtitle": {
     "message": "收藏清單"
   },
