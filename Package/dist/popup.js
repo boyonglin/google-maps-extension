@@ -21,8 +21,6 @@ const responseField = document.getElementById("response");
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
 const favoriteListContainer = document.getElementById("favoriteList");
 const summaryListContainer = document.getElementById("summaryList");
-const searchHistoryUl = searchHistoryListContainer.getElementsByTagName("ul");
-const favoriteUl = favoriteListContainer.getElementsByTagName("ul");
 
 // Page Buttons
 const searchHistoryButton = document.getElementById("searchHistoryButton");

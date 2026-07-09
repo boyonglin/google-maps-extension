@@ -77,7 +77,7 @@ function createPopupDOM() {
         </div>
       </div>
     </div>
-    <div id="historyPanel" class="page-H d-none" data-tab-panel="history">
+    <div id="historyPanel" class="d-none" data-tab-panel="history">
       <p id="emptyMessage" class="text-muted text-center py-4">No search history yet</p>
       <div id="searchHistoryList" class="overflow-auto mb-4"></div>
       <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3">
@@ -85,7 +85,7 @@ function createPopupDOM() {
         <a id="mapsButton" href="#" target="_blank" class="btn btn-primary btn-maps flex-fill"><i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText">Open Maps</span></a>
       </div>
     </div>
-    <div id="favoritePanel" class="page-F d-none" data-tab-panel="favorite">
+    <div id="favoritePanel" class="d-none" data-tab-panel="favorite">
       <p id="favoriteEmptyMessage" class="text-muted text-center py-4">No favorites yet</p>
       <div id="favoriteList" class="overflow-auto mb-4"></div>
       <div id="exportButtonGroup" class="d-flex justify-content-evenly mt-3">
@@ -94,7 +94,7 @@ function createPopupDOM() {
         <input type="file" id="fileInput" style="display: none" accept=".csv" aria-label="Import" />
       </div>
     </div>
-    <div id="geminiPanel" class="page-G d-none" data-tab-panel="gemini">
+    <div id="geminiPanel" class="d-none" data-tab-panel="gemini">
       <p id="geminiEmptyMessage" class="text-muted text-center py-4">No summary yet</p>
       <div id="geminiResponse">
         <textarea class="w-100 d-none" id="response" style="height: 200px" aria-label="Testing Purpose"></textarea>
@@ -106,7 +106,7 @@ function createPopupDOM() {
         <button id="sendButton" class="btn btn-send flex-fill"><i class="bi bi-stars me-2"></i><span data-locale="sendBtnText">Send</span></button>
       </div>
     </div>
-    <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-D">
+    <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none">
       <button id="cancelButton" class="btn btn-light me-3 w-25">
         <span data-locale="cancelBtnText">Cancel</span>
       </button>

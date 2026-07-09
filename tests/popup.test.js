@@ -223,8 +223,8 @@ describe("popup.js", () => {
       const searchHistoryButton = document.getElementById("searchHistoryButton");
       expect(searchHistoryButton.classList.contains("active-button")).toBe(true);
 
-      const historyElements = document.getElementsByClassName("page-H");
-      expect(historyElements[0].classList.contains("d-none")).toBe(false);
+      const historyPanel = document.querySelector('[data-tab-panel="history"]');
+      expect(historyPanel.classList.contains("d-none")).toBe(false);
     });
 
     test("popupLayout restores favorite tab from lastActiveTab", async () => {
@@ -250,10 +250,8 @@ describe("popup.js", () => {
       const favoriteListButton = document.getElementById("favoriteListButton");
       expect(favoriteListButton.classList.contains("active-button")).toBe(true);
 
-      const favoriteElements = document.getElementsByClassName("page-F");
-      Array.from(favoriteElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(false);
-      });
+      const favoritePanel = document.querySelector('[data-tab-panel="favorite"]');
+      expect(favoritePanel.classList.contains("d-none")).toBe(false);
 
       expect(mockState.getSnapshot().favorite.items).toEqual(["place1"]);
     });
@@ -330,54 +328,28 @@ describe("popup.js", () => {
 
     const showPage = (tab) => mockState.dispatch({ type: "SET_ACTIVE_TAB", tab });
 
+    const getPanel = (tab) => document.querySelector(`[data-tab-panel="${tab}"]`);
+
     test("SET_ACTIVE_TAB history shows history page elements and hides others", () => {
       showPage("history");
 
-      const historyElements = document.getElementsByClassName("page-H");
-      const favoriteElements = document.getElementsByClassName("page-F");
-      const geminiElements = document.getElementsByClassName("page-G");
-
-      Array.from(historyElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(false);
-      });
-
-      Array.from(favoriteElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(true);
-      });
-
-      Array.from(geminiElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(true);
-      });
+      expect(getPanel("history").classList.contains("d-none")).toBe(false);
+      expect(getPanel("favorite").classList.contains("d-none")).toBe(true);
+      expect(getPanel("gemini").classList.contains("d-none")).toBe(true);
     });
 
     test("SET_ACTIVE_TAB favorite shows favorite page elements", () => {
       showPage("favorite");
 
-      const favoriteElements = document.getElementsByClassName("page-F");
-      const historyElements = document.getElementsByClassName("page-H");
-
-      Array.from(favoriteElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(false);
-      });
-
-      Array.from(historyElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(true);
-      });
+      expect(getPanel("favorite").classList.contains("d-none")).toBe(false);
+      expect(getPanel("history").classList.contains("d-none")).toBe(true);
     });
 
     test("SET_ACTIVE_TAB gemini shows gemini page elements", () => {
       showPage("gemini");
 
-      const geminiElements = document.getElementsByClassName("page-G");
-      const historyElements = document.getElementsByClassName("page-H");
-
-      Array.from(geminiElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(false);
-      });
-
-      Array.from(historyElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(true);
-      });
+      expect(getPanel("gemini").classList.contains("d-none")).toBe(false);
+      expect(getPanel("history").classList.contains("d-none")).toBe(true);
     });
 
     test("SET_ACTIVE_TAB updates active button classes correctly", () => {
