@@ -88,6 +88,12 @@ const setupGlobalDOMElements = () => {
                 </div>
             </div>
         </div>
+        <div id="languageDropdown">
+            <button class="language-dropdown-toggle"></button>
+            <span class="language-dropdown-label"></span>
+            <button class="language-dropdown-item" data-value="en" data-locale="langEnglish">English</button>
+            <button class="language-dropdown-item" data-value="ja" data-locale="langJapanese">Japanese</button>
+        </div>
     `;
 
   // Assign global references
@@ -600,6 +606,87 @@ describe("Modal Component - Full Coverage", () => {
       expect(darkModeToggle.classList.contains("toggle-active")).toBe(false);
       expect(document.querySelector(".darkmode-text").classList.contains("d-none")).toBe(false);
       expect(document.querySelector(".darkmode-icon").classList.contains("d-none")).toBe(true);
+    });
+  });
+
+  describe("Language Dropdown", () => {
+    beforeEach(() => {
+      mockI18n({
+        langEnglish: "English",
+        langJapanese: "Japanese",
+      });
+
+      window.I18nUtils = {
+        currentLanguage: "en",
+        getCurrentLanguage: jest.fn(() => window.I18nUtils.currentLanguage),
+        setLanguage: jest.fn(async (lang) => {
+          window.I18nUtils.currentLanguage = lang;
+        }),
+      };
+      window.applyI18n = jest.fn();
+    });
+
+    afterEach(() => {
+      delete window.I18nUtils;
+      delete window.applyI18n;
+    });
+
+    test("should initialize and refresh dropdown state when optional modal opens", async () => {
+      await modalInstance.addModalListener();
+
+      const dropdown = document.getElementById("languageDropdown");
+      const toggle = dropdown.querySelector(".language-dropdown-toggle");
+      const label = dropdown.querySelector(".language-dropdown-label");
+      const englishItem = dropdown.querySelector('[data-value="en"]');
+      const japaneseItem = dropdown.querySelector('[data-value="ja"]');
+
+      expect(toggle.classList.contains("is-default")).toBe(true);
+      expect(englishItem.classList.contains("active")).toBe(true);
+      expect(japaneseItem.classList.contains("active")).toBe(false);
+      expect(label.textContent).toBe("English");
+
+      window.I18nUtils.currentLanguage = "ja";
+      document.getElementById("optionalModal").dispatchEvent(new Event("show.bs.modal"));
+
+      expect(toggle.classList.contains("is-default")).toBe(true);
+      expect(englishItem.classList.contains("active")).toBe(false);
+      expect(japaneseItem.classList.contains("active")).toBe(true);
+      expect(label.textContent).toBe("Japanese");
+    });
+
+    test("should persist changed language, apply i18n, and dispatch change event", async () => {
+      window.Analytics = { trackFeatureClick: jest.fn() };
+      const dispatchSpy = jest.spyOn(window, "dispatchEvent");
+
+      await modalInstance.addModalListener();
+
+      document.querySelector('[data-value="ja"]').click();
+      await wait(50);
+
+      expect(window.Analytics.trackFeatureClick).toHaveBeenCalledWith(
+        "change_language_ja",
+        "languageDropdown"
+      );
+      expect(window.I18nUtils.setLanguage).toHaveBeenCalledWith("ja");
+      expect(window.applyI18n).toHaveBeenCalled();
+      expect(
+        document.querySelector(".language-dropdown-toggle").classList.contains("is-default")
+      ).toBe(false);
+      expect(dispatchSpy).toHaveBeenCalledWith(expect.any(CustomEvent));
+      expect(dispatchSpy.mock.calls.at(-1)[0].detail).toEqual({ lang: "ja" });
+
+      dispatchSpy.mockRestore();
+      delete window.Analytics;
+    });
+
+    test("should ignore clicks for current language", async () => {
+      await modalInstance.addModalListener();
+
+      document.querySelector('[data-value="en"]').click();
+      await wait(50);
+
+      expect(window.I18nUtils.setLanguage).not.toHaveBeenCalled();
+      expect(window.applyI18n).not.toHaveBeenCalled();
     });
   });
 
