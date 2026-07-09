@@ -1053,6 +1053,66 @@ describe("popup.js", () => {
       expect(mockState.summarizedTabId).toBeUndefined();
     });
 
+    describe("persistPopupHeight", () => {
+      beforeEach(() => {
+        jest.useFakeTimers();
+      });
+
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+
+      test("debounces rapid successive calls into a single write for the last height", () => {
+        popup.persistPopupHeight(100);
+        popup.persistPopupHeight(200);
+        popup.persistPopupHeight(300);
+
+        jest.advanceTimersByTime(299);
+        expect(chrome.storage.local.set).not.toHaveBeenCalled();
+
+        jest.advanceTimersByTime(1);
+        expect(chrome.storage.local.set).toHaveBeenCalledTimes(1);
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({ popupHeight_history: 300 });
+      });
+
+      test("does not persist when there is no active tab", () => {
+        jest.spyOn(mockState, "getSnapshot").mockReturnValue({ activeTab: null });
+
+        popup.persistPopupHeight(400);
+        jest.advanceTimersByTime(300);
+
+        expect(chrome.storage.local.set).not.toHaveBeenCalled();
+      });
+
+      test("measureContentSize schedules a persist of the freshly measured height", () => {
+        chrome.tabs.query.mockImplementation((queryInfo, callback) => {
+          callback([{ id: 456 }]);
+        });
+        mockState.previousWidth = 0;
+        mockState.previousHeight = 0;
+
+        popup.measureContentSize();
+        jest.advanceTimersByTime(300);
+
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({
+          popupHeight_history: document.body.offsetHeight,
+        });
+      });
+
+      test("a transient height superseded before the debounce fires is never persisted", () => {
+        // Simulates a search query briefly shrinking the list, then the
+        // real content height winning before the popup closes.
+        popup.persistPopupHeight(120); // transient, e.g. filtered list
+        jest.advanceTimersByTime(250);
+        popup.persistPopupHeight(560); // settled height
+
+        jest.advanceTimersByTime(300);
+
+        expect(chrome.storage.local.set).toHaveBeenCalledTimes(1);
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({ popupHeight_history: 560 });
+      });
+    });
+
     test("summary success resize targets the browser tab that started the request", () => {
       Object.defineProperty(document.body, "offsetWidth", { value: 360, configurable: true });
       Object.defineProperty(document.body, "offsetHeight", { value: 480, configurable: true });

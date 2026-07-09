@@ -24,6 +24,11 @@ describe("inject.js - TME Module", () => {
     });
     mockChromeStorage({ isDarkMode: false });
 
+    // contentScript.js is a persistent content script (manifest.json) that
+    // always runs before inject.js is programmatically injected, and it's
+    // what defines this shared offset in production.
+    window.TME_IFRAME_CHROME_OFFSET = 35;
+
     chrome.runtime.getURL.mockImplementation((path) => `chrome-extension://mock-id/${path}`);
     chrome.runtime.sendMessage.mockImplementation(() => {});
 
@@ -242,6 +247,74 @@ describe("inject.js - TME Module", () => {
 
       // Should set storage with system preference
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ isDarkMode: true });
+    });
+  });
+
+  // ============================================================================
+  // Pre-sizing from persisted height (inject.js:29-53)
+  // ============================================================================
+
+  describe("Pre-sizing from persisted height", () => {
+    function setupWithStorage(storageData) {
+      document.getElementById("TMEiframe")?.remove();
+      delete window.TME;
+      mockChromeStorage({ isDarkMode: false, ...storageData });
+      jest.isolateModules(() => {
+        require("../Package/dist/inject.js");
+      });
+    }
+
+    test("pre-sizes the container using the persisted height for lastActiveTab", async () => {
+      setupWithStorage({ lastActiveTab: "favorite", popupHeight_favorite: 600 });
+      await flushPromises();
+
+      expect(document.getElementById("TMEiframe").style.height).toBe("635px"); // 600 + 35
+    });
+
+    test("falls back to the history tab height when lastActiveTab is missing", async () => {
+      setupWithStorage({ popupHeight_history: 500 });
+      await flushPromises();
+
+      expect(document.getElementById("TMEiframe").style.height).toBe("535px");
+    });
+
+    test("falls back to the history tab height when lastActiveTab is an unrecognized value", async () => {
+      // Regression guard: a corrupted/unexpected storage value must not be
+      // trusted as a tab name (would read the wrong popupHeight_* key).
+      setupWithStorage({ lastActiveTab: "corrupted", popupHeight_history: 480 });
+      await flushPromises();
+
+      expect(document.getElementById("TMEiframe").style.height).toBe("515px");
+    });
+
+    test("clamps the pre-set height so it never exceeds the viewport", async () => {
+      const originalInnerHeight = window.innerHeight;
+      Object.defineProperty(window, "innerHeight", { value: 800, configurable: true });
+
+      setupWithStorage({ lastActiveTab: "history", popupHeight_history: 5000 });
+      await flushPromises();
+
+      // maxContentHeight = 800 - 100 - 35 = 665; total = 665 + 35 = 700
+      expect(document.getElementById("TMEiframe").style.height).toBe("700px");
+
+      Object.defineProperty(window, "innerHeight", {
+        value: originalInnerHeight,
+        configurable: true,
+      });
+    });
+
+    test("applies a small persisted height as-is, with no artificial lower bound", async () => {
+      setupWithStorage({ lastActiveTab: "history", popupHeight_history: 50 });
+      await flushPromises();
+
+      expect(document.getElementById("TMEiframe").style.height).toBe("85px"); // 50 + 35
+    });
+
+    test("ignores a zero/non-numeric persisted height and leaves the default CSS height", async () => {
+      setupWithStorage({ lastActiveTab: "gemini", popupHeight_gemini: 0 });
+      await flushPromises();
+
+      expect(document.getElementById("TMEiframe").style.height).toBe("");
     });
   });
 

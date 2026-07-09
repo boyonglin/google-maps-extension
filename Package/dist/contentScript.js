@@ -1,3 +1,7 @@
+// Shared with inject.js (loaded into the same page later, on demand):
+// 32px draggable bar + 3px border around the iframe content.
+window.TME_IFRAME_CHROME_OFFSET = 35;
+
 // Track tab messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (!request) {
@@ -64,7 +68,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (iframeContainer) {
       iframeContainer.style.width = request.width + "px";
-      iframeContainer.style.height = request.height + 32 + 3 + "px"; // 32px for the draggable bar, 3px for the border
+      iframeContainer.style.height = request.height + window.TME_IFRAME_CHROME_OFFSET + "px";
     }
   }
 

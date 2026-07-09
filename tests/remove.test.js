@@ -385,6 +385,19 @@ describe("Remove Component", () => {
       expect(deleteListButton.classList.contains("active-button")).toBe(false);
     });
 
+    test("keeps the toggle-active-button marker class through the active-button toggle", () => {
+      // scss/popup.scss relies on this class to exempt deleteListButton from
+      // `.active-button { pointer-events: none }` so it stays clickable
+      // (toggle-off) while delete mode is on. Losing it re-blocks the click.
+      expect(deleteListButton.classList.contains("toggle-active-button")).toBe(true);
+
+      state.dispatch({ type: "DELETE_ENTER", source: "history" });
+      expect(deleteListButton.classList.contains("toggle-active-button")).toBe(true);
+
+      state.dispatch({ type: "DELETE_CANCEL" });
+      expect(deleteListButton.classList.contains("toggle-active-button")).toBe(true);
+    });
+
     test("should show deleteButtonGroup and hide the tab's action group while deleting", () => {
       state.dispatch({ type: "SET_ACTIVE_TAB", tab: "history" });
       state.dispatch({ type: "DELETE_ENTER", source: "history" });

@@ -585,6 +585,7 @@ function measureContentSize(summary = false, targetTabId = null) {
 
   if (currentWidth !== state.previousWidth || currentHeight !== state.previousHeight) {
     state.updateDimensions(currentWidth, currentHeight);
+    persistPopupHeight(currentHeight);
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       let contentTabId = targetTabId ?? (summary ? state.summarizedTabId : tabs[0]?.id);
@@ -598,6 +599,19 @@ function measureContentSize(summary = false, targetTabId = null) {
       }
     });
   }
+}
+
+// Lets inject.js pre-size the iframe next time this tab opens. Debounced so a
+// transient height (e.g. a search query briefly narrowing the list) doesn't
+// get persisted as the tab's height if the user closes the popup mid-change.
+let persistHeightTimer = null;
+function persistPopupHeight(height) {
+  const tab = state.getSnapshot().activeTab;
+  if (!tab) return;
+  clearTimeout(persistHeightTimer);
+  persistHeightTimer = setTimeout(() => {
+    chrome.storage.local.set({ [`popupHeight_${tab}`]: height });
+  }, 300);
 }
 
 function measureContentSizeLast() {
@@ -684,5 +698,6 @@ if (typeof module !== "undefined" && module.exports) {
     retryMeasureContentSize,
     measureContentSize,
     measureContentSizeLast,
+    persistPopupHeight,
   };
 }

@@ -25,16 +25,34 @@ window.TME = {
     iframeContainer.style.left = defaultX + "px";
     iframeContainer.style.top = defaultY + "px";
 
-    // Apply dark mode theme if enabled
-    chrome.storage.local.get("isDarkMode", ({ isDarkMode }) => {
-      if (isDarkMode === undefined) {
-        const prefersDark = TME.getSystemPreference();
-        chrome.storage.local.set({ isDarkMode: prefersDark });
-        TME.applyTheme(iframeContainer, prefersDark);
-      } else {
-        TME.applyTheme(iframeContainer, isDarkMode);
+    // Pre-size the iframe using the last measured height for this tab.
+    const POPUP_TAB_NAMES = ["history", "favorite", "gemini"];
+    chrome.storage.local.get(
+      ["isDarkMode", "lastActiveTab", ...POPUP_TAB_NAMES.map((tab) => `popupHeight_${tab}`)],
+      (result) => {
+        const { isDarkMode } = result;
+        if (isDarkMode === undefined) {
+          const prefersDark = TME.getSystemPreference();
+          chrome.storage.local.set({ isDarkMode: prefersDark });
+          TME.applyTheme(iframeContainer, prefersDark);
+        } else {
+          TME.applyTheme(iframeContainer, isDarkMode);
+        }
+
+        const lastTab = POPUP_TAB_NAMES.includes(result.lastActiveTab)
+          ? result.lastActiveTab
+          : "history";
+        const lastHeight = result[`popupHeight_${lastTab}`];
+        // Same window.innerHeight - 100 upper bound as the manual resizer's
+        // max height (line ~176); no lower bound, since lastHeight always
+        // comes from a real past body.offsetHeight measurement.
+        const maxContentHeight = window.innerHeight - 100 - window.TME_IFRAME_CHROME_OFFSET;
+        if (typeof lastHeight === "number" && lastHeight > 0) {
+          const clampedHeight = Math.min(lastHeight, maxContentHeight);
+          iframeContainer.style.height = clampedHeight + window.TME_IFRAME_CHROME_OFFSET + "px";
+        }
       }
-    });
+    );
     // iframeContainer.style.resize = "vertical";
 
     const draggableBar = document.createElement("div");

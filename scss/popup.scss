@@ -736,7 +736,10 @@ li:hover .form-check-input {
   position: relative;
 }
 
-.active-button:not(#videoSummaryButton) {
+// Toggle-type buttons (video/delete mode) must stay clickable while active
+// so the user can click them again to turn the mode off. Tab-switch buttons
+// don't opt into .toggle-active-button, so they keep the disabled look.
+.active-button:not(.toggle-active-button) {
   pointer-events: none;
 }
 
