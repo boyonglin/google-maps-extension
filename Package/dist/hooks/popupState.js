@@ -157,7 +157,7 @@ function reducePopupState(current, action = {}) {
         summary: { ...current.summary, estimateSeconds: action.estimateSeconds ?? null },
       };
     case "SUMMARY_SUCCESS":
-      if (action.requestId && action.requestId !== current.summary.requestId) return current;
+      if (action.requestId !== current.summary.requestId) return current;
       return {
         ...current,
         summary: {
@@ -171,7 +171,7 @@ function reducePopupState(current, action = {}) {
         },
       };
     case "SUMMARY_ERROR":
-      if (action.requestId && action.requestId !== current.summary.requestId) return current;
+      if (action.requestId !== current.summary.requestId) return current;
       return {
         ...current,
         summary: {

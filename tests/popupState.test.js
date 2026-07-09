@@ -716,6 +716,17 @@ describe("Popup reducer architecture", () => {
     expect(state.getSnapshot().api).toEqual({ status: "verifying", token: 2 });
   });
 
+  test("BUG REPRO: a null-requestId SUMMARY_SUCCESS/ERROR must not overwrite an active generation", () => {
+    const state = new State();
+    state.dispatch({ type: "SUMMARY_START", requestId: "active" });
+
+    state.dispatch({ type: "SUMMARY_SUCCESS", requestId: null, items: [{ name: "Orphan" }] });
+    expect(state.getSnapshot().summary).toMatchObject({ phase: "generating", requestId: "active" });
+
+    state.dispatch({ type: "SUMMARY_ERROR", requestId: null, errorKey: "geminiErrorMsg" });
+    expect(state.getSnapshot().summary).toMatchObject({ phase: "generating", requestId: "active" });
+  });
+
   test("storage removal does not interrupt an active generation", () => {
     const state = new State();
     state.dispatch({ type: "SUMMARY_START", requestId: "active" });
