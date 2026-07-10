@@ -920,31 +920,6 @@ describe("History Component", () => {
       expect(li.querySelector("i").classList.contains("d-none")).toBe(true);
     });
 
-    test("should not render a select-all bar outside delete mode", () => {
-      state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
-
-      expect(searchHistoryListContainer.querySelector(".select-all-checkbox")).toBeNull();
-    });
-
-    test("should render a select-all bar above the list while in delete mode", () => {
-      state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
-      state.dispatch({ type: "DELETE_ENTER", source: "history" });
-
-      expect(DOMUtils.createSelectAllBar).toHaveBeenCalledWith(
-        ["Location 1", "Location 2"],
-        new Set()
-      );
-      const bar = searchHistoryListContainer.querySelector(".select-all-bar");
-      expect(bar).toBeTruthy();
-      expect(bar.nextElementSibling.tagName).toBe("UL");
-    });
-
-    test("should not render a select-all bar in delete mode when history is empty", () => {
-      state.dispatch({ type: "DELETE_ENTER", source: "history" });
-
-      expect(searchHistoryListContainer.querySelector(".select-all-bar")).toBeNull();
-    });
-
     test("should remove mb-3 from the first item (due to flex-column-reverse)", () => {
       state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2", "Location 3"] });
 

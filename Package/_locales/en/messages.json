@@ -102,10 +102,6 @@
       }
     }
   },
-  "selectAllBtnText": {
-    "message": "Select All",
-    "description": "popup delete mode select-all bar text"
-  },
   "exportBtnText": {
     "message": "Export",
     "description": "popup export button text"
@@ -343,10 +339,6 @@
   "deleteLabel": {
     "message": "Delete Mode",
     "description": "tooltips delete label"
-  },
-  "selectAllLabel": {
-    "message": "Select All",
-    "description": "aria-label for the delete mode select-all checkbox"
   },
   "videoLabel": {
     "message": "Video Summary Mode",

@@ -28,19 +28,6 @@ class Remove {
     [searchHistoryListContainer, favoriteListContainer].forEach((container) => {
       container.addEventListener("change", (event) => {
         if (!event.target.classList.contains("form-check-input")) return;
-
-        if (event.target.classList.contains("select-all-checkbox")) {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("delete_select_all", "selectAllCheckbox");
-          const snapshot = state.getSnapshot();
-          const values =
-            snapshot.deleteMode.source === "favorite"
-              ? snapshot.favorite.items
-              : snapshot.history.items;
-          state.dispatch({ type: "DELETE_TOGGLE_ALL", values });
-          return;
-        }
-
         const li = event.target.closest("li");
         if (li) state.dispatch({ type: "DELETE_TOGGLE", value: li.dataset.itemValue || "" });
       });

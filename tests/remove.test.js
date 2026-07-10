@@ -71,6 +71,19 @@ describe("Remove Component", () => {
 
         expect(spy).toHaveBeenCalled();
       });
+
+      test("should track cancel button clicks via Analytics", () => {
+        window.Analytics = { trackFeatureClick: jest.fn() };
+        removeInstance.addRemoveListener();
+
+        cancelButton.click();
+
+        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledWith(
+          "cancel_delete",
+          "cancelButton"
+        );
+        delete window.Analytics;
+      });
     });
 
     describe("deleteButton click handler", () => {
@@ -180,70 +193,6 @@ describe("Remove Component", () => {
         li.dispatchEvent(new Event("change", { bubbles: true }));
 
         expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
-      });
-
-      test("should select every history item via the select-all checkbox", () => {
-        state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
-        deleteListButton.click();
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "form-check-input select-all-checkbox";
-        searchHistoryListContainer.appendChild(checkbox);
-
-        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-
-        expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["Location 1", "Location 2"]);
-      });
-
-      test("should select every favorite item (not history items) when the source is favorite", () => {
-        state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
-        state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1", "Favorite 2"] });
-        state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
-        deleteListButton.click();
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "form-check-input select-all-checkbox";
-        favoriteListContainer.appendChild(checkbox);
-
-        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-
-        expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["Favorite 1", "Favorite 2"]);
-      });
-
-      test("should clear the selection via the select-all checkbox when everything is already selected", () => {
-        state.dispatch({ type: "HISTORY_SET", items: ["Location 1", "Location 2"] });
-        deleteListButton.click();
-        state.dispatch({ type: "DELETE_TOGGLE_ALL", values: ["Location 1", "Location 2"] });
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "form-check-input select-all-checkbox";
-        searchHistoryListContainer.appendChild(checkbox);
-
-        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-
-        expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
-      });
-
-      test("should track select-all-checkbox clicks via Analytics", () => {
-        window.Analytics = { trackFeatureClick: jest.fn() };
-        state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
-        deleteListButton.click();
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "form-check-input select-all-checkbox";
-        searchHistoryListContainer.appendChild(checkbox);
-
-        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-
-        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledWith(
-          "delete_select_all",
-          "selectAllCheckbox"
-        );
-        delete window.Analytics;
       });
     });
   });

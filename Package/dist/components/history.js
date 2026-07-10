@@ -163,10 +163,6 @@ class History {
 
     container.replaceChildren();
 
-    if (deleting && items.length > 0) {
-      container.appendChild(DOMUtils.createSelectAllBar(items, selected));
-    }
-
     if (items.length > 0 || showDemo) {
       const ul = document.createElement("ul");
       ul.className = "list-group d-flex flex-column-reverse";

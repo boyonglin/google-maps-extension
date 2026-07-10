@@ -39,31 +39,6 @@ const DOMUtils = {
 
     iconElement.addEventListener("mouseleave", restore, { once: true });
   },
-
-  // Fixed row above the (reversed) list in delete mode, toggling all items on/off
-  createSelectAllBar(items, selected) {
-    const bar = document.createElement("div");
-    bar.className = "select-all-bar d-flex align-items-center px-3 py-2 mb-2";
-
-    const label = document.createElement("label");
-    label.className = "d-flex justify-content-between align-items-center w-100 mb-0";
-
-    const text = document.createElement("span");
-    text.textContent = chrome.i18n.getMessage("selectAllBtnText");
-    label.appendChild(text);
-
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.className = "form-check-input select-all-checkbox";
-    const allSelected = items.length > 0 && items.every((item) => selected.has(item));
-    const someSelected = items.some((item) => selected.has(item));
-    checkbox.checked = allSelected;
-    checkbox.indeterminate = !allSelected && someSelected;
-    label.appendChild(checkbox);
-
-    bar.appendChild(label);
-    return bar;
-  },
 };
 
 if (typeof window !== "undefined") {
@@ -307,16 +282,6 @@ function reducePopupState(current, action = {}) {
       return {
         ...current,
         deleteMode: { ...current.deleteMode, selectedValues: Array.from(selected) },
-      };
-    }
-    case "DELETE_TOGGLE_ALL": {
-      if (!current.deleteMode.source) return current;
-      const values = stringList(action.values);
-      const allSelected =
-        values.length > 0 && values.every((v) => current.deleteMode.selectedValues.includes(v));
-      return {
-        ...current,
-        deleteMode: { ...current.deleteMode, selectedValues: allSelected ? [] : values },
       };
     }
     case "DELETE_CANCEL":
@@ -900,19 +865,6 @@ class Remove {
     [searchHistoryListContainer, favoriteListContainer].forEach((container) => {
       container.addEventListener("change", (event) => {
         if (!event.target.classList.contains("form-check-input")) return;
-
-        if (event.target.classList.contains("select-all-checkbox")) {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("delete_select_all", "selectAllCheckbox");
-          const snapshot = state.getSnapshot();
-          const values =
-            snapshot.deleteMode.source === "favorite"
-              ? snapshot.favorite.items
-              : snapshot.history.items;
-          state.dispatch({ type: "DELETE_TOGGLE_ALL", values });
-          return;
-        }
-
         const li = event.target.closest("li");
         if (li) state.dispatch({ type: "DELETE_TOGGLE", value: li.dataset.itemValue || "" });
       });
@@ -1249,10 +1201,6 @@ class Favorite {
     statusMessage.classList.toggle("d-none", items.length > 0 && status !== "error");
 
     if (items.length > 0 && status !== "error") {
-      if (deleting) {
-        container.appendChild(DOMUtils.createSelectAllBar(items, selected));
-      }
-
       const ul = document.createElement("ul");
       ul.className = "list-group d-flex flex-column-reverse";
       items.forEach((selectedText) => {
@@ -1468,10 +1416,6 @@ class History {
     }
 
     container.replaceChildren();
-
-    if (deleting && items.length > 0) {
-      container.appendChild(DOMUtils.createSelectAllBar(items, selected));
-    }
 
     if (items.length > 0 || showDemo) {
       const ul = document.createElement("ul");

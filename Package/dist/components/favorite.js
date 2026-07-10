@@ -260,10 +260,6 @@ class Favorite {
     statusMessage.classList.toggle("d-none", items.length > 0 && status !== "error");
 
     if (items.length > 0 && status !== "error") {
-      if (deleting) {
-        container.appendChild(DOMUtils.createSelectAllBar(items, selected));
-      }
-
       const ul = document.createElement("ul");
       ul.className = "list-group d-flex flex-column-reverse";
       items.forEach((selectedText) => {

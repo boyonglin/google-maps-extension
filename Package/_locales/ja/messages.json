@@ -78,9 +78,6 @@
       }
     }
   },
-  "selectAllBtnText": {
-    "message": "すべて選択"
-  },
   "exportBtnText": {
     "message": "エクスポート"
   },
@@ -259,9 +256,6 @@
   },
   "deleteLabel": {
     "message": "削除モード"
-  },
-  "selectAllLabel": {
-    "message": "すべて選択"
   },
   "videoLabel": {
     "message": "動画要約モード"
