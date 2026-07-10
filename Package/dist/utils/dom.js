@@ -19,22 +19,17 @@ const DOMUtils = {
 
   // Fade the icon out on unfavorite instead of reusing the "add" spring
   // animation (which would read as the opposite action). The icon is only
-  // swapped to its unfavorited state once the pointer leaves the row, so the
-  // user doesn't see it flip while still looking at it.
+  // swapped to its unfavorited state once the pointer leaves the icon's own
+  // hit area, so the user doesn't see it flip while still hovering it.
   fadeOutFavoriteIcon(iconElement) {
     iconElement.classList.add("unfavoriting");
-    const li = iconElement.closest("li");
 
     const restore = () => {
       iconElement.className = "bi bi-patch-plus-fill";
       iconElement.title = chrome.i18n.getMessage("plusLabel");
     };
 
-    if (li) {
-      li.addEventListener("mouseleave", restore, { once: true });
-    } else {
-      restore();
-    }
+    iconElement.addEventListener("mouseleave", restore, { once: true });
   },
 
   // Fixed row above the (reversed) list in delete mode, toggling all items on/off

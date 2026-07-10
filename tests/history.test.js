@@ -328,7 +328,7 @@ describe("History Component", () => {
         expect(global.favorite.addToFavoriteList).not.toHaveBeenCalled();
       });
 
-      test("should fade the icon out immediately, restoring it only after the pointer leaves the row", () => {
+      test("should fade the icon out immediately, restoring it only after the pointer leaves the icon", () => {
         const li = createMockHistoryItem("Test Location", ["Test Location"]);
         li.dataset.itemValue = "Test Location";
         searchHistoryListContainer.appendChild(li);
@@ -339,7 +339,7 @@ describe("History Component", () => {
         expect(icon.classList.contains("unfavoriting")).toBe(true);
         expect(icon.className).not.toContain("bi-patch-plus-fill");
 
-        li.dispatchEvent(new Event("mouseleave"));
+        icon.dispatchEvent(new Event("mouseleave"));
 
         expect(icon.className).toBe("bi bi-patch-plus-fill");
       });

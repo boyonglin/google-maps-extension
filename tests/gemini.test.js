@@ -283,7 +283,7 @@ describe("Gemini Component", () => {
       );
     });
 
-    test("should fade the icon out immediately, restoring it only after the pointer leaves the row", () => {
+    test("should fade the icon out immediately, restoring it only after the pointer leaves the icon", () => {
       const mockItem = createMockSummaryItem("Restaurant", "Downtown");
       summaryListContainer.appendChild(mockItem);
       const icon = mockItem.querySelector("i");
@@ -297,7 +297,7 @@ describe("Gemini Component", () => {
       expect(icon.classList.contains("unfavoriting")).toBe(true);
       expect(icon.className).not.toContain("bi-patch-plus-fill");
 
-      mockItem.dispatchEvent(new Event("mouseleave"));
+      icon.dispatchEvent(new Event("mouseleave"));
 
       expect(icon.className).toBe("bi bi-patch-plus-fill");
     });

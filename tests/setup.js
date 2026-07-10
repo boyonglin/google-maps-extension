@@ -202,16 +202,11 @@ global.DOMUtils = {
   }),
   fadeOutFavoriteIcon: jest.fn((iconElement) => {
     iconElement.classList.add("unfavoriting");
-    const li = iconElement.closest("li");
     const restore = () => {
       iconElement.className = "bi bi-patch-plus-fill";
       iconElement.title = chrome.i18n.getMessage("plusLabel");
     };
-    if (li) {
-      li.addEventListener("mouseleave", restore, { once: true });
-    } else {
-      restore();
-    }
+    iconElement.addEventListener("mouseleave", restore, { once: true });
   }),
   createSelectAllBar: jest.fn((items, selected) => {
     const bar = document.createElement("div");
