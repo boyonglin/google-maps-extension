@@ -226,6 +226,25 @@ describe("Remove Component", () => {
 
         expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
       });
+
+      test("should track select-all-checkbox clicks via Analytics", () => {
+        window.Analytics = { trackFeatureClick: jest.fn() };
+        state.dispatch({ type: "HISTORY_SET", items: ["Location 1"] });
+        deleteListButton.click();
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "form-check-input select-all-checkbox";
+        searchHistoryListContainer.appendChild(checkbox);
+
+        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+
+        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledWith(
+          "delete_select_all",
+          "selectAllCheckbox"
+        );
+        delete window.Analytics;
+      });
     });
   });
 
