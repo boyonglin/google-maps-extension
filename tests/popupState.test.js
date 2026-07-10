@@ -630,6 +630,20 @@ describe("Integration Tests", () => {
 });
 
 describe("Popup reducer architecture", () => {
+  test("ignores stale, inapplicable, and unknown actions", () => {
+    const state = new State();
+    const initial = state.getSnapshot();
+
+    state.dispatch({ type: "SUMMARY_ESTIMATE", requestId: "stale", estimateSeconds: 5 });
+    expect(state.getSnapshot()).toBe(initial);
+
+    state.dispatch({ type: "DELETE_TOGGLE", value: "A" });
+    expect(state.getSnapshot()).toBe(initial);
+
+    state.dispatch({ type: "UNKNOWN_ACTION" });
+    expect(state.getSnapshot()).toBe(initial);
+  });
+
   test("history empty to cached summary renders ready without an intermediate message state", () => {
     const state = new State();
     const now = Date.now();
