@@ -200,12 +200,22 @@ global.DOMUtils = {
       iconElement.classList.remove("spring-animation");
     }, 500);
   }),
+  animateUnfavoriteIcon: jest.fn((iconElement) => {
+    iconElement.className = "bi bi-patch-plus-fill spring-animation";
+    setTimeout(() => {
+      iconElement.classList.remove("spring-animation");
+    }, 500);
+  }),
   createSelectAllBar: jest.fn((items, selected) => {
     const bar = document.createElement("div");
     bar.className = "select-all-bar d-flex align-items-center px-3 py-2 mb-2";
 
     const label = document.createElement("label");
-    label.className = "d-flex align-items-center w-100 mb-0";
+    label.className = "d-flex justify-content-between align-items-center w-100 mb-0";
+
+    const text = document.createElement("span");
+    text.textContent = chrome.i18n.getMessage("selectAllBtnText");
+    label.appendChild(text);
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -215,11 +225,6 @@ global.DOMUtils = {
     checkbox.checked = allSelected;
     checkbox.indeterminate = !allSelected && someSelected;
     label.appendChild(checkbox);
-
-    const text = document.createElement("span");
-    text.className = "ms-2";
-    text.textContent = chrome.i18n.getMessage("selectAllBtnText");
-    label.appendChild(text);
 
     bar.appendChild(label);
     return bar;

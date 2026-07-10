@@ -25,13 +25,25 @@ const DOMUtils = {
     }, 500);
   },
 
+  // Spring animate icon back to its unfavorited state
+  animateUnfavoriteIcon(iconElement) {
+    iconElement.className = "bi bi-patch-plus-fill spring-animation";
+    setTimeout(() => {
+      iconElement.classList.remove("spring-animation");
+    }, 500);
+  },
+
   // Fixed row above the (reversed) list in delete mode, toggling all items on/off
   createSelectAllBar(items, selected) {
     const bar = document.createElement("div");
     bar.className = "select-all-bar d-flex align-items-center px-3 py-2 mb-2";
 
     const label = document.createElement("label");
-    label.className = "d-flex align-items-center w-100 mb-0";
+    label.className = "d-flex justify-content-between align-items-center w-100 mb-0";
+
+    const text = document.createElement("span");
+    text.textContent = chrome.i18n.getMessage("selectAllBtnText");
+    label.appendChild(text);
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -41,11 +53,6 @@ const DOMUtils = {
     checkbox.checked = allSelected;
     checkbox.indeterminate = !allSelected && someSelected;
     label.appendChild(checkbox);
-
-    const text = document.createElement("span");
-    text.className = "ms-2";
-    text.textContent = chrome.i18n.getMessage("selectAllBtnText");
-    label.appendChild(text);
 
     bar.appendChild(label);
     return bar;
@@ -1329,7 +1336,7 @@ class History {
                 "searchHistoryListContainer"
               );
             favorite.removeFavoriteItem(liElement.dataset.itemValue || "", event);
-            event.target.className = "bi bi-patch-plus-fill";
+            DOMUtils.animateUnfavoriteIcon(event.target);
             event.target.title = chrome.i18n.getMessage("plusLabel");
           } else {
             if (window.Analytics)
@@ -1539,7 +1546,7 @@ class Gemini {
               "summaryListContainer"
             );
           favorite.removeFavoriteItem(storedItem, event);
-          event.target.className = "bi bi-patch-plus-fill";
+          DOMUtils.animateUnfavoriteIcon(event.target);
           event.target.title = chrome.i18n.getMessage("plusLabel");
         } else {
           if (window.Analytics)

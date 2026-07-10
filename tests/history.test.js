@@ -328,13 +328,18 @@ describe("History Component", () => {
         expect(global.favorite.addToFavoriteList).not.toHaveBeenCalled();
       });
 
-      test("should immediately update the icon to unmatched when removing a favorite", () => {
+      test("should immediately update the icon to unmatched when removing a favorite", async () => {
         const li = createMockHistoryItem("Test Location", ["Test Location"]);
         li.dataset.itemValue = "Test Location";
         searchHistoryListContainer.appendChild(li);
 
         const icon = li.querySelector("i");
         icon.dispatchEvent(createMouseEvent(icon, 0));
+
+        expect(icon.className).toContain("bi-patch-plus-fill");
+        expect(icon.className).toContain("spring-animation");
+
+        await wait(500);
 
         expect(icon.className).toBe("bi bi-patch-plus-fill");
       });

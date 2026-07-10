@@ -48,7 +48,7 @@ class Gemini {
               "summaryListContainer"
             );
           favorite.removeFavoriteItem(storedItem, event);
-          event.target.className = "bi bi-patch-plus-fill";
+          DOMUtils.animateUnfavoriteIcon(event.target);
           event.target.title = chrome.i18n.getMessage("plusLabel");
         } else {
           if (window.Analytics)

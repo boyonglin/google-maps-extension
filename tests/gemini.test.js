@@ -294,7 +294,10 @@ describe("Gemini Component", () => {
 
       summaryListContainer.dispatchEvent(clickEvent);
 
-      await wait(50);
+      expect(icon.className).toContain("bi-patch-plus-fill");
+      expect(icon.className).toContain("spring-animation");
+
+      await wait(500);
 
       expect(icon.className).toBe("bi bi-patch-plus-fill");
     });

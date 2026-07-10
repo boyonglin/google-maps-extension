@@ -37,7 +37,7 @@ class History {
                 "searchHistoryListContainer"
               );
             favorite.removeFavoriteItem(liElement.dataset.itemValue || "", event);
-            event.target.className = "bi bi-patch-plus-fill";
+            DOMUtils.animateUnfavoriteIcon(event.target);
             event.target.title = chrome.i18n.getMessage("plusLabel");
           } else {
             if (window.Analytics)

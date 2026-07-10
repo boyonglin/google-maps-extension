@@ -595,6 +595,10 @@ li i.matched {
   display: flex;
   opacity: 0.5;
 }
+li i.spring-animation {
+  display: flex;
+  opacity: 1;
+}
 li:hover i.matched {
   opacity: 1;
 }
