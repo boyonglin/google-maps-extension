@@ -136,7 +136,7 @@ describe("DOMUtils", () => {
       const checkbox = bar.querySelector("input.select-all-checkbox");
       expect(checkbox.checked).toBe(false);
       expect(checkbox.indeterminate).toBe(false);
-      expect(bar.querySelector("span").textContent).toBe("selectAllBtnText");
+      expect(bar.querySelector("label").textContent).toBe("selectAllBtnText");
     });
 
     test("should render a checked checkbox when every item is selected", () => {
