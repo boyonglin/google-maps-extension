@@ -7,10 +7,7 @@
 
 // ---- utils/dom.js ----
 const DOMUtils = {
-  /**
-   * Find the closest LI element from an event target
-   * Used by list click handlers in history, favorite, and gemini components
-   */
+  // Find closest LI element
   findClosestListItem(event) {
     if (event.target.tagName === "LI") {
       return event.target;
@@ -20,10 +17,7 @@ const DOMUtils = {
     return null;
   },
 
-  /**
-   * Animate a favorite icon with spring animation effect
-   * Used when adding items to favorites from history or summary lists
-   */
+  // Spring animate favorite icon
   animateFavoriteIcon(iconElement) {
     iconElement.className = "bi bi-patch-check-fill matched spring-animation";
     setTimeout(() => {
@@ -58,8 +52,7 @@ function summaryItems(value) {
     }));
 }
 
-// Shared by hydrateSnapshot, the SUMMARY_STORAGE_SET reducer case, and callers
-// outside the reducer (gemini.js, popup.js) that need the same TTL check.
+// Shared TTL check for hydrateSnapshot, reducer, and external callers
 function isSummaryFresh(items, timestamp, now) {
   return (
     Array.isArray(items) &&
@@ -103,7 +96,7 @@ function hydrateSnapshot(current, payload = {}) {
   return {
     ...current,
     boot: "ready",
-    // Don't snap back to lastActiveTab if the user already picked a tab.
+    // Preserve user tab selection
     activeTab: current.activeTabTouched
       ? current.activeTab
       : POPUP_TABS.has(payload.lastActiveTab)
@@ -293,7 +286,7 @@ class State {
     this.snapshot = initialPopupSnapshot();
     this.listeners = new Set();
 
-    // User and layout state not owned by the tab reducer.
+    // State not owned by tab reducer
     this.paymentStage = null;
     this.previousWidth = 0;
     this.previousHeight = 0;
@@ -357,10 +350,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 // ---- utils/theme.js ----
-/**
- * Theme Utilities Module
- * Centralized dark mode management for the extension
- */
+// Theme Utilities
 
 const ThemeUtils = {
   STORAGE_KEY: "isDarkMode",
@@ -369,12 +359,10 @@ const ThemeUtils = {
   DARK: "dark",
   LIGHT: "light",
 
-  // Check if system prefers dark mode
   getSystemPreference() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   },
 
-  // Get stored theme preference from Chrome storage
   getStoredPreference() {
     return new Promise((resolve) => {
       chrome.storage.local.get(this.STORAGE_KEY, (result) => {
@@ -383,14 +371,12 @@ const ThemeUtils = {
     });
   },
 
-  // Save theme preference to Chrome storage
   savePreference(isDarkMode) {
     return new Promise((resolve) => {
       chrome.storage.local.set({ [this.STORAGE_KEY]: isDarkMode }, resolve);
     });
   },
 
-  // Apply theme to a DOM element
   applyToElement(element, isDarkMode, includeBootstrap = false) {
     if (!element) return;
 
@@ -402,11 +388,9 @@ const ThemeUtils = {
     }
   },
 
-  // Initialize theme based on stored preference or system preference
   async initialize(element, includeBootstrap = false, callback = null) {
     let isDarkMode = await this.getStoredPreference();
 
-    // If no stored preference, check system preference
     if (isDarkMode === undefined) {
       isDarkMode = this.getSystemPreference();
       await this.savePreference(isDarkMode);
@@ -421,7 +405,6 @@ const ThemeUtils = {
     return isDarkMode;
   },
 
-  // Toggle theme and save preference
   async toggle(element, includeBootstrap = false, callback = null) {
     const currentValue = (await this.getStoredPreference()) || false;
     const newValue = !currentValue;
@@ -436,7 +419,6 @@ const ThemeUtils = {
     return newValue;
   },
 
-  // Send theme update message to content script
   notifyContentScript(isDarkMode) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
@@ -445,15 +427,12 @@ const ThemeUtils = {
             action: "updateTheme",
             isDarkMode: isDarkMode,
           })
-          .catch(() => {
-            // Ignore errors if content script isn't loaded
-          });
+          .catch(() => {});
       }
     });
   },
 };
 
-// Export for both module and script contexts
 if (typeof module !== "undefined" && module.exports) {
   module.exports = ThemeUtils;
 }
@@ -463,33 +442,28 @@ class ContextMenuUtil {
   static createContextMenu(event, listContainer) {
     event.preventDefault();
 
-    // Don't create context menu in delete mode
+    // Prevent context menu in delete mode
     const deleteListButton = document.getElementById("deleteListButton");
     if (deleteListButton && deleteListButton.classList.contains("active-button")) {
       return;
     }
 
-    // Find the specific item that was right-clicked
     const clickedItem = event.target.closest(".summary-list, .history-list, .favorite-list");
 
-    // Get all list items in the current container based on tab type
     const listItems = listContainer.querySelectorAll(
       ".summary-list, .history-list, .favorite-list"
     );
 
-    // Remove any existing context menu
     const existingMenu = document.querySelector(".context-menu");
     if (existingMenu) {
       existingMenu.remove();
     }
 
-    // Create context menu
     const contextMenu = document.createElement("ul");
     contextMenu.className = "list-group position-absolute rounded-3 context-menu";
     contextMenu.style.left = event.pageX + "px";
     contextMenu.style.top = event.pageY + "px";
 
-    // Create "Open all URL" option
     const openAllOption = this.createOption(
       contextMenu,
       `${chrome.i18n.getMessage("openAll")} (${listItems.length})`,
@@ -501,7 +475,6 @@ class ContextMenuUtil {
     );
     contextMenu.appendChild(openAllOption);
 
-    // Create "Tidy Locations" option with premium check
     const canTidy = state.paymentStage?.isTrial || state.paymentStage?.isPremium;
     const tidyLocationsOption = this.createOption(
       contextMenu,
@@ -521,7 +494,6 @@ class ContextMenuUtil {
       tidyLocationsOption.classList.add("premium-option");
     }
 
-    // Create "Plan Route" option
     chrome.storage.local.get("startAddr", ({ startAddr }) => {
       if (clickedItem && startAddr) {
         const getDirectionsOption = this.createOption(
@@ -536,13 +508,13 @@ class ContextMenuUtil {
         contextMenu.appendChild(getDirectionsOption);
       }
 
-      // Always append tidy after
+      // Append tidy after plan route
       contextMenu.appendChild(tidyLocationsOption);
     });
 
     document.body.appendChild(contextMenu);
 
-    // Close context menu when clicking elsewhere
+    // Close context menu on outside click
     const closeMenu = (e) => {
       if (!contextMenu.contains(e.target)) {
         contextMenu.remove();
@@ -611,7 +583,6 @@ class ContextMenuUtil {
     });
   }
 
-  // Get list info from class
   static getListInfo(firstItem) {
     if (firstItem.classList.contains("summary-list"))
       return { type: "summary", groupTitle: "✨", groupColor: "purple" };
@@ -622,7 +593,6 @@ class ContextMenuUtil {
     return { type: "unknown", groupTitle: "", groupColor: "" };
   }
 
-  // Delegate to getListInfo
   static getGroupInfo(firstItem) {
     const { groupTitle, groupColor } = this.getListInfo(firstItem);
     return { groupTitle, groupColor };
@@ -638,10 +608,8 @@ class ContextMenuUtil {
   }
 
   static tidyLocations(listItems) {
-    // Start breathing effect for the full list container
     this.startBreathingEffect(listItems);
 
-    // Extract location data from list items
     const locations = Array.from(listItems)
       .map((item) => {
         const spans = item.querySelectorAll("span");
@@ -658,7 +626,6 @@ class ContextMenuUtil {
       })
       .filter(Boolean);
 
-    // Send to background script for Gemini AI processing
     chrome.runtime.sendMessage(
       {
         action: "organizeLocations",
@@ -666,7 +633,6 @@ class ContextMenuUtil {
         listType: this.getListInfo(listItems[0]).type,
       },
       (response) => {
-        // Stop breathing effect when response is received
         this.stopBreathingEffect(listItems);
 
         if (response?.success) {
@@ -694,19 +660,15 @@ class ContextMenuUtil {
       return;
     }
 
-    // Create element mapping with multiple search strategies
     const { elementMap, elementsList } = this.createElementMapping(listItems);
 
-    // Clear container
     elementsList.forEach((item) => item.remove());
     const existingHeaders = container.querySelectorAll(".category-header");
     existingHeaders.forEach((header) => header.remove());
 
-    // Determine layout strategy
     const currentListType = this.getListInfo(elementsList[0]).type;
     const hasFlexReverse = ["history", "favorite"].includes(currentListType);
 
-    // Render organized categories
     this.renderCategories(
       organizedData.categories,
       container,
@@ -715,7 +677,6 @@ class ContextMenuUtil {
       hasFlexReverse
     );
 
-    // Update spacing for boundary items
     this.updateBoundaryItemSpacing(hasFlexReverse, container);
 
     measureContentSize();
@@ -729,7 +690,7 @@ class ContextMenuUtil {
       const locationName = item.querySelector("span")?.textContent.trim();
       if (!locationName) return;
 
-      // Multiple mapping strategies for robust matching
+      // Robust mapping strategies
       const mappings = [
         locationName,
         locationName.toLowerCase().replace(/\s+/g, " ").trim(),
@@ -746,12 +707,11 @@ class ContextMenuUtil {
     categories.forEach((category) => {
       const categoryHeader = this.createCategoryHeader(category.name);
 
-      // Add header first for normal layout, last for reversed layout
+      // Add header based on layout
       if (!hasFlexReverse) {
         container.appendChild(categoryHeader);
       }
 
-      // Add locations to category
       category.locations.forEach((location) => {
         const element = this.findMatchingElement(location.name, elementMap, elementsList);
         if (element) {
@@ -760,7 +720,6 @@ class ContextMenuUtil {
         }
       });
 
-      // Add header last for reversed layout
       if (hasFlexReverse) {
         container.appendChild(categoryHeader);
       }
@@ -779,23 +738,19 @@ class ContextMenuUtil {
   }
 
   static findMatchingElement(locationName, elementMap, elementsList) {
-    // Try exact match
     let element = elementMap.get(locationName);
     if (element) return element;
 
-    // Try normalized match
     const normalized = locationName.toLowerCase().replace(/\s+/g, " ").trim();
     element = elementMap.get(normalized);
     if (element) return element;
 
-    // Try fuzzy matching
     for (const [key, el] of elementMap.entries()) {
       if (!key.startsWith("index_") && key.includes(normalized)) {
         return el;
       }
     }
 
-    // Try partial content matching
     return elementsList.find((item) => {
       const itemText = item.querySelector("span")?.textContent.trim() || "";
       return (
@@ -807,7 +762,6 @@ class ContextMenuUtil {
   static updateBoundaryItemSpacing(hasFlexReverse, container) {
     if (!container) return;
 
-    // Get current DOM elements that are actually in the container
     const currentItems = container.querySelectorAll(".list-group-item");
 
     if (currentItems.length === 0) return;
@@ -908,7 +862,7 @@ class Remove {
     const items = snapshot.history.items.filter((item) => !selected.has(item));
     state.dispatch({ type: "HISTORY_SET", items, emptyReason: "cleared" });
     state.dispatch({ type: "DELETE_CANCEL" });
-    // Re-read so a concurrent write from another context isn't clobbered.
+    // Re-read to avoid clobbering concurrent writes
     chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
       const latest = Array.isArray(searchHistoryList) ? searchHistoryList : [];
       chrome.storage.local.set({ searchHistoryList: latest.filter((item) => !selected.has(item)) });
@@ -921,7 +875,6 @@ class Remove {
     const items = snapshot.favorite.items.filter((item) => !selected.has(item));
     state.dispatch({ type: "FAVORITE_SET", items });
     state.dispatch({ type: "DELETE_CANCEL" });
-    // See deleteFromHistoryList.
     chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
       const latest = Array.isArray(favoriteList) ? favoriteList : [];
       chrome.storage.local.set({ favoriteList: latest.filter((item) => !selected.has(item)) });
@@ -990,7 +943,7 @@ class Favorite {
         const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
         const csv = "name\n" + trimmedFavorite.map((item) => `${escapeCSV(item)}`).join("\n");
 
-        // UTF-8 BOM so Excel renders non-ASCII names (e.g. Chinese/Japanese) correctly
+        // UTF-8 BOM for Excel non-ASCII support
         const blob = new Blob(["\uFEFF" + csv], {
           type: "text/csv; charset=utf-8;",
         });
@@ -1021,14 +974,13 @@ class Favorite {
           if (fileContent && fileContent.length > 0) {
             const rows = this.parseCSV(fileContent);
             importedData = rows
-              .slice(1) // drop the "name" header row
+              .slice(1)
               .map((row) => (row[0] || "").trim())
               .filter((name) => name.length > 0);
           }
 
           chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-            // Merge with the existing list (don't overwrite); dedupe by name,
-            // ignoring the " @clue" suffix
+            // Merge without overwrite, dedupe by name ignoring "@clue"
             const existingList = Array.isArray(favoriteList) ? favoriteList : [];
             const existingNames = new Set(existingList.map((item) => item.split(" @")[0]));
             const newNames = [];
@@ -1050,7 +1002,7 @@ class Favorite {
 
       reader.readAsText(file);
 
-      // Reset the file input value to allow re-selecting the same file
+      // Allow re-selecting same file
       event.target.value = "";
     });
 
@@ -1068,6 +1020,18 @@ class Favorite {
           state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
         }
       } else {
+        if (event.target.classList.contains("form-check-input")) {
+          return;
+        }
+
+        if (event.target.classList.contains("bi")) {
+          if (event.button !== 0) return;
+          if (window.Analytics)
+            window.Analytics.trackFeatureClick("remove_favorite_item", "favoriteListContainer");
+          this.removeFavoriteItem(liElement.dataset.itemValue || "", event);
+          return;
+        }
+
         const spans = liElement.querySelectorAll("span");
         const selectedText = Array.from(spans)
           .map((span) => span.textContent)
@@ -1075,21 +1039,13 @@ class Favorite {
           .trim();
 
         state.buildSearchUrl(selectedText).then((searchUrl) => {
-          if (event.target.classList.contains("bi")) {
-            return;
-          } else if (event.target.classList.contains("form-check-input")) {
-            return;
-          } else {
-            if (window.Analytics)
-              window.Analytics.trackFeatureClick("click_favorite_item", "favoriteListContainer");
-            if (event.button === 1) {
-              // Middle click
-              event.preventDefault();
-              chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
-            } else if (event.button === 0) {
-              // Left click
-              window.open(searchUrl, "_blank");
-            }
+          if (window.Analytics)
+            window.Analytics.trackFeatureClick("click_favorite_item", "favoriteListContainer");
+          if (event.button === 1) {
+            event.preventDefault();
+            chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+          } else if (event.button === 0) {
+            window.open(searchUrl, "_blank");
           }
         });
       }
@@ -1100,7 +1056,7 @@ class Favorite {
     });
   }
 
-  // Minimal RFC 4180-style parser matching what escapeCSV produces on export
+  // Minimal RFC 4180 parser matching export format
   parseCSV(content) {
     const rows = [];
     let row = [];
@@ -1146,17 +1102,68 @@ class Favorite {
   }
 
   createFavoriteIcon(itemName, favoriteList) {
+    const matched = Boolean(favoriteList && favoriteList.includes(itemName));
     const favoriteIcon = document.createElement("i");
-    favoriteIcon.className =
-      favoriteList && favoriteList.includes(itemName)
-        ? "bi bi-patch-check-fill matched"
-        : "bi bi-patch-plus-fill";
-    favoriteIcon.title = chrome.i18n.getMessage("plusLabel");
+    favoriteIcon.className = matched ? "bi bi-patch-check-fill matched" : "bi bi-patch-plus-fill";
+    favoriteIcon.title = chrome.i18n.getMessage(matched ? "removeFavoriteLabel" : "plusLabel");
     return favoriteIcon;
   }
 
   addToFavoriteList(selectedText) {
-    chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
+    // Runs through the same write queue as removeFavoriteItem (rather than a
+    // separate background.js round-trip) so an add and a remove can never
+    // race each other and silently drop one of the two changes.
+    this.queueFavoriteWrite((latest) => {
+      const next = latest.filter((item) => item !== selectedText);
+      next.push(selectedText);
+      return next;
+    });
+  }
+
+  // Chain get-then-set writes to favoriteList so each get() reads storage after
+  // the previous set() has landed, avoiding a lost update when several writes
+  // happen in quick succession. Recovers on failure instead of permanently
+  // blocking every later call behind a rejected promise.
+  queueFavoriteWrite(computeNext) {
+    this._favoriteWriteQueue = (this._favoriteWriteQueue || Promise.resolve())
+      .then(
+        () =>
+          new Promise((resolve) => {
+            chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+              const latest = Array.isArray(favoriteList) ? favoriteList : [];
+              chrome.storage.local.set({ favoriteList: computeNext(latest) }, resolve);
+            });
+          })
+      )
+      .catch((error) => {
+        console.error("Failed to persist favoriteList change:", error);
+        this._favoriteWriteQueue = Promise.resolve();
+      });
+    return this._favoriteWriteQueue;
+  }
+
+  removeFavoriteItem(itemValue, event) {
+    if (!itemValue) return;
+
+    // Ignore a second removal within 300ms at nearly the same screen position:
+    // the list re-renders synchronously on removal, so a fast double-click can
+    // otherwise land on a different item that reflowed into the same spot.
+    const now = Date.now();
+    const last = this._lastFavoriteRemoveClick;
+    if (
+      last &&
+      now - last.time < 300 &&
+      Math.abs(event.clientX - last.x) < 10 &&
+      Math.abs(event.clientY - last.y) < 10
+    ) {
+      return;
+    }
+    this._lastFavoriteRemoveClick = { time: now, x: event.clientX, y: event.clientY };
+
+    const items = state.getSnapshot().favorite.items.filter((item) => item !== itemValue);
+    state.dispatch({ type: "FAVORITE_SET", items });
+
+    this.queueFavoriteWrite((latest) => latest.filter((item) => item !== itemValue));
   }
 
   updateFavorite(favoriteList) {
@@ -1202,6 +1209,7 @@ class Favorite {
         const icon = document.createElement("i");
         icon.className = "bi bi-patch-check-fill matched";
         icon.classList.toggle("d-none", deleting);
+        icon.title = chrome.i18n.getMessage("removeFavoriteLabel");
         li.appendChild(icon);
 
         const checkbox = document.createElement("input");
@@ -1236,10 +1244,7 @@ class History {
       const liElement = DOMUtils.findClosestListItem(event);
       if (!liElement) return;
 
-      // The onboarding tour's demo item is fake data; swallow clicks here
-      // (delegated on the container, not the <li>) so the click-through logic
-      // below never persists it, regardless of how many times render()
-      // has rebuilt the list since the item was injected.
+      // Swallow clicks on fake onboarding demo item to prevent persistence
       if (liElement.classList.contains("onboarding-demo-item")) {
         event.stopPropagation();
         event.preventDefault();
@@ -1279,11 +1284,9 @@ class History {
                   "searchHistoryListContainer"
                 );
               if (event.button === 1) {
-                // Middle click
                 event.preventDefault();
                 chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
               } else if (event.button === 0) {
-                // Left click
                 window.open(searchUrl, "_blank");
               }
             }
@@ -1353,8 +1356,7 @@ class History {
     statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
     clearAction.disabled = items.length === 0;
 
-    // Patch icon classNames in place on favorite-only updates, so an
-    // in-flight spring-animation icon survives (mirrors gemini.js).
+    // Patch icon classNames in place to preserve animation
     const structuralChange =
       meta.historyChanged !== false ||
       meta.deleteModeChanged !== false ||
@@ -1493,7 +1495,7 @@ class Gemini {
       videoSummaryButton.classList.toggle("no-hover-temp", !enabled);
     });
 
-    // One time hover disable effect for videoSummaryButton
+    // Hover disable effect for videoSummaryButton
     videoSummaryButton.addEventListener("mouseleave", () => {
       if (videoSummaryButton.classList.contains("no-hover-temp")) {
         videoSummaryButton.classList.remove("no-hover-temp");
@@ -1570,7 +1572,7 @@ class Gemini {
       chrome.storage.local.remove("currentVideoInfo");
     }
 
-    // Visibility is derived by render(); the token protects against stale tab callbacks.
+    // Token prevents stale tab callbacks
   }
 
   async scrapeLen(id) {
@@ -1586,7 +1588,7 @@ class Gemini {
     }
   }
 
-  // Clear summary data if it's stale (older than State.SUMMARY_TTL_MS)
+  // Clear stale summary data
   clearExpiredSummary() {
     chrome.storage.local.get(["summaryList", "timestamp", "favoriteList"], (result) => {
       const items = Array.isArray(result.summaryList) ? result.summaryList : [];
@@ -1603,7 +1605,7 @@ class Gemini {
     });
   }
 
-  // Parse LLM output into plain-text items to prevent prompt injection.
+  // Parse LLM output to prevent prompt injection
   parseSummaryItems(response) {
     const doc = new DOMParser().parseFromString(response, "text/html");
     const normalize = (text) => text.replace(/\s+/g, " ").trim();
@@ -1665,7 +1667,7 @@ class Gemini {
     });
   }
 
-  // Strip decorative query params so Gemini gets a canonical YouTube URL
+  // Strip query params for canonical YouTube URL
   normalizeYoutubeUrl(url) {
     const match = url.match(/youtube\.com\/(watch\?v=|shorts\/)(.{11})/);
     if (!match) return url;
@@ -1689,7 +1691,7 @@ class Gemini {
     });
 
     chrome.runtime.sendMessage({ action: "summarizeVideo", text: videoUrl }, (response) => {
-      // success when we get a string fragment of <ul>...</ul>
+      // Success on <ul> fragment
       if (typeof response === "string") {
         try {
           this.createSummaryList(response, requestId);
@@ -1724,7 +1726,7 @@ class Gemini {
 
         if (isYouTube) {
           chrome.tabs.sendMessage(tabs[0].id, { action: "expandYouTubeDescription" }, () => {
-            // Wait for the expansion to finish rendering before scraping content
+            // Wait for expansion before scraping
             setTimeout(() => {
               this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
             }, 500);
@@ -1767,8 +1769,7 @@ class Gemini {
     chrome.runtime.sendMessage(
       { action: "summarizeApi", text: content, apiKey: apiKey, url: url },
       (response) => {
-        // response is undefined if the channel closed early (e.g. SW killed);
-        // treat as an error so the send button gets re-enabled
+        // Treat early close as error
         if (!response || response.error) {
           responseField.value = `API Error: ${response?.error || "No response from background"}`;
           this.ResponseErrorMsg(response, requestId);
@@ -1798,7 +1799,7 @@ class Gemini {
       items: summaryItems,
       timestamp,
     });
-    // Respect incognito mode: do not persist summaries when enabled
+    // Don't persist summaries in incognito mode
     chrome.storage.local.get("isIncognito", ({ isIncognito = false }) => {
       if (!isIncognito) {
         chrome.storage.local.set({
@@ -1860,7 +1861,7 @@ class Gemini {
     statusMessage.classList.toggle("d-none", ready);
     statusMessage.classList.toggle("shineText", generating);
 
-    // Favorite-only updates patch icon classNames in place instead.
+    // Patch favorite icon classNames in place
     const summaryChanged = meta.summaryChanged !== false;
     if (!ready) {
       listContainer.replaceChildren();
@@ -1931,7 +1932,7 @@ class Modal {
     this._setupPremiumPanel();
   }
 
-  // Private setup helpers (called once from addModalListener)
+  // Private setup helpers
   _setupShortcutsLinks() {
     for (let i = 0; i < configureElements.length; i++) {
       configureElements[i].onclick = function (event) {
@@ -1959,7 +1960,7 @@ class Modal {
       const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
       chrome.storage.local.set({ geminiApiKey: encrypted });
 
-      // Always wired by popup.js in production.
+      // Wired by popup.js in production
       this.onApiKeyChange(apiKey);
     });
 
@@ -2101,9 +2102,7 @@ class Modal {
     });
   }
 
-  // Language selector — uses Bootstrap's dropdown plugin (Popper bundled via
-  // bootstrap.bundle.min.js). Bootstrap handles open/close, outside-click, and
-  // Escape; we only sync the visual state and persist the selection.
+  // Language selector uses Bootstrap dropdown; we sync state and persist selection
   _setupLanguageDropdown() {
     const languageDropdown = document.getElementById("languageDropdown");
     if (!languageDropdown || typeof window === "undefined" || !window.I18nUtils) return;
@@ -2113,14 +2112,13 @@ class Modal {
     const items = languageDropdown.querySelectorAll(".language-dropdown-item");
 
     const syncDropdownState = (lang, isDirty = false) => {
-      // Gray (placeholder-like) until user makes a change in this session
+      // Gray placeholder until user change
       toggleBtn.classList.toggle("is-default", !isDirty);
       items.forEach((item) => {
         const isActive = item.dataset.value === lang;
         item.classList.toggle("active", isActive);
         if (isActive && labelEl) {
-          // Prefer the i18n message directly so this works regardless of
-          // whether popup.js's [data-locale] pass has run yet.
+          // Prefer i18n message over [data-locale] pass
           const localeKey = item.dataset.locale;
           const localized = localeKey ? chrome.i18n.getMessage(localeKey) : "";
           labelEl.textContent = localized || item.textContent;
@@ -2143,7 +2141,7 @@ class Modal {
         if (newLang === window.I18nUtils.getCurrentLanguage()) return;
         if (window.Analytics)
           window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
-        // setLanguage now applies the override synchronously, so no reloadOverride needed.
+        // setLanguage applies override synchronously
         await window.I18nUtils.setLanguage(newLang);
         if (typeof window.applyI18n === "function") window.applyI18n();
         syncDropdownState(window.I18nUtils.getCurrentLanguage(), true);
@@ -2218,7 +2216,7 @@ class Modal {
   }
 
   updateToggleUI(isActive, textSelector, iconSelector, toggleElement) {
-    // Support for legacy text/icon toggle (if elements exist)
+    // Support legacy text/icon toggle
     const textEl = document.querySelector(textSelector);
     const iconEl = document.querySelector(iconSelector);
 
@@ -2343,17 +2341,9 @@ if (typeof module !== "undefined" && module.exports) {
 // ---- components/onboarding.js ----
 /**
  * Lightweight 4-step onboarding for first-time users.
- * Steps:
- *   1) Hints    -> highlights the footer "Tips" button (keyboard shortcuts modal)
- *   2) Favorite -> injects a demo search-history item and highlights its "add favorite" icon
- *   3) API      -> highlights the Gemini summary button (entry to API key setup)
- *   4) Premium  -> highlights the footer "Premium" button (premium features)
- *
- * Persistence: chrome.storage.local key `onboardingDone` (boolean).
- *
- * Steps may declare `setup` / `cleanup` hooks. `setup` runs once when the step
- * first renders; `cleanup` runs when leaving the step (via next or finish) so
- * any temporary DOM (e.g. the demo history item) is reliably removed.
+ * Steps: Hints, Favorite, API, Premium.
+ * Persistence: chrome.storage.local key `onboardingDone`.
+ * setup/cleanup hooks manage transient DOM like the demo history item.
  */
 const DEMO_ITEM_CLASS = "onboarding-demo-item";
 
@@ -2395,16 +2385,12 @@ class Onboarding {
   }
 
   /**
-   * Append a fake search-history list item so the user can see the
-   * "add to favorite" affordance even on a fresh install with no history.
-   * The item is marked with DEMO_ITEM_CLASS so it can be removed later.
-   * Clicks inside the demo item are swallowed (capture phase) and routed to
-   * `next()` so the real history click handler never adds it to favorites.
+   * Inject a demo history item to show "add to favorite" feature.
+   * Clicks are swallowed and routed to next() to prevent persistence.
    */
   injectDemoHistoryItem() {
     this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
-    // Click handling for the demo item lives in history.js (container-level
-    // listener), since render() would discard a listener bound here.
+    // Click handled in history.js since render() discards bound listeners
   }
 
   removeDemoHistoryItem() {
@@ -2415,7 +2401,7 @@ class Onboarding {
     if (!chrome?.storage?.local?.get) return;
     chrome.storage.local.get(this.STORAGE_KEY, (result) => {
       if (result && result[this.STORAGE_KEY]) return;
-      // Defer slightly to let the popup paint and i18n apply.
+      // Defer to allow popup paint and i18n
       setTimeout(() => this.start(), 250);
     });
   }
@@ -2440,7 +2426,7 @@ class Onboarding {
     this.tooltip.setAttribute("role", "dialog");
     this.tooltip.setAttribute("aria-live", "polite");
 
-    // Build tooltip structure once; render() only updates text + listeners.
+    // Build tooltip structure once
     this.tooltip.innerHTML = `
       <div class="onboarding-tooltip-header">
         <span class="onboarding-tooltip-title"></span>
@@ -2531,7 +2517,7 @@ class Onboarding {
     let top;
     if (placement === "top") {
       top = targetRect.top - ttRect.height - margin;
-      if (top < 8) top = targetRect.bottom + margin; // flip if no room
+      if (top < 8) top = targetRect.bottom + margin; // Flip if no room
     } else {
       top = targetRect.bottom + margin;
       if (top + ttRect.height > viewportH - 8) top = targetRect.top - ttRect.height - margin;
@@ -2547,8 +2533,7 @@ class Onboarding {
   }
 
   next() {
-    // Tear down the leaving step (e.g. remove demo history item) before
-    // moving forward so transient DOM disappears immediately.
+    // Clean up leaving step to remove transient DOM
     const leaving = this.steps[this.currentStep];
     if (leaving?.cleanup && leaving._setupDone) {
       try {
@@ -2568,7 +2553,7 @@ class Onboarding {
   }
 
   finish() {
-    // Run cleanup for any step whose setup ran but never got cleaned up.
+    // Run pending cleanups
     this.steps.forEach((s) => {
       if (s._setupDone && s.cleanup) {
         try {
@@ -2669,13 +2654,11 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 // ---- popup.js ----
-// Page
 const loadingMessage = document.getElementById("loadingMessage");
 const historyPanel = document.getElementById("historyPanel");
 const favoritePanel = document.getElementById("favoritePanel");
 const geminiPanel = document.getElementById("geminiPanel");
 
-// Context
 const searchInput = document.getElementById("searchInput");
 const apiInput = document.getElementById("apiInput");
 const subtitleElement = document.getElementById("subtitle");
@@ -2689,19 +2672,16 @@ const incognitoToggle = document.getElementById("incognitoToggle");
 const darkModeToggle = document.getElementById("darkModeToggle");
 const responseField = document.getElementById("response");
 
-// Lists
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
 const favoriteListContainer = document.getElementById("favoriteList");
 const summaryListContainer = document.getElementById("summaryList");
 
-// Page Buttons
 const searchHistoryButton = document.getElementById("searchHistoryButton");
 const favoriteListButton = document.getElementById("favoriteListButton");
 const deleteListButton = document.getElementById("deleteListButton");
 const geminiSummaryButton = document.getElementById("geminiSummaryButton");
 const videoSummaryButton = document.getElementById("videoSummaryButton");
 
-// Buttons
 const searchButtonGroup = document.getElementById("searchButtonGroup");
 const deleteButtonGroup = document.getElementById("deleteButtonGroup");
 const exportButtonGroup = document.getElementById("exportButtonGroup");
@@ -2721,13 +2701,11 @@ const closeButton = premiumModal.parentElement.querySelector(".btn-close");
 const optionalButton = document.getElementById("optionalButton");
 const mapsButton = document.getElementById("mapsButton");
 
-// ExtensionPay
 const paymentButton = document.getElementById("paymentButton");
 const restoreButton = document.getElementById("restoreButton");
 const shortcutTip = document.getElementsByClassName("premium-only");
 const premiumNoteElement = document.querySelector(`p[data-locale="premiumNote"]`);
 
-// Spans
 const clearButtonSpan = document.querySelector("#clearButton > i + span");
 const cancelButtonSpan = document.querySelector("#cancelButton > span");
 const deleteButtonSpan = document.querySelector("#deleteButton > i + span");
@@ -2736,7 +2714,6 @@ const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i +
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
 
-// Import Scripts
 let state, remove, favorite, history, gemini, modal, payment, onboarding;
 let unsubscribeState = null;
 let hydrationPromise = null;
@@ -2846,7 +2823,6 @@ function popupLayout() {
   return hydratePopup();
 }
 
-// Check if the text overflows the button since locale
 function checkTextOverflow() {
   const mapsButtonHeight = mapsButtonSpan.offsetHeight;
   const clearButtonHeight = clearButtonSpan.offsetHeight;
@@ -3005,7 +2981,6 @@ mapsButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackFeatureClick("open_maps", "mapsButton");
 });
 
-// Diffed against the next snapshot so unrelated components skip re-render.
 let previousPopupSnapshot = null;
 
 function renderPopup(snapshot = state.getSnapshot(), action = null, force = false) {
@@ -3135,7 +3110,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
-// Exposed on window so modal.js can re-apply i18n after a language change.
 function applyI18n(root = document) {
   root.querySelectorAll("[data-locale]").forEach((el) => {
     const v = chrome.i18n.getMessage(el.dataset.locale);
@@ -3157,8 +3131,7 @@ function applyI18n(root = document) {
 window.applyI18n = applyI18n;
 applyI18n();
 
-// On window, not a module-scope const, so re-requiring this file (tests)
-// replaces the old listener instead of stacking another one.
+// Prevent stacking listeners on re-require (e.g. in tests)
 if (window.__popupI18nChangedHandler) {
   window.removeEventListener("i18n:changed", window.__popupI18nChangedHandler);
 }
@@ -3182,7 +3155,6 @@ window.__popupI18nChangedHandler = () => {
 };
 window.addEventListener("i18n:changed", window.__popupI18nChangedHandler);
 
-// Handle IME composition for CJK input
 let isComposing = false;
 
 searchInput.addEventListener("compositionstart", () => {
@@ -3202,10 +3174,8 @@ document.addEventListener(
   true
 );
 
-// configureElements is consumed by modal.js for the shortcuts click handler.
 const configureElements = document.querySelectorAll(".modal-body p");
 
-// Resize utils
 const body = document.body;
 let measurementFrame = null;
 let measurementTargetTabId = null;
@@ -3236,7 +3206,6 @@ function sendUpdateIframeSize(id, width, height) {
   });
 }
 
-// Prevent layout glitch
 function delayMeasurement() {
   setTimeout(() => {
     measureContentSize();
