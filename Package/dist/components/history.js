@@ -22,50 +22,33 @@ class History {
           state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
         }
       } else {
-        if (event.target.classList.contains("form-check-input")) {
-          return;
-        }
-
-        if (event.target.classList.contains("bi")) {
-          const selectedText = liElement.querySelector("span")?.textContent;
-
-          if (event.target.classList.contains("matched")) {
-            if (event.button !== 0) return;
-            if (window.Analytics)
-              window.Analytics.trackFeatureClick(
-                "remove_favorite_from_history",
-                "searchHistoryListContainer"
-              );
-            favorite.removeFavoriteItem(liElement.dataset.itemValue || "", event);
-            DOMUtils.animateUnfavoriteIcon(event.target);
-            event.target.title = chrome.i18n.getMessage("plusLabel");
-          } else {
-            if (window.Analytics)
-              window.Analytics.trackFeatureClick(
-                "add_to_favorite_from_history",
-                "searchHistoryListContainer"
-              );
-            favorite.addToFavoriteList(selectedText);
-            DOMUtils.animateFavoriteIcon(event.target);
-          }
-          return;
-        }
-
         const selectedText = liElement.querySelector("span")?.textContent;
 
         state
           .buildSearchUrl(selectedText)
           .then((searchUrl) => {
-            if (window.Analytics)
-              window.Analytics.trackFeatureClick(
-                "click_history_item",
-                "searchHistoryListContainer"
-              );
-            if (event.button === 1) {
-              event.preventDefault();
-              chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
-            } else if (event.button === 0) {
-              window.open(searchUrl, "_blank");
+            if (event.target.classList.contains("bi")) {
+              if (window.Analytics)
+                window.Analytics.trackFeatureClick(
+                  "add_to_favorite_from_history",
+                  "searchHistoryListContainer"
+                );
+              favorite.addToFavoriteList(selectedText);
+              DOMUtils.animateFavoriteIcon(event.target);
+            } else if (event.target.classList.contains("form-check-input")) {
+              return;
+            } else {
+              if (window.Analytics)
+                window.Analytics.trackFeatureClick(
+                  "click_history_item",
+                  "searchHistoryListContainer"
+                );
+              if (event.button === 1) {
+                event.preventDefault();
+                chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+              } else if (event.button === 0) {
+                window.open(searchUrl, "_blank");
+              }
             }
           })
           .catch((error) => {
@@ -144,15 +127,14 @@ class History {
       existingItems.forEach((li) => {
         const icon = li.querySelector("i");
         if (!icon || icon.classList.contains("spring-animation")) return;
-        const newIcon = (this.favoriteComponent || favorite).createFavoriteIcon(
+        const newClassName = (this.favoriteComponent || favorite).createFavoriteIcon(
           li.dataset.itemValue,
           snapshot.favorite.items
-        );
-        if (icon.className !== newIcon.className) {
-          icon.className = newIcon.className;
+        ).className;
+        if (icon.className !== newClassName) {
+          icon.className = newClassName;
           icon.classList.toggle("d-none", deleting);
         }
-        icon.title = newIcon.title;
       });
       return;
     }

@@ -27,41 +27,6 @@ class Gemini {
       if (!liElement) return;
 
       const spans = liElement.querySelectorAll("span");
-
-      if (event.target.classList.contains("bi")) {
-        const nameSpan = spans[0].textContent;
-        const reconstructedValue =
-          spans.length >= 2 ? nameSpan + " @" + spans[1].textContent : nameSpan;
-
-        if (event.target.classList.contains("matched")) {
-          // "matched" is determined by name only (ignoring clue), so the
-          // stored favorite may carry a different clue than this summary
-          // item's own reconstructed value — resolve the actual stored
-          // entry by name instead of removing the reconstructed string.
-          const favoriteItems = this.getStore().getSnapshot().favorite.items;
-          const storedItem =
-            favoriteItems.find((item) => item.split(" @")[0] === nameSpan) || reconstructedValue;
-
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick(
-              "remove_favorite_from_summary",
-              "summaryListContainer"
-            );
-          favorite.removeFavoriteItem(storedItem, event);
-          DOMUtils.animateUnfavoriteIcon(event.target);
-          event.target.title = chrome.i18n.getMessage("plusLabel");
-        } else {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick(
-              "add_to_favorite_from_summary",
-              "summaryListContainer"
-            );
-          favorite.addToFavoriteList(reconstructedValue);
-          DOMUtils.animateFavoriteIcon(event.target);
-        }
-        return;
-      }
-
       const selectedText = Array.from(spans)
         .map((span) => span.textContent)
         .join(" ")
@@ -70,9 +35,25 @@ class Gemini {
       this.getStore()
         .buildSearchUrl(selectedText)
         .then((searchUrl) => {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("click_summary_item", "summaryListContainer");
-          chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+          if (event.target.classList.contains("bi")) {
+            if (window.Analytics)
+              window.Analytics.trackFeatureClick(
+                "add_to_favorite_from_summary",
+                "summaryListContainer"
+              );
+            const nameSpan = spans[0].textContent;
+            if (spans.length >= 2) {
+              const clueSpan = spans[1].textContent;
+              favorite.addToFavoriteList(nameSpan + " @" + clueSpan);
+            } else {
+              favorite.addToFavoriteList(nameSpan);
+            }
+            DOMUtils.animateFavoriteIcon(event.target);
+          } else {
+            if (window.Analytics)
+              window.Analytics.trackFeatureClick("click_summary_item", "summaryListContainer");
+            chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+          }
         });
     });
 
@@ -265,7 +246,6 @@ class Gemini {
       if (existingIcon) {
         const newIcon = favorite.createFavoriteIcon(itemName, trimmedFavorite);
         existingIcon.className = newIcon.className;
-        existingIcon.title = newIcon.title;
       }
     });
   }
@@ -479,9 +459,11 @@ class Gemini {
         const icon = item.querySelector("i");
         if (icon.classList.contains("spring-animation")) return;
         const itemName = item.querySelector("span:first-child").textContent;
-        const newIcon = favoriteComponent.createFavoriteIcon(itemName, trimmedFavorite);
-        if (icon.className !== newIcon.className) icon.className = newIcon.className;
-        icon.title = newIcon.title;
+        const newClassName = favoriteComponent.createFavoriteIcon(
+          itemName,
+          trimmedFavorite
+        ).className;
+        if (icon.className !== newClassName) icon.className = newClassName;
       });
     }
 

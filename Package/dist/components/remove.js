@@ -66,9 +66,10 @@ class Remove {
     const items = snapshot.favorite.items.filter((item) => !selected.has(item));
     state.dispatch({ type: "FAVORITE_SET", items });
     state.dispatch({ type: "DELETE_CANCEL" });
-    // Goes through favorite's write queue so this can't race a concurrent
-    // single-item removal (favorite.removeFavoriteItem) on the same key.
-    favorite.queueFavoriteWrite((latest) => latest.filter((item) => !selected.has(item)));
+    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+      const latest = Array.isArray(favoriteList) ? favoriteList : [];
+      chrome.storage.local.set({ favoriteList: latest.filter((item) => !selected.has(item)) });
+    });
   }
 
   backToNormal() {

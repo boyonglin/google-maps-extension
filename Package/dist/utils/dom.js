@@ -17,14 +17,6 @@ const DOMUtils = {
     }, 500);
   },
 
-  // Spring animate icon back to its unfavorited state
-  animateUnfavoriteIcon(iconElement) {
-    iconElement.className = "bi bi-patch-plus-fill spring-animation";
-    setTimeout(() => {
-      iconElement.classList.remove("spring-animation");
-    }, 500);
-  },
-
   // Fixed row above the (reversed) list in delete mode, toggling all items on/off
   createSelectAllBar(items, selected) {
     const bar = document.createElement("div");

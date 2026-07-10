@@ -11,7 +11,6 @@ global.state.buildSearchUrl = jest.fn();
 
 global.favorite = {
   addToFavoriteList: jest.fn(),
-  removeFavoriteItem: jest.fn(),
   updateFavorite: jest.fn(),
   createFavoriteIcon: jest.fn(),
   updateHistoryFavoriteIcons: jest.fn(),
@@ -215,91 +214,6 @@ describe("Gemini Component", () => {
       await wait(50);
 
       expect(favorite.addToFavoriteList).toHaveBeenCalledWith("Restaurant");
-    });
-
-    test("should remove from favorites when clicking an already-matched icon with clue", async () => {
-      const mockItem = createMockSummaryItem("Restaurant", "Downtown");
-      summaryListContainer.appendChild(mockItem);
-      const icon = mockItem.querySelector("i");
-      icon.className = "bi bi-patch-check-fill matched";
-
-      state.buildSearchUrl.mockResolvedValue("https://maps.test/search");
-
-      const clickEvent = new MouseEvent("click", { bubbles: true });
-      Object.defineProperty(clickEvent, "target", { value: icon, enumerable: true });
-
-      summaryListContainer.dispatchEvent(clickEvent);
-
-      await wait(50);
-
-      expect(favorite.removeFavoriteItem).toHaveBeenCalledWith(
-        "Restaurant @Downtown",
-        expect.any(MouseEvent)
-      );
-      expect(favorite.addToFavoriteList).not.toHaveBeenCalled();
-    });
-
-    test("should remove from favorites when clicking an already-matched icon without clue", async () => {
-      const mockItem = createMockSummaryItem("Restaurant");
-      summaryListContainer.appendChild(mockItem);
-      const icon = mockItem.querySelector("i");
-      icon.className = "bi bi-patch-check-fill matched";
-
-      state.buildSearchUrl.mockResolvedValue("https://maps.test/search");
-
-      const clickEvent = new MouseEvent("click", { bubbles: true });
-      Object.defineProperty(clickEvent, "target", { value: icon, enumerable: true });
-
-      summaryListContainer.dispatchEvent(clickEvent);
-
-      await wait(50);
-
-      expect(favorite.removeFavoriteItem).toHaveBeenCalledWith(
-        "Restaurant",
-        expect.any(MouseEvent)
-      );
-    });
-
-    test("should remove the actual stored favorite when its clue differs from this summary item's clue", async () => {
-      // "matched" is determined by name only, so a summary item can show as
-      // matched while carrying a different clue than what's actually stored.
-      state.dispatch({ type: "FAVORITE_SET", items: ["Restaurant @Elsewhere"] });
-
-      const mockItem = createMockSummaryItem("Restaurant", "Downtown");
-      summaryListContainer.appendChild(mockItem);
-      const icon = mockItem.querySelector("i");
-      icon.className = "bi bi-patch-check-fill matched";
-
-      const clickEvent = new MouseEvent("click", { bubbles: true });
-      Object.defineProperty(clickEvent, "target", { value: icon, enumerable: true });
-
-      summaryListContainer.dispatchEvent(clickEvent);
-
-      await wait(50);
-
-      expect(favorite.removeFavoriteItem).toHaveBeenCalledWith(
-        "Restaurant @Elsewhere",
-        expect.any(MouseEvent)
-      );
-    });
-
-    test("should immediately update the icon to unmatched when removing a favorite", async () => {
-      const mockItem = createMockSummaryItem("Restaurant", "Downtown");
-      summaryListContainer.appendChild(mockItem);
-      const icon = mockItem.querySelector("i");
-      icon.className = "bi bi-patch-check-fill matched";
-
-      const clickEvent = new MouseEvent("click", { bubbles: true });
-      Object.defineProperty(clickEvent, "target", { value: icon, enumerable: true });
-
-      summaryListContainer.dispatchEvent(clickEvent);
-
-      expect(icon.className).toContain("bi-patch-plus-fill");
-      expect(icon.className).toContain("spring-animation");
-
-      await wait(500);
-
-      expect(icon.className).toBe("bi bi-patch-plus-fill");
     });
 
     test("should remove spring animation after 500ms", async () => {

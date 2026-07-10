@@ -11,7 +11,6 @@ global.state.buildSearchUrl = jest.fn();
 global.favorite = {
   createFavoriteIcon: jest.fn(),
   addToFavoriteList: jest.fn(),
-  removeFavoriteItem: jest.fn(),
   updateFavorite: jest.fn(),
 };
 
@@ -67,7 +66,6 @@ describe("History Component", () => {
         return icon;
       }),
       addToFavoriteList: jest.fn(),
-      removeFavoriteItem: jest.fn(),
       updateFavorite: jest.fn(),
     };
 
@@ -304,75 +302,6 @@ describe("History Component", () => {
 
         expect(global.favorite.addToFavoriteList).toHaveBeenCalledWith("Test Location");
         expect(DOMUtils.refreshFavoriteList).toBeUndefined();
-      });
-
-      test("should remove from favorites when clicking an already-matched icon", async () => {
-        const li = createMockHistoryItem("Test Location", ["Test Location"]);
-        li.dataset.itemValue = "Test Location";
-        searchHistoryListContainer.appendChild(li);
-
-        global.state.buildSearchUrl.mockResolvedValue("http://maps.test/search");
-
-        const icon = li.querySelector("i");
-        expect(icon.className).toContain("matched");
-
-        const mouseEvent = createMouseEvent(icon, 0);
-        icon.dispatchEvent(mouseEvent);
-
-        await wait();
-
-        expect(global.favorite.removeFavoriteItem).toHaveBeenCalledWith(
-          "Test Location",
-          expect.any(MouseEvent)
-        );
-        expect(global.favorite.addToFavoriteList).not.toHaveBeenCalled();
-      });
-
-      test("should immediately update the icon to unmatched when removing a favorite", async () => {
-        const li = createMockHistoryItem("Test Location", ["Test Location"]);
-        li.dataset.itemValue = "Test Location";
-        searchHistoryListContainer.appendChild(li);
-
-        const icon = li.querySelector("i");
-        icon.dispatchEvent(createMouseEvent(icon, 0));
-
-        expect(icon.className).toContain("bi-patch-plus-fill");
-        expect(icon.className).toContain("spring-animation");
-
-        await wait(500);
-
-        expect(icon.className).toBe("bi bi-patch-plus-fill");
-      });
-
-      test("should not remove a favorite when right- or middle-clicking a matched icon", () => {
-        const li = createMockHistoryItem("Test Location", ["Test Location"]);
-        li.dataset.itemValue = "Test Location";
-        searchHistoryListContainer.appendChild(li);
-
-        const icon = li.querySelector("i");
-        icon.dispatchEvent(createMouseEvent(icon, 2));
-        icon.dispatchEvent(createMouseEvent(icon, 1));
-
-        expect(global.favorite.removeFavoriteItem).not.toHaveBeenCalled();
-      });
-
-      test("should not open URL when clicking an already-matched icon", async () => {
-        const li = createMockHistoryItem("Test Location", ["Test Location"]);
-        li.dataset.itemValue = "Test Location";
-        searchHistoryListContainer.appendChild(li);
-
-        global.state.buildSearchUrl.mockResolvedValue("http://maps.test/search");
-
-        await withWindowOpenSpy(async (openSpy) => {
-          const icon = li.querySelector("i");
-
-          const mouseEvent = createMouseEvent(icon, 0);
-          icon.dispatchEvent(mouseEvent);
-
-          await wait();
-
-          expect(openSpy).not.toHaveBeenCalled();
-        });
       });
 
       test("should not open URL when clicking favorite icon", async () => {
