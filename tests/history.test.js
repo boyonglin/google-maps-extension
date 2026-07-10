@@ -328,7 +328,7 @@ describe("History Component", () => {
         expect(global.favorite.addToFavoriteList).not.toHaveBeenCalled();
       });
 
-      test("should fade the icon out immediately, restoring it only after the pointer leaves the icon", () => {
+      test("should immediately update the icon to unmatched when removing a favorite", async () => {
         const li = createMockHistoryItem("Test Location", ["Test Location"]);
         li.dataset.itemValue = "Test Location";
         searchHistoryListContainer.appendChild(li);
@@ -336,10 +336,10 @@ describe("History Component", () => {
         const icon = li.querySelector("i");
         icon.dispatchEvent(createMouseEvent(icon, 0));
 
-        expect(icon.classList.contains("unfavoriting")).toBe(true);
-        expect(icon.className).not.toContain("bi-patch-plus-fill");
+        expect(icon.className).toContain("bi-patch-plus-fill");
+        expect(icon.className).toContain("spring-animation");
 
-        icon.dispatchEvent(new Event("mouseleave"));
+        await wait(500);
 
         expect(icon.className).toBe("bi bi-patch-plus-fill");
       });

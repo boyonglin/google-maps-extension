@@ -600,7 +600,6 @@ li {
     height: 2rem;
     justify-content: center;
     align-items: center;
-    transition: opacity 0.3s ease;
   }
 
   &:hover i {
@@ -618,11 +617,12 @@ li {
       opacity: 0.5;
     }
 
-    // Fade out on unfavorite regardless of hover state, until the icon is
-    // swapped back once the pointer leaves the row (see fadeOutFavoriteIcon).
-    &.unfavoriting {
+    // Force the icon visible while the toggle animation plays, regardless of
+    // hover state — otherwise a just-unfavorited icon can briefly vanish if
+    // the cursor hasn't moved since the click (li:hover isn't re-evaluated).
+    &.spring-animation {
       display: flex;
-      opacity: 0 !important;
+      opacity: 1;
     }
   }
 

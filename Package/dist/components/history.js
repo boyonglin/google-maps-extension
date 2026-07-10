@@ -37,7 +37,8 @@ class History {
                 "searchHistoryListContainer"
               );
             favorite.removeFavoriteItem(liElement.dataset.itemValue || "", event);
-            DOMUtils.fadeOutFavoriteIcon(event.target);
+            DOMUtils.animateUnfavoriteIcon(event.target);
+            event.target.title = chrome.i18n.getMessage("plusLabel");
           } else {
             if (window.Analytics)
               window.Analytics.trackFeatureClick(
@@ -142,12 +143,7 @@ class History {
     if (!structuralChange && existingItems.length > 0) {
       existingItems.forEach((li) => {
         const icon = li.querySelector("i");
-        if (
-          !icon ||
-          icon.classList.contains("spring-animation") ||
-          icon.classList.contains("unfavoriting")
-        )
-          return;
+        if (!icon || icon.classList.contains("spring-animation")) return;
         const newIcon = (this.favoriteComponent || favorite).createFavoriteIcon(
           li.dataset.itemValue,
           snapshot.favorite.items
