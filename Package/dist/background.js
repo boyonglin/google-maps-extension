@@ -309,9 +309,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         updateHistoryList(searchTerm);
       });
     }
-  } else if (request.action === "addToFavoriteList") {
-    const selectedText = request.selectedText;
-    addToFavoriteList(selectedText);
   }
 
   if (request.action === "openTab") {
@@ -432,22 +429,6 @@ async function updateHistoryList(selectedText) {
     }
 
     chrome.storage.local.set({ searchHistoryList });
-  });
-}
-
-function addToFavoriteList(selectedText) {
-  chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-    if (!favoriteList) {
-      favoriteList = [];
-    }
-
-    const index = favoriteList.indexOf(selectedText);
-    if (index !== -1) {
-      favoriteList.splice(index, 1);
-    }
-    favoriteList.push(selectedText);
-
-    chrome.storage.local.set({ favoriteList });
   });
 }
 

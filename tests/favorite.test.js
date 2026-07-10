@@ -94,10 +94,17 @@ describe("Favorite Component", () => {
     jest.clearAllMocks();
     mockI18n({
       plusLabel: "Add to favorites",
+      removeFavoriteLabel: "Remove from favorites",
       importErrorMsg: "Import failed. Please check file format.",
       favoriteEmptyMsg: "No favorites yet",
     });
     mockChromeStorage();
+    // mockChromeStorage() only resets .get; reset .set too so a test that
+    // installs a delayed mockImplementation (e.g. to simulate real timing)
+    // can't leave it behind for a later test that never reassigns it.
+    chrome.storage.local.set.mockImplementation((data, callback) => {
+      if (callback) callback();
+    });
 
     // Create new instance and subscribe it to the store, matching popup.js's
     // renderPopup wiring (favorite.render(snapshot) on every dispatch).
@@ -511,26 +518,47 @@ describe("Favorite Component", () => {
         expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
       });
 
-      test("should not open URL if clicking on icon", async () => {
-        const li = createMockListItem("Test Location", {
-          className: "favorite-list",
-          favoriteList: ["Test Location"],
-        });
-        favoriteListContainer.appendChild(li);
+      test("should remove the item (not open URL) when clicking its icon", async () => {
+        state.dispatch({ type: "FAVORITE_SET", items: ["Test Location"] });
+        const li = favoriteListContainer.querySelector("li");
+        const icon = li.querySelector("i.bi");
 
         global.state.buildSearchUrl.mockResolvedValue("http://maps.test/search");
 
         await withWindowOpenSpy(async (openSpy) => {
-          const icon = li.querySelector("i");
-          icon.classList.add("bi");
-
-          const mouseEvent = createMouseEvent(icon, 0);
+          const mouseEvent = createMouseEvent(icon, 0, { clientX: 5, clientY: 5 });
           icon.dispatchEvent(mouseEvent);
 
           await wait();
 
           expect(openSpy).not.toHaveBeenCalled();
+          expect(state.getSnapshot().favorite.items).toEqual([]);
         });
+      });
+
+      test("should not remove the item when right- or middle-clicking its icon", () => {
+        state.dispatch({ type: "FAVORITE_SET", items: ["Test Location"] });
+        const li = favoriteListContainer.querySelector("li");
+        const icon = li.querySelector("i.bi");
+
+        icon.dispatchEvent(createMouseEvent(icon, 2, { clientX: 5, clientY: 5 }));
+        icon.dispatchEvent(createMouseEvent(icon, 1, { clientX: 5, clientY: 5 }));
+
+        expect(state.getSnapshot().favorite.items).toEqual(["Test Location"]);
+      });
+
+      test("should remove an item whose stored key includes an @clue suffix", () => {
+        // The list only renders "name" + a hidden clue span (no "@"), so the
+        // removal must key off dataset.itemValue (the full stored string),
+        // not text reconstructed from the rendered spans.
+        state.dispatch({ type: "FAVORITE_SET", items: ["Place @Clue"] });
+        const li = favoriteListContainer.querySelector("li");
+        const icon = li.querySelector("i.bi");
+        expect(li.dataset.itemValue).toBe("Place @Clue");
+
+        icon.dispatchEvent(createMouseEvent(icon, 0, { clientX: 5, clientY: 5 }));
+
+        expect(state.getSnapshot().favorite.items).toEqual([]);
       });
 
       test("should not open URL if clicking on checkbox in favorite mode", async () => {
@@ -615,7 +643,7 @@ describe("Favorite Component", () => {
 
       expect(icon.tagName).toBe("I");
       expect(icon.className).toBe("bi bi-patch-check-fill matched");
-      expect(icon.title).toBe("Add to favorites");
+      expect(icon.title).toBe("Remove from favorites");
     });
 
     test("should create icon with plus class when item is not in favorites", () => {
@@ -675,33 +703,50 @@ describe("Favorite Component", () => {
   // ============================================================================
 
   describe("addToFavoriteList", () => {
-    test("should send runtime message to add favorite", () => {
+    test("should add a new favorite to storage", async () => {
+      mockChromeStorage({ favoriteList: [] });
+
       favoriteInstance.addToFavoriteList("New Location");
+      await wait();
 
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-        action: "addToFavoriteList",
-        selectedText: "New Location",
-      });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: ["New Location"] },
+        expect.any(Function)
+      );
     });
 
-    test("should handle empty string", () => {
-      favoriteInstance.addToFavoriteList("");
+    test("should move an existing favorite to the end instead of duplicating it", async () => {
+      mockChromeStorage({ favoriteList: ["Fav A", "Fav B", "Fav C"] });
 
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-        action: "addToFavoriteList",
-        selectedText: "",
-      });
+      favoriteInstance.addToFavoriteList("Fav B");
+      await wait();
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: ["Fav A", "Fav C", "Fav B"] },
+        expect.any(Function)
+      );
     });
 
-    test("should handle special characters", () => {
-      const specialText = "!@#$%^&*()";
-
-      favoriteInstance.addToFavoriteList(specialText);
-
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-        action: "addToFavoriteList",
-        selectedText: specialText,
+    test("should serialize with removeFavoriteItem so an add and a remove can't race", async () => {
+      let backingStore = ["A", "B"];
+      chrome.storage.local.get.mockImplementation((keys, callback) => {
+        setTimeout(() => callback({ favoriteList: backingStore }), 10);
       });
+      chrome.storage.local.set.mockImplementation((data, callback) => {
+        setTimeout(() => {
+          backingStore = data.favoriteList;
+          if (callback) callback();
+        }, 10);
+      });
+
+      state.dispatch({ type: "FAVORITE_SET", items: ["A", "B"] });
+
+      favoriteInstance.removeFavoriteItem("A", { clientX: 0, clientY: 0 });
+      favoriteInstance.addToFavoriteList("C");
+
+      await wait(100);
+
+      expect(backingStore).toEqual(["B", "C"]);
     });
   });
 
@@ -745,6 +790,13 @@ describe("Favorite Component", () => {
       expect(items.length).toBe(2);
       expect(items[0].querySelector("span").textContent).toBe("Location 1");
       expect(items[1].querySelector("span").textContent).toBe("Location 2");
+    });
+
+    test("should set the remove-from-favorites tooltip on the icon", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1"] });
+
+      const icon = favoriteListContainer.querySelector("i.bi");
+      expect(icon.title).toBe("Remove from favorites");
     });
 
     test("should render favorite items with clue", () => {
@@ -906,6 +958,114 @@ describe("Favorite Component", () => {
   });
 
   // ============================================================================
+  // removeFavoriteItem Tests
+  // ============================================================================
+
+  describe("removeFavoriteItem", () => {
+    test("should do nothing when itemValue is empty", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1"] });
+
+      favoriteInstance.removeFavoriteItem("", { clientX: 0, clientY: 0 });
+
+      expect(state.getSnapshot().favorite.items).toEqual(["Location 1"]);
+      expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    });
+
+    test("should update in-memory state and write the filtered list to storage", async () => {
+      mockChromeStorage({ favoriteList: ["Location 1", "Location 2"] });
+      state.dispatch({ type: "FAVORITE_SET", items: ["Location 1", "Location 2"] });
+
+      favoriteInstance.removeFavoriteItem("Location 1", { clientX: 0, clientY: 0 });
+
+      expect(state.getSnapshot().favorite.items).toEqual(["Location 2"]);
+
+      await wait();
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: ["Location 2"] },
+        expect.any(Function)
+      );
+    });
+
+    test("should ignore a second removal at nearly the same spot within 300ms", async () => {
+      mockChromeStorage({ favoriteList: ["A", "B"] });
+      state.dispatch({ type: "FAVORITE_SET", items: ["A", "B"] });
+
+      favoriteInstance.removeFavoriteItem("A", { clientX: 10, clientY: 10 });
+      favoriteInstance.removeFavoriteItem("B", { clientX: 12, clientY: 11 });
+
+      // "B" is a distinct item deliberately removed right after "A" in the test,
+      // but from the reflowed list's perspective a real second mousedown this
+      // close in time and position is treated as an accidental double-click on
+      // the same (now-shifted) row, so it must be ignored.
+      expect(state.getSnapshot().favorite.items).toEqual(["B"]);
+
+      await wait();
+    });
+
+    test("should process rapid removals at different screen positions", async () => {
+      mockChromeStorage({ favoriteList: ["A", "B"] });
+      state.dispatch({ type: "FAVORITE_SET", items: ["A", "B"] });
+
+      favoriteInstance.removeFavoriteItem("A", { clientX: 10, clientY: 10 });
+      favoriteInstance.removeFavoriteItem("B", { clientX: 300, clientY: 300 });
+
+      expect(state.getSnapshot().favorite.items).toEqual([]);
+
+      await wait();
+    });
+
+    test("should serialize writes so a rapid second removal cannot resurrect the first", async () => {
+      // Simulates real chrome.storage.local timing: get/set are async and
+      // resolve out of order relative to when they were scheduled.
+      let backingStore = ["A", "B", "C"];
+      chrome.storage.local.get.mockImplementation((keys, callback) => {
+        setTimeout(() => callback({ favoriteList: backingStore }), 10);
+      });
+      chrome.storage.local.set.mockImplementation((data, callback) => {
+        setTimeout(() => {
+          backingStore = data.favoriteList;
+          if (callback) callback();
+        }, 10);
+      });
+
+      state.dispatch({ type: "FAVORITE_SET", items: ["A", "B", "C"] });
+
+      favoriteInstance.removeFavoriteItem("A", { clientX: 0, clientY: 0 });
+      favoriteInstance.removeFavoriteItem("B", { clientX: 500, clientY: 500 });
+
+      await wait(100);
+
+      expect(backingStore).toEqual(["C"]);
+      expect(state.getSnapshot().favorite.items).toEqual(["C"]);
+    });
+
+    test("should recover after a failed write instead of blocking all later removals", async () => {
+      mockChromeStorage({ favoriteList: ["A", "B"] });
+      chrome.storage.local.get.mockImplementationOnce(() => {
+        throw new Error("Extension context invalidated");
+      });
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+      state.dispatch({ type: "FAVORITE_SET", items: ["A", "B"] });
+
+      favoriteInstance.removeFavoriteItem("A", { clientX: 0, clientY: 0 });
+      await wait();
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      favoriteInstance.removeFavoriteItem("B", { clientX: 500, clientY: 500 });
+      await wait();
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: ["A"] },
+        expect.any(Function)
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  // ============================================================================
   // Integration Tests
   // ============================================================================
 
@@ -941,13 +1101,16 @@ describe("Favorite Component", () => {
       expect(favoriteListContainer.querySelectorAll(".favorite-list").length).toBe(2);
     });
 
-    test("add to favorite sends a runtime message", () => {
-      favoriteInstance.addToFavoriteList("New Place");
+    test("add to favorite writes to storage", async () => {
+      mockChromeStorage({ favoriteList: [] });
 
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-        action: "addToFavoriteList",
-        selectedText: "New Place",
-      });
+      favoriteInstance.addToFavoriteList("New Place");
+      await wait();
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: ["New Place"] },
+        expect.any(Function)
+      );
     });
 
     test("render favorites and setup event listeners", () => {
