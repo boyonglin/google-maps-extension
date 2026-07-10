@@ -749,6 +749,33 @@ describe("Popup reducer architecture", () => {
     expect(state.getSnapshot().deleteMode).toEqual({ source: null, selectedValues: [] });
   });
 
+  test("DELETE_TOGGLE_ALL is a no-op outside delete mode", () => {
+    const state = new State();
+    const initial = state.getSnapshot();
+    state.dispatch({ type: "DELETE_TOGGLE_ALL", values: ["A", "B"] });
+    expect(state.getSnapshot()).toBe(initial);
+  });
+
+  test("DELETE_TOGGLE_ALL selects everything when nothing (or only some) is selected", () => {
+    const state = new State();
+    state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+    state.dispatch({ type: "DELETE_TOGGLE_ALL", values: ["A", "B", "C"] });
+    expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["A", "B", "C"]);
+
+    // Partial selection also toggles to fully selected, not fully cleared
+    state.dispatch({ type: "DELETE_TOGGLE", value: "A" });
+    state.dispatch({ type: "DELETE_TOGGLE_ALL", values: ["A", "B", "C"] });
+    expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["A", "B", "C"]);
+  });
+
+  test("DELETE_TOGGLE_ALL clears the selection when everything is already selected", () => {
+    const state = new State();
+    state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+    state.dispatch({ type: "DELETE_TOGGLE_ALL", values: ["A", "B"] });
+    state.dispatch({ type: "DELETE_TOGGLE_ALL", values: ["A", "B"] });
+    expect(state.getSnapshot().deleteMode.selectedValues).toEqual([]);
+  });
+
   test("a tab switch before HYDRATE resolves is not clobbered by the persisted lastActiveTab", () => {
     const state = new State();
     // User clicks a tab before hydratePopup() completes

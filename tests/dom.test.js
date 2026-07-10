@@ -122,6 +122,49 @@ describe("DOMUtils", () => {
   });
 
   // ============================================================================
+  // createSelectAllBar Tests
+  // ============================================================================
+
+  describe("createSelectAllBar", () => {
+    beforeEach(() => {
+      chrome.i18n.getMessage = jest.fn((key) => key);
+    });
+
+    test("should render an unchecked, non-indeterminate checkbox when nothing is selected", () => {
+      const bar = DOMUtils.createSelectAllBar(["A", "B"], new Set());
+
+      const checkbox = bar.querySelector("input.select-all-checkbox");
+      expect(checkbox.checked).toBe(false);
+      expect(checkbox.indeterminate).toBe(false);
+      expect(bar.querySelector("span").textContent).toBe("selectAllBtnText");
+    });
+
+    test("should render a checked checkbox when every item is selected", () => {
+      const bar = DOMUtils.createSelectAllBar(["A", "B"], new Set(["A", "B"]));
+
+      const checkbox = bar.querySelector("input.select-all-checkbox");
+      expect(checkbox.checked).toBe(true);
+      expect(checkbox.indeterminate).toBe(false);
+    });
+
+    test("should render an indeterminate checkbox when only some items are selected", () => {
+      const bar = DOMUtils.createSelectAllBar(["A", "B", "C"], new Set(["A"]));
+
+      const checkbox = bar.querySelector("input.select-all-checkbox");
+      expect(checkbox.checked).toBe(false);
+      expect(checkbox.indeterminate).toBe(true);
+    });
+
+    test("should not be checked or indeterminate for an empty item list", () => {
+      const bar = DOMUtils.createSelectAllBar([], new Set());
+
+      const checkbox = bar.querySelector("input.select-all-checkbox");
+      expect(checkbox.checked).toBe(false);
+      expect(checkbox.indeterminate).toBe(false);
+    });
+  });
+
+  // ============================================================================
   // Module Export Tests
   // ============================================================================
 
@@ -134,6 +177,7 @@ describe("DOMUtils", () => {
     test("should have all required methods", () => {
       expect(typeof DOMUtils.findClosestListItem).toBe("function");
       expect(typeof DOMUtils.animateFavoriteIcon).toBe("function");
+      expect(typeof DOMUtils.createSelectAllBar).toBe("function");
     });
   });
 });

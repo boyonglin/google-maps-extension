@@ -78,6 +78,9 @@
       }
     }
   },
+  "selectAllBtnText": {
+    "message": "全選"
+  },
   "exportBtnText": {
     "message": "匯出"
   },
@@ -256,6 +259,9 @@
   },
   "deleteLabel": {
     "message": "刪除模式"
+  },
+  "selectAllLabel": {
+    "message": "全選"
   },
   "videoLabel": {
     "message": "影片摘要模式"

@@ -232,6 +232,16 @@ function reducePopupState(current, action = {}) {
         deleteMode: { ...current.deleteMode, selectedValues: Array.from(selected) },
       };
     }
+    case "DELETE_TOGGLE_ALL": {
+      if (!current.deleteMode.source) return current;
+      const values = stringList(action.values);
+      const allSelected =
+        values.length > 0 && values.every((v) => current.deleteMode.selectedValues.includes(v));
+      return {
+        ...current,
+        deleteMode: { ...current.deleteMode, selectedValues: allSelected ? [] : values },
+      };
+    }
     case "DELETE_CANCEL":
       return { ...current, deleteMode: { source: null, selectedValues: [] } };
     case "ONBOARDING_DEMO_SET":
