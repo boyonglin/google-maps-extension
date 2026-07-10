@@ -328,13 +328,18 @@ describe("History Component", () => {
         expect(global.favorite.addToFavoriteList).not.toHaveBeenCalled();
       });
 
-      test("should immediately update the icon to unmatched when removing a favorite", () => {
+      test("should fade the icon out immediately, restoring it only after the pointer leaves the icon", () => {
         const li = createMockHistoryItem("Test Location", ["Test Location"]);
         li.dataset.itemValue = "Test Location";
         searchHistoryListContainer.appendChild(li);
 
         const icon = li.querySelector("i");
         icon.dispatchEvent(createMouseEvent(icon, 0));
+
+        expect(icon.classList.contains("unfavoriting")).toBe(true);
+        expect(icon.className).not.toContain("bi-patch-plus-fill");
+
+        icon.dispatchEvent(new Event("mouseleave"));
 
         expect(icon.className).toBe("bi bi-patch-plus-fill");
       });

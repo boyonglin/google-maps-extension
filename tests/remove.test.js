@@ -71,6 +71,19 @@ describe("Remove Component", () => {
 
         expect(spy).toHaveBeenCalled();
       });
+
+      test("should track cancel button clicks via Analytics", () => {
+        window.Analytics = { trackFeatureClick: jest.fn() };
+        removeInstance.addRemoveListener();
+
+        cancelButton.click();
+
+        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledWith(
+          "cancel_delete",
+          "cancelButton"
+        );
+        delete window.Analytics;
+      });
     });
 
     describe("deleteButton click handler", () => {

@@ -573,6 +573,7 @@ li i {
   height: 2rem;
   justify-content: center;
   align-items: center;
+  transition: opacity 0.3s ease;
 }
 li:hover i {
   display: flex;
@@ -584,6 +585,10 @@ li i:hover {
 li i.matched {
   display: flex;
   opacity: 0.5;
+}
+li i.unfavoriting {
+  display: flex;
+  opacity: 0 !important;
 }
 li:hover i.matched {
   opacity: 1;

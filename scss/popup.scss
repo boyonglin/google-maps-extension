@@ -590,6 +590,7 @@ li {
     height: 2rem;
     justify-content: center;
     align-items: center;
+    transition: opacity 0.3s ease;
   }
 
   &:hover i {
@@ -605,6 +606,13 @@ li {
     &.matched {
       display: flex;
       opacity: 0.5;
+    }
+
+    // Fade out on unfavorite regardless of hover state, until the icon is
+    // swapped back once the pointer leaves the row (see fadeOutFavoriteIcon).
+    &.unfavoriting {
+      display: flex;
+      opacity: 0 !important;
     }
   }
 

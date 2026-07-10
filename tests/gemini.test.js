@@ -283,7 +283,7 @@ describe("Gemini Component", () => {
       );
     });
 
-    test("should immediately update the icon to unmatched when removing a favorite", async () => {
+    test("should fade the icon out immediately, restoring it only after the pointer leaves the icon", () => {
       const mockItem = createMockSummaryItem("Restaurant", "Downtown");
       summaryListContainer.appendChild(mockItem);
       const icon = mockItem.querySelector("i");
@@ -294,7 +294,10 @@ describe("Gemini Component", () => {
 
       summaryListContainer.dispatchEvent(clickEvent);
 
-      await wait(50);
+      expect(icon.classList.contains("unfavoriting")).toBe(true);
+      expect(icon.className).not.toContain("bi-patch-plus-fill");
+
+      icon.dispatchEvent(new Event("mouseleave"));
 
       expect(icon.className).toBe("bi bi-patch-plus-fill");
     });

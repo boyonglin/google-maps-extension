@@ -200,6 +200,14 @@ global.DOMUtils = {
       iconElement.classList.remove("spring-animation");
     }, 500);
   }),
+  fadeOutFavoriteIcon: jest.fn((iconElement) => {
+    iconElement.classList.add("unfavoriting");
+    const restore = () => {
+      iconElement.className = "bi bi-patch-plus-fill";
+      iconElement.title = chrome.i18n.getMessage("plusLabel");
+    };
+    iconElement.addEventListener("mouseleave", restore, { once: true });
+  }),
 };
 
 global.requestAnimationFrame = jest.fn((cb) => {
