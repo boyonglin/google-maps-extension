@@ -25,12 +25,24 @@ const DOMUtils = {
     }, 500);
   },
 
-  // Spring animate icon back to its unfavorited state
-  animateUnfavoriteIcon(iconElement) {
-    iconElement.className = "bi bi-patch-plus-fill spring-animation";
-    setTimeout(() => {
-      iconElement.classList.remove("spring-animation");
-    }, 500);
+  // Fade the icon out on unfavorite instead of reusing the "add" spring
+  // animation (which would read as the opposite action). The icon is only
+  // swapped to its unfavorited state once the pointer leaves the row, so the
+  // user doesn't see it flip while still looking at it.
+  fadeOutFavoriteIcon(iconElement) {
+    iconElement.classList.add("unfavoriting");
+    const li = iconElement.closest("li");
+
+    const restore = () => {
+      iconElement.className = "bi bi-patch-plus-fill";
+      iconElement.title = chrome.i18n.getMessage("plusLabel");
+    };
+
+    if (li) {
+      li.addEventListener("mouseleave", restore, { once: true });
+    } else {
+      restore();
+    }
   },
 
   // Fixed row above the (reversed) list in delete mode, toggling all items on/off
@@ -1336,8 +1348,7 @@ class History {
                 "searchHistoryListContainer"
               );
             favorite.removeFavoriteItem(liElement.dataset.itemValue || "", event);
-            DOMUtils.animateUnfavoriteIcon(event.target);
-            event.target.title = chrome.i18n.getMessage("plusLabel");
+            DOMUtils.fadeOutFavoriteIcon(event.target);
           } else {
             if (window.Analytics)
               window.Analytics.trackFeatureClick(
@@ -1442,7 +1453,12 @@ class History {
     if (!structuralChange && existingItems.length > 0) {
       existingItems.forEach((li) => {
         const icon = li.querySelector("i");
-        if (!icon || icon.classList.contains("spring-animation")) return;
+        if (
+          !icon ||
+          icon.classList.contains("spring-animation") ||
+          icon.classList.contains("unfavoriting")
+        )
+          return;
         const newIcon = (this.favoriteComponent || favorite).createFavoriteIcon(
           li.dataset.itemValue,
           snapshot.favorite.items
@@ -1546,8 +1562,7 @@ class Gemini {
               "summaryListContainer"
             );
           favorite.removeFavoriteItem(storedItem, event);
-          DOMUtils.animateUnfavoriteIcon(event.target);
-          event.target.title = chrome.i18n.getMessage("plusLabel");
+          DOMUtils.fadeOutFavoriteIcon(event.target);
         } else {
           if (window.Analytics)
             window.Analytics.trackFeatureClick(
@@ -1975,7 +1990,8 @@ class Gemini {
       const favoriteComponent = this.favoriteComponent || favorite;
       listContainer.querySelectorAll(".summary-list").forEach((item) => {
         const icon = item.querySelector("i");
-        if (icon.classList.contains("spring-animation")) return;
+        if (icon.classList.contains("spring-animation") || icon.classList.contains("unfavoriting"))
+          return;
         const itemName = item.querySelector("span:first-child").textContent;
         const newIcon = favoriteComponent.createFavoriteIcon(itemName, trimmedFavorite);
         if (icon.className !== newIcon.className) icon.className = newIcon.className;

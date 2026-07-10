@@ -48,8 +48,7 @@ class Gemini {
               "summaryListContainer"
             );
           favorite.removeFavoriteItem(storedItem, event);
-          DOMUtils.animateUnfavoriteIcon(event.target);
-          event.target.title = chrome.i18n.getMessage("plusLabel");
+          DOMUtils.fadeOutFavoriteIcon(event.target);
         } else {
           if (window.Analytics)
             window.Analytics.trackFeatureClick(
@@ -477,7 +476,8 @@ class Gemini {
       const favoriteComponent = this.favoriteComponent || favorite;
       listContainer.querySelectorAll(".summary-list").forEach((item) => {
         const icon = item.querySelector("i");
-        if (icon.classList.contains("spring-animation")) return;
+        if (icon.classList.contains("spring-animation") || icon.classList.contains("unfavoriting"))
+          return;
         const itemName = item.querySelector("span:first-child").textContent;
         const newIcon = favoriteComponent.createFavoriteIcon(itemName, trimmedFavorite);
         if (icon.className !== newIcon.className) icon.className = newIcon.className;

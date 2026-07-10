@@ -200,11 +200,18 @@ global.DOMUtils = {
       iconElement.classList.remove("spring-animation");
     }, 500);
   }),
-  animateUnfavoriteIcon: jest.fn((iconElement) => {
-    iconElement.className = "bi bi-patch-plus-fill spring-animation";
-    setTimeout(() => {
-      iconElement.classList.remove("spring-animation");
-    }, 500);
+  fadeOutFavoriteIcon: jest.fn((iconElement) => {
+    iconElement.classList.add("unfavoriting");
+    const li = iconElement.closest("li");
+    const restore = () => {
+      iconElement.className = "bi bi-patch-plus-fill";
+      iconElement.title = chrome.i18n.getMessage("plusLabel");
+    };
+    if (li) {
+      li.addEventListener("mouseleave", restore, { once: true });
+    } else {
+      restore();
+    }
   }),
   createSelectAllBar: jest.fn((items, selected) => {
     const bar = document.createElement("div");
