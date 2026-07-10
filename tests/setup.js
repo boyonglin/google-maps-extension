@@ -200,12 +200,6 @@ global.DOMUtils = {
       iconElement.classList.remove("spring-animation");
     }, 500);
   }),
-  animateUnfavoriteIcon: jest.fn((iconElement) => {
-    iconElement.className = "bi bi-patch-plus-fill spring-animation";
-    setTimeout(() => {
-      iconElement.classList.remove("spring-animation");
-    }, 500);
-  }),
   createSelectAllBar: jest.fn((items, selected) => {
     const bar = document.createElement("div");
     bar.className = "select-all-bar d-flex align-items-center px-3 py-2 mb-2";
