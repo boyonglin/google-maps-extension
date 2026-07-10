@@ -6,6 +6,20 @@ const State = require("../Package/dist/hooks/popupState.js");
 global.State = State;
 global.state = new State();
 
+// deleteFromFavoriteList writes through favorite's shared queue so it can't
+// race a concurrent single-item removal; mirror that get-then-set behavior.
+global.favorite = {
+  queueFavoriteWrite: jest.fn(
+    (computeNext) =>
+      new Promise((resolve) => {
+        chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
+          const latest = Array.isArray(favoriteList) ? favoriteList : [];
+          chrome.storage.local.set({ favoriteList: computeNext(latest) }, resolve);
+        });
+      })
+  ),
+};
+
 const Remove = require("../Package/dist/components/remove.js");
 const { mockChromeStorage, mockI18n } = require("./testHelpers");
 const { setupPopupDOM, teardownPopupDOM } = require("./popupDOMFixture");
@@ -327,9 +341,10 @@ describe("Remove Component", () => {
 
       removeInstance.deleteFromFavoriteList();
 
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        favoriteList: ["Favorite 2"],
-      });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: ["Favorite 2"] },
+        expect.any(Function)
+      );
       expect(state.getSnapshot().favorite.items).toEqual(["Favorite 2"]);
     });
 
@@ -341,7 +356,10 @@ describe("Remove Component", () => {
 
       removeInstance.deleteFromFavoriteList();
 
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({ favoriteList: [] });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: [] },
+        expect.any(Function)
+      );
     });
 
     test("should cancel delete mode after deleting", () => {
@@ -382,9 +400,10 @@ describe("Remove Component", () => {
 
       removeInstance.deleteFromFavoriteList();
 
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        favoriteList: ["Favorite 1"],
-      });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: ["Favorite 1"] },
+        expect.any(Function)
+      );
     });
 
     test("BUG REPRO: must not clobber an item another context wrote to storage after this snapshot was taken", () => {
@@ -396,9 +415,21 @@ describe("Remove Component", () => {
 
       removeInstance.deleteFromFavoriteList();
 
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        favoriteList: ["Favorite 2", "Favorite 3"],
-      });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: ["Favorite 2", "Favorite 3"] },
+        expect.any(Function)
+      );
+    });
+
+    test("should serialize bulk delete through favorite's shared write queue", () => {
+      state.dispatch({ type: "FAVORITE_SET", items: ["Favorite 1", "Favorite 2"] });
+      state.dispatch({ type: "DELETE_ENTER", source: "favorite" });
+      state.dispatch({ type: "DELETE_TOGGLE", value: "Favorite 1" });
+      mockChromeStorage({ favoriteList: ["Favorite 1", "Favorite 2"] });
+
+      removeInstance.deleteFromFavoriteList();
+
+      expect(favorite.queueFavoriteWrite).toHaveBeenCalledWith(expect.any(Function));
     });
   });
 
@@ -567,7 +598,10 @@ describe("Remove Component", () => {
       deleteButton.click();
 
       expect(state.getSnapshot().favorite.items).toEqual(["Favorite 2"]);
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({ favoriteList: ["Favorite 2"] });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: ["Favorite 2"] },
+        expect.any(Function)
+      );
     });
 
     test("cancel deletion workflow", () => {
@@ -609,7 +643,10 @@ describe("Remove Component", () => {
       expect(() => {
         removeInstance.deleteFromFavoriteList();
       }).not.toThrow();
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({ favoriteList: [] });
+      expect(chrome.storage.local.set).toHaveBeenCalledWith(
+        { favoriteList: [] },
+        expect.any(Function)
+      );
     });
 
     test("should handle items with special characters in text", () => {

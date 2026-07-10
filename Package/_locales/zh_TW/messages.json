@@ -278,6 +278,9 @@
   "plusLabel": {
     "message": "加入收藏"
   },
+  "removeFavoriteLabel": {
+    "message": "移除收藏"
+  },
   "clearSummaryLabel": {
     "message": "摘要結果將會保存 1 天後自動清除"
   },
