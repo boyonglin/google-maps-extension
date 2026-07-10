@@ -1,23 +1,14 @@
 /**
  * Lightweight 4-step onboarding for first-time users.
- * Steps:
- *   1) Hints    -> highlights the footer "Tips" button (keyboard shortcuts modal)
- *   2) Favorite -> injects a demo search-history item and highlights its "add favorite" icon
- *   3) API      -> highlights the Gemini summary button (entry to API key setup)
- *   4) Premium  -> highlights the footer "Premium" button (premium features)
- *
- * Persistence: chrome.storage.local key `onboardingDone` (boolean).
- *
- * Steps may declare `setup` / `cleanup` hooks. `setup` runs once when the step
- * first renders; `cleanup` runs when leaving the step (via next or finish) so
- * any temporary DOM (e.g. the demo history item) is reliably removed.
+ * Steps: Hints, Favorite, API, Premium.
+ * Persistence: chrome.storage.local key `onboardingDone`.
+ * setup/cleanup hooks manage transient DOM like the demo history item.
  */
 const DEMO_ITEM_CLASS = "onboarding-demo-item";
 
 class Onboarding {
   constructor() {
     this.STORAGE_KEY = "onboardingDone";
-    this.DEMO_ITEM_CLASS = DEMO_ITEM_CLASS;
     this.steps = [
       {
         targetSelector: '.footer-li[data-bs-target="#tipsModal"]',
@@ -53,81 +44,23 @@ class Onboarding {
   }
 
   /**
-   * Append a fake search-history list item so the user can see the
-   * "add to favorite" affordance even on a fresh install with no history.
-   * The item is marked with DEMO_ITEM_CLASS so it can be removed later.
-   * Clicks inside the demo item are swallowed (capture phase) and routed to
-   * `next()` so the real history click handler never adds it to favorites.
+   * Inject a demo history item to show "add to favorite" feature.
+   * Clicks are swallowed and routed to next() to prevent persistence.
    */
   injectDemoHistoryItem() {
-    const container = document.getElementById("searchHistoryList");
-    if (!container) return;
-
-    let ul = container.querySelector("ul");
-    if (!ul) {
-      ul = document.createElement("ul");
-      ul.className = "list-group d-flex flex-column-reverse";
-      ul.dataset.onboardingCreated = "true";
-      container.appendChild(ul);
-    }
-
-    const placeName = chrome?.i18n?.getMessage?.("onboardingDemoPlace") || "Eiffel Tower";
-
-    const li = document.createElement("li");
-    li.className = `${this.DEMO_ITEM_CLASS} list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center text-break`;
-
-    const span = document.createElement("span");
-    span.textContent = placeName;
-    li.appendChild(span);
-
-    const icon = document.createElement("i");
-    icon.className = "bi bi-patch-plus-fill";
-    icon.title = chrome?.i18n?.getMessage?.("plusLabel") || "";
-    li.appendChild(icon);
-
-    // Swallow real clicks so the existing history listener does not persist
-    // the demo item to chrome.storage favorites. Clicking the icon advances.
-    const swallow = (event) => {
-      event.stopPropagation();
-      event.preventDefault();
-      if (event.target.classList.contains("bi")) this.next();
-    };
-    ["mousedown", "click", "contextmenu"].forEach((evt) => li.addEventListener(evt, swallow, true));
-
-    ul.appendChild(li);
-
-    const emptyMessage = document.getElementById("emptyMessage");
-    if (emptyMessage && emptyMessage.style.display !== "none") {
-      emptyMessage.dataset.onboardingHidden = "true";
-      emptyMessage.style.display = "none";
-    }
+    this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
+    // Click handled in history.js since render() discards bound listeners
   }
 
   removeDemoHistoryItem() {
-    const container = document.getElementById("searchHistoryList");
-    if (!container) return;
-
-    container.querySelectorAll(`.${this.DEMO_ITEM_CLASS}`).forEach((el) => el.remove());
-
-    // If we created the <ul> ourselves and it is now empty, drop it too.
-    const ul = container.querySelector("ul[data-onboarding-created='true']");
-    if (ul && ul.children.length === 0) ul.remove();
-
-    const emptyMessage = document.getElementById("emptyMessage");
-    if (emptyMessage && emptyMessage.dataset.onboardingHidden === "true") {
-      emptyMessage.style.display = "block";
-      delete emptyMessage.dataset.onboardingHidden;
-    }
+    this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: false });
   }
 
-  /**
-   * Start onboarding only if it has not been completed previously.
-   */
   maybeStart() {
     if (!chrome?.storage?.local?.get) return;
     chrome.storage.local.get(this.STORAGE_KEY, (result) => {
       if (result && result[this.STORAGE_KEY]) return;
-      // Defer slightly to let the popup paint and i18n apply.
+      // Defer to allow popup paint and i18n
       setTimeout(() => this.start(), 250);
     });
   }
@@ -152,7 +85,7 @@ class Onboarding {
     this.tooltip.setAttribute("role", "dialog");
     this.tooltip.setAttribute("aria-live", "polite");
 
-    // Build tooltip structure once; render() only updates text + listeners.
+    // Build tooltip structure once
     this.tooltip.innerHTML = `
       <div class="onboarding-tooltip-header">
         <span class="onboarding-tooltip-title"></span>
@@ -243,7 +176,7 @@ class Onboarding {
     let top;
     if (placement === "top") {
       top = targetRect.top - ttRect.height - margin;
-      if (top < 8) top = targetRect.bottom + margin; // flip if no room
+      if (top < 8) top = targetRect.bottom + margin; // Flip if no room
     } else {
       top = targetRect.bottom + margin;
       if (top + ttRect.height > viewportH - 8) top = targetRect.top - ttRect.height - margin;
@@ -259,8 +192,7 @@ class Onboarding {
   }
 
   next() {
-    // Tear down the leaving step (e.g. remove demo history item) before
-    // moving forward so transient DOM disappears immediately.
+    // Clean up leaving step to remove transient DOM
     const leaving = this.steps[this.currentStep];
     if (leaving?.cleanup && leaving._setupDone) {
       try {
@@ -280,7 +212,7 @@ class Onboarding {
   }
 
   finish() {
-    // Run cleanup for any step whose setup ran but never got cleaned up.
+    // Run pending cleanups
     this.steps.forEach((s) => {
       if (s._setupDone && s.cleanup) {
         try {

@@ -20,7 +20,6 @@ function getMaxListLength() {
   return Number.isFinite(historyMax) && historyMax > 0 ? historyMax : DEFAULT_MAX_HISTORY;
 }
 
-// Utilities
 const RECEIVING_END_ERR = "Receiving end does not exist";
 const DEFAULT_CAN_RETRY = (err) => String(err?.message ?? err).includes(RECEIVING_END_ERR);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -43,7 +42,6 @@ async function withRetry(
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
-  // Create the right-click context menu items
   chrome.contextMenus.create({
     id: "googleMapsSearch",
     title: chrome.i18n.getMessage("searchContext"),
@@ -60,7 +58,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     }
   });
 
-  // What's new page
+  // Open what's new page on install/update
   const userLocale = chrome.i18n.getUILanguage();
   if (
     details.reason === "install" ||
@@ -78,7 +76,6 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 
-// Version comparison utility
 function compareChromeVersions(a, b) {
   const pa = String(a).split(".").map(Number);
   const pb = String(b).split(".").map(Number);
@@ -94,12 +91,11 @@ function compareChromeVersions(a, b) {
 
 const isLessThan = (v, t) => compareChromeVersions(v, t) < 0;
 
-// Storage changes
 chrome.storage.onChanged.addListener((changes, area) => {
-  // Keep module cache in sync (also updates URLs when authUser changes)
+  // Keep module cache in sync (updates URLs when authUser changes)
   applyStorageChanges(changes, area);
 
-  // Manage context menu for directions based on presence of startAddr
+  // Toggle directions context menu based on startAddr
   if (area === "local" && changes.startAddr) {
     const newStartAddr = changes.startAddr.newValue;
     if (newStartAddr) {
@@ -120,7 +116,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     }
   }
 
-  // Trim history list immediately when historyMax is reduced
+  // Trim history list when historyMax is reduced
   if (area === "local" && changes.historyMax) {
     const newMax = changes.historyMax.newValue;
     if (Number.isFinite(newMax) && newMax > 0) {
@@ -134,9 +130,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// Track the right-click event
 chrome.contextMenus.onClicked.addListener(async (info) => {
-  // The service worker may have just woken up; warm the cache first.
+  // Warm cache in case service worker just woke up
   await ensureWarm();
   const selectedText = info.selectionText;
   if (info.menuItemId === "googleMapsSearch") {
@@ -148,7 +143,6 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
   }
 });
 
-// Track the shortcuts event
 chrome.commands.onCommand.addListener(async (command) => {
   Analytics.trackShortcut(command);
   await ensureWarm();
@@ -170,24 +164,17 @@ chrome.commands.onCommand.addListener(async (command) => {
         extpay.getUser().then(async (user) => {
           const now = new Date();
 
-          // Paid user
           if (user.paid) {
             await tryAndCheckApi(tabId);
             chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
-          }
-          // Active trial
-          else if (user.trialStartedAt && now - user.trialStartedAt < trialPeriod) {
+          } else if (user.trialStartedAt && now - user.trialStartedAt < trialPeriod) {
             await tryAndCheckApi(tabId);
             chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
-          }
-          // Expired trial
-          else if (user.trialStartedAt) {
+          } else if (user.trialStartedAt) {
             await tryAndCheckApi(tabId);
             chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
             tryPremiumNotify().catch(() => {});
-          }
-          // First time user
-          else {
+          } else {
             await tryAndCheckApi(tabId);
             chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
           }
@@ -226,7 +213,6 @@ async function tryAndCheckApi(tabId) {
   await trySuggest(tabId);
 }
 
-// Retry mechanism for trying to suggest places from the content
 async function trySuggest(tabId, retries = 10) {
   return withRetry(
     async () => {
@@ -287,15 +273,12 @@ function sendChromeMessage({ tabId, message } = {}) {
   });
 }
 
-// Handle selected text and send messages to background.js
 function handleSelectedText(selectedText) {
-  // Check that the selected text is not empty or null
   if (!selectedText || selectedText.trim() === "") {
     console.error("No valid selected text.");
     return;
   }
 
-  // Use chrome.tabs.create to open a new tab for search
   const searchUrl = buildSearchUrl(selectedText);
   chrome.tabs.create({ url: searchUrl });
 
@@ -332,20 +315,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "openTab") {
-    // Opens the tab without focusing on it
     chrome.tabs.create({
       url: request.url,
       active: false,
     });
   } else if (request.action === "canGroup") {
-    // Checks if the user can group tabs
     sendResponse({ canGroup });
     return;
   } else if (request.action === "openInGroup") {
-    // Create a new tab group (if supported)
     openUrlsInNewGroup(request.urls, request.groupTitle, request.groupColor, request.collapsed);
   } else if (request.action === "organizeLocations") {
-    // Organize locations using Gemini
     handleOrganizeLocations(request.locations, request.listType, sendResponse);
     return true;
   }
@@ -428,12 +407,11 @@ function openUrlsInNewGroup(urls, title, color, collapsed) {
   });
 }
 
-// Add the selected text to history list
 async function updateHistoryList(selectedText) {
   // Defense in depth: never trim or record history against cold DEFAULTS.
   await ensureWarm();
   chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
-    // Respect incognito mode: do not persist history when enabled
+    // Do not persist history in incognito mode
     if (getCache().isIncognito) {
       return;
     }
@@ -442,25 +420,21 @@ async function updateHistoryList(selectedText) {
       searchHistoryList = [];
     }
 
-    // Remove and rejoin existing selected text item
     const index = searchHistoryList.indexOf(selectedText);
     if (index !== -1) {
       searchHistoryList.splice(index, 1);
     }
     searchHistoryList.push(selectedText);
 
-    // Trim excess items
     const maxListLength = getMaxListLength();
     while (searchHistoryList.length > maxListLength) {
       searchHistoryList.shift();
     }
 
-    // Updated searchHistoryList to storage
     chrome.storage.local.set({ searchHistoryList });
   });
 }
 
-// Add the target item to favorite list
 function addToFavoriteList(selectedText) {
   chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
     if (!favoriteList) {
@@ -477,7 +451,6 @@ function addToFavoriteList(selectedText) {
   });
 }
 
-// Gemini API
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "summarizeApi" && request.text) {
     // Special case for YouTube video descriptions
@@ -505,7 +478,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 });
 
-// Registered event listeners at module level
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "verifyApiKey") {
     verifyApiKey(request.apiKey)
@@ -564,13 +536,13 @@ async function verifyApiKey(apiKey) {
 function callApi(prompt, content, apiKey, sendResponse) {
   const url = `${endpoint}:generateContent`;
 
-  // 1. Build contents based on content type (YouTube URI vs plain text)
+  // Handle YouTube URI vs plain text
   const isYouTubeUri = content.includes("youtube.com") || content.includes("youtu.be");
   const contents = isYouTubeUri
     ? [{ parts: [{ text: prompt }, { file_data: { file_uri: content.trim() } }] }]
     : [{ parts: [{ text: `${prompt}${content}` }] }];
 
-  // 2. Build generationConfig based on task type (organize needs thinking, others need speed)
+  // Use thinking config only when organizing
   const needsThinking = prompt.includes("Organize");
   const generationConfig = {
     thinkingConfig: {
@@ -578,7 +550,6 @@ function callApi(prompt, content, apiKey, sendResponse) {
     },
   };
 
-  // 3. Combine into request data
   const data = { contents, generationConfig };
 
   fetch(url, {
@@ -611,7 +582,6 @@ function callApi(prompt, content, apiKey, sendResponse) {
     });
 }
 
-// iframe injection
 chrome.action.onClicked.addListener(meow);
 
 function meow() {
@@ -645,20 +615,15 @@ function meow() {
   });
 }
 
-// Payment system
 const trialPeriod = 40 * 24 * 60 * 60 * 1000; // 40 days
 const extpay = ExtPay("the-maps-express");
 extpay.startBackground();
 
 function handleExtensionPayment(user, sender) {
-  // First time user
   if (!user.trialStartedAt) {
     extpay.openTrialPage("40-day");
     chrome.tabs.sendMessage(sender.tab.id, { action: "consoleQuote", stage: "first" });
-  }
-
-  // Trial or expired trial
-  else {
+  } else {
     extpay.openTrialPage();
   }
 }
@@ -688,12 +653,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// 1) Warm on first useful wake-ups
 chrome.tabs.onActivated.addListener(() => {
   ensureWarm();
 });
 
-// 2) Fast message responder for popup
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "getWarmState") {
     ensureWarm().then(() => {
@@ -703,7 +666,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     });
     return true;
   } else if (request.action === "getApiKey") {
-    getApiKey().then((apiKey) => sendResponse({ apiKey }));
+    getApiKey()
+      .then((apiKey) => sendResponse({ apiKey }))
+      .catch((err) => sendResponse({ apiKey: "", error: err.message }));
     return true;
   } else if (request.action === "buildSearchUrl") {
     ensureWarm().then(() => sendResponse({ url: buildSearchUrl(request.query) }));

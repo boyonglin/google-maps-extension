@@ -1,16 +1,17 @@
-// Track tab messages from the background script
+// Shared with inject.js (loaded into the same page later, on demand):
+// 32px draggable bar + 3px border around the iframe content.
+window.TME_IFRAME_CHROME_OFFSET = 35;
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (!request) {
     return;
   }
 
-  // Get the selected text from the webpage
   if (request.action === "getSelectedText") {
     const selectedText = window.getSelection().toString();
     sendResponse({ selectedText });
   }
 
-  // Inject Active Tab Content
   if (request.action === "getContent") {
     const content = getContent();
     const contentLength = content.length;
@@ -21,21 +22,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     globalThis.attachMapLinkToPage(request);
   }
 
-  // Check the connection between the background and the content script
   if (request.message === "ping") {
     sendResponse({ status: "connected" });
   }
 
-  // Expand YouTube description if available
   if (request.action === "expandYouTubeDescription") {
     try {
-      // Look for the expand button with the specific selector
       const expandButton = document.querySelector(
         "tp-yt-paper-button#expand.button.style-scope.ytd-text-inline-expander"
       );
 
       if (expandButton && expandButton.getAttribute("aria-disabled") !== "true") {
-        // Click the expand button
         expandButton.click();
         sendResponse({ expanded: true });
       } else {
@@ -64,7 +61,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (iframeContainer) {
       iframeContainer.style.width = request.width + "px";
-      iframeContainer.style.height = request.height + 32 + 3 + "px"; // 32px for the draggable bar, 3px for the border
+      iframeContainer.style.height = request.height + window.TME_IFRAME_CHROME_OFFSET + "px";
     }
   }
 
@@ -109,7 +106,6 @@ function getTextContent(element) {
   return element.innerText || element.textContent;
 }
 
-// Remove header and footer text from bodyText
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -121,7 +117,6 @@ function isYouTubeWatchPage() {
 }
 
 function getContent() {
-  // Get the summary topic
   const titleElement = document.querySelector("head > title");
   const titleText = getTextContent(titleElement);
   const summaryTopic = `Page's main topic: <title>${titleText}</title>`;

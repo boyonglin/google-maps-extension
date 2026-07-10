@@ -1,7 +1,4 @@
-/**
- * Theme Initialization Script
- * Runs before CSS to prevent theme flash on popup open
- */
+// Initialize theme before CSS loads to prevent flash
 (function () {
   chrome.storage.local.get("isDarkMode", function (result) {
     let isDark = result.isDarkMode;

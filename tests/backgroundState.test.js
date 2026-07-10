@@ -25,8 +25,6 @@ describe("backgroundState.js - URL Building Functions", () => {
   let updateUserUrls, buildSearchUrl, buildDirectionsUrl, buildMapsUrl;
 
   beforeEach(() => {
-    // Don't reset modules - it clears mocks!
-    // jest.resetModules();
     jest.clearAllMocks();
 
     backgroundState = require("../Package/dist/hooks/backgroundState.js");
@@ -35,7 +33,6 @@ describe("backgroundState.js - URL Building Functions", () => {
     buildDirectionsUrl = backgroundState.buildDirectionsUrl;
     buildMapsUrl = backgroundState.buildMapsUrl;
 
-    // Reset cache for test isolation
     if (backgroundState.__resetCacheForTesting) {
       backgroundState.__resetCacheForTesting();
     }
@@ -278,8 +275,6 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
   let ensureWarm, getApiKey, applyStorageChanges, DEFAULTS;
 
   beforeEach(() => {
-    // Don't reset modules - it clears the mock!
-    // jest.resetModules();
     jest.clearAllMocks();
     decryptApiKey.mockReset();
 
@@ -289,7 +284,6 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
     applyStorageChanges = backgroundState.applyStorageChanges;
     DEFAULTS = backgroundState.DEFAULTS;
 
-    // Reset cache for test isolation
     if (backgroundState.__resetCacheForTesting) {
       backgroundState.__resetCacheForTesting();
     }
@@ -307,6 +301,9 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
         isIncognito: false,
         videoSummaryToggle: false,
         historyMax: 10,
+        summaryList: [],
+        timestamp: null,
+        lastActiveTab: "history",
       });
     });
 
@@ -347,9 +344,7 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
         geminiApiKey: "",
       });
 
-      // First call
       const result1 = await ensureWarm();
-      // Second call
       const result2 = await ensureWarm();
 
       expect(chrome.storage.local.get).toHaveBeenCalledTimes(1);
@@ -385,7 +380,6 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
 
       await ensureWarm();
 
-      // Verify URLs were updated
       expect(backgroundState.queryUrl).toBe("https://www.google.com/maps?authuser=5&");
       expect(backgroundState.routeUrl).toBe("https://www.google.com/maps/dir/?authuser=5&");
     });
@@ -395,14 +389,11 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
         geminiApiKey: "",
       });
 
-      // Make multiple concurrent calls
       const promises = [ensureWarm(), ensureWarm(), ensureWarm()];
 
       const results = await Promise.all(promises);
 
-      // Should only call storage once
       expect(chrome.storage.local.get).toHaveBeenCalledTimes(1);
-      // All results should be the same
       expect(results[0]).toBe(results[1]);
       expect(results[1]).toBe(results[2]);
     });
@@ -491,11 +482,34 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
       expect(chrome.storage.local.get).toHaveBeenCalled();
       expect(apiKey).toBe("my-api-key");
     });
+
+    test("BUG REPRO: must wait for an in-flight applyStorageChanges decrypt instead of reading stale cache", async () => {
+      setupMockStorageWithDecryption("", { geminiApiKey: "" });
+      await ensureWarm();
+
+      let resolveDecrypt;
+      decryptApiKey.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveDecrypt = resolve;
+          })
+      );
+
+      const applyPromise = applyStorageChanges(
+        { geminiApiKey: { newValue: "new-encrypted-key" } },
+        "local"
+      );
+
+      const getApiKeyPromise = getApiKey();
+      resolveDecrypt("new-decrypted-key");
+      await applyPromise;
+
+      await expect(getApiKeyPromise).resolves.toBe("new-decrypted-key");
+    });
   });
 
   describe("applyStorageChanges", () => {
     beforeEach(async () => {
-      // Initialize cache first
       setupMockStorage({
         geminiApiKey: "",
       });
@@ -589,8 +603,6 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
     });
 
     test("should initialize cache with DEFAULTS if cache is null", async () => {
-      // Reset cache instead of modules
-      // jest.resetModules();
       const freshBackgroundState = require("../Package/dist/hooks/backgroundState.js");
       if (freshBackgroundState.__resetCacheForTesting) {
         freshBackgroundState.__resetCacheForTesting();
@@ -604,6 +616,27 @@ describe("backgroundState.js - Edge Cases and Performance", () => {
 
       const cache = freshBackgroundState.getCache();
       expect(cache.searchHistoryList).toEqual(["New Item"]);
+    });
+
+    test("should preserve real persisted fields (not reset to DEFAULTS) when a storage write races ahead of the first ensureWarm() read", async () => {
+      // Simulates a cold-started service worker: real data from a previous
+      // session already sits in chrome.storage.local, but ensureWarm() has
+      // not run yet in this worker instance, so the in-memory cache is null.
+      const freshBackgroundState = require("../Package/dist/hooks/backgroundState.js");
+      if (freshBackgroundState.__resetCacheForTesting) {
+        freshBackgroundState.__resetCacheForTesting();
+      }
+      setupMockStorage({ searchHistoryList: ["Old Trip", "Home"] });
+
+      // An unrelated write (e.g. another popup instance, or the background's
+      // own historyMax trim) reaches applyStorageChanges before anything has
+      // triggered a real ensureWarm() read.
+      const changes = { favoriteList: { newValue: ["New Fav"] } };
+      await freshBackgroundState.applyStorageChanges(changes, "local");
+
+      const cache = freshBackgroundState.getCache();
+      expect(cache.favoriteList).toEqual(["New Fav"]);
+      expect(cache.searchHistoryList).toEqual(["Old Trip", "Home"]);
     });
 
     test("should handle empty changes object", async () => {
@@ -645,8 +678,6 @@ describe("backgroundState.js - Integration & Performance Tests", () => {
   let buildDirectionsUrl, buildMapsUrl;
 
   beforeEach(() => {
-    // Don't reset modules - it clears mocks!
-    // jest.resetModules();
     jest.clearAllMocks();
     decryptApiKey.mockReset();
 
@@ -658,7 +689,6 @@ describe("backgroundState.js - Integration & Performance Tests", () => {
     buildDirectionsUrl = backgroundState.buildDirectionsUrl;
     buildMapsUrl = backgroundState.buildMapsUrl;
 
-    // Reset cache for test isolation
     if (backgroundState.__resetCacheForTesting) {
       backgroundState.__resetCacheForTesting();
     }
@@ -671,19 +701,15 @@ describe("backgroundState.js - Integration & Performance Tests", () => {
       geminiApiKey: "initial.encrypted.key",
     });
 
-    // Load cache
     await ensureWarm();
 
-    // Verify initial state
     let cache = backgroundState.getCache();
     expect(cache.authUser).toBe(2);
     expect(cache.geminiApiKey).toBe("initial-api-key");
 
-    // Build URLs with initial authUser
     let searchUrl = buildSearchUrl("Tokyo");
     expect(searchUrl).toContain("authuser=2");
 
-    // Simulate storage change
     decryptApiKey.mockResolvedValue("updated-api-key");
     await applyStorageChanges(
       {
@@ -693,12 +719,10 @@ describe("backgroundState.js - Integration & Performance Tests", () => {
       "local"
     );
 
-    // Verify updated state
     cache = backgroundState.getCache();
     expect(cache.authUser).toBe(7);
     expect(cache.geminiApiKey).toBe("updated-api-key");
 
-    // Build URLs with updated authUser
     searchUrl = buildSearchUrl("Osaka");
     expect(searchUrl).toContain("authuser=7");
   });
@@ -709,12 +733,10 @@ describe("backgroundState.js - Integration & Performance Tests", () => {
     });
     decryptApiKey.mockRejectedValue(new Error("Bad decryption"));
 
-    // First load with corrupted key
     await ensureWarm();
     let cache = backgroundState.getCache();
     expect(cache.geminiApiKey).toBe("");
 
-    // Update with valid key
     decryptApiKey.mockResolvedValue("valid-key");
     await applyStorageChanges(
       {
@@ -735,7 +757,6 @@ describe("backgroundState.js - Integration & Performance Tests", () => {
 
     await ensureWarm();
 
-    // Multiple updates
     await applyStorageChanges(
       {
         searchHistoryList: { newValue: ["Item 1", "Item 2"] },

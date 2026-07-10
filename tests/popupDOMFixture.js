@@ -1,14 +1,11 @@
 /**
  * DOM Fixture Helper for popup.js testing
- * Creates a minimal but complete DOM structure based on popup.html
  */
 
 function createPopupDOM() {
-  // Create main container
   const container = document.createElement("div");
   container.className = "mx-4 mt-4 mb-3 w-100";
 
-  // Create header with search input
   const header = document.createElement("header");
   header.className = "d-flex align-items-center border-bottom pb-4";
   header.innerHTML = `
@@ -26,7 +23,6 @@ function createPopupDOM() {
     </div>
   `;
 
-  // Create main section
   const section = document.createElement("section");
   section.className = "pt-3 pb-4";
   section.innerHTML = `
@@ -38,7 +34,7 @@ function createPopupDOM() {
         <div class="col-auto ml-auto d-flex align-items-center px-0">
           <div class="row g-1">
             <div class="col">
-              <button type="button" id="videoSummaryButton" class="btn btn-outline-secondary d-none"
+              <button type="button" id="videoSummaryButton" class="btn btn-outline-secondary toggle-active-button d-none"
                       aria-label="Video Summary" title="Video Summary"
                       data-locale-title="videoLabel" data-locale-aria-label="videoLabel">
                 <i class="bi bi-youtube"></i>
@@ -67,7 +63,7 @@ function createPopupDOM() {
               </button>
             </div>
             <div class="col">
-              <button type="button" id="deleteListButton" class="btn btn-outline-secondary"
+              <button type="button" id="deleteListButton" class="btn btn-outline-secondary toggle-active-button"
                       aria-label="Delete List" title="Delete Mode"
                       data-locale-title="deleteLabel" data-locale-aria-label="deleteLabel">
                 <i class="bi bi-trash-fill"></i>
@@ -77,24 +73,37 @@ function createPopupDOM() {
         </div>
       </div>
     </div>
-    <p id="emptyMessage" class="text-muted text-center py-4 page-H" data-locale="historyEmptyMsg">No search history yet</p>
-    <p id="favoriteEmptyMessage" class="text-muted text-center py-4 page-F" data-locale="favoriteEmptyMsg">No favorites yet</p>
-    <p id="geminiEmptyMessage" class="text-muted text-center py-4 page-G" data-locale="geminiEmptyMsg">No summary yet</p>
-    <div id="searchHistoryList" class="overflow-auto mb-4 page-H"></div>
-    <div id="favoriteList" class="overflow-auto mb-4 page-F d-none"></div>
-    <div id="geminiResponse" class="d-none page-G">
-      <textarea class="w-100 d-none" id="response" style="height: 200px" aria-label="Testing Purpose"></textarea>
-      <div id="summaryList" class="overflow-auto mb-4"></div>
+    <p id="loadingMessage" class="text-muted text-center py-4">Loading, please wait...</p>
+    <div id="historyPanel" class="d-none" data-tab-panel="history">
+      <p id="emptyMessage" class="text-muted text-center py-4">No search history yet</p>
+      <div id="searchHistoryList" class="overflow-auto mb-4"></div>
+      <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3">
+        <button id="clearButton" class="btn btn-light me-3 w-25"><i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span></button>
+        <a id="mapsButton" href="#" target="_blank" class="btn btn-primary btn-maps flex-fill"><i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText">Open Maps</span></a>
+      </div>
     </div>
-    <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3 page-H">
-      <button id="clearButton" class="btn btn-light me-3 w-25">
-        <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span>
-      </button>
-      <a id="mapsButton" href="#" target="_blank" class="btn btn-primary btn-maps flex-fill">
-        <i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText">Open Maps</span>
-      </a>
+    <div id="favoritePanel" class="d-none" data-tab-panel="favorite">
+      <p id="favoriteEmptyMessage" class="text-muted text-center py-4">No favorites yet</p>
+      <div id="favoriteList" class="overflow-auto mb-4"></div>
+      <div id="exportButtonGroup" class="d-flex justify-content-evenly mt-3">
+        <button id="exportButton" class="btn btn-light me-3 w-50"><i class="bi bi-download me-2"></i><span data-locale="exportBtnText">Export</span></button>
+        <button id="importButton" class="btn btn-light w-50"><i class="bi bi-upload me-2"></i><span data-locale="importBtnText">Import</span></button>
+        <input type="file" id="fileInput" style="display: none" accept=".csv" aria-label="Import" />
+      </div>
     </div>
-    <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-D">
+    <div id="geminiPanel" class="d-none" data-tab-panel="gemini">
+      <p id="geminiEmptyMessage" class="text-muted text-center py-4">No summary yet</p>
+      <div id="geminiResponse">
+        <textarea class="w-100 d-none" id="response" style="height: 200px" aria-label="Testing Purpose"></textarea>
+        <div id="summaryList" class="overflow-auto mb-4"></div>
+      </div>
+      <div id="geminiButtonGroup" class="d-flex justify-content-evenly mt-3">
+        <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal" data-bs-target="#apiModal"><i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText">API</span></button>
+        <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none"><i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span></button>
+        <button id="sendButton" class="btn btn-send flex-fill"><i class="bi bi-stars me-2"></i><span data-locale="sendBtnText">Send</span></button>
+      </div>
+    </div>
+    <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none">
       <button id="cancelButton" class="btn btn-light me-3 w-25">
         <span data-locale="cancelBtnText">Cancel</span>
       </button>
@@ -102,29 +111,8 @@ function createPopupDOM() {
         <i class="bi bi-trash-fill me-2"></i><span></span>
       </a>
     </div>
-    <div id="exportButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-F">
-      <button id="exportButton" class="btn btn-light me-3 w-50">
-        <i class="bi bi-download me-2"></i><span data-locale="exportBtnText">Export</span>
-      </button>
-      <button id="importButton" class="btn btn-light w-50">
-        <i class="bi bi-upload me-2"></i><span data-locale="importBtnText">Import</span>
-      </button>
-      <input type="file" id="fileInput" style="display: none" accept=".csv" aria-label="Import" />
-    </div>
-    <div id="geminiButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-G">
-      <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal" data-bs-target="#apiModal">
-        <i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText">API</span>
-      </button>
-      <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none">
-        <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span>
-      </button>
-      <button id="sendButton" class="btn btn-send flex-fill">
-        <i class="bi bi-stars me-2"></i><span data-locale="sendBtnText">Send</span>
-      </button>
-    </div>
   `;
 
-  // Create footer
   const footer = document.createElement("footer");
   footer.innerHTML = `
     <ul class="nav justify-content-center border-top">
@@ -143,7 +131,6 @@ function createPopupDOM() {
     </ul>
   `;
 
-  // Create modals
   const modals = document.createElement("div");
   modals.innerHTML = `
     <div class="modal fade" id="tipsModal" tabindex="-1" aria-label="Tips Modal">
@@ -294,7 +281,6 @@ function createPopupDOM() {
     </div>
   `;
 
-  // Assemble everything
   container.appendChild(header);
   container.appendChild(section);
   container.appendChild(footer);
@@ -304,17 +290,14 @@ function createPopupDOM() {
 }
 
 /**
- * Initialize the complete popup DOM in the document body
+ * Initialize popup DOM in body
  */
 function setupPopupDOM() {
-  // Clear existing body content
   document.body.innerHTML = "";
 
-  // Add popup DOM to body
   const popupDOM = createPopupDOM();
   document.body.appendChild(popupDOM);
 
-  // Set body dimensions for measurement tests
   Object.defineProperty(document.body, "offsetWidth", {
     configurable: true,
     value: 400,
@@ -327,7 +310,7 @@ function setupPopupDOM() {
 }
 
 /**
- * Clean up DOM after test
+ * Clean up DOM
  */
 function teardownPopupDOM() {
   document.body.innerHTML = "";

@@ -1,6 +1,5 @@
 /**
- * Jest Unit Tests for ContextMenuUtil (menu.js)
- * Tests cover all methods with comprehensive mocking of Chrome APIs and DOM manipulation
+ * Tests for ContextMenuUtil (menu.js)
  */
 
 // Mock the State class and global functions before requiring menu.js
@@ -25,14 +24,9 @@ describe("ContextMenuUtil", () => {
   let mockListContainer;
   let mockListItems;
 
-  // ============================================================================
-  // Helper Functions - Test-Specific
-  // ============================================================================
+  // Helper Functions
 
-  /**
-   * Helper: Create mock context menu and wait for async operations
-   * Reduces repetitive code in createContextMenu tests
-   */
+  // Helper: Create mock context menu and wait for async ops
   const createMenuAndWait = async (delay = 50) => {
     mockEvent.target.closest = jest.fn(() => mockListItems[0]);
     const menu = ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
@@ -40,25 +34,18 @@ describe("ContextMenuUtil", () => {
     return menu;
   };
 
-  /**
-   * Helper: Setup state with payment stage
-   */
+  // Setup state with payment stage
   const setPaymentStage = (isTrial, isPremium) => {
     global.state.paymentStage = { isTrial, isPremium };
   };
 
-  // ============================================================================
-  // Test Setup/Teardown
-  // ============================================================================
+  // Setup/Teardown
 
   beforeEach(() => {
-    // Setup popup DOM using fixture
     setupPopupDOM();
 
-    // Get list container from popup fixture
     mockListContainer = document.getElementById("searchHistoryList");
 
-    // Mock event
     mockEvent = {
       preventDefault: jest.fn(),
       pageX: 100,
@@ -66,7 +53,6 @@ describe("ContextMenuUtil", () => {
       target: document.createElement("div"),
     };
 
-    // Mock list items
     mockListItems = [];
     for (let i = 0; i < 3; i++) {
       const item = document.createElement("div");
@@ -78,16 +64,12 @@ describe("ContextMenuUtil", () => {
       mockListItems.push(item);
     }
 
-    // Reset all mocks at once
     jest.clearAllMocks();
 
-    // Setup default i18n mock
     mockI18n();
 
-    // Reset state to defaults
     setPaymentStage(false, false);
 
-    // Clear breathing interval
     if (ContextMenuUtil.breathingInterval) {
       clearInterval(ContextMenuUtil.breathingInterval);
       ContextMenuUtil.breathingInterval = null;
@@ -95,13 +77,11 @@ describe("ContextMenuUtil", () => {
   });
 
   afterEach(() => {
-    // Clean up any remaining intervals
     if (ContextMenuUtil.breathingInterval) {
       clearInterval(ContextMenuUtil.breathingInterval);
       ContextMenuUtil.breathingInterval = null;
     }
 
-    // Teardown popup DOM
     teardownPopupDOM();
   });
 
@@ -116,7 +96,6 @@ describe("ContextMenuUtil", () => {
     });
 
     test("should return early if delete mode is active", () => {
-      // Use existing deleteListButton from popup fixture
       const deleteButton = document.getElementById("deleteListButton");
       deleteButton.classList.add("active-button");
 
@@ -225,7 +204,6 @@ describe("ContextMenuUtil", () => {
     test("should trigger premium modal when non-premium user clicks tidy", async () => {
       setPaymentStage(false, false);
 
-      // Use existing premium modal trigger from popup fixture
       const premiumButton = document.querySelector('[data-bs-target="#premiumModal"]');
       premiumButton.click = jest.fn();
 
@@ -260,7 +238,6 @@ describe("ContextMenuUtil", () => {
 
       await wait(10);
 
-      // Menu should still exist after clicking inside
       expect(document.querySelector(".context-menu")).toBeTruthy();
     });
   });
@@ -387,7 +364,6 @@ describe("ContextMenuUtil", () => {
     });
 
     test("should set collapsed to true when more than 10 items", async () => {
-      // Create 11 items
       const manyItems = [];
       for (let i = 0; i < 11; i++) {
         const item = document.createElement("div");
@@ -799,8 +775,7 @@ describe("ContextMenuUtil", () => {
 
       ContextMenuUtil.applyOrganization(organizedData, mockListItems);
 
-      // Items should be re-added after organization, but in a different order
-      // At least verify the container has category headers
+      // Verify items re-added with category headers
       const headers = container.querySelectorAll(".category-header");
       expect(headers.length).toBeGreaterThan(0);
     });
@@ -822,7 +797,6 @@ describe("ContextMenuUtil", () => {
       ContextMenuUtil.applyOrganization(organizedData, mockListItems);
 
       expect(container.querySelectorAll(".category-header").length).toBeGreaterThan(0);
-      // But the old header should be gone
     });
 
     test("should call renderCategories with correct parameters", () => {
@@ -869,9 +843,6 @@ describe("ContextMenuUtil", () => {
       };
 
       ContextMenuUtil.applyOrganization(organizedData, mockListItems);
-
-      // The method should detect history and pass hasFlexReverse=true
-      // We can verify indirectly by checking header placement
     });
 
     test("should use flex-reverse layout for favorite list", () => {
@@ -887,8 +858,6 @@ describe("ContextMenuUtil", () => {
       };
 
       ContextMenuUtil.applyOrganization(organizedData, mockListItems);
-
-      // Similar to history test
     });
   });
 
@@ -1098,13 +1067,11 @@ describe("ContextMenuUtil", () => {
 
     test("should return early if container is null", () => {
       ContextMenuUtil.updateBoundaryItemSpacing(false, null);
-      // Should not throw
     });
 
     test("should return early if no items in container", () => {
       const emptyContainer = document.createElement("div");
       ContextMenuUtil.updateBoundaryItemSpacing(false, emptyContainer);
-      // Should not throw
     });
 
     test("should remove mb-3 from last item in normal layout", () => {
@@ -1179,7 +1146,6 @@ describe("ContextMenuUtil", () => {
 
       const container = mockListItems[0].parentElement;
 
-      // Run enough times to reach minimum
       jest.advanceTimersByTime(1000);
 
       const opacity = parseFloat(container.style.opacity);
@@ -1191,12 +1157,10 @@ describe("ContextMenuUtil", () => {
 
       const container = mockListItems[0].parentElement;
 
-      // Run the breathing cycle - decrease to 0.4
       jest.advanceTimersByTime(800);
       let opacity = parseFloat(container.style.opacity);
       expect(opacity).toBeLessThan(0.6);
 
-      // Then increase back up
       jest.advanceTimersByTime(800);
       opacity = parseFloat(container.style.opacity);
       expect(opacity).toBeGreaterThan(0.6);
@@ -1236,14 +1200,12 @@ describe("ContextMenuUtil", () => {
       const orphanItem = document.createElement("div");
 
       ContextMenuUtil.stopBreathingEffect([orphanItem]);
-      // Should not throw
     });
 
     test("should handle null interval", () => {
       ContextMenuUtil.breathingInterval = null;
 
       ContextMenuUtil.stopBreathingEffect(mockListItems);
-      // Should not throw
     });
   });
 
@@ -1286,8 +1248,6 @@ describe("ContextMenuUtil", () => {
 
       ContextMenuUtil.tidyLocations(mockListItems);
 
-      // The breathing effect is started but then immediately stopped in the callback
-      // So we just verify measureContentSize was called
       expect(global.measureContentSize).toHaveBeenCalled();
 
       jest.useRealTimers();
@@ -1301,11 +1261,8 @@ describe("ContextMenuUtil", () => {
         callback({ canGroup: false });
       });
 
-      // openAllUrls should handle empty array gracefully
       await ContextMenuUtil.openAllUrls([]);
 
-      // With empty array, getGroupInfo will throw, so we expect the function to handle this
-      // or we just don't call it at all since there are no items
       expect(global.state.buildSearchUrl).not.toHaveBeenCalled();
     });
 
@@ -1313,7 +1270,6 @@ describe("ContextMenuUtil", () => {
       global.state.paymentStage = null;
       mockEvent.target.closest = jest.fn(() => mockListItems[0]);
 
-      // Should not throw - null paymentStage should be handled gracefully
       expect(() => {
         ContextMenuUtil.createContextMenu(mockEvent, mockListContainer);
       }).not.toThrow();

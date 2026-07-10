@@ -2,33 +2,28 @@ class ContextMenuUtil {
   static createContextMenu(event, listContainer) {
     event.preventDefault();
 
-    // Don't create context menu in delete mode
+    // Prevent context menu in delete mode
     const deleteListButton = document.getElementById("deleteListButton");
     if (deleteListButton && deleteListButton.classList.contains("active-button")) {
       return;
     }
 
-    // Find the specific item that was right-clicked
     const clickedItem = event.target.closest(".summary-list, .history-list, .favorite-list");
 
-    // Get all list items in the current container based on tab type
     const listItems = listContainer.querySelectorAll(
       ".summary-list, .history-list, .favorite-list"
     );
 
-    // Remove any existing context menu
     const existingMenu = document.querySelector(".context-menu");
     if (existingMenu) {
       existingMenu.remove();
     }
 
-    // Create context menu
     const contextMenu = document.createElement("ul");
     contextMenu.className = "list-group position-absolute rounded-3 context-menu";
     contextMenu.style.left = event.pageX + "px";
     contextMenu.style.top = event.pageY + "px";
 
-    // Create "Open all URL" option
     const openAllOption = this.createOption(
       contextMenu,
       `${chrome.i18n.getMessage("openAll")} (${listItems.length})`,
@@ -40,7 +35,6 @@ class ContextMenuUtil {
     );
     contextMenu.appendChild(openAllOption);
 
-    // Create "Tidy Locations" option with premium check
     const canTidy = state.paymentStage?.isTrial || state.paymentStage?.isPremium;
     const tidyLocationsOption = this.createOption(
       contextMenu,
@@ -60,7 +54,6 @@ class ContextMenuUtil {
       tidyLocationsOption.classList.add("premium-option");
     }
 
-    // Create "Plan Route" option
     chrome.storage.local.get("startAddr", ({ startAddr }) => {
       if (clickedItem && startAddr) {
         const getDirectionsOption = this.createOption(
@@ -75,13 +68,13 @@ class ContextMenuUtil {
         contextMenu.appendChild(getDirectionsOption);
       }
 
-      // Always append tidy after
+      // Append tidy after plan route
       contextMenu.appendChild(tidyLocationsOption);
     });
 
     document.body.appendChild(contextMenu);
 
-    // Close context menu when clicking elsewhere
+    // Close context menu on outside click
     const closeMenu = (e) => {
       if (!contextMenu.contains(e.target)) {
         contextMenu.remove();
@@ -150,7 +143,6 @@ class ContextMenuUtil {
     });
   }
 
-  // Get list info from class
   static getListInfo(firstItem) {
     if (firstItem.classList.contains("summary-list"))
       return { type: "summary", groupTitle: "✨", groupColor: "purple" };
@@ -161,7 +153,6 @@ class ContextMenuUtil {
     return { type: "unknown", groupTitle: "", groupColor: "" };
   }
 
-  // Delegate to getListInfo
   static getGroupInfo(firstItem) {
     const { groupTitle, groupColor } = this.getListInfo(firstItem);
     return { groupTitle, groupColor };
@@ -177,10 +168,8 @@ class ContextMenuUtil {
   }
 
   static tidyLocations(listItems) {
-    // Start breathing effect for the full list container
     this.startBreathingEffect(listItems);
 
-    // Extract location data from list items
     const locations = Array.from(listItems)
       .map((item) => {
         const spans = item.querySelectorAll("span");
@@ -197,7 +186,6 @@ class ContextMenuUtil {
       })
       .filter(Boolean);
 
-    // Send to background script for Gemini AI processing
     chrome.runtime.sendMessage(
       {
         action: "organizeLocations",
@@ -205,7 +193,6 @@ class ContextMenuUtil {
         listType: this.getListInfo(listItems[0]).type,
       },
       (response) => {
-        // Stop breathing effect when response is received
         this.stopBreathingEffect(listItems);
 
         if (response?.success) {
@@ -233,19 +220,15 @@ class ContextMenuUtil {
       return;
     }
 
-    // Create element mapping with multiple search strategies
     const { elementMap, elementsList } = this.createElementMapping(listItems);
 
-    // Clear container
     elementsList.forEach((item) => item.remove());
     const existingHeaders = container.querySelectorAll(".category-header");
     existingHeaders.forEach((header) => header.remove());
 
-    // Determine layout strategy
     const currentListType = this.getListInfo(elementsList[0]).type;
     const hasFlexReverse = ["history", "favorite"].includes(currentListType);
 
-    // Render organized categories
     this.renderCategories(
       organizedData.categories,
       container,
@@ -254,7 +237,6 @@ class ContextMenuUtil {
       hasFlexReverse
     );
 
-    // Update spacing for boundary items
     this.updateBoundaryItemSpacing(hasFlexReverse, container);
 
     measureContentSize();
@@ -268,7 +250,7 @@ class ContextMenuUtil {
       const locationName = item.querySelector("span")?.textContent.trim();
       if (!locationName) return;
 
-      // Multiple mapping strategies for robust matching
+      // Robust mapping strategies
       const mappings = [
         locationName,
         locationName.toLowerCase().replace(/\s+/g, " ").trim(),
@@ -285,12 +267,11 @@ class ContextMenuUtil {
     categories.forEach((category) => {
       const categoryHeader = this.createCategoryHeader(category.name);
 
-      // Add header first for normal layout, last for reversed layout
+      // Add header based on layout
       if (!hasFlexReverse) {
         container.appendChild(categoryHeader);
       }
 
-      // Add locations to category
       category.locations.forEach((location) => {
         const element = this.findMatchingElement(location.name, elementMap, elementsList);
         if (element) {
@@ -299,7 +280,6 @@ class ContextMenuUtil {
         }
       });
 
-      // Add header last for reversed layout
       if (hasFlexReverse) {
         container.appendChild(categoryHeader);
       }
@@ -318,23 +298,19 @@ class ContextMenuUtil {
   }
 
   static findMatchingElement(locationName, elementMap, elementsList) {
-    // Try exact match
     let element = elementMap.get(locationName);
     if (element) return element;
 
-    // Try normalized match
     const normalized = locationName.toLowerCase().replace(/\s+/g, " ").trim();
     element = elementMap.get(normalized);
     if (element) return element;
 
-    // Try fuzzy matching
     for (const [key, el] of elementMap.entries()) {
       if (!key.startsWith("index_") && key.includes(normalized)) {
         return el;
       }
     }
 
-    // Try partial content matching
     return elementsList.find((item) => {
       const itemText = item.querySelector("span")?.textContent.trim() || "";
       return (
@@ -346,7 +322,6 @@ class ContextMenuUtil {
   static updateBoundaryItemSpacing(hasFlexReverse, container) {
     if (!container) return;
 
-    // Get current DOM elements that are actually in the container
     const currentItems = container.querySelectorAll(".list-group-item");
 
     if (currentItems.length === 0) return;

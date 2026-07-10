@@ -62,21 +62,23 @@ describe("State Class", () => {
 
   describe("Constructor", () => {
     test("should initialize with correct default values for page state", () => {
-      expect(state.hasHistory).toBe(false);
-      expect(state.hasFavorite).toBe(false);
-      expect(state.hasSummary).toBe(false);
-      expect(state.hasInit).toBe(false);
+      expect(state.getSnapshot()).toMatchObject({
+        boot: "loading",
+        activeTab: "history",
+        history: { items: [] },
+        favorite: { items: [] },
+        summary: { phase: "empty", items: [] },
+      });
     });
 
-    test("should initialize with correct default values for list change flags", () => {
-      expect(state.historyListChanged).toBe(false);
-      expect(state.favoriteListChanged).toBe(false);
-      expect(state.summaryListChanged).toBe(false);
+    test("does not expose legacy list change flags", () => {
+      expect(state.getSnapshot()).not.toHaveProperty("historyListChanged");
+      expect(state.getSnapshot()).not.toHaveProperty("favoriteListChanged");
+      expect(state.getSnapshot()).not.toHaveProperty("summaryListChanged");
     });
 
     test("should initialize with correct default values for video summary mode", () => {
-      expect(state.videoSummaryMode).toBeUndefined();
-      expect(state.localVideoToggle).toBe(false);
+      expect(state.getSnapshot().video).toMatchObject({ available: null, enabled: false });
       expect(state.summarizedTabId).toBeUndefined();
     });
 
@@ -93,11 +95,11 @@ describe("State Class", () => {
       const state1 = new State();
       const state2 = new State();
 
-      state1.hasHistory = true;
-      state2.hasHistory = false;
+      state1.dispatch({ type: "HISTORY_SET", items: ["A"] });
+      state2.dispatch({ type: "HISTORY_SET", items: [] });
 
-      expect(state1.hasHistory).toBe(true);
-      expect(state2.hasHistory).toBe(false);
+      expect(state1.getSnapshot().history.items).toEqual(["A"]);
+      expect(state2.getSnapshot().history.items).toEqual([]);
     });
   });
 
@@ -371,145 +373,103 @@ describe("State Class", () => {
   });
 
   describe("State Management Behaviors", () => {
-    test("should track component initialization states independently", () => {
-      // Simulate component lifecycle
-      expect(state.hasInit).toBe(false);
-      expect(state.hasHistory).toBe(false);
-      expect(state.hasFavorite).toBe(false);
-
-      // Initialize first component
-      state.hasHistory = true;
-      expect(state.hasHistory).toBe(true);
-      expect(state.hasFavorite).toBe(false); // Others remain unchanged
-
-      // Initialize second component
-      state.hasFavorite = true;
-      expect(state.hasHistory).toBe(true);
-      expect(state.hasFavorite).toBe(true);
-
-      // Mark fully initialized
-      state.hasInit = true;
-      expect(state.hasInit).toBe(true);
+    test("hydrates all component state atomically", () => {
+      state.dispatch({
+        type: "HYDRATE",
+        payload: { searchHistoryList: ["H"], favoriteList: ["F"] },
+      });
+      expect(state.getSnapshot()).toMatchObject({
+        boot: "ready",
+        history: { items: ["H"] },
+        favorite: { items: ["F"], status: "ready" },
+      });
     });
 
-    test("should track list change flags for triggering re-renders", () => {
-      // Simulate data changes requiring UI updates
-      expect(state.historyListChanged).toBe(false);
-      expect(state.favoriteListChanged).toBe(false);
+    test("notifies subscribers from reducer transitions without change flags", () => {
+      const listener = jest.fn();
+      state.subscribe(listener);
+      state.dispatch({ type: "HISTORY_SET", items: ["A"] });
+      state.dispatch({ type: "FAVORITE_SET", items: ["B"] });
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(state.getSnapshot()).toMatchObject({
+        history: { items: ["A"] },
+        favorite: { items: ["B"] },
+      });
+    });
 
-      // History item added
-      state.historyListChanged = true;
-      expect(state.historyListChanged).toBe(true);
-      expect(state.favoriteListChanged).toBe(false);
+    test("BUG REPRO: an echo HISTORY_SET without emptyReason must not clobber a prior 'cleared' reason", () => {
+      // The storage.onChanged echo dispatch carries no emptyReason.
+      state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
+      state.dispatch({ type: "HISTORY_SET", items: [] });
 
-      // After re-render, flag reset
-      state.historyListChanged = false;
-      expect(state.historyListChanged).toBe(false);
-
-      // Multiple flags can be set
-      state.historyListChanged = true;
-      state.favoriteListChanged = true;
-      state.summaryListChanged = true;
-      expect(state.historyListChanged).toBe(true);
-      expect(state.favoriteListChanged).toBe(true);
-      expect(state.summaryListChanged).toBe(true);
+      expect(state.getSnapshot().history.emptyReason).toBe("cleared");
     });
 
     test("should manage video summary mode state transitions", () => {
-      // Start with no active video summary
-      expect(state.videoSummaryMode).toBeUndefined();
-      expect(state.localVideoToggle).toBe(false);
+      expect(state.getSnapshot().video).toMatchObject({ available: null, enabled: false });
       expect(state.summarizedTabId).toBeUndefined();
 
-      // User activates video summary
-      state.videoSummaryMode = "processing";
-      state.localVideoToggle = true;
+      state.dispatch({ type: "VIDEO_CONTEXT_REQUEST", token: 1 });
+      state.dispatch({ type: "VIDEO_CONTEXT_RESULT", token: 1, available: true });
+      state.dispatch({ type: "VIDEO_TOGGLE", enabled: true });
       state.summarizedTabId = 12345;
 
-      expect(state.videoSummaryMode).toBe("processing");
-      expect(state.localVideoToggle).toBe(true);
+      expect(state.getSnapshot().video).toMatchObject({ available: true, enabled: true });
       expect(state.summarizedTabId).toBe(12345);
 
-      // Summary completes
-      state.videoSummaryMode = "completed";
-      expect(state.videoSummaryMode).toBe("completed");
-      expect(state.summarizedTabId).toBe(12345); // Tab ID persists
-
-      // User deactivates
-      state.localVideoToggle = false;
-      state.videoSummaryMode = undefined;
-      expect(state.localVideoToggle).toBe(false);
-      expect(state.videoSummaryMode).toBeUndefined();
+      state.dispatch({ type: "VIDEO_TOGGLE", enabled: false });
+      state.dispatch({ type: "VIDEO_CONTEXT_REQUEST", token: 2 });
+      expect(state.getSnapshot().video).toMatchObject({
+        available: null,
+        enabled: false,
+        token: 2,
+      });
     });
 
     test("should manage payment stage lifecycle", () => {
-      // Default state: no payment stage
       expect(state.paymentStage).toBeNull();
 
-      // User subscribes
       state.paymentStage = "trial";
       expect(state.paymentStage).toBe("trial");
 
-      // Upgrades to premium
       state.paymentStage = "premium";
       expect(state.paymentStage).toBe("premium");
 
-      // Downgrade or cancellation
       state.paymentStage = null;
       expect(state.paymentStage).toBeNull();
     });
 
     test("should preserve dimensions cache through operations", async () => {
-      // Initial state
       expect(state.previousWidth).toBe(0);
       expect(state.previousHeight).toBe(0);
 
-      // First render
       state.updateDimensions(800, 600);
       expect(state.previousWidth).toBe(800);
       expect(state.previousHeight).toBe(600);
 
-      // Perform operations that might affect state
       mockChromeRuntimeMessage({ buildSearchUrl: { url: "https://maps.google.com" } });
       await state.buildSearchUrl("test");
 
-      // Dimensions should persist
       expect(state.previousWidth).toBe(800);
       expect(state.previousHeight).toBe(600);
 
-      // Window resize
       state.updateDimensions(1024, 768);
       expect(state.previousWidth).toBe(1024);
       expect(state.previousHeight).toBe(768);
     });
 
-    test("should handle state flags in realistic workflow sequence", async () => {
+    test("should keep popup store instances independent", () => {
       const state1 = new State();
       const state2 = new State();
 
-      // Simulate popup opening: initialization sequence
-      expect(state1.hasInit).toBe(false);
-
-      // Load history component
-      state1.hasHistory = true;
-      expect(state1.hasHistory).toBe(true);
-      expect(state1.historyListChanged).toBe(false);
-
-      // User adds item, flag change
-      state1.historyListChanged = true;
-      expect(state1.historyListChanged).toBe(true);
-
-      // Load other components
-      state1.hasFavorite = true;
-      state1.hasSummary = true;
-
-      // Mark initialized
-      state1.hasInit = true;
-      expect(state1.hasInit).toBe(true);
-
-      // Second instance should be independent
-      expect(state2.hasInit).toBe(false);
-      expect(state2.hasHistory).toBe(false);
+      state1.dispatch({
+        type: "HYDRATE",
+        payload: { searchHistoryList: ["H"], favoriteList: ["F"] },
+      });
+      expect(state1.getSnapshot().boot).toBe("ready");
+      expect(state1.getSnapshot().history.items).toEqual(["H"]);
+      expect(state2.getSnapshot().boot).toBe("loading");
+      expect(state2.getSnapshot().history.items).toEqual([]);
     });
   });
 
@@ -626,12 +586,10 @@ describe("Integration Tests", () => {
   });
 
   test("should handle complete workflow: initialize, search, update dimensions", async () => {
-    // Initialize
-    expect(state.hasInit).toBe(false);
-    state.hasInit = true;
-    expect(state.hasInit).toBe(true);
+    expect(state.getSnapshot().boot).toBe("loading");
+    state.dispatch({ type: "HYDRATE", payload: {} });
+    expect(state.getSnapshot().boot).toBe("ready");
 
-    // Search
     chrome.runtime.sendMessage.mockImplementation((message, callback) => {
       callback({ url: "https://www.google.com/maps/search/test" });
     });
@@ -639,16 +597,16 @@ describe("Integration Tests", () => {
     const searchUrl = await state.buildSearchUrl("test");
     expect(searchUrl).toBe("https://www.google.com/maps/search/test");
 
-    // Update dimensions
     state.updateDimensions(1920, 1080);
     expect(state.previousWidth).toBe(1920);
     expect(state.previousHeight).toBe(1080);
   });
 
   test("should handle state changes across multiple operations", async () => {
-    // Set initial state
-    state.hasHistory = true;
-    state.hasFavorite = true;
+    state.dispatch({
+      type: "HYDRATE",
+      payload: { searchHistoryList: ["H"], favoriteList: ["F"] },
+    });
 
     // Perform operations
     chrome.runtime.sendMessage.mockImplementation((message, callback) => {
@@ -665,9 +623,146 @@ describe("Integration Tests", () => {
     await state.buildDirectionsUrl("origin", "dest");
     state.buildMapsButtonUrl();
 
-    // Verify state is maintained
-    expect(state.hasHistory).toBe(true);
-    expect(state.hasFavorite).toBe(true);
+    expect(state.getSnapshot().history.items).toEqual(["H"]);
+    expect(state.getSnapshot().favorite.items).toEqual(["F"]);
     expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("Popup reducer architecture", () => {
+  test("ignores stale, inapplicable, and unknown actions", () => {
+    const state = new State();
+    const initial = state.getSnapshot();
+
+    state.dispatch({ type: "SUMMARY_ESTIMATE", requestId: "stale", estimateSeconds: 5 });
+    expect(state.getSnapshot()).toBe(initial);
+
+    state.dispatch({ type: "DELETE_TOGGLE", value: "A" });
+    expect(state.getSnapshot()).toBe(initial);
+
+    state.dispatch({ type: "UNKNOWN_ACTION" });
+    expect(state.getSnapshot()).toBe(initial);
+  });
+
+  test("history empty to cached summary renders ready without an intermediate message state", () => {
+    const state = new State();
+    const now = Date.now();
+    state.dispatch({
+      type: "HYDRATE",
+      payload: {
+        now,
+        lastActiveTab: "history",
+        searchHistoryList: [],
+        summaryList: [{ name: "Taipei 101", clue: "Taipei" }],
+        timestamp: now - 1000,
+        geminiApiKey: "key",
+      },
+    });
+
+    expect(state.getSnapshot().summary.phase).toBe("ready");
+    state.dispatch({ type: "SET_ACTIVE_TAB", tab: "gemini" });
+    expect(state.getSnapshot()).toMatchObject({
+      activeTab: "gemini",
+      summary: { phase: "ready", items: [{ name: "Taipei 101", clue: "Taipei" }] },
+    });
+  });
+
+  test("expired summaries are normalized to empty during hydration", () => {
+    const state = new State();
+    const now = Date.now();
+    state.dispatch({
+      type: "HYDRATE",
+      payload: {
+        now,
+        summaryList: [{ name: "Expired", clue: "" }],
+        timestamp: now - State.SUMMARY_TTL_MS - 1,
+      },
+    });
+    expect(state.getSnapshot().summary).toMatchObject({ phase: "empty", items: [] });
+  });
+
+  test("future and stale storage timestamps are treated as corrupted summary data", () => {
+    const state = new State();
+    const now = Date.now();
+    state.dispatch({
+      type: "HYDRATE",
+      payload: {
+        now,
+        summaryList: [{ name: "Future", clue: "" }],
+        timestamp: now + 1,
+      },
+    });
+    expect(state.getSnapshot().summary.phase).toBe("empty");
+
+    state.dispatch({
+      type: "SUMMARY_STORAGE_SET",
+      items: [{ name: "Stale", clue: "" }],
+      timestamp: now - State.SUMMARY_TTL_MS - 1,
+      now,
+    });
+    expect(state.getSnapshot().summary.phase).toBe("empty");
+  });
+
+  test("stale summary and API callbacks cannot overwrite newer state", () => {
+    const state = new State();
+    state.dispatch({ type: "SUMMARY_START", requestId: "new" });
+    state.dispatch({
+      type: "SUMMARY_SUCCESS",
+      requestId: "old",
+      items: [{ name: "Stale", clue: "" }],
+    });
+    state.dispatch({ type: "API_VERIFY_START", token: 2, hasKey: true });
+    state.dispatch({ type: "API_VERIFY_RESULT", token: 1, valid: false });
+
+    expect(state.getSnapshot().summary.phase).toBe("generating");
+    expect(state.getSnapshot().api).toEqual({ status: "verifying", token: 2 });
+  });
+
+  test("BUG REPRO: a null-requestId SUMMARY_SUCCESS/ERROR must not overwrite an active generation", () => {
+    const state = new State();
+    state.dispatch({ type: "SUMMARY_START", requestId: "active" });
+
+    state.dispatch({ type: "SUMMARY_SUCCESS", requestId: null, items: [{ name: "Orphan" }] });
+    expect(state.getSnapshot().summary).toMatchObject({ phase: "generating", requestId: "active" });
+
+    state.dispatch({ type: "SUMMARY_ERROR", requestId: null, errorKey: "geminiErrorMsg" });
+    expect(state.getSnapshot().summary).toMatchObject({ phase: "generating", requestId: "active" });
+  });
+
+  test("storage removal does not interrupt an active generation", () => {
+    const state = new State();
+    state.dispatch({ type: "SUMMARY_START", requestId: "active" });
+    state.dispatch({ type: "SUMMARY_STORAGE_SET", items: [] });
+    expect(state.getSnapshot().summary).toMatchObject({
+      phase: "generating",
+      requestId: "active",
+    });
+  });
+
+  test("delete mode is derived from the active list and exits when it becomes empty", () => {
+    const state = new State();
+    state.dispatch({ type: "HYDRATE", payload: { searchHistoryList: ["A"] } });
+    state.dispatch({ type: "DELETE_ENTER", source: "history" });
+    state.dispatch({ type: "DELETE_TOGGLE", value: "A" });
+    expect(state.getSnapshot().deleteMode.selectedValues).toEqual(["A"]);
+    state.dispatch({ type: "HISTORY_SET", items: [] });
+    expect(state.getSnapshot().deleteMode).toEqual({ source: null, selectedValues: [] });
+  });
+
+  test("a tab switch before HYDRATE resolves is not clobbered by the persisted lastActiveTab", () => {
+    const state = new State();
+    // User clicks a tab before hydratePopup() completes
+    state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
+    state.dispatch({
+      type: "HYDRATE",
+      payload: { lastActiveTab: "gemini" },
+    });
+    expect(state.getSnapshot().activeTab).toBe("favorite");
+  });
+
+  test("HYDRATE still applies the persisted lastActiveTab when the user hasn't touched a tab yet", () => {
+    const state = new State();
+    state.dispatch({ type: "HYDRATE", payload: { lastActiveTab: "gemini" } });
+    expect(state.getSnapshot().activeTab).toBe("gemini");
   });
 });

@@ -1,19 +1,16 @@
-// I18n override: wraps chrome.i18n.getMessage once at load to serve a
-// user-selected language bundle from localStorage. chrome.storage.local is
-// the source of truth; a storage.onChanged listener mirrors it back to
-// localStorage so every popup boot can apply the override synchronously.
+// Wraps chrome.i18n.getMessage to serve user-selected language from localStorage synchronously.
 (function () {
   const STORAGE_KEY = "userLanguage";
   const MESSAGES_CACHE_KEY = "userLanguageMessages";
   const SUPPORTED_LANGUAGES = ["auto", "en", "ja", "zh_TW"];
   const EXT_VERSION = chrome.runtime.getManifest().version;
 
-  // Captured before wrapping so re-wrapping on language change is never needed.
+  // Capture original to avoid re-wrapping.
   const originalGetMessage = chrome.i18n.getMessage.bind(chrome.i18n);
 
   let activeLanguage = "auto";
   let overrideMessages = null;
-  // Prevents slow async loads from clobbering newer selections.
+  // Prevent async load clobbering.
   let applyToken = 0;
 
   function safeLocalGet(key, parse = false) {
@@ -43,9 +40,7 @@
     return cache && cache.lang === lang && cache.version === EXT_VERSION ? cache.messages : null;
   }
 
-  // Async fallback for cache misses.
   async function fetchMessages(lang) {
-    // Defense in depth: never let an unexpected lang reach runtime.getURL.
     if (!SUPPORTED_LANGUAGES.includes(lang) || lang === "auto") return null;
     try {
       const res = await fetch(chrome.runtime.getURL(`_locales/${lang}/messages.json`));
@@ -72,8 +67,7 @@
     window.dispatchEvent(new CustomEvent("i18n:changed", { detail: { lang } }));
   }
 
-  // Resolve named placeholders (e.g. $checkedCount$) the same way
-  // chrome.i18n.getMessage does: name -> positional token -> value
+  // Resolve named placeholders like chrome.i18n.getMessage does.
   function resolveNamedPlaceholders(message, placeholders) {
     if (!placeholders) return message;
     return message.replace(/\$(\w+)\$/g, (match, name) => {
@@ -105,7 +99,6 @@
     return originalGetMessage(key, substitutions);
   };
 
-  // Cache-first, falls back to async fetch. Degrades to "auto" on failure.
   function applyOverride(lang, { notifyOnAsync = false } = {}) {
     const token = ++applyToken;
 
@@ -131,8 +124,7 @@
 
   applyOverride(safeLocalGet(STORAGE_KEY), { notifyOnAsync: true });
 
-  // Mirror storage.local → localStorage so the next popup boot applies the
-  // override synchronously (a language set elsewhere takes effect immediately).
+  // Mirror storage.local to localStorage.
   if (chrome.storage && chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== "local") return;
@@ -181,7 +173,6 @@
       });
     },
 
-    // Re-applies the stored language in place.
     reloadOverride() {
       applyOverride(safeLocalGet(STORAGE_KEY), { notifyOnAsync: true });
       return activeLanguage;

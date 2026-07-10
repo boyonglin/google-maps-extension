@@ -15,6 +15,10 @@
     "message": "Search History",
     "description": "popup search history subtitle"
   },
+  "loadingMsg": {
+    "message": "Loading, please wait...",
+    "description": "popup loading message shown before hydration finishes"
+  },
   "favoriteListSubtitle": {
     "message": "Favorite List",
     "description": "popup favorite list subtitle"
@@ -48,8 +52,17 @@
     "description": "popup no gemini summary message"
   },
   "geminiLoadMsg": {
-    "message": "Treating the sea as a snack\nmakes waiting romantic... (Est. NaN s)",
-    "description": "popup gemini model loading message"
+    "message": "Treating the sea as a snack\nmakes waiting romantic... (Est. $estimatedSeconds$ s)",
+    "description": "popup gemini model loading message",
+    "placeholders": {
+      "estimatedSeconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "geminiLoadMsgNoEstimate": {
+    "message": "Treating the sea as a snack\nmakes waiting romantic...",
+    "description": "popup gemini model loading message without an estimate"
   },
   "geminiErrorMsg": {
     "message": "Something went wrong!\nPlease refresh the page and try again.\ud83d\udea7",
@@ -298,10 +311,6 @@
   "premiumNote": {
     "message": "Hello there, wizard friend\ud83e\uddd9Feel free to share your feedback to help us make things better.",
     "description": "modal premium note"
-  },
-  "freeNote": {
-    "message": "Pay securely with ExtensionPay, and let The Maps Express be your guiding key.",
-    "description": "modal free note"
   },
   "apiTitle": {
     "message": "Set up your API key",

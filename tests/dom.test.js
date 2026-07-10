@@ -11,7 +11,6 @@ describe("DOMUtils", () => {
     jest.clearAllMocks();
     mockChromeStorage({ favoriteList: ["Tokyo", "Paris"] });
 
-    // Mock global favorite object
     global.favorite = {
       updateFavorite: jest.fn(),
     };
@@ -70,7 +69,6 @@ describe("DOMUtils", () => {
       div.appendChild(span);
       const event = { target: span };
 
-      // Only checks immediate parent, not grandparent
       const result = DOMUtils.findClosestListItem(event);
 
       expect(result).toBeNull();
@@ -124,35 +122,6 @@ describe("DOMUtils", () => {
   });
 
   // ============================================================================
-  // refreshFavoriteList Tests
-  // ============================================================================
-
-  describe("refreshFavoriteList", () => {
-    test("should get favoriteList from storage and call favorite.updateFavorite", () => {
-      DOMUtils.refreshFavoriteList();
-
-      expect(chrome.storage.local.get).toHaveBeenCalledWith("favoriteList", expect.any(Function));
-      expect(global.favorite.updateFavorite).toHaveBeenCalledWith(["Tokyo", "Paris"]);
-    });
-
-    test("should handle missing favorite object gracefully", () => {
-      global.favorite = undefined;
-
-      expect(() => {
-        DOMUtils.refreshFavoriteList();
-      }).not.toThrow();
-    });
-
-    test("should handle favorite object without updateFavorite method", () => {
-      global.favorite = {};
-
-      expect(() => {
-        DOMUtils.refreshFavoriteList();
-      }).not.toThrow();
-    });
-  });
-
-  // ============================================================================
   // Module Export Tests
   // ============================================================================
 
@@ -165,7 +134,6 @@ describe("DOMUtils", () => {
     test("should have all required methods", () => {
       expect(typeof DOMUtils.findClosestListItem).toBe("function");
       expect(typeof DOMUtils.animateFavoriteIcon).toBe("function");
-      expect(typeof DOMUtils.refreshFavoriteList).toBe("function");
     });
   });
 });

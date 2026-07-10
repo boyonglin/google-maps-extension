@@ -1,11 +1,5 @@
 /**
- * Comprehensive Jest Unit Tests for Payment Component (payment.js)
- *
- * Tests cover:
- * - checkPay() - Payment status checking with chrome.runtime.sendMessage
- * - updateShortcutDisplay() - UI updates based on payment stage
- * - updateNoteDisplay() - Dynamic note content based on payment stage (isFirst, isTrial, isExpiredTrial, isPremium)
- * - calcTrialEndDate() - Date formatting logic
+ * Tests for Payment Component (payment.js)
  */
 
 // Mock global objects that payment.js depends on
@@ -65,7 +59,6 @@ describe("Payment Component - Full Coverage", () => {
       trialNote: "Trial ends on $1",
       remindNote: "Enjoy premium features during trial!",
       premiumNote: "Thank you for being a premium user! 回饋 feedback フィードバック",
-      freeNote: "Upgrade to premium via ExtensionPay",
     });
 
     // Reset state and mocks
@@ -85,9 +78,7 @@ describe("Payment Component - Full Coverage", () => {
     cleanupDOM();
   });
 
-  // ============================================================================
-  // Test: checkPay
-  // ============================================================================
+  // checkPay
 
   describe("checkPay", () => {
     test("should send checkPay message and update state", () => {
@@ -102,22 +93,18 @@ describe("Payment Component - Full Coverage", () => {
         callback({ result: mockPaymentStage });
       });
 
-      // Spy on the instance methods
       const updateShortcutSpy = jest.spyOn(paymentInstance, "updateShortcutDisplay");
       const updateNoteSpy = jest.spyOn(paymentInstance, "updateNoteDisplay");
 
       paymentInstance.checkPay();
 
-      // Verify sendMessage was called correctly
       expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
         { action: "checkPay" },
         expect.any(Function)
       );
 
-      // Verify state was updated
       expect(global.state.paymentStage).toEqual(mockPaymentStage);
 
-      // Verify display methods were called
       expect(updateShortcutSpy).toHaveBeenCalled();
       expect(updateNoteSpy).toHaveBeenCalled();
     });
@@ -127,17 +114,13 @@ describe("Payment Component - Full Coverage", () => {
         callback({});
       });
 
-      // Spy on the instance methods
       const updateShortcutSpy = jest.spyOn(paymentInstance, "updateShortcutDisplay");
       const updateNoteSpy = jest.spyOn(paymentInstance, "updateNoteDisplay");
 
       paymentInstance.checkPay();
 
-      // When response.result is undefined, the early return prevents execution
-      // State remains as it was (null from beforeEach)
       expect(global.state.paymentStage).toBeNull();
 
-      // Methods should NOT be called due to early return in checkPay
       expect(updateShortcutSpy).not.toHaveBeenCalled();
       expect(updateNoteSpy).not.toHaveBeenCalled();
     });
@@ -147,22 +130,17 @@ describe("Payment Component - Full Coverage", () => {
         callback(null);
       });
 
-      // Spy on the instance methods
       const updateShortcutSpy = jest.spyOn(paymentInstance, "updateShortcutDisplay");
       const updateNoteSpy = jest.spyOn(paymentInstance, "updateNoteDisplay");
 
-      // Should not throw (BUG FIX: we added null check in payment.js)
       expect(() => paymentInstance.checkPay()).not.toThrow();
 
-      // Methods should NOT be called due to early return
       expect(updateShortcutSpy).not.toHaveBeenCalled();
       expect(updateNoteSpy).not.toHaveBeenCalled();
     });
   });
 
-  // ============================================================================
-  // Test: updateShortcutDisplay
-  // ============================================================================
+  // updateShortcutDisplay
 
   describe("updateShortcutDisplay", () => {
     test("should remove premium-only class for trial users", () => {
@@ -171,12 +149,10 @@ describe("Payment Component - Full Coverage", () => {
         isPremium: false,
       });
 
-      // Verify initial state - all elements should have premium-only
       expectShortcutsPremiumOnly(true);
 
       paymentInstance.updateShortcutDisplay();
 
-      // Verify premium-only class is removed from all elements
       expectShortcutsPremiumOnly(false);
     });
 
@@ -222,9 +198,7 @@ describe("Payment Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
-  // Test: updateNoteDisplay
-  // ============================================================================
+  // updateNoteDisplay
 
   describe("updateNoteDisplay - isFirst", () => {
     test("should display first-time user note", () => {
@@ -238,7 +212,6 @@ describe("Payment Component - Full Coverage", () => {
 
       expect(global.premiumNoteElement.innerHTML).toBe("Welcome! This is your first time.");
 
-      // Should not call modal methods for first-time users
       expect(global.modal.text2Modal).not.toHaveBeenCalled();
       expect(global.modal.text2Link).not.toHaveBeenCalled();
     });
@@ -268,7 +241,6 @@ describe("Payment Component - Full Coverage", () => {
     test("should display expired note with ExtensionPay link", () => {
       global.state.paymentStage = { isExpiredTrial: true };
 
-      // Mock i18n for expiredNote
       global.chrome.i18n.getMessage.mockImplementation((key) => {
         const msgs = {
           expiredNote:
@@ -312,7 +284,6 @@ describe("Payment Component - Full Coverage", () => {
 
   describe("updateNoteDisplay - Priority Testing", () => {
     test("should prioritize isFirst > isExpiredTrial > isTrial > isPremium", () => {
-      // Test if-else precedence: isFirst wins
       global.state.paymentStage = {
         isFirst: true,
         isExpiredTrial: true,
@@ -322,7 +293,6 @@ describe("Payment Component - Full Coverage", () => {
       paymentInstance.updateNoteDisplay();
       expect(premiumNoteElement.innerHTML).toBe("Welcome! This is your first time.");
 
-      // isTrial wins when isFirst and isExpiredTrial are false
       global.state.paymentStage = {
         isTrial: true,
         isPremium: true,
@@ -331,7 +301,6 @@ describe("Payment Component - Full Coverage", () => {
       paymentInstance.updateNoteDisplay();
       expect(global.modal.text2Modal).toHaveBeenCalled();
 
-      // isPremium wins when isFirst, isExpiredTrial and isTrial are false
       global.modal.text2Link.mockClear();
       global.state.paymentStage = { isPremium: true };
       paymentInstance.updateNoteDisplay();
@@ -357,9 +326,7 @@ describe("Payment Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
-  // Test: calcTrialEndDate
-  // ============================================================================
+  // calcTrialEndDate
 
   describe("calcTrialEndDate", () => {
     test("should format date in US locale with 24-hour time", () => {
@@ -375,22 +342,19 @@ describe("Payment Component - Full Coverage", () => {
     });
 
     test("should handle edge case timestamps", () => {
-      // Midnight (timezone dependent: 00:00 or 24:00)
       expect(paymentInstance.calcTrialEndDate(new Date("2025-12-25T00:00:00").getTime())).toMatch(
         /Dec 25, (00:00|24:00)/
       );
 
-      // Unix epoch
       expect(paymentInstance.calcTrialEndDate(0)).toMatch(/Jan 1, \d{2}:\d{2}/);
 
-      // Invalid
       expect(paymentInstance.calcTrialEndDate(NaN)).toContain("Invalid Date");
     });
 
     test("should pad minutes and maintain consistent format", () => {
       const result = paymentInstance.calcTrialEndDate(new Date("2025-05-10T10:05:00").getTime());
-      expect(result).toMatch(/^\w{3} \d{1,2}, \d{2}:\d{2}$/); // Format: "May 10, 10:05"
-      expect(result).toContain(":05"); // Minutes padded
+      expect(result).toMatch(/^\w{3} \d{1,2}, \d{2}:\d{2}$/);
+      expect(result).toContain(":05");
     });
 
     test("should be deterministic for same timestamp", () => {
@@ -401,9 +365,7 @@ describe("Payment Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
   // Integration Tests
-  // ============================================================================
 
   describe("Integration - Full Payment Flow", () => {
     test("should handle trial user flow: unlock shortcuts and show trial note", () => {
@@ -455,9 +417,7 @@ describe("Payment Component - Full Coverage", () => {
     });
   });
 
-  // ============================================================================
   // Constructor and Error Handling
-  // ============================================================================
 
   describe("Constructor and Error Handling", () => {
     test("should create instance with all required methods", () => {
@@ -470,16 +430,14 @@ describe("Payment Component - Full Coverage", () => {
     });
 
     test("should handle runtime errors gracefully", () => {
-      // Null response from chrome.runtime.sendMessage
       chrome.runtime.sendMessage.mockImplementation((msg, cb) => cb(null));
       const spy1 = jest.spyOn(paymentInstance, "updateShortcutDisplay");
       const spy2 = jest.spyOn(paymentInstance, "updateNoteDisplay");
 
       expect(() => paymentInstance.checkPay()).not.toThrow();
-      expect(spy1).not.toHaveBeenCalled(); // Early return prevents call
+      expect(spy1).not.toHaveBeenCalled();
       expect(spy2).not.toHaveBeenCalled();
 
-      // Empty shortcut collection
       const original = global.shortcutTip;
       global.shortcutTip = [];
       global.state.paymentStage = { isTrial: true };

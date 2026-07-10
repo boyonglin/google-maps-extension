@@ -30,16 +30,12 @@ class Modal {
     this._setupPremiumPanel();
   }
 
-  // ---------------------------------------------------------------------------
-  // Private setup helpers (called once from addModalListener)
-  // ---------------------------------------------------------------------------
-
+  // Private setup helpers
   _setupShortcutsLinks() {
     for (let i = 0; i < configureElements.length; i++) {
       configureElements[i].onclick = function (event) {
         if (window.Analytics)
           window.Analytics.trackFeatureClick("configure_shortcuts", "configureLink");
-        // Detect user browser
         let userAgent = navigator.userAgent;
 
         if (/Chrome/i.test(userAgent)) {
@@ -62,28 +58,8 @@ class Modal {
       const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
       chrome.storage.local.set({ geminiApiKey: encrypted });
 
-      if (!apiKey) {
-        apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-        sendButton.disabled = true;
-        return;
-      }
-
-      chrome.runtime.sendMessage(
-        { action: "verifyApiKey", apiKey: apiKey },
-        ({ valid, error } = {}) => {
-          if (error || !valid) {
-            geminiEmptyMessage.classList.remove("d-none");
-            apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-            geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
-            sendButton.disabled = true;
-          } else {
-            apiInput.placeholder = "............" + apiKey.slice(-4);
-            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-            sendButton.disabled = false;
-          }
-        }
-      );
+      // Wired by popup.js in production
+      this.onApiKeyChange(apiKey);
     });
 
     this.text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
@@ -103,8 +79,7 @@ class Modal {
 
     this._setupResetButton(apiInput, "geminiApiKey", () => {
       apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-      sendButton.disabled = true;
+      this.onApiKeyChange("");
     });
   }
 
@@ -225,9 +200,7 @@ class Modal {
     });
   }
 
-  // Language selector — uses Bootstrap's dropdown plugin (Popper bundled via
-  // bootstrap.bundle.min.js). Bootstrap handles open/close, outside-click, and
-  // Escape; we only sync the visual state and persist the selection.
+  // Language selector uses Bootstrap dropdown; we sync state and persist selection
   _setupLanguageDropdown() {
     const languageDropdown = document.getElementById("languageDropdown");
     if (!languageDropdown || typeof window === "undefined" || !window.I18nUtils) return;
@@ -237,14 +210,13 @@ class Modal {
     const items = languageDropdown.querySelectorAll(".language-dropdown-item");
 
     const syncDropdownState = (lang, isDirty = false) => {
-      // Gray (placeholder-like) until user makes a change in this session
+      // Gray placeholder until user change
       toggleBtn.classList.toggle("is-default", !isDirty);
       items.forEach((item) => {
         const isActive = item.dataset.value === lang;
         item.classList.toggle("active", isActive);
         if (isActive && labelEl) {
-          // Prefer the i18n message directly so this works regardless of
-          // whether popup.js's [data-locale] pass has run yet.
+          // Prefer i18n message over [data-locale] pass
           const localeKey = item.dataset.locale;
           const localized = localeKey ? chrome.i18n.getMessage(localeKey) : "";
           labelEl.textContent = localized || item.textContent;
@@ -264,11 +236,10 @@ class Modal {
     items.forEach((item) => {
       item.addEventListener("click", async () => {
         const newLang = item.dataset.value;
-        syncDropdownState(newLang, true); // user made a change → go dark
         if (newLang === window.I18nUtils.getCurrentLanguage()) return;
         if (window.Analytics)
           window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
-        // setLanguage now applies the override synchronously, so no reloadOverride needed.
+        // setLanguage applies override synchronously
         await window.I18nUtils.setLanguage(newLang);
         if (typeof window.applyI18n === "function") window.applyI18n();
         syncDropdownState(window.I18nUtils.getCurrentLanguage(), true);
@@ -293,7 +264,6 @@ class Modal {
     });
   }
 
-  // Replace text in a locale element with a link or modal trigger
   _replaceTextWithElement(dataLocale, linkText, replacement) {
     const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
     if (pElement) {
@@ -344,7 +314,7 @@ class Modal {
   }
 
   updateToggleUI(isActive, textSelector, iconSelector, toggleElement) {
-    // Support for legacy text/icon toggle (if elements exist)
+    // Support legacy text/icon toggle
     const textEl = document.querySelector(textSelector);
     const iconEl = document.querySelector(iconSelector);
 

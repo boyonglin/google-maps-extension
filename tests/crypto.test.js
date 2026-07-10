@@ -6,7 +6,6 @@
 import { encryptApiKey, decryptApiKey } from "../Package/dist/utils/crypto.js";
 
 describe("crypto.js - API Key Encryption/Decryption", () => {
-  // Mock data for testing
   const mockAesKey = {
     kty: "oct",
     k: "mockKeyValue",
@@ -20,7 +19,7 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
     algorithm: { name: "AES-GCM", length: 256 },
   };
 
-  // Helper functions to reduce repetitive mock setup
+  // Helpers
   const setupEncryptionMocks = (options = {}) => {
     const {
       hasExistingKey = true,
@@ -61,14 +60,11 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
   describe("encryptApiKey", () => {
     test("should encrypt an API key successfully with existing AES key", async () => {
-      // Arrange
       const apiKey = "test-api-key-12345";
       setupEncryptionMocks();
 
-      // Act
       const result = await encryptApiKey(apiKey);
 
-      // Assert
       expect(chrome.storage.local.get).toHaveBeenCalledWith("aesKey");
       expect(crypto.subtle.importKey).toHaveBeenCalledWith(
         "jwk",
@@ -88,14 +84,11 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
     });
 
     test("should generate new AES key if none exists", async () => {
-      // Arrange
       const apiKey = "new-api-key";
       setupEncryptionMocks({ hasExistingKey: false });
 
-      // Act
       const result = await encryptApiKey(apiKey);
 
-      // Assert
       expect(crypto.subtle.generateKey).toHaveBeenCalledWith(
         { name: "AES-GCM", length: 256 },
         true,
@@ -108,81 +101,64 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
     });
 
     test("should encrypt empty string", async () => {
-      // Arrange
       const apiKey = "";
       setupEncryptionMocks({ cipherBuffer: new Uint8Array([]).buffer });
 
-      // Act
       const result = await encryptApiKey(apiKey);
 
-      // Assert
       expect(result).toBeTruthy();
       expect(result.split(".").length).toBe(2);
     });
 
     test("should handle special characters in API key", async () => {
-      // Arrange
       const apiKey = "test-key-!@#$%^&*()_+-={}[]|:;<>?,./~`";
       setupEncryptionMocks({ cipherBuffer: new Uint8Array([1, 2, 3]).buffer });
 
-      // Act
       const result = await encryptApiKey(apiKey);
 
-      // Assert
       expect(result).toBeTruthy();
       expect(crypto.subtle.encrypt).toHaveBeenCalled();
     });
 
     test("should handle unicode characters in API key", async () => {
-      // Arrange
       const apiKey = "test-key-你好-مرحبا-🚀";
       setupEncryptionMocks({ cipherBuffer: new Uint8Array([1, 2, 3]).buffer });
 
-      // Act
       const result = await encryptApiKey(apiKey);
 
-      // Assert
       expect(result).toBeTruthy();
       expect(crypto.subtle.encrypt).toHaveBeenCalled();
     });
 
     test("should handle very long API key", async () => {
-      // Arrange
       const apiKey = "a".repeat(10000);
       setupEncryptionMocks({ cipherBuffer: new Uint8Array([1, 2, 3]).buffer });
 
-      // Act
       const result = await encryptApiKey(apiKey);
 
-      // Assert
       expect(result).toBeTruthy();
       expect(crypto.subtle.encrypt).toHaveBeenCalled();
     });
 
     test("should propagate errors from crypto.subtle.encrypt", async () => {
-      // Arrange
       const apiKey = "test-key";
       setupEncryptionMocks();
       crypto.subtle.encrypt.mockRejectedValue(new Error("Encryption failed"));
 
-      // Act & Assert
       await expect(encryptApiKey(apiKey)).rejects.toThrow("Encryption failed");
     });
 
     test("should propagate errors from chrome.storage.local.set", async () => {
-      // Arrange
       const apiKey = "test-key";
       setupEncryptionMocks({ hasExistingKey: false });
       chrome.storage.local.set.mockRejectedValue(new Error("Storage failed"));
 
-      // Act & Assert
       await expect(encryptApiKey(apiKey)).rejects.toThrow("Storage failed");
     });
   });
 
   describe("decryptApiKey", () => {
     test("should decrypt an encrypted API key successfully", async () => {
-      // Arrange
       const apiKey = "original-api-key";
       const mockIv = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
       const ivB64 = btoa(String.fromCharCode(...mockIv));
@@ -191,10 +167,8 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
       setupDecryptionMocks(apiKey);
 
-      // Act
       const result = await decryptApiKey(stored);
 
-      // Assert
       expect(chrome.storage.local.get).toHaveBeenCalledWith("aesKey");
       expect(crypto.subtle.importKey).toHaveBeenCalledWith(
         "jwk",
@@ -212,62 +186,48 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
     });
 
     test("should return empty string for null/undefined input", async () => {
-      // Act & Assert
       expect(await decryptApiKey(null)).toBe("");
       expect(await decryptApiKey(undefined)).toBe("");
       expect(await decryptApiKey("")).toBe("");
     });
 
     test("should return empty string for invalid format (missing dot)", async () => {
-      // Arrange
       const stored = "invalid-format-no-dot";
 
-      // Act
       const result = await decryptApiKey(stored);
 
-      // Assert
       expect(result).toBe("");
       expect(crypto.subtle.decrypt).not.toHaveBeenCalled();
     });
 
     test("should return empty string for invalid format (empty IV)", async () => {
-      // Arrange
       const stored = ".data";
 
-      // Act
       const result = await decryptApiKey(stored);
 
-      // Assert
       expect(result).toBe("");
       expect(crypto.subtle.decrypt).not.toHaveBeenCalled();
     });
 
     test("should return empty string for invalid format (empty data)", async () => {
-      // Arrange
       const stored = "iv.";
 
-      // Act
       const result = await decryptApiKey(stored);
 
-      // Assert
       expect(result).toBe("");
       expect(crypto.subtle.decrypt).not.toHaveBeenCalled();
     });
 
     test("should return empty string for invalid format (both parts empty)", async () => {
-      // Arrange
       const stored = ".";
 
-      // Act
       const result = await decryptApiKey(stored);
 
-      // Assert
       expect(result).toBe("");
       expect(crypto.subtle.decrypt).not.toHaveBeenCalled();
     });
 
     test("should decrypt empty string successfully", async () => {
-      // Arrange
       const mockIv = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
       const ivB64 = btoa(String.fromCharCode(...mockIv));
       const dataB64 = btoa("x"); // Use a minimal valid base64 string
@@ -275,16 +235,13 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
       setupDecryptionMocks("");
 
-      // Act
       const result = await decryptApiKey(stored);
 
-      // Assert
       expect(result).toBe("");
       expect(crypto.subtle.decrypt).toHaveBeenCalled();
     });
 
     test("should decrypt unicode characters correctly", async () => {
-      // Arrange
       const apiKey = "你好世界-مرحبا-🌍";
       const mockIv = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
       const ivB64 = btoa(String.fromCharCode(...mockIv));
@@ -293,15 +250,12 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
       setupDecryptionMocks(apiKey);
 
-      // Act
       const result = await decryptApiKey(stored);
 
-      // Assert
       expect(result).toBe(apiKey);
     });
 
     test("should generate new key if none exists during decryption", async () => {
-      // Arrange
       const mockIv = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
       const ivB64 = btoa(String.fromCharCode(...mockIv));
       const dataB64 = btoa("data");
@@ -310,17 +264,14 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
       setupDecryptionMocks(apiKey, { hasExistingKey: false });
 
-      // Act
       const result = await decryptApiKey(stored);
 
-      // Assert
       expect(crypto.subtle.generateKey).toHaveBeenCalled();
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ aesKey: mockAesKey });
       expect(result).toBe(apiKey);
     });
 
     test("should propagate errors from crypto.subtle.decrypt", async () => {
-      // Arrange
       const mockIv = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
       const ivB64 = btoa(String.fromCharCode(...mockIv));
       const dataB64 = btoa("data");
@@ -329,18 +280,15 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       setupDecryptionMocks("test");
       crypto.subtle.decrypt.mockRejectedValue(new Error("Decryption failed"));
 
-      // Act & Assert
       await expect(decryptApiKey(stored)).rejects.toThrow("Decryption failed");
     });
 
     test("should handle invalid base64 in IV gracefully", async () => {
-      // Arrange
       const stored = "invalid!!!base64.validbase64";
 
       chrome.storage.local.get.mockResolvedValue({ aesKey: mockAesKey });
       crypto.subtle.importKey.mockResolvedValue(mockCryptoKey);
 
-      // Act & Assert
       // atob() will process the string but might not throw for all invalid inputs
       // The behavior depends on the base64 string structure
       // If it doesn't throw, it will return empty string due to validation
@@ -355,7 +303,6 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
     });
 
     test("should handle invalid base64 in data gracefully", async () => {
-      // Arrange
       const mockIv = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
       const ivB64 = btoa(String.fromCharCode(...mockIv));
       const stored = `${ivB64}.invalid!!!base64`;
@@ -363,7 +310,6 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       chrome.storage.local.get.mockResolvedValue({ aesKey: mockAesKey });
       crypto.subtle.importKey.mockResolvedValue(mockCryptoKey);
 
-      // Act & Assert
       // atob() will process the string but might not throw for all invalid inputs
       try {
         const result = await decryptApiKey(stored);
@@ -402,7 +348,6 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       // Act - Decrypt
       const decrypted = await decryptApiKey(encrypted);
 
-      // Assert
       expect(decrypted).toBe(originalApiKey);
     });
 
@@ -438,7 +383,6 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
   describe("Edge Cases and Error Handling", () => {
     test("should handle chrome.storage.local.get returning null", async () => {
-      // Arrange
       chrome.storage.local.get.mockResolvedValue(null);
       crypto.subtle.generateKey.mockResolvedValue(mockCryptoKey);
       crypto.subtle.exportKey.mockResolvedValue(mockAesKey);
@@ -446,58 +390,45 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       crypto.getRandomValues.mockReturnValue(new Uint8Array(12));
       crypto.subtle.encrypt.mockResolvedValue(new ArrayBuffer(8));
 
-      // Act
       const result = await encryptApiKey("test");
 
-      // Assert
       expect(crypto.subtle.generateKey).toHaveBeenCalled();
       expect(result).toBeTruthy();
     });
 
     test("should handle chrome.storage.local.get rejection", async () => {
-      // Arrange
       chrome.storage.local.get.mockRejectedValue(new Error("Storage error"));
 
-      // Act & Assert
       await expect(encryptApiKey("test")).rejects.toThrow("Storage error");
     });
 
     test("should handle crypto.subtle.importKey failure", async () => {
-      // Arrange
       chrome.storage.local.get.mockResolvedValue({ aesKey: mockAesKey });
       crypto.subtle.importKey.mockRejectedValue(new Error("Import failed"));
 
-      // Act & Assert
       await expect(encryptApiKey("test")).rejects.toThrow("Import failed");
     });
 
     test("should handle crypto.subtle.generateKey failure", async () => {
-      // Arrange
       chrome.storage.local.get.mockResolvedValue({});
       crypto.subtle.generateKey.mockRejectedValue(new Error("Generate failed"));
 
-      // Act & Assert
       await expect(encryptApiKey("test")).rejects.toThrow("Generate failed");
     });
 
     test("should handle crypto.subtle.exportKey failure", async () => {
-      // Arrange
       chrome.storage.local.get.mockResolvedValue({});
       crypto.subtle.generateKey.mockResolvedValue(mockCryptoKey);
       crypto.subtle.exportKey.mockRejectedValue(new Error("Export failed"));
 
-      // Act & Assert
       await expect(encryptApiKey("test")).rejects.toThrow("Export failed");
     });
 
     test("should handle malformed encrypted string with multiple dots", async () => {
-      // Arrange
       const stored = "part1.part2.part3.part4";
 
-      // Act
       const result = await decryptApiKey(stored);
 
-      // Assert
       // The function will try to decrypt using first part as IV and rest as data
       // Due to split() behavior, this becomes: ['part1', 'part2', 'part3', 'part4']
       // And stored.split(".") returns array, so [0] is IV and [1] is data
@@ -506,7 +437,6 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
     });
 
     test("should verify IV is exactly 12 bytes", async () => {
-      // Arrange
       const apiKey = "test-key";
       const mockIv = new Uint8Array(12);
       const mockCipherBuffer = new Uint8Array([1, 2, 3]).buffer;
@@ -516,10 +446,8 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       crypto.getRandomValues.mockReturnValue(mockIv);
       crypto.subtle.encrypt.mockResolvedValue(mockCipherBuffer);
 
-      // Act
       await encryptApiKey(apiKey);
 
-      // Assert
       const encryptCall = crypto.subtle.encrypt.mock.calls[0];
       const ivUsed = encryptCall[0].iv;
       expect(ivUsed.length).toBe(12);
@@ -527,10 +455,9 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
   });
 
   describe("Buffer Conversion Functions (Indirect Testing)", () => {
-    // These functions are not exported but we can test their behavior indirectly
+    // Testing internals indirectly
 
     test("should correctly convert buffer to base64 and back", async () => {
-      // Arrange
       const apiKey = "test-conversion";
       const mockIv = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
       const plainBuffer = new TextEncoder().encode(apiKey);
@@ -568,7 +495,6 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       crypto.getRandomValues.mockReturnValue(mockIv);
       crypto.subtle.encrypt.mockResolvedValue(binaryData.buffer);
 
-      // Act
       const encrypted = await encryptApiKey("test");
 
       // Assert - Should create valid base64
@@ -584,7 +510,6 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
   describe("Concurrent Operations", () => {
     test("should handle multiple concurrent encrypt operations", async () => {
-      // Arrange
       const apiKeys = ["key1", "key2", "key3", "key4", "key5"];
 
       chrome.storage.local.get.mockResolvedValue({ aesKey: mockAesKey });
@@ -593,11 +518,9 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
         Promise.resolve(new Uint8Array([1, 2, 3, 4]).buffer)
       );
 
-      // Act
       const promises = apiKeys.map((key) => encryptApiKey(key));
       const results = await Promise.all(promises);
 
-      // Assert
       expect(results.length).toBe(apiKeys.length);
       results.forEach((result) => {
         expect(result).toBeTruthy();
@@ -607,7 +530,6 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
     });
 
     test("should handle multiple concurrent decrypt operations", async () => {
-      // Arrange
       const encryptedKeys = [
         "aXYxMjM0NTY3ODkwMTI=.ZGF0YTE=",
         "aXYyMzQ1Njc4OTAxMjM=.ZGF0YTI=",
@@ -621,11 +543,9 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
         return Promise.resolve(new TextEncoder().encode(text).buffer);
       });
 
-      // Act
       const promises = encryptedKeys.map((key) => decryptApiKey(key));
       const results = await Promise.all(promises);
 
-      // Assert
       expect(results.length).toBe(encryptedKeys.length);
       results.forEach((result) => {
         expect(result).toBe("decrypted-key");
@@ -636,7 +556,6 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
   describe("Performance and Limits", () => {
     test("should handle maximum safe integer as API key", async () => {
-      // Arrange
       const apiKey = Number.MAX_SAFE_INTEGER.toString();
       const mockIv = new Uint8Array(12);
       const mockCipherBuffer = new Uint8Array([1, 2, 3]).buffer;
@@ -646,15 +565,12 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       crypto.getRandomValues.mockReturnValue(mockIv);
       crypto.subtle.encrypt.mockResolvedValue(mockCipherBuffer);
 
-      // Act
       const result = await encryptApiKey(apiKey);
 
-      // Assert
       expect(result).toBeTruthy();
     });
 
     test("should handle API key with newlines and tabs", async () => {
-      // Arrange
       const apiKey = "line1\nline2\tline3\r\nline4";
       const mockIv = new Uint8Array(12);
       const mockCipherBuffer = new Uint8Array([1, 2, 3]).buffer;
@@ -664,10 +580,8 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       crypto.getRandomValues.mockReturnValue(mockIv);
       crypto.subtle.encrypt.mockResolvedValue(mockCipherBuffer);
 
-      // Act
       const result = await encryptApiKey(apiKey);
 
-      // Assert
       expect(result).toBeTruthy();
 
       // Verify it can be decrypted back
@@ -680,25 +594,21 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
 
   describe("AES Key Management", () => {
     test("should reuse existing AES key across multiple operations", async () => {
-      // Arrange
       chrome.storage.local.get.mockResolvedValue({ aesKey: mockAesKey });
       crypto.subtle.importKey.mockResolvedValue(mockCryptoKey);
       crypto.getRandomValues.mockReturnValue(new Uint8Array(12));
       crypto.subtle.encrypt.mockResolvedValue(new ArrayBuffer(8));
 
-      // Act
       await encryptApiKey("key1");
       await encryptApiKey("key2");
       await encryptApiKey("key3");
 
-      // Assert
       expect(chrome.storage.local.get).toHaveBeenCalledTimes(3);
       expect(crypto.subtle.generateKey).not.toHaveBeenCalled();
       expect(chrome.storage.local.set).not.toHaveBeenCalled();
     });
 
     test("should generate AES key only once when none exists", async () => {
-      // Arrange
       let keyGenerated = false;
       chrome.storage.local.get.mockImplementation(() => {
         if (keyGenerated) {
@@ -718,17 +628,14 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       crypto.getRandomValues.mockReturnValue(new Uint8Array(12));
       crypto.subtle.encrypt.mockResolvedValue(new ArrayBuffer(8));
 
-      // Act
       await encryptApiKey("key1");
       await encryptApiKey("key2");
 
-      // Assert
       expect(crypto.subtle.generateKey).toHaveBeenCalledTimes(1);
       expect(chrome.storage.local.set).toHaveBeenCalledTimes(1);
     });
 
     test("should use correct AES-GCM parameters", async () => {
-      // Arrange
       chrome.storage.local.get.mockResolvedValue({});
       crypto.subtle.generateKey.mockResolvedValue(mockCryptoKey);
       crypto.subtle.exportKey.mockResolvedValue(mockAesKey);
@@ -737,10 +644,8 @@ describe("crypto.js - API Key Encryption/Decryption", () => {
       crypto.getRandomValues.mockReturnValue(new Uint8Array(12));
       crypto.subtle.encrypt.mockResolvedValue(new ArrayBuffer(8));
 
-      // Act
       await encryptApiKey("test");
 
-      // Assert
       expect(crypto.subtle.generateKey).toHaveBeenCalledWith(
         { name: "AES-GCM", length: 256 },
         true,

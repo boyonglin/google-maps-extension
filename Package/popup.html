@@ -40,7 +40,7 @@
                     <div class="col-auto ml-auto d-flex align-items-center px-0">
                         <div class="row g-1">
                             <div class="col">
-                                <button type="button" id="videoSummaryButton" class="btn btn-outline-secondary d-none"
+                                <button type="button" id="videoSummaryButton" class="btn btn-outline-secondary toggle-active-button d-none"
                                     aria-label="Video Summary" title="Video Summary"
                                     data-locale-title="videoLabel" data-locale-aria-label="videoLabel">
                                     <i class="bi bi-youtube"></i>
@@ -69,7 +69,7 @@
                                 </button>
                             </div>
                             <div class="col">
-                                <button type="button" id="deleteListButton" class="btn btn-outline-secondary"
+                                <button type="button" id="deleteListButton" class="btn btn-outline-secondary toggle-active-button"
                                     aria-label="Delete List" title="Delete Mode"
                                     data-locale-title="deleteLabel" data-locale-aria-label="deleteLabel">
                                     <i class="bi bi-trash-fill"></i>
@@ -79,51 +79,58 @@
                     </div>
                 </div>
             </div>
-            <p id="emptyMessage" class="text-muted text-center py-4 page-H" data-locale="historyEmptyMsg"></p>
-            <p id="favoriteEmptyMessage" class="text-muted text-center py-4 page-F" data-locale="favoriteEmptyMsg"></p>
-            <p id="geminiEmptyMessage" class="text-muted text-center py-4 page-G" data-locale="geminiEmptyMsg"></p>
-            <div id="searchHistoryList" class="overflow-auto mb-4 page-H"></div>
-            <div id="favoriteList" class="overflow-auto mb-4 page-F d-none"></div>
-            <div id="geminiResponse" class="d-none page-G">
-                <textarea class="w-100 d-none" id="response" style="height: 200px"
-                    aria-label="Testing Purpose"></textarea>
-                <div id="summaryList" class="overflow-auto mb-4"></div>
+            <p id="loadingMessage" class="text-muted text-center py-4" data-locale="loadingMsg"></p>
+            <div id="historyPanel" class="d-none" data-tab-panel="history">
+                <p id="emptyMessage" class="text-muted text-center py-4"></p>
+                <div id="searchHistoryList" class="overflow-auto mb-4"></div>
+                <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3">
+                    <button id="clearButton" class="btn btn-light me-3 w-25">
+                        <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText"></span>
+                    </button>
+                    <a id="mapsButton" href="#" target="_blank" class="btn btn-primary btn-maps flex-fill">
+                        <i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText"></span></a>
+                </div>
             </div>
-            <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3 page-H">
-                <button id="clearButton" class="btn btn-light me-3 w-25">
-                    <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText"></span>
-                </button>
-                <a id="mapsButton" href="#" target="_blank" class="btn btn-primary btn-maps flex-fill">
-                    <i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText"></span></a>
+            <div id="favoritePanel" class="d-none" data-tab-panel="favorite">
+                <p id="favoriteEmptyMessage" class="text-muted text-center py-4"></p>
+                <div id="favoriteList" class="overflow-auto mb-4"></div>
+                <div id="exportButtonGroup" class="d-flex justify-content-evenly mt-3">
+                    <button id="exportButton" class="btn btn-light me-3 w-50">
+                        <i class="bi bi-download me-2"></i><span data-locale="exportBtnText"></span>
+                    </button>
+                    <button id="importButton" class="btn btn-light w-50">
+                        <i class="bi bi-upload me-2"></i><span data-locale="importBtnText"></span>
+                    </button>
+                    <input type="file" id="fileInput" style="display: none" accept=".csv" aria-label="Import" />
+                </div>
             </div>
-            <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-D">
+            <div id="geminiPanel" class="d-none" data-tab-panel="gemini">
+                <p id="geminiEmptyMessage" class="text-muted text-center py-4"></p>
+                <div id="geminiResponse">
+                    <textarea class="w-100 d-none" id="response" style="height: 200px"
+                        aria-label="Testing Purpose"></textarea>
+                    <div id="summaryList" class="overflow-auto mb-4"></div>
+                </div>
+                <div id="geminiButtonGroup" class="d-flex justify-content-evenly mt-3">
+                    <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal"
+                        data-bs-target="#apiModal">
+                        <i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText"></span>
+                    </button>
+                    <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none"
+                        data-locale-title="clearSummaryLabel">
+                        <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText"></span>
+                    </button>
+                    <button id="sendButton" class="btn btn-send flex-fill">
+                        <i class="bi bi-stars me-2"></i><span data-locale="sendBtnText"></span>
+                    </button>
+                </div>
+            </div>
+            <div id="deleteButtonGroup" class="d-flex justify-content-evenly mt-3 d-none">
                 <button id="cancelButton" class="btn btn-light me-3 w-25">
                     <span data-locale="cancelBtnText"></span>
                 </button>
                 <a id="deleteButton" class="btn btn-danger btn-delete flex-fill">
                     <i class="bi bi-trash-fill me-2"></i><span></span></a>
-            </div>
-            <div id="exportButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-F">
-                <button id="exportButton" class="btn btn-light me-3 w-50">
-                    <i class="bi bi-download me-2"></i><span data-locale="exportBtnText"></span>
-                </button>
-                <button id="importButton" class="btn btn-light w-50">
-                    <i class="bi bi-upload me-2"></i><span data-locale="importBtnText"></span>
-                </button>
-                <input type="file" id="fileInput" style="display: none" accept=".csv" aria-label="Import" />
-            </div>
-            <div id="geminiButtonGroup" class="d-flex justify-content-evenly mt-3 d-none page-G">
-                <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal"
-                    data-bs-target="#apiModal">
-                    <i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText"></span>
-                </button>
-                <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none"
-                    data-locale-title="clearSummaryLabel">
-                    <i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText"></span>
-                </button>
-                <button id="sendButton" class="btn btn-send flex-fill">
-                    <i class="bi bi-stars me-2"></i><span data-locale="sendBtnText"></span>
-                </button>
             </div>
         </section>
         <footer>

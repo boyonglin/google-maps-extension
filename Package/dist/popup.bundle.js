@@ -30,18 +30,6 @@ const DOMUtils = {
       iconElement.classList.remove("spring-animation");
     }, 500);
   },
-
-  /**
-   * Refresh favorite list after adding an item
-   * Common pattern used after animating favorite icon
-   */
-  refreshFavoriteList() {
-    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-      if (typeof favorite !== "undefined" && favorite.updateFavorite) {
-        favorite.updateFavorite(favoriteList);
-      }
-    });
-  },
 };
 
 if (typeof window !== "undefined") {
@@ -53,36 +41,283 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 // ---- hooks/popupState.js ----
+const SUMMARY_TTL_MS = 24 * 60 * 60 * 1000;
+const POPUP_TABS = new Set(["history", "favorite", "gemini"]);
+
+function stringList(value) {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
+}
+
+function summaryItems(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item) => item && typeof item.name === "string")
+    .map((item) => ({
+      name: item.name,
+      clue: typeof item.clue === "string" ? item.clue : "",
+    }));
+}
+
+// Shared by hydrateSnapshot, the SUMMARY_STORAGE_SET reducer case, and callers
+// outside the reducer (gemini.js, popup.js) that need the same TTL check.
+function isSummaryFresh(items, timestamp, now) {
+  return (
+    Array.isArray(items) &&
+    items.length > 0 &&
+    Number.isFinite(timestamp) &&
+    timestamp > 0 &&
+    timestamp <= now &&
+    now - timestamp <= SUMMARY_TTL_MS
+  );
+}
+
+function initialPopupSnapshot() {
+  return {
+    boot: "loading",
+    activeTab: "history",
+    activeTabTouched: false,
+    history: { items: [], emptyReason: "initial" },
+    favorite: { items: [], status: "empty", errorKey: null },
+    summary: {
+      phase: "empty",
+      items: [],
+      errorKey: null,
+      estimateSeconds: null,
+      requestId: null,
+      originTabId: null,
+      timestamp: null,
+    },
+    api: { status: "missing", token: 0 },
+    video: { available: null, enabled: false, token: 0 },
+    deleteMode: { source: null, selectedValues: [] },
+    onboarding: { demoHistoryVisible: false },
+  };
+}
+
+function hydrateSnapshot(current, payload = {}) {
+  const now = Number.isFinite(payload.now) ? payload.now : Date.now();
+  const persistedSummary = summaryItems(payload.summaryList);
+  const timestamp = Number(payload.timestamp);
+  const summaryIsFresh = isSummaryFresh(persistedSummary, timestamp, now);
+
+  return {
+    ...current,
+    boot: "ready",
+    // Don't snap back to lastActiveTab if the user already picked a tab.
+    activeTab: current.activeTabTouched
+      ? current.activeTab
+      : POPUP_TABS.has(payload.lastActiveTab)
+        ? payload.lastActiveTab
+        : "history",
+    history: { items: stringList(payload.searchHistoryList), emptyReason: "initial" },
+    favorite: {
+      items: stringList(payload.favoriteList),
+      status: stringList(payload.favoriteList).length ? "ready" : "empty",
+      errorKey: null,
+    },
+    summary: summaryIsFresh
+      ? {
+          ...current.summary,
+          phase: "ready",
+          items: persistedSummary,
+          timestamp,
+        }
+      : { ...initialPopupSnapshot().summary },
+    api: {
+      status: payload.geminiApiKey ? "verifying" : "missing",
+      token: current.api.token + 1,
+    },
+    video: {
+      ...current.video,
+      enabled: Boolean(payload.videoSummaryToggle),
+    },
+  };
+}
+
+function reducePopupState(current, action = {}) {
+  switch (action.type) {
+    case "HYDRATE":
+      return hydrateSnapshot(current, action.payload);
+    case "SET_ACTIVE_TAB":
+      return POPUP_TABS.has(action.tab) && action.tab !== current.activeTab
+        ? {
+            ...current,
+            activeTab: action.tab,
+            activeTabTouched: true,
+            deleteMode: { source: null, selectedValues: [] },
+          }
+        : current;
+    case "HISTORY_SET": {
+      const items = stringList(action.items);
+      return {
+        ...current,
+        history: {
+          items,
+          emptyReason: items.length
+            ? "initial"
+            : action.emptyReason || current.history.emptyReason || "initial",
+        },
+        deleteMode:
+          current.deleteMode.source === "history" && items.length === 0
+            ? { source: null, selectedValues: [] }
+            : current.deleteMode,
+      };
+    }
+    case "FAVORITE_SET": {
+      const items = stringList(action.items);
+      return {
+        ...current,
+        favorite: {
+          items,
+          status: items.length ? "ready" : "empty",
+          errorKey: null,
+        },
+        deleteMode:
+          current.deleteMode.source === "favorite" && items.length === 0
+            ? { source: null, selectedValues: [] }
+            : current.deleteMode,
+      };
+    }
+    case "FAVORITE_ERROR":
+      return {
+        ...current,
+        favorite: { ...current.favorite, status: "error", errorKey: action.errorKey },
+      };
+    case "SUMMARY_START":
+      return {
+        ...current,
+        summary: {
+          ...initialPopupSnapshot().summary,
+          phase: "generating",
+          requestId: action.requestId,
+          originTabId: action.originTabId ?? null,
+        },
+      };
+    case "SUMMARY_ESTIMATE":
+      if (action.requestId !== current.summary.requestId) return current;
+      return {
+        ...current,
+        summary: { ...current.summary, estimateSeconds: action.estimateSeconds ?? null },
+      };
+    case "SUMMARY_SUCCESS":
+      if (action.requestId !== current.summary.requestId) return current;
+      return {
+        ...current,
+        summary: {
+          ...current.summary,
+          phase: "ready",
+          items: summaryItems(action.items),
+          errorKey: null,
+          estimateSeconds: null,
+          requestId: null,
+          timestamp: action.timestamp ?? Date.now(),
+        },
+      };
+    case "SUMMARY_ERROR":
+      if (action.requestId !== current.summary.requestId) return current;
+      return {
+        ...current,
+        summary: {
+          ...current.summary,
+          phase: "error",
+          items: [],
+          errorKey: action.errorKey || "geminiErrorMsg",
+          estimateSeconds: null,
+          requestId: null,
+        },
+      };
+    case "SUMMARY_CLEAR":
+      return { ...current, summary: { ...initialPopupSnapshot().summary } };
+    case "SUMMARY_STORAGE_SET": {
+      if (current.summary.phase === "generating") return current;
+      const items = summaryItems(action.items);
+      const now = Number.isFinite(action.now) ? action.now : Date.now();
+      const timestamp = Number(action.timestamp);
+      const isFresh = isSummaryFresh(items, timestamp, now);
+      return isFresh
+        ? {
+            ...current,
+            summary: {
+              ...initialPopupSnapshot().summary,
+              phase: "ready",
+              items,
+              timestamp,
+            },
+          }
+        : { ...current, summary: { ...initialPopupSnapshot().summary } };
+    }
+    case "API_VERIFY_START":
+      return {
+        ...current,
+        api: { status: action.hasKey ? "verifying" : "missing", token: action.token },
+      };
+    case "API_VERIFY_RESULT":
+      return action.token === current.api.token
+        ? { ...current, api: { status: action.valid ? "valid" : "invalid", token: action.token } }
+        : current;
+    case "VIDEO_CONTEXT_REQUEST":
+      return { ...current, video: { ...current.video, available: null, token: action.token } };
+    case "VIDEO_CONTEXT_RESULT":
+      return action.token === current.video.token
+        ? { ...current, video: { ...current.video, available: Boolean(action.available) } }
+        : current;
+    case "VIDEO_TOGGLE":
+      return { ...current, video: { ...current.video, enabled: Boolean(action.enabled) } };
+    case "DELETE_ENTER":
+      return action.source === "history" || action.source === "favorite"
+        ? { ...current, deleteMode: { source: action.source, selectedValues: [] } }
+        : current;
+    case "DELETE_TOGGLE": {
+      if (!current.deleteMode.source) return current;
+      const selected = new Set(current.deleteMode.selectedValues);
+      selected.has(action.value) ? selected.delete(action.value) : selected.add(action.value);
+      return {
+        ...current,
+        deleteMode: { ...current.deleteMode, selectedValues: Array.from(selected) },
+      };
+    }
+    case "DELETE_CANCEL":
+      return { ...current, deleteMode: { source: null, selectedValues: [] } };
+    case "ONBOARDING_DEMO_SET":
+      return {
+        ...current,
+        onboarding: { ...current.onboarding, demoHistoryVisible: Boolean(action.visible) },
+      };
+    default:
+      return current;
+  }
+}
+
 class State {
   constructor() {
-    // Page state
-    this.hasHistory = false;
-    this.hasFavorite = false;
-    this.hasSummary = false;
-    this.hasInit = false;
+    this.snapshot = initialPopupSnapshot();
+    this.listeners = new Set();
 
-    // List change flags
-    this.historyListChanged = false;
-    this.favoriteListChanged = false;
-    this.summaryListChanged = false;
-
-    // Video summary mode
-    this.videoSummaryMode = undefined;
-    this.localVideoToggle = false;
-    this.summarizedTabId = undefined;
-
-    // User state
+    // User and layout state not owned by the tab reducer.
     this.paymentStage = null;
-
-    // Dimension cache
     this.previousWidth = 0;
     this.previousHeight = 0;
+    this.summarizedTabId = undefined;
   }
 
-  /**
-   * Build search URL
-   * @param {string} q - Search query
-   */
+  getSnapshot() {
+    return this.snapshot;
+  }
+
+  subscribe(listener) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  dispatch(action) {
+    const next = reducePopupState(this.snapshot, action);
+    if (next !== this.snapshot) {
+      this.snapshot = next;
+      this.listeners.forEach((listener) => listener(next, action));
+    }
+    return this.snapshot;
+  }
+
   buildSearchUrl(q) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({ action: "buildSearchUrl", query: q }, (response) =>
@@ -91,11 +326,6 @@ class State {
     });
   }
 
-  /**
-   * Build directions URL
-   * @param {string} origin - Origin location
-   * @param {string} destination - Destination location
-   */
   buildDirectionsUrl(origin, destination) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(
@@ -105,27 +335,22 @@ class State {
     });
   }
 
-  /**
-   * Update maps button URL
-   */
   buildMapsButtonUrl() {
     chrome.runtime.sendMessage({ action: "buildMapsUrl" }, (response) => {
-      if (response && response.url) {
-        mapsButton.href = response.url;
-      }
+      if (response && response.url) mapsButton.href = response.url;
     });
   }
 
-  /**
-   * Update dimension cache
-   * @param {number} width - Width
-   * @param {number} height - Height
-   */
   updateDimensions(width, height) {
     this.previousWidth = width;
     this.previousHeight = height;
   }
 }
+
+State.reduce = reducePopupState;
+State.initialSnapshot = initialPopupSnapshot;
+State.SUMMARY_TTL_MS = SUMMARY_TTL_MS;
+State.isSummaryFresh = isSummaryFresh;
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = State;
@@ -650,221 +875,95 @@ class Remove {
 
     deleteButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("delete_items", "deleteButton");
-      if (searchHistoryButton.classList.contains("active-button")) {
+      if (state.getSnapshot().deleteMode.source === "history") {
         this.deleteFromHistoryList();
       } else {
         this.deleteFromFavoriteList();
       }
       this.backToNormal();
-      measureContentSize();
     });
 
     deleteListButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("delete_mode", "deleteListButton");
-      const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
-      const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
+      const snapshot = state.getSnapshot();
+      state.dispatch(
+        snapshot.deleteMode.source
+          ? { type: "DELETE_CANCEL" }
+          : { type: "DELETE_ENTER", source: snapshot.activeTab }
+      );
+    });
 
-      if (deleteListButton.classList.contains("active-button")) {
-        this.backToNormal();
-      } else {
-        deleteListButton.classList.add("active-button");
-        deleteListButton.style.pointerEvents = "auto";
-
-        searchButtonGroup.classList.add("d-none");
-        exportButtonGroup.classList.add("d-none");
-        deleteButtonGroup.classList.remove("d-none");
-
-        checkTextOverflow();
-
-        historyLiElements.forEach((li) => {
-          const checkbox = li.querySelector("input");
-          const favoriteIcon = li.querySelector("i");
-
-          checkbox.classList.remove("d-none");
-          favoriteIcon.classList.add("d-none");
-
-          li.classList.add("delete-list");
-          li.classList.remove("history-list");
-        });
-
-        favoriteLiElements.forEach((li) => {
-          const checkbox = li.querySelector("input");
-          const favoriteIcon = li.querySelector("i");
-
-          checkbox.classList.remove("d-none");
-          favoriteIcon.classList.add("d-none");
-
-          li.classList.add("delete-list");
-          li.classList.remove("favorite-list");
-        });
-
-        if (searchHistoryButton.classList.contains("active-button")) {
-          favoriteListButton.disabled = true;
-          geminiSummaryButton.disabled = true;
-          this.updateDeleteCount();
-        } else {
-          searchHistoryButton.disabled = true;
-          geminiSummaryButton.disabled = true;
-          this.updateDeleteCount();
-        }
-      }
+    [searchHistoryListContainer, favoriteListContainer].forEach((container) => {
+      container.addEventListener("change", (event) => {
+        if (!event.target.classList.contains("form-check-input")) return;
+        const li = event.target.closest("li");
+        if (li) state.dispatch({ type: "DELETE_TOGGLE", value: li.dataset.itemValue || "" });
+      });
     });
   }
 
   deleteFromHistoryList() {
-    const checkedBoxes = searchHistoryListContainer.querySelectorAll("input:checked");
-    const selectedTexts = [];
-
-    // Delete checked items from the lists
-    checkedBoxes.forEach((checkbox) => {
-      // Get the corresponding list item (parent element of the checkbox)
-      const listItem = checkbox.closest("li");
-      const selectedText = listItem.querySelector("span").textContent;
-      selectedTexts.push(selectedText);
-
-      listItem.remove();
-    });
-
+    const snapshot = state.getSnapshot();
+    const selected = new Set(snapshot.deleteMode.selectedValues);
+    const items = snapshot.history.items.filter((item) => !selected.has(item));
+    state.dispatch({ type: "HISTORY_SET", items, emptyReason: "cleared" });
+    state.dispatch({ type: "DELETE_CANCEL" });
+    // Re-read so a concurrent write from another context isn't clobbered.
     chrome.storage.local.get("searchHistoryList", ({ searchHistoryList }) => {
-      if (!searchHistoryList) return;
-
-      // Filter out the selected texts from the search history list
-      const updatedList = searchHistoryList.filter((item) => !selectedTexts.includes(item));
-      chrome.storage.local.set({ searchHistoryList: updatedList });
-
-      if (updatedList.length === 0) {
-        state.hasHistory = false;
-        clearButton.disabled = true;
-        searchHistoryUl[0].classList.add("d-none");
-        emptyMessage.style.display = "block";
-        emptyMessage.innerHTML = chrome.i18n.getMessage("clearedUpMsg").replace(/\n/g, "<br>");
-      }
+      const latest = Array.isArray(searchHistoryList) ? searchHistoryList : [];
+      chrome.storage.local.set({ searchHistoryList: latest.filter((item) => !selected.has(item)) });
     });
   }
 
   deleteFromFavoriteList() {
-    const checkedBoxes = favoriteListContainer.querySelectorAll("input:checked");
-    const selectedTexts = [];
-
-    checkedBoxes.forEach((checkbox) => {
-      const listItem = checkbox.closest("li");
-      const spanItem = listItem.querySelectorAll("span");
-      const selectedText = spanItem[0].textContent;
-      if (spanItem.length > 1) {
-        const clueText = spanItem[1].textContent;
-        selectedTexts.push(selectedText + " @" + clueText);
-      } else {
-        selectedTexts.push(selectedText);
-      }
-
-      listItem.remove();
-
-      const historyIElements = searchHistoryListContainer.querySelectorAll("i");
-
-      historyIElements.forEach((icon) => {
-        const parentSpan = icon.parentElement?.querySelector("span");
-        if (parentSpan && selectedText === parentSpan.textContent) {
-          icon.className = "bi bi-patch-plus-fill";
-        }
-      });
-    });
-
+    const snapshot = state.getSnapshot();
+    const selected = new Set(snapshot.deleteMode.selectedValues);
+    const items = snapshot.favorite.items.filter((item) => !selected.has(item));
+    state.dispatch({ type: "FAVORITE_SET", items });
+    state.dispatch({ type: "DELETE_CANCEL" });
+    // See deleteFromHistoryList.
     chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-      if (!favoriteList) return;
-
-      const updatedList = favoriteList.filter((item) => !selectedTexts.includes(item));
-      chrome.storage.local.set({ favoriteList: updatedList });
-
-      if (updatedList.length === 0) {
-        state.hasFavorite = false;
-        exportButton.disabled = true;
-        favoriteUl[0].classList.add("d-none");
-        favoriteEmptyMessage.style.display = "block";
-        favoriteEmptyMessage.innerHTML = chrome.i18n
-          .getMessage("clearedUpMsg")
-          .replace(/\n/g, "<br>");
-      }
+      const latest = Array.isArray(favoriteList) ? favoriteList : [];
+      chrome.storage.local.set({ favoriteList: latest.filter((item) => !selected.has(item)) });
     });
-  }
-
-  attachCheckboxEventListener(container) {
-    const checkboxes = container.querySelectorAll("input");
-    const liElements = container.querySelectorAll("li");
-
-    checkboxes.forEach((checkbox, index) => {
-      checkbox.addEventListener("click", () => {
-        const li = liElements[index];
-
-        if (checkbox.checked) {
-          li.classList.add("checked-list");
-        } else {
-          li.classList.remove("checked-list");
-        }
-
-        this.updateDeleteCount();
-      });
-    });
-  }
-
-  // Update the delete count based on checked checkboxes
-  updateDeleteCount() {
-    const historyCheckedCount = searchHistoryListContainer.querySelectorAll("input:checked").length;
-    const favoriteCheckedCount = favoriteListContainer.querySelectorAll("input:checked").length;
-
-    const checkedCount = searchHistoryButton.classList.contains("active-button")
-      ? historyCheckedCount
-      : favoriteCheckedCount;
-
-    if (checkedCount > 0) {
-      deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnText", String(checkedCount));
-      deleteButton.classList.remove("disabled");
-    } else {
-      deleteButtonSpan.textContent = chrome.i18n.getMessage("deleteBtnTextEmpty");
-      deleteButton.classList.add("disabled");
-    }
   }
 
   backToNormal() {
-    deleteListButton.style.pointerEvents = "";
-    deleteListButton.classList.remove("active-button");
-    deleteButtonGroup.classList.add("d-none");
+    state.dispatch({ type: "DELETE_CANCEL" });
+  }
 
-    if (searchHistoryButton.classList.contains("active-button")) {
-      searchButtonGroup.classList.remove("d-none");
-      favoriteListButton.disabled = false;
-      geminiSummaryButton.disabled = false;
-    } else {
-      exportButtonGroup.classList.remove("d-none");
-      searchHistoryButton.disabled = false;
-      geminiSummaryButton.disabled = false;
+  render(snapshot) {
+    const deleteModeButton = deleteListButton;
+    const deleteActions = deleteButtonGroup;
+    const historyActions = searchButtonGroup;
+    const favoriteActions = exportButtonGroup;
+    const historyTabButton = searchHistoryButton;
+    const favoriteTabButton = favoriteListButton;
+    const summaryTabButton = geminiSummaryButton;
+    const deleteAction = deleteButton;
+    const deleteLabel = deleteAction?.querySelector("span");
+    if (!deleteModeButton || !deleteActions || !historyActions || !favoriteActions) return;
+
+    const { source, selectedValues } = snapshot.deleteMode;
+    const deleting = Boolean(source);
+    deleteModeButton.classList.toggle("active-button", deleting);
+    deleteActions.classList.toggle("d-none", !deleting);
+    historyActions.classList.toggle("d-none", snapshot.activeTab !== "history" || deleting);
+    favoriteActions.classList.toggle("d-none", snapshot.activeTab !== "favorite" || deleting);
+    geminiButtonGroup?.classList.toggle("d-none", snapshot.activeTab !== "gemini");
+
+    if (historyTabButton) historyTabButton.disabled = deleting && source !== "history";
+    if (favoriteTabButton) favoriteTabButton.disabled = deleting && source !== "favorite";
+    if (summaryTabButton) summaryTabButton.disabled = deleting;
+
+    const count = selectedValues.length;
+    if (deleteLabel) {
+      deleteLabel.textContent = chrome.i18n.getMessage(
+        count ? "deleteBtnText" : "deleteBtnTextEmpty",
+        count ? String(count) : undefined
+      );
     }
-
-    this.updateInput();
-  }
-
-  // Toggle checkbox display
-  updateInput() {
-    const historyLiElements = searchHistoryListContainer.querySelectorAll("li");
-    const favoriteLiElements = favoriteListContainer.querySelectorAll("li");
-
-    this.updateListElements(historyLiElements, "history");
-    this.updateListElements(favoriteLiElements, "favorite");
-  }
-
-  updateListElements(liElements, listType) {
-    liElements.forEach((li) => {
-      const checkbox = li.querySelector("input");
-      const favoriteIcon = li.querySelector("i");
-
-      checkbox.classList.add("d-none");
-      favoriteIcon.classList.remove("d-none");
-
-      li.classList.remove("checked-list");
-      checkbox.checked = false;
-
-      li.classList.remove("delete-list");
-      li.classList.add(listType + "-list");
-    });
+    deleteAction?.classList.toggle("disabled", count === 0);
   }
 }
 
@@ -896,7 +995,6 @@ class Favorite {
           type: "text/csv; charset=utf-8;",
         });
 
-        // Create a temporary anchor element and trigger the download
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "TheMapsExpress_FavoriteList.csv";
@@ -941,16 +1039,12 @@ class Favorite {
             });
             const mergedList = existingList.concat(newNames);
 
-            favoriteEmptyMessage.style.display = mergedList.length ? "none" : "block";
-
             chrome.storage.local.set({ favoriteList: mergedList }, () => {
-              this.updateFavorite(mergedList);
-              this.updateHistoryFavoriteIcons();
+              state.dispatch({ type: "FAVORITE_SET", items: mergedList });
             });
           });
         } catch (error) {
-          favoriteEmptyMessage.style.display = "block";
-          favoriteEmptyMessage.innerText = chrome.i18n.getMessage("importErrorMsg");
+          state.dispatch({ type: "FAVORITE_ERROR", errorKey: "importErrorMsg" });
         }
       };
 
@@ -964,14 +1058,14 @@ class Favorite {
       const liElement = DOMUtils.findClosestListItem(event);
       if (!liElement) return;
 
-      if (liElement.classList.contains("delete-list")) {
+      if (
+        state.getSnapshot().deleteMode.source === "favorite" ||
+        liElement.classList.contains("delete-list")
+      ) {
         if (event.target.classList.contains("form-check-input")) {
           return;
         } else {
-          liElement.classList.toggle("checked-list");
-          const checkbox = liElement.querySelector("input");
-          checkbox.checked = !checkbox.checked;
-          remove.updateDeleteCount();
+          state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
         }
       } else {
         const spans = liElement.querySelectorAll("span");
@@ -1001,7 +1095,6 @@ class Favorite {
       }
     });
 
-    // Add context menu listener for favorite items
     favoriteListContainer.addEventListener("contextmenu", (event) => {
       ContextMenuUtil.createContextMenu(event, favoriteListContainer);
     });
@@ -1062,96 +1155,73 @@ class Favorite {
     return favoriteIcon;
   }
 
-  updateHistoryFavoriteIcons() {
-    chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
-      const historyItems = document.querySelectorAll(".history-list");
-      historyItems.forEach((item) => {
-        const text = item.querySelector("span").textContent;
-        const favoriteIcon = item.querySelector("i");
-        if (favoriteList && !favoriteList.includes(text)) {
-          favoriteIcon.className = "bi bi-patch-plus-fill";
-        } else {
-          favoriteIcon.className = "bi bi-patch-check-fill matched";
-        }
-      });
-    });
-  }
-
   addToFavoriteList(selectedText) {
     chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
-    exportButton.disabled = false;
   }
 
-  // Update the favorite list container
   updateFavorite(favoriteList) {
-    if (state.favoriteListChanged || favoriteListContainer.innerHTML.trim() === "") {
-      favoriteListContainer.innerHTML = "";
+    state.dispatch({ type: "FAVORITE_SET", items: favoriteList });
+  }
 
-      if (favoriteList && favoriteList.length > 0) {
-        favoriteEmptyMessage.style.display = "none";
-        state.hasFavorite = true;
+  render(snapshot) {
+    const container = favoriteListContainer;
+    const statusMessage = favoriteEmptyMessage;
+    const exportAction = exportButton;
+    if (!container || !statusMessage || !exportAction) return;
+    const { items, status, errorKey } = snapshot.favorite;
+    const selected = new Set(snapshot.deleteMode.selectedValues);
+    const deleting = snapshot.deleteMode.source === "favorite";
 
-        const ul = document.createElement("ul");
-        ul.className = "list-group d-flex flex-column-reverse";
+    container.replaceChildren();
+    statusMessage.style.whiteSpace = "pre-line";
+    statusMessage.textContent = chrome.i18n.getMessage(
+      status === "error" ? errorKey || "importErrorMsg" : "favoriteEmptyMsg"
+    );
+    statusMessage.classList.toggle("d-none", items.length > 0 && status !== "error");
 
-        // Create list item from new selectedText
-        const fragment = document.createDocumentFragment();
-        favoriteList.forEach((selectedText) => {
-          const li = document.createElement("li");
-          li.className =
-            "list-group-item border rounded mb-3 px-3 favorite-list d-flex justify-content-between align-items-center text-break";
+    if (items.length > 0 && status !== "error") {
+      const ul = document.createElement("ul");
+      ul.className = "list-group d-flex flex-column-reverse";
+      items.forEach((selectedText) => {
+        const li = document.createElement("li");
+        li.className =
+          "list-group-item border rounded mb-3 px-3 d-flex justify-content-between align-items-center text-break";
+        li.dataset.itemValue = selectedText;
 
-          const span = document.createElement("span");
-          if (selectedText.includes(" @")) {
-            const name = selectedText.split(" @")[0];
-            const clue = selectedText.split(" @")[1];
-            span.textContent = name;
-            li.appendChild(span);
-
-            const clueSpan = document.createElement("span");
-            clueSpan.className = "d-none";
-            clueSpan.textContent = clue;
-            li.appendChild(clueSpan);
-          } else {
-            span.textContent = selectedText;
-            li.appendChild(span);
-          }
-
-          const favoriteIcon = document.createElement("i");
-          favoriteIcon.className = "bi bi-patch-check-fill matched";
-          li.appendChild(favoriteIcon);
-
-          const checkbox = document.createElement("input");
-          checkbox.className = "form-check-input d-none";
-          checkbox.type = "checkbox";
-          checkbox.value = "delete";
-          checkbox.name = "checkDelete";
-          checkbox.ariaLabel = "Delete";
-          checkbox.style.cursor = "pointer";
-          li.appendChild(checkbox);
-          fragment.appendChild(li);
-        });
-        ul.appendChild(fragment);
-        favoriteListContainer.appendChild(ul);
-
-        exportButton.disabled = false;
-
-        const lastListItem = favoriteListContainer.querySelector(
-          ".list-group .list-group-item:first-child"
-        );
-        if (lastListItem) {
-          lastListItem.classList.remove("mb-3");
+        const [name, clue] = selectedText.split(" @");
+        const span = document.createElement("span");
+        span.textContent = name;
+        li.appendChild(span);
+        if (clue !== undefined) {
+          const clueSpan = document.createElement("span");
+          clueSpan.className = "d-none";
+          clueSpan.textContent = clue;
+          li.appendChild(clueSpan);
         }
 
-        remove.attachCheckboxEventListener(favoriteListContainer);
-      } else {
-        favoriteEmptyMessage.style.display = "block";
-        state.hasFavorite = false;
-        exportButton.disabled = true;
-      }
+        const icon = document.createElement("i");
+        icon.className = "bi bi-patch-check-fill matched";
+        icon.classList.toggle("d-none", deleting);
+        li.appendChild(icon);
+
+        const checkbox = document.createElement("input");
+        checkbox.className = "form-check-input";
+        checkbox.classList.toggle("d-none", !deleting);
+        checkbox.type = "checkbox";
+        checkbox.checked = selected.has(selectedText);
+        checkbox.ariaLabel = "Delete";
+        li.appendChild(checkbox);
+
+        li.classList.toggle("favorite-list", !deleting);
+        li.classList.toggle("delete-list", deleting);
+        li.classList.toggle("checked-list", selected.has(selectedText));
+        ul.appendChild(li);
+      });
+      ul.firstElementChild?.classList.remove("mb-3");
+      container.appendChild(ul);
     }
 
-    delayMeasurement();
+    exportAction.disabled = items.length === 0;
   }
 }
 
@@ -1162,19 +1232,29 @@ if (typeof module !== "undefined" && module.exports) {
 // ---- components/history.js ----
 class History {
   addHistoryPageListener() {
-    // Track the click event on li elements
     searchHistoryListContainer.addEventListener("mousedown", (event) => {
       const liElement = DOMUtils.findClosestListItem(event);
       if (!liElement) return;
 
-      if (liElement.classList.contains("delete-list")) {
+      // The onboarding tour's demo item is fake data; swallow clicks here
+      // (delegated on the container, not the <li>) so the click-through logic
+      // below never persists it, regardless of how many times render()
+      // has rebuilt the list since the item was injected.
+      if (liElement.classList.contains("onboarding-demo-item")) {
+        event.stopPropagation();
+        event.preventDefault();
+        if (event.target.classList.contains("bi") && onboarding) onboarding.next();
+        return;
+      }
+
+      if (
+        state.getSnapshot().deleteMode.source === "history" ||
+        liElement.classList.contains("delete-list")
+      ) {
         if (event.target.classList.contains("form-check-input")) {
           return;
         } else {
-          liElement.classList.toggle("checked-list");
-          const checkbox = liElement.querySelector("input");
-          checkbox.checked = !checkbox.checked;
-          remove.updateDeleteCount();
+          state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
         }
       } else {
         const selectedText = liElement.querySelector("span")?.textContent;
@@ -1182,7 +1262,6 @@ class History {
         state
           .buildSearchUrl(selectedText)
           .then((searchUrl) => {
-            // Check if the clicked element has the "bi" class (favorite icon)
             if (event.target.classList.contains("bi")) {
               if (window.Analytics)
                 window.Analytics.trackFeatureClick(
@@ -1191,7 +1270,6 @@ class History {
                 );
               favorite.addToFavoriteList(selectedText);
               DOMUtils.animateFavoriteIcon(event.target);
-              DOMUtils.refreshFavoriteList();
             } else if (event.target.classList.contains("form-check-input")) {
               return;
             } else {
@@ -1216,29 +1294,21 @@ class History {
       }
     });
 
-    // Add context menu listener for history items
     searchHistoryListContainer.addEventListener("contextmenu", (event) => {
+      const liElement = DOMUtils.findClosestListItem(event);
+      if (liElement?.classList.contains("onboarding-demo-item")) {
+        event.preventDefault();
+        return;
+      }
       ContextMenuUtil.createContextMenu(event, searchHistoryListContainer);
     });
 
     clearButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
       chrome.storage.local.set({ searchHistoryList: [] });
+      state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
 
-      clearButton.disabled = true;
-      searchHistoryListContainer.innerHTML = "";
-
-      emptyMessage.style.display = "block";
-      // Render the message as text; pre-line keeps the \n line breaks
-      emptyMessage.style.whiteSpace = "pre-line";
-      emptyMessage.textContent = chrome.i18n.getMessage("clearedUpMsg") || "";
-
-      state.hasHistory = false;
-
-      // Send a message to background.js to request clearing of selected text list data
       chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
-
-      measureContentSize();
     });
   }
 
@@ -1251,7 +1321,7 @@ class History {
     span.textContent = itemName;
     li.appendChild(span);
 
-    const icon = favorite.createFavoriteIcon(itemName, favoriteList);
+    const icon = (this.favoriteComponent || favorite).createFavoriteIcon(itemName, favoriteList);
     li.appendChild(icon);
 
     const checkbox = document.createElement("input");
@@ -1265,6 +1335,77 @@ class History {
 
     return li;
   }
+
+  render(snapshot, meta = {}) {
+    const container = searchHistoryListContainer;
+    const statusMessage = emptyMessage;
+    const clearAction = clearButton;
+    if (!container || !statusMessage || !clearAction) return;
+    const { items, emptyReason } = snapshot.history;
+    const selected = new Set(snapshot.deleteMode.selectedValues);
+    const deleting = snapshot.deleteMode.source === "history";
+    const showDemo = snapshot.onboarding.demoHistoryVisible;
+
+    statusMessage.style.whiteSpace = "pre-line";
+    statusMessage.textContent = chrome.i18n.getMessage(
+      emptyReason === "cleared" ? "clearedUpMsg" : "historyEmptyMsg"
+    );
+    statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
+    clearAction.disabled = items.length === 0;
+
+    // Patch icon classNames in place on favorite-only updates, so an
+    // in-flight spring-animation icon survives (mirrors gemini.js).
+    const structuralChange =
+      meta.historyChanged !== false ||
+      meta.deleteModeChanged !== false ||
+      meta.onboardingChanged !== false;
+    const existingItems = structuralChange ? [] : container.querySelectorAll("li[data-item-value]");
+
+    if (!structuralChange && existingItems.length > 0) {
+      existingItems.forEach((li) => {
+        const icon = li.querySelector("i");
+        if (!icon || icon.classList.contains("spring-animation")) return;
+        const newClassName = (this.favoriteComponent || favorite).createFavoriteIcon(
+          li.dataset.itemValue,
+          snapshot.favorite.items
+        ).className;
+        if (icon.className !== newClassName) {
+          icon.className = newClassName;
+          icon.classList.toggle("d-none", deleting);
+        }
+      });
+      return;
+    }
+
+    container.replaceChildren();
+
+    if (items.length > 0 || showDemo) {
+      const ul = document.createElement("ul");
+      ul.className = "list-group d-flex flex-column-reverse";
+      items.forEach((item) => {
+        const li = this.createListItem(item, snapshot.favorite.items);
+        li.dataset.itemValue = item;
+        const checkbox = li.querySelector("input");
+        const icon = li.querySelector("i");
+        checkbox?.classList.toggle("d-none", !deleting);
+        if (checkbox) checkbox.checked = selected.has(item);
+        icon?.classList.toggle("d-none", deleting);
+        li.classList.toggle("history-list", !deleting);
+        li.classList.toggle("delete-list", deleting);
+        li.classList.toggle("checked-list", selected.has(item));
+        ul.appendChild(li);
+      });
+      if (showDemo) {
+        const demoName = chrome.i18n.getMessage("onboardingDemoPlace") || "Eiffel Tower";
+        const li = this.createListItem(demoName, snapshot.favorite.items);
+        li.classList.add("onboarding-demo-item");
+        li.dataset.itemValue = demoName;
+        ul.appendChild(li);
+      }
+      ul.firstElementChild?.classList.remove("mb-3");
+      container.appendChild(ul);
+    }
+  }
 }
 
 if (typeof module !== "undefined" && module.exports) {
@@ -1273,6 +1414,28 @@ if (typeof module !== "undefined" && module.exports) {
 
 // ---- components/gemini.js ----
 class Gemini {
+  constructor() {
+    this.apiToken = 0;
+    this.videoToken = 0;
+    this.summarySequence = 0;
+  }
+
+  getStore() {
+    return this.store || state;
+  }
+
+  nextSummaryRequestId() {
+    this.summarySequence += 1;
+    return `summary-${Date.now()}-${this.summarySequence}`;
+  }
+
+  beginSummary(originTabId = null) {
+    const requestId = this.nextSummaryRequestId();
+    this.getStore().dispatch({ type: "SUMMARY_START", requestId, originTabId });
+    chrome.storage.local.remove(["summaryList", "timestamp"]);
+    return requestId;
+  }
+
   addGeminiPageListener() {
     summaryListContainer.addEventListener("click", (event) => {
       const liElement = DOMUtils.findClosestListItem(event);
@@ -1284,28 +1447,29 @@ class Gemini {
         .join(" ")
         .trim();
 
-      state.buildSearchUrl(selectedText).then((searchUrl) => {
-        if (event.target.classList.contains("bi")) {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick(
-              "add_to_favorite_from_summary",
-              "summaryListContainer"
-            );
-          const nameSpan = spans[0].textContent;
-          if (spans.length >= 2) {
-            const clueSpan = spans[1].textContent;
-            favorite.addToFavoriteList(nameSpan + " @" + clueSpan);
+      this.getStore()
+        .buildSearchUrl(selectedText)
+        .then((searchUrl) => {
+          if (event.target.classList.contains("bi")) {
+            if (window.Analytics)
+              window.Analytics.trackFeatureClick(
+                "add_to_favorite_from_summary",
+                "summaryListContainer"
+              );
+            const nameSpan = spans[0].textContent;
+            if (spans.length >= 2) {
+              const clueSpan = spans[1].textContent;
+              favorite.addToFavoriteList(nameSpan + " @" + clueSpan);
+            } else {
+              favorite.addToFavoriteList(nameSpan);
+            }
+            DOMUtils.animateFavoriteIcon(event.target);
           } else {
-            favorite.addToFavoriteList(nameSpan);
+            if (window.Analytics)
+              window.Analytics.trackFeatureClick("click_summary_item", "summaryListContainer");
+            chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
           }
-          DOMUtils.animateFavoriteIcon(event.target);
-          DOMUtils.refreshFavoriteList();
-        } else {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("click_summary_item", "summaryListContainer");
-          chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
-        }
-      });
+        });
     });
 
     summaryListContainer.addEventListener("contextmenu", (event) => {
@@ -1316,34 +1480,17 @@ class Gemini {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("clear_summary", "clearButtonSummary");
       chrome.storage.local.remove(["summaryList", "timestamp"]);
-
-      state.hasSummary = false;
-      summaryListContainer.innerHTML = "";
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-      clearButtonSummary.classList.add("d-none");
-      geminiEmptyMessage.classList.remove("d-none");
-      apiButton.classList.remove("d-none");
-
-      measureContentSize();
+      this.getStore().dispatch({ type: "SUMMARY_CLEAR" });
     });
 
-    // Video Summary Button toggle functionality
     videoSummaryButton.addEventListener("click", () => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("video_summary_toggle", "videoSummaryButton");
-      state.localVideoToggle = !state.localVideoToggle;
+      const enabled = !this.getStore().getSnapshot().video.enabled;
+      this.getStore().dispatch({ type: "VIDEO_TOGGLE", enabled });
 
-      // Save new state to localStorage
-      chrome.storage.local.set({ videoSummaryToggle: state.localVideoToggle });
-
-      // Update button appearance
-      if (state.localVideoToggle) {
-        videoSummaryButton.classList.add("active-button");
-        videoSummaryButton.classList.remove("no-hover-temp");
-      } else {
-        videoSummaryButton.classList.remove("active-button");
-        videoSummaryButton.classList.add("no-hover-temp");
-      }
+      chrome.storage.local.set({ videoSummaryToggle: enabled });
+      videoSummaryButton.classList.toggle("no-hover-temp", !enabled);
     });
 
     // One time hover disable effect for videoSummaryButton
@@ -1355,89 +1502,75 @@ class Gemini {
 
     sendButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("send_gemini", "sendButton");
-      sendButton.disabled = true;
-      clearButtonSummary.disabled = true;
-      this.RecordSummaryTab();
-
-      // Check if video summary button is active
-      const isVideoSummaryActive =
-        videoSummaryButton.classList.contains("active-button") &&
-        !videoSummaryButton.classList.contains("d-none");
-
-      if (isVideoSummaryActive) {
-        // Use video summary functionality
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (!tabs.length) {
-            // No active tab (e.g. focus on devtools/detached window): restore controls
-            sendButton.disabled = false;
-            clearButtonSummary.disabled = false;
-            return;
-          }
-          this.summarizeFromGeminiVideoUnderstanding(this.normalizeYoutubeUrl(tabs[0].url));
-        });
-      } else {
-        // Use normal content summarization
-        this.performNormalContentSummary();
-      }
+      if (this.getStore().getSnapshot().summary.phase === "generating") return;
+      const requestId = this.beginSummary(null);
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (!tabs.length) {
+          this.ResponseErrorMsg(null, requestId);
+          return;
+        }
+        this.getStore().dispatch({ type: "SUMMARY_START", requestId, originTabId: tabs[0].id });
+        const video = this.getStore().getSnapshot().video;
+        if (video.enabled && video.available) {
+          this.summarizeFromGeminiVideoUnderstanding(
+            this.normalizeYoutubeUrl(tabs[0].url),
+            requestId
+          );
+        } else {
+          this.performNormalContentSummary(requestId, tabs[0]);
+        }
+      });
     });
   }
 
-  // Check if the API key is defined and valid
   fetchAPIKey(apiKey) {
     apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
+    const token = ++this.apiToken;
+    this.getStore().dispatch({ type: "API_VERIFY_START", token, hasKey: Boolean(apiKey) });
 
     if (apiKey) {
       chrome.runtime.sendMessage({ action: "verifyApiKey", apiKey }, ({ valid, error } = {}) => {
-        if (error || !valid) {
-          sendButton.disabled = true;
-          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-        } else {
+        this.getStore().dispatch({
+          type: "API_VERIFY_RESULT",
+          token,
+          valid: !error && Boolean(valid),
+        });
+        if (!error && valid) {
           apiInput.placeholder = "............" + apiKey.slice(-4);
         }
       });
-    } else {
-      sendButton.disabled = true;
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
     }
   }
 
-  // Check if current tab URL contains "youtube" and show/hide videoSummaryButton
   async checkCurrentTabForYoutube() {
-    const isGeminiActive = geminiSummaryButton.classList.contains("active-button");
-    if (state.videoSummaryMode === undefined) {
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      const currentTabUrl = tabs[0]?.url || "";
-      const youtubeMatch = currentTabUrl.match(/youtube\.com\/(?:watch\?v=|shorts\/)(.{11})/);
+    const token = ++this.videoToken;
+    this.getStore().dispatch({ type: "VIDEO_CONTEXT_REQUEST", token });
+    const tabs = (await chrome.tabs.query({ active: true, currentWindow: true })) || [];
+    const currentTabUrl = tabs[0]?.url || "";
+    const youtubeMatch = currentTabUrl.match(/youtube\.com\/(?:watch\?v=|shorts\/)(.{11})/);
 
-      if (youtubeMatch) {
-        const videoId = youtubeMatch[1];
-        state.videoSummaryMode = Boolean(videoId);
+    if (youtubeMatch) {
+      const videoId = youtubeMatch[1];
+      this.getStore().dispatch({ type: "VIDEO_CONTEXT_RESULT", token, available: true });
 
-        // Scrape length in the background; not needed until summarization runs
-        this.scrapeLen(videoId)
-          .then((videoLength) => {
+      this.scrapeLen(videoId)
+        .then((videoLength) => {
+          if (token === this.videoToken) {
             chrome.storage.local.set({
               currentVideoInfo: {
-                videoId: videoId,
+                videoId,
                 length: videoLength,
               },
             });
-          })
-          .catch((error) => {
-            console.error("Error scraping video length:", error);
-          });
-      } else {
-        // Clear currentVideoInfo if not on YouTube
-        state.videoSummaryMode = false;
-        chrome.storage.local.remove("currentVideoInfo");
-      }
-
-      videoSummaryButton.classList.toggle("active-button", state.localVideoToggle);
+          }
+        })
+        .catch((error) => console.error("Error scraping video length:", error));
+    } else {
+      this.getStore().dispatch({ type: "VIDEO_CONTEXT_RESULT", token, available: false });
+      chrome.storage.local.remove("currentVideoInfo");
     }
 
-    if (isGeminiActive) {
-      videoSummaryButton.classList.toggle("d-none", !state.videoSummaryMode);
-    }
+    // Visibility is derived by render(); the token protects against stale tab callbacks.
   }
 
   async scrapeLen(id) {
@@ -1453,50 +1586,19 @@ class Gemini {
     }
   }
 
-  // Clear summary data if it's older than 1 hour
+  // Clear summary data if it's stale (older than State.SUMMARY_TTL_MS)
   clearExpiredSummary() {
     chrome.storage.local.get(["summaryList", "timestamp", "favoriteList"], (result) => {
-      if (result.timestamp && result.summaryList && result.summaryList.length > 0) {
-        const currentTime = Date.now();
-        const elapsedTime = (currentTime - result.timestamp) / 1000;
-        if (elapsedTime > 86400) {
-          // Data is expired, clear it and show empty state
-          state.hasSummary = false;
-          summaryListContainer.innerHTML = "";
-          geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-          clearButtonSummary.classList.add("d-none");
-          geminiEmptyMessage.classList.remove("d-none");
-          apiButton.classList.remove("d-none");
-          clearButtonSummary.disabled = true;
-          chrome.storage.local.remove(["summaryList", "timestamp"]);
-          checkTextOverflow();
-          delayMeasurement();
-        } else {
-          if (result.summaryList) {
-            state.hasSummary = true;
-            geminiEmptyMessage.classList.add("d-none");
-            clearButtonSummary.classList.remove("d-none");
-            clearButtonSummary.disabled = false;
-            apiButton.classList.add("d-none");
-
-            // Only reconstruct if summary list structure changed or container is empty
-            if (state.summaryListChanged || summaryListContainer.innerHTML.trim() === "") {
-              summaryListContainer.innerHTML = this.constructSummaryHTML(
-                result.summaryList,
-                result.favoriteList
-              );
-            } else if (result.favoriteList) {
-              // Just update the favorite icons if only favorites changed
-              this.updateSummaryFavoriteIcons(result.favoriteList);
-            }
-
-            checkTextOverflow();
-            delayMeasurement();
-          }
-        }
+      const items = Array.isArray(result.summaryList) ? result.summaryList : [];
+      const timestamp = Number(result.timestamp);
+      const now = Date.now();
+      if (State.isSummaryFresh(items, timestamp, now)) {
+        this.getStore().dispatch({ type: "SUMMARY_STORAGE_SET", items, timestamp });
       } else {
-        checkTextOverflow();
-        delayMeasurement();
+        this.getStore().dispatch({ type: "SUMMARY_STORAGE_SET", items: [] });
+        if (items.length || result.timestamp != null) {
+          chrome.storage.local.remove(["summaryList", "timestamp"]);
+        }
       }
     });
   }
@@ -1548,7 +1650,6 @@ class Gemini {
     return summaryListContainer.innerHTML;
   }
 
-  // Update only the favorite icons in the summary list without reconstructing the entire list
   updateSummaryFavoriteIcons(favoriteList = []) {
     const summaryItems = summaryListContainer.querySelectorAll(".summary-list");
     const trimmedFavorite = favoriteList.map((item) => item.split(" @")[0]);
@@ -1573,111 +1674,86 @@ class Gemini {
       : `https://www.youtube.com/watch?v=${match[2]}`;
   }
 
-  // Get Gemini response
-  summarizeFromGeminiVideoUnderstanding(videoUrl) {
-    // Clear any existing summary data first to prevent race condition
-    chrome.storage.local.remove(["summaryList", "timestamp"]);
+  summarizeFromGeminiVideoUnderstanding(videoUrl, requestId = null) {
+    requestId = requestId || this.beginSummary(null);
 
-    // begin UI update (same as sendButton click)
-    sendButton.disabled = true;
-    clearButtonSummary.disabled = true;
-    summaryListContainer.innerHTML = "";
-    geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiLoadMsg");
-    geminiEmptyMessage.classList.remove("d-none");
-    geminiEmptyMessage.classList.add("shineText");
-
-    // request background video length
     chrome.storage.local.get("currentVideoInfo", ({ currentVideoInfo }) => {
       if (currentVideoInfo && currentVideoInfo.length) {
         const estTime = Math.ceil(currentVideoInfo.length / 30);
-        const originalText = geminiEmptyMessage.innerHTML;
-        const newText = originalText.replace("NaN", estTime);
-        geminiEmptyMessage.innerHTML = newText;
+        this.getStore().dispatch({
+          type: "SUMMARY_ESTIMATE",
+          requestId,
+          estimateSeconds: estTime,
+        });
       }
     });
 
-    measureContentSize();
-
-    // request background summary
     chrome.runtime.sendMessage({ action: "summarizeVideo", text: videoUrl }, (response) => {
-      // restore send-button state
-      sendButton.disabled = false;
-
       // success when we get a string fragment of <ul>...</ul>
       if (typeof response === "string") {
         try {
-          this.createSummaryList(response);
+          this.createSummaryList(response, requestId);
         } catch (error) {
-          this.ResponseErrorMsg({ error: String(error) });
+          this.ResponseErrorMsg({ error: String(error) }, requestId);
         }
       } else {
-        this.ResponseErrorMsg(response);
+        this.ResponseErrorMsg(response, requestId);
       }
     });
   }
 
-  performNormalContentSummary() {
+  performNormalContentSummary(requestId = null, knownTab = null) {
     chrome.runtime.sendMessage({ action: "getApiKey" }, (res) => {
       const apiKey = res ? res.apiKey : "";
 
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (knownTab) tabs = [knownTab];
         if (!tabs.length) {
-          // No active tab (e.g. focus on devtools/detached window): restore controls
-          sendButton.disabled = false;
-          clearButtonSummary.disabled = false;
+          if (requestId) this.ResponseErrorMsg(null, requestId);
           return;
         }
+        requestId = requestId || this.beginSummary(tabs[0].id);
         chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
           if (chrome.runtime.lastError) {
-            summaryListContainer.innerHTML = "";
-            this.ResponseErrorMsg(response);
-            geminiEmptyMessage.classList.remove("d-none");
-            sendButton.disabled = false;
-            clearButtonSummary.disabled = false;
+            this.ResponseErrorMsg(response, requestId);
             return;
           }
         });
 
-        // Check if we're on YouTube and expand description first
         const isYouTube = tabs[0].url && tabs[0].url.toLowerCase().includes("youtube");
 
         if (isYouTube) {
-          // First expand the YouTube description
           chrome.tabs.sendMessage(tabs[0].id, { action: "expandYouTubeDescription" }, () => {
-            // Wait a moment for the expansion to complete, then get content
+            // Wait for the expansion to finish rendering before scraping content
             setTimeout(() => {
-              this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url);
+              this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
             }, 500);
           });
         } else {
-          // For non-YouTube pages, get content directly
-          this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url);
+          this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
         }
       });
     });
   }
 
-  getContentAndSummarize(tabId, apiKey, url) {
+  getContentAndSummarize(tabId, apiKey, url, requestId) {
+    requestId = requestId || this.beginSummary(tabId);
     chrome.tabs.sendMessage(tabId, { action: "getContent" }, (response) => {
       if (response && response.content) {
-        summaryListContainer.innerHTML = "";
-        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiLoadMsg");
-        geminiEmptyMessage.classList.remove("d-none");
-        geminiEmptyMessage.classList.add("shineText");
+        const divisor = this.isPredominantlyLatinChars(response.content) ? 3000 : 1500;
+        this.getStore().dispatch({
+          type: "SUMMARY_ESTIMATE",
+          requestId,
+          estimateSeconds: Math.ceil(response.content.length / divisor),
+        });
 
-        const originalText = geminiEmptyMessage.innerHTML;
-        const divisor = this.isPredominantlyLatinChars(response.content) ? 1500 : 750;
-
-        const newText = originalText.replace("NaN", Math.ceil(response.length / divisor));
-        geminiEmptyMessage.innerHTML = newText;
-
-        this.summarizeContent(response.content, apiKey, url);
-        measureContentSize();
+        this.summarizeContent(response.content, apiKey, url, requestId);
+      } else {
+        this.ResponseErrorMsg(response, requestId);
       }
     });
   }
 
-  // Check if the content is predominantly Latin characters
   isPredominantlyLatinChars(text) {
     const latinChars = text.match(/[a-zA-Z\u00C0-\u00FF]/g)?.length || 0;
     const squareChars = text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g)?.length || 0;
@@ -1685,7 +1761,7 @@ class Gemini {
     return latinChars > squareChars;
   }
 
-  summarizeContent(content, apiKey, url) {
+  summarizeContent(content, apiKey, url, requestId) {
     responseField.value = "";
 
     chrome.runtime.sendMessage(
@@ -1695,61 +1771,39 @@ class Gemini {
         // treat as an error so the send button gets re-enabled
         if (!response || response.error) {
           responseField.value = `API Error: ${response?.error || "No response from background"}`;
-          this.ResponseErrorMsg(response);
+          this.ResponseErrorMsg(response, requestId);
         } else {
           responseField.value = response;
           try {
-            this.createSummaryList(response);
+            this.createSummaryList(response, requestId);
           } catch (error) {
             responseField.value = `HTML Error: ${error}`;
-            this.ResponseErrorMsg(response);
+            this.ResponseErrorMsg(response, requestId);
           }
         }
-        sendButton.disabled = false;
       }
     );
   }
 
-  createSummaryList(response) {
+  createSummaryList(response, requestId = null) {
     const summaryItems = this.parseSummaryItems(response);
     if (summaryItems.length === 0) {
       throw new Error("No summary items found in response");
     }
 
-    document.documentElement.classList.add("no-expand-scroll");
-    summaryListContainer.classList.add("no-expand-scroll");
-
-    summaryListContainer.replaceChildren(this.buildSummaryListElement(summaryItems));
-    state.hasSummary = true;
-    geminiEmptyMessage.classList.remove("shineText");
-    geminiEmptyMessage.classList.add("d-none");
-    clearButtonSummary.classList.remove("d-none");
-    apiButton.classList.add("d-none");
-    clearButtonSummary.disabled = false;
-
-    checkTextOverflow();
-    measureContentSize(true);
-
-    setTimeout(() => {
-      document.documentElement.classList.remove("no-expand-scroll");
-      summaryListContainer.classList.remove("no-expand-scroll");
-    }, 400);
-
-    chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-      if (!favoriteList) {
-        return;
-      }
-
-      this.updateSummaryFavoriteIcons(favoriteList);
+    const timestamp = Date.now();
+    this.getStore().dispatch({
+      type: "SUMMARY_SUCCESS",
+      requestId,
+      items: summaryItems,
+      timestamp,
     });
-
     // Respect incognito mode: do not persist summaries when enabled
     chrome.storage.local.get("isIncognito", ({ isIncognito = false }) => {
       if (!isIncognito) {
-        const currentTime = Date.now();
         chrome.storage.local.set({
           summaryList: summaryItems,
-          timestamp: currentTime,
+          timestamp,
         });
       }
     });
@@ -1757,22 +1811,86 @@ class Gemini {
 
   RecordSummaryTab() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      state.summarizedTabId = tabs[0]?.id;
+      this.getStore().summarizedTabId = tabs[0]?.id;
     });
   }
 
-  ResponseErrorMsg(response) {
+  ResponseErrorMsg(response, requestId = null) {
     const errorMsg = response?.error || "";
-    if (errorMsg.includes("overloaded")) {
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiOverloadMsg");
-    } else {
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiErrorMsg");
+    this.getStore().dispatch({
+      type: "SUMMARY_ERROR",
+      requestId,
+      errorKey: errorMsg.includes("overloaded") ? "geminiOverloadMsg" : "geminiErrorMsg",
+    });
+  }
+
+  render(snapshot, meta = {}) {
+    const statusMessage = document.getElementById("geminiEmptyMessage");
+    const listContainer = document.getElementById("summaryList");
+    const clearAction = document.getElementById("clearButtonSummary");
+    const apiAction = document.getElementById("apiButton");
+    const sendAction = document.getElementById("sendButton");
+    const videoAction = document.getElementById("videoSummaryButton");
+    if (!statusMessage || !listContainer || !clearAction || !apiAction || !sendAction) return;
+    const { summary, api, favorite: favoriteState } = snapshot;
+    const ready = summary.phase === "ready" && summary.items.length > 0;
+    const generating = summary.phase === "generating";
+    let messageKey = "geminiEmptyMsg";
+    let substitutions;
+
+    if (generating) {
+      if (Number.isFinite(summary.estimateSeconds)) {
+        messageKey = "geminiLoadMsg";
+        substitutions = String(summary.estimateSeconds);
+      } else {
+        messageKey = "geminiLoadMsgNoEstimate";
+      }
+    } else if (summary.phase === "error") {
+      messageKey = summary.errorKey || "geminiErrorMsg";
+    } else if (api.status === "invalid") {
+      messageKey = "apiInvalidMsg";
+    } else if (api.status === "missing") {
+      messageKey = "geminiFirstMsg";
     }
 
-    state.hasSummary = false;
-    geminiEmptyMessage.classList.remove("shineText");
-    clearButtonSummary.classList.add("d-none");
-    apiButton.classList.remove("d-none");
+    statusMessage.style.whiteSpace = "pre-line";
+    const message = chrome.i18n.getMessage(messageKey, substitutions);
+    statusMessage.textContent = message;
+    statusMessage.innerText = message;
+    statusMessage.classList.toggle("d-none", ready);
+    statusMessage.classList.toggle("shineText", generating);
+
+    // Favorite-only updates patch icon classNames in place instead.
+    const summaryChanged = meta.summaryChanged !== false;
+    if (!ready) {
+      listContainer.replaceChildren();
+    } else if (summaryChanged || listContainer.children.length === 0) {
+      listContainer.replaceChildren(this.buildSummaryListElement(summary.items));
+    }
+
+    if (ready) {
+      const trimmedFavorite = favoriteState.items.map((item) => item.split(" @")[0]);
+      const favoriteComponent = this.favoriteComponent || favorite;
+      listContainer.querySelectorAll(".summary-list").forEach((item) => {
+        const icon = item.querySelector("i");
+        if (icon.classList.contains("spring-animation")) return;
+        const itemName = item.querySelector("span:first-child").textContent;
+        const newClassName = favoriteComponent.createFavoriteIcon(
+          itemName,
+          trimmedFavorite
+        ).className;
+        if (icon.className !== newClassName) icon.className = newClassName;
+      });
+    }
+
+    clearAction.classList.toggle("d-none", !ready);
+    clearAction.disabled = !ready || generating;
+    apiAction.classList.toggle("d-none", ready);
+    sendAction.disabled = api.status !== "valid" || generating;
+    if (videoAction) {
+      videoAction.classList.toggle("d-none", !snapshot.video.available);
+      videoAction.classList.toggle("active-button", snapshot.video.enabled);
+    }
   }
 }
 
@@ -1813,16 +1931,12 @@ class Modal {
     this._setupPremiumPanel();
   }
 
-  // ---------------------------------------------------------------------------
   // Private setup helpers (called once from addModalListener)
-  // ---------------------------------------------------------------------------
-
   _setupShortcutsLinks() {
     for (let i = 0; i < configureElements.length; i++) {
       configureElements[i].onclick = function (event) {
         if (window.Analytics)
           window.Analytics.trackFeatureClick("configure_shortcuts", "configureLink");
-        // Detect user browser
         let userAgent = navigator.userAgent;
 
         if (/Chrome/i.test(userAgent)) {
@@ -1845,28 +1959,8 @@ class Modal {
       const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
       chrome.storage.local.set({ geminiApiKey: encrypted });
 
-      if (!apiKey) {
-        apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-        geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-        sendButton.disabled = true;
-        return;
-      }
-
-      chrome.runtime.sendMessage(
-        { action: "verifyApiKey", apiKey: apiKey },
-        ({ valid, error } = {}) => {
-          if (error || !valid) {
-            geminiEmptyMessage.classList.remove("d-none");
-            apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-            geminiEmptyMessage.innerText = chrome.i18n.getMessage("apiInvalidMsg");
-            sendButton.disabled = true;
-          } else {
-            apiInput.placeholder = "............" + apiKey.slice(-4);
-            geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiEmptyMsg");
-            sendButton.disabled = false;
-          }
-        }
-      );
+      // Always wired by popup.js in production.
+      this.onApiKeyChange(apiKey);
     });
 
     this.text2Link("apiNote", "Google AI Studio", "https://aistudio.google.com/app/apikey");
@@ -1886,8 +1980,7 @@ class Modal {
 
     this._setupResetButton(apiInput, "geminiApiKey", () => {
       apiInput.placeholder = chrome.i18n.getMessage("apiPlaceholder");
-      geminiEmptyMessage.innerText = chrome.i18n.getMessage("geminiFirstMsg");
-      sendButton.disabled = true;
+      this.onApiKeyChange("");
     });
   }
 
@@ -2047,7 +2140,6 @@ class Modal {
     items.forEach((item) => {
       item.addEventListener("click", async () => {
         const newLang = item.dataset.value;
-        syncDropdownState(newLang, true); // user made a change → go dark
         if (newLang === window.I18nUtils.getCurrentLanguage()) return;
         if (window.Analytics)
           window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
@@ -2076,7 +2168,6 @@ class Modal {
     });
   }
 
-  // Replace text in a locale element with a link or modal trigger
   _replaceTextWithElement(dataLocale, linkText, replacement) {
     const pElement = document.querySelector(`p[data-locale="${dataLocale}"]`);
     if (pElement) {
@@ -2269,7 +2360,6 @@ const DEMO_ITEM_CLASS = "onboarding-demo-item";
 class Onboarding {
   constructor() {
     this.STORAGE_KEY = "onboardingDone";
-    this.DEMO_ITEM_CLASS = DEMO_ITEM_CLASS;
     this.steps = [
       {
         targetSelector: '.footer-li[data-bs-target="#tipsModal"]',
@@ -2312,69 +2402,15 @@ class Onboarding {
    * `next()` so the real history click handler never adds it to favorites.
    */
   injectDemoHistoryItem() {
-    const container = document.getElementById("searchHistoryList");
-    if (!container) return;
-
-    let ul = container.querySelector("ul");
-    if (!ul) {
-      ul = document.createElement("ul");
-      ul.className = "list-group d-flex flex-column-reverse";
-      ul.dataset.onboardingCreated = "true";
-      container.appendChild(ul);
-    }
-
-    const placeName = chrome?.i18n?.getMessage?.("onboardingDemoPlace") || "Eiffel Tower";
-
-    const li = document.createElement("li");
-    li.className = `${this.DEMO_ITEM_CLASS} list-group-item border rounded mb-3 px-3 history-list d-flex justify-content-between align-items-center text-break`;
-
-    const span = document.createElement("span");
-    span.textContent = placeName;
-    li.appendChild(span);
-
-    const icon = document.createElement("i");
-    icon.className = "bi bi-patch-plus-fill";
-    icon.title = chrome?.i18n?.getMessage?.("plusLabel") || "";
-    li.appendChild(icon);
-
-    // Swallow real clicks so the existing history listener does not persist
-    // the demo item to chrome.storage favorites. Clicking the icon advances.
-    const swallow = (event) => {
-      event.stopPropagation();
-      event.preventDefault();
-      if (event.target.classList.contains("bi")) this.next();
-    };
-    ["mousedown", "click", "contextmenu"].forEach((evt) => li.addEventListener(evt, swallow, true));
-
-    ul.appendChild(li);
-
-    const emptyMessage = document.getElementById("emptyMessage");
-    if (emptyMessage && emptyMessage.style.display !== "none") {
-      emptyMessage.dataset.onboardingHidden = "true";
-      emptyMessage.style.display = "none";
-    }
+    this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: true });
+    // Click handling for the demo item lives in history.js (container-level
+    // listener), since render() would discard a listener bound here.
   }
 
   removeDemoHistoryItem() {
-    const container = document.getElementById("searchHistoryList");
-    if (!container) return;
-
-    container.querySelectorAll(`.${this.DEMO_ITEM_CLASS}`).forEach((el) => el.remove());
-
-    // If we created the <ul> ourselves and it is now empty, drop it too.
-    const ul = container.querySelector("ul[data-onboarding-created='true']");
-    if (ul && ul.children.length === 0) ul.remove();
-
-    const emptyMessage = document.getElementById("emptyMessage");
-    if (emptyMessage && emptyMessage.dataset.onboardingHidden === "true") {
-      emptyMessage.style.display = "block";
-      delete emptyMessage.dataset.onboardingHidden;
-    }
+    this.store.dispatch({ type: "ONBOARDING_DEMO_SET", visible: false });
   }
 
-  /**
-   * Start onboarding only if it has not been completed previously.
-   */
   maybeStart() {
     if (!chrome?.storage?.local?.get) return;
     chrome.storage.local.get(this.STORAGE_KEY, (result) => {
@@ -2634,10 +2670,10 @@ if (typeof module !== "undefined" && module.exports) {
 
 // ---- popup.js ----
 // Page
-const pageHistory = document.getElementsByClassName("page-H");
-const pageFavorite = document.getElementsByClassName("page-F");
-const pageDelete = document.getElementsByClassName("page-D");
-const pageGemini = document.getElementsByClassName("page-G");
+const loadingMessage = document.getElementById("loadingMessage");
+const historyPanel = document.getElementById("historyPanel");
+const favoritePanel = document.getElementById("favoritePanel");
+const geminiPanel = document.getElementById("geminiPanel");
 
 // Context
 const searchInput = document.getElementById("searchInput");
@@ -2657,8 +2693,6 @@ const responseField = document.getElementById("response");
 const searchHistoryListContainer = document.getElementById("searchHistoryList");
 const favoriteListContainer = document.getElementById("favoriteList");
 const summaryListContainer = document.getElementById("summaryList");
-const searchHistoryUl = searchHistoryListContainer.getElementsByTagName("ul");
-const favoriteUl = favoriteListContainer.getElementsByTagName("ul");
 
 // Page Buttons
 const searchHistoryButton = document.getElementById("searchHistoryButton");
@@ -2671,6 +2705,7 @@ const videoSummaryButton = document.getElementById("videoSummaryButton");
 const searchButtonGroup = document.getElementById("searchButtonGroup");
 const deleteButtonGroup = document.getElementById("deleteButtonGroup");
 const exportButtonGroup = document.getElementById("exportButtonGroup");
+const geminiButtonGroup = document.getElementById("geminiButtonGroup");
 const clearButton = document.getElementById("clearButton");
 const cancelButton = document.getElementById("cancelButton");
 const deleteButton = document.getElementById("deleteButton");
@@ -2703,7 +2738,10 @@ const paymentSpan = document.querySelector("#paymentButton > span");
 
 // Import Scripts
 let state, remove, favorite, history, gemini, modal, payment, onboarding;
-let lastGeminiApiKey = "";
+let unsubscribeState = null;
+let hydrationPromise = null;
+let iframeRevealed = false;
+let skipNextApiKeyEcho = false;
 
 function initializeDependencies(deps = {}) {
   state = deps.state || new State();
@@ -2714,6 +2752,22 @@ function initializeDependencies(deps = {}) {
   modal = deps.modal || new Modal();
   payment = deps.payment || new Payment();
   onboarding = deps.onboarding || (typeof Onboarding !== "undefined" ? new Onboarding() : null);
+  history.favoriteComponent = favorite;
+  gemini.favoriteComponent = favorite;
+  gemini.store = state;
+  // Flags the echo below to skip re-verifying the same key.
+  modal.onApiKeyChange = (apiKey) => {
+    skipNextApiKeyEcho = true;
+    gemini.fetchAPIKey(apiKey);
+  };
+  if (onboarding) onboarding.store = state;
+
+  // Re-subscribe renderPopup to the new state instance, not the old one.
+  if (unsubscribeState) unsubscribeState();
+  if (typeof state.subscribe === "function") {
+    unsubscribeState = state.subscribe(renderPopup);
+  }
+  previousPopupSnapshot = null;
 
   return { state, remove, favorite, history, gemini, modal, payment, onboarding };
 }
@@ -2749,12 +2803,6 @@ function initializePopup() {
 
   searchInput.focus();
 
-  // Optimize by running heavy operations asynchronously
-  requestAnimationFrame(() => {
-    popupLayout();
-    Promise.all([fetchData(), gemini.checkCurrentTabForYoutube()]);
-  });
-
   // Run payment check in background to avoid blocking UI
   if ("requestIdleCallback" in window) {
     requestIdleCallback(() => {
@@ -2770,9 +2818,11 @@ function initializePopup() {
   gemini.addGeminiPageListener();
   modal.addModalListener();
 
-  if (onboarding && typeof onboarding.maybeStart === "function") {
-    onboarding.maybeStart();
-  }
+  requestAnimationFrame(() => {
+    hydrationPromise = hydratePopup().then(() => {
+      if (onboarding && typeof onboarding.maybeStart === "function") onboarding.maybeStart();
+    });
+  });
 
   // Fix: "Blocked aria-hidden..."
   document.addEventListener("hide.bs.modal", function () {
@@ -2792,45 +2842,8 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-document.addEventListener("readystatechange", () => {
-  if (document.readyState === "complete") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (!tabs.length) return;
-      chrome.tabs.sendMessage(tabs[0].id, {
-        action: "finishIframe",
-      });
-    });
-  }
-});
-
 function popupLayout() {
-  chrome.storage.local.get("lastActiveTab", (result) => {
-    const lastTab = ["history", "favorite", "gemini"].includes(result?.lastActiveTab)
-      ? result.lastActiveTab
-      : "history";
-
-    showPage(lastTab);
-    checkTextOverflow();
-
-    if (window.Analytics) {
-      window.Analytics.trackPageView(lastTab);
-    }
-
-    if (lastTab === "favorite") {
-      getWarmState().then(({ favoriteList = [] }) => {
-        favorite.updateFavorite(favoriteList);
-        state.hasFavorite = favoriteList.length > 0;
-        favoriteEmptyMessage.style.display = favoriteList.length ? "none" : "block";
-      });
-    } else if (lastTab === "gemini") {
-      deleteListButton.disabled = true;
-      gemini.clearExpiredSummary();
-
-      // Re-run: checkCurrentTabForYoutube() ran earlier and missed this tab
-      // becoming the active gemini tab
-      gemini.checkCurrentTabForYoutube();
-    }
-  });
+  return hydratePopup();
 }
 
 // Check if the text overflows the button since locale
@@ -2895,56 +2908,59 @@ async function getWarmState(retries = 3, delay = 200) {
 }
 
 async function fetchData() {
-  searchHistoryListContainer.innerHTML = "";
+  return hydratePopup();
+}
 
-  const {
-    searchHistoryList = [],
-    favoriteList = [],
-    geminiApiKey = "",
-    startAddr = "",
-    authUser = 0,
-    isIncognito = false,
-    videoSummaryToggle = false,
-    historyMax = 10,
-  } = await getWarmState();
+async function hydratePopup() {
+  // Independent of each other: run together instead of serializing, so the
+  // youtube-tab probe doesn't add its own latency on top of getWarmState().
+  const [warmState] = await Promise.all([getWarmState(), gemini.checkCurrentTabForYoutube()]);
+  const payload = {
+    searchHistoryList: warmState.searchHistoryList || [],
+    favoriteList: warmState.favoriteList || [],
+    summaryList: warmState.summaryList || [],
+    timestamp: warmState.timestamp ?? null,
+    lastActiveTab: warmState.lastActiveTab,
+    geminiApiKey: warmState.geminiApiKey || "",
+    videoSummaryToggle: Boolean(warmState.videoSummaryToggle),
+    now: Date.now(),
+  };
 
-  if (searchHistoryList.length) {
-    emptyMessage.style.display = "none";
-    state.hasHistory = true;
-    clearButton.disabled = false;
+  const hadPersistedSummary = payload.summaryList.length > 0 || payload.timestamp != null;
+  const timestamp = Number(payload.timestamp);
+  const persistedSummaryIsValid = State.isSummaryFresh(payload.summaryList, timestamp, payload.now);
 
-    const ul = document.createElement("ul");
-    ul.className = "list-group d-flex flex-column-reverse";
+  state.dispatch({ type: "HYDRATE", payload });
 
-    const frag = document.createDocumentFragment();
-    searchHistoryList.forEach((item) =>
-      frag.appendChild(history.createListItem(item, favoriteList))
-    );
-    ul.appendChild(frag);
-    searchHistoryListContainer.appendChild(ul);
-
-    const first = searchHistoryListContainer.querySelector(
-      ".list-group .list-group-item:first-child"
-    );
-    first?.classList.remove("mb-3");
-  } else {
-    emptyMessage.style.display = "block";
-    state.hasHistory = false;
-    clearButton.disabled = true;
+  if (hadPersistedSummary && !persistedSummaryIsValid) {
+    chrome.storage.local.remove(["summaryList", "timestamp"]);
   }
 
-  remove.attachCheckboxEventListener(searchHistoryListContainer);
-
-  state.hasInit ? measureContentSizeLast() : retryMeasureContentSize();
-
-  lastGeminiApiKey = geminiApiKey;
-  gemini.fetchAPIKey(geminiApiKey);
-  modal.updateOptionalModal(startAddr, authUser, historyMax);
-  modal.updateIncognitoModal(!!isIncognito);
-  state.localVideoToggle = videoSummaryToggle;
-  videoSummaryButton.classList.toggle("active-button", videoSummaryToggle);
-
+  gemini.fetchAPIKey(payload.geminiApiKey);
+  modal.updateOptionalModal(
+    warmState.startAddr || "",
+    warmState.authUser || 0,
+    warmState.historyMax || 10
+  );
+  modal.updateIncognitoModal(Boolean(warmState.isIncognito));
   state.buildMapsButtonUrl();
+
+  checkTextOverflow();
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  measureContentSize();
+  revealIframe();
+
+  if (window.Analytics) window.Analytics.trackPageView(state.getSnapshot().activeTab);
+  return state.getSnapshot();
+}
+
+function revealIframe() {
+  if (iframeRevealed) return;
+  iframeRevealed = true;
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs.length) return;
+    chrome.tabs.sendMessage(tabs[0].id, { action: "finishIframe" });
+  });
 }
 
 searchInput.addEventListener("keydown", (event) => {
@@ -2989,40 +3005,61 @@ mapsButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackFeatureClick("open_maps", "mapsButton");
 });
 
-function showPage(tabName) {
-  const tabMap = {
-    history: pageHistory,
-    favorite: pageFavorite,
-    gemini: pageGemini,
-    delete: pageDelete,
-  };
+// Diffed against the next snapshot so unrelated components skip re-render.
+let previousPopupSnapshot = null;
 
-  Object.keys(tabMap).forEach((key) => {
-    for (let i = 0; i < tabMap[key].length; i++) {
-      tabMap[key][i].classList[key === tabName ? "remove" : "add"]("d-none");
-    }
+function renderPopup(snapshot = state.getSnapshot(), action = null, force = false) {
+  const prev = previousPopupSnapshot;
+  previousPopupSnapshot = snapshot;
+  const first = force || prev === null;
+
+  const ready = snapshot.boot === "ready";
+  const tab = snapshot.activeTab;
+  const panels = { history: historyPanel, favorite: favoritePanel, gemini: geminiPanel };
+
+  if (loadingMessage) loadingMessage.classList.toggle("d-none", ready);
+  Object.entries(panels).forEach(([name, panel]) => {
+    if (panel) panel.classList.toggle("d-none", !ready || name !== tab);
   });
 
-  searchHistoryButton.classList.toggle("active-button", tabName === "history");
-  favoriteListButton.classList.toggle("active-button", tabName === "favorite");
-  geminiSummaryButton.classList.toggle("active-button", tabName === "gemini");
-  deleteListButton.classList.toggle("active-button", tabName === "delete");
+  searchHistoryButton.classList.toggle("active-button", tab === "history");
+  favoriteListButton.classList.toggle("active-button", tab === "favorite");
+  geminiSummaryButton.classList.toggle("active-button", tab === "gemini");
 
-  if (tabName === "history" || tabName === "favorite") {
-    videoSummaryButton.classList.add("d-none");
+  const subtitleKeys = {
+    history: "searchHistorySubtitle",
+    favorite: "favoriteListSubtitle",
+    gemini: "geminiSummarySubtitle",
+  };
+  subtitleElement.textContent = chrome.i18n.getMessage(subtitleKeys[tab]);
+
+  const historyChanged = first || snapshot.history !== prev.history;
+  const favoriteChanged = first || snapshot.favorite !== prev.favorite;
+  const deleteModeChanged = first || snapshot.deleteMode !== prev.deleteMode;
+  const onboardingChanged = first || snapshot.onboarding !== prev.onboarding;
+  const summaryChanged = first || snapshot.summary !== prev.summary;
+  const apiChanged = first || snapshot.api !== prev.api;
+  const videoChanged = first || snapshot.video !== prev.video;
+  const activeTabChanged = first || snapshot.activeTab !== prev.activeTab;
+
+  if (historyChanged || deleteModeChanged || favoriteChanged || onboardingChanged) {
+    history.render(snapshot, { historyChanged, deleteModeChanged, onboardingChanged });
+  }
+  if (favoriteChanged || deleteModeChanged) {
+    favorite.render(snapshot);
+  }
+  if (summaryChanged || apiChanged || videoChanged || favoriteChanged) {
+    gemini.render(snapshot, { summaryChanged });
+  }
+  if (deleteModeChanged || activeTabChanged) {
+    remove.render(snapshot);
   }
 
-  switch (tabName) {
-    case "history":
-      subtitleElement.textContent = chrome.i18n.getMessage("searchHistorySubtitle");
-      break;
-    case "favorite":
-      subtitleElement.textContent = chrome.i18n.getMessage("favoriteListSubtitle");
-      break;
-    case "gemini":
-      subtitleElement.textContent = chrome.i18n.getMessage("geminiSummarySubtitle");
-      break;
-  }
+  deleteListButton.disabled = tab === "gemini";
+  if (tab !== "gemini") videoSummaryButton.classList.add("d-none");
+  scheduleContentMeasurement(
+    action?.type === "SUMMARY_SUCCESS" ? snapshot.summary.originTabId : null
+  );
 }
 
 apiButton.addEventListener("click", () => {
@@ -3036,72 +3073,56 @@ optionalButton.addEventListener("click", () => {
 searchHistoryButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("history");
   chrome.storage.local.set({ lastActiveTab: "history" });
-  showPage("history");
-
-  if (!state.hasHistory) {
-    emptyMessage.style.display = "block";
-    clearButton.disabled = true;
-  } else {
-    emptyMessage.style.display = "none";
-    clearButton.disabled = false;
-  }
-
-  deleteListButton.disabled = false;
-
-  measureContentSize();
-  remove.updateInput();
+  state.dispatch({ type: "SET_ACTIVE_TAB", tab: "history" });
 });
 
 favoriteListButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("favorite");
   chrome.storage.local.set({ lastActiveTab: "favorite" });
-  getWarmState().then(({ favoriteList = [] }) => {
-    favorite.updateFavorite(favoriteList);
-  });
-
-  showPage("favorite");
-
-  if (!state.hasFavorite) {
-    favoriteEmptyMessage.style.display = "block";
-  } else {
-    favoriteEmptyMessage.style.display = "none";
-  }
-
-  deleteListButton.disabled = false;
-
-  remove.updateInput();
-  state.favoriteListChanged = false;
+  state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
 });
 
 geminiSummaryButton.addEventListener("click", () => {
   if (window.Analytics) window.Analytics.trackPageView("gemini");
   chrome.storage.local.set({ lastActiveTab: "gemini" });
-  showPage("gemini");
-  deleteListButton.disabled = true;
-
-  gemini.checkCurrentTabForYoutube();
-
+  state.dispatch({ type: "SET_ACTIVE_TAB", tab: "gemini" });
   gemini.clearExpiredSummary();
-  state.summaryListChanged = false;
+  gemini.checkCurrentTabForYoutube();
 });
 
-chrome.storage.onChanged.addListener((changes) => {
-  state.historyListChanged = changes.searchHistoryList;
-  state.favoriteListChanged = changes.favoriteList;
-  state.summaryListChanged = changes.summaryList;
-
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName && areaName !== "local") return;
   const incognitoChange = changes.isIncognito;
 
-  if (state.favoriteListChanged && state.favoriteListChanged.newValue) {
-    favorite.updateFavorite(state.favoriteListChanged.newValue);
+  if (changes.favoriteList) {
+    state.dispatch({ type: "FAVORITE_SET", items: changes.favoriteList.newValue || [] });
   }
 
-  if (state.historyListChanged && state.historyListChanged.newValue) {
-    const newList = state.historyListChanged.newValue;
-    const oldList = state.historyListChanged.oldValue || [];
+  if (changes.searchHistoryList) {
+    state.dispatch({ type: "HISTORY_SET", items: changes.searchHistoryList.newValue || [] });
+  }
 
-    if (newList.length >= oldList.length) {
-      fetchData(state.hasInit);
+  if (changes.summaryList) {
+    state.dispatch({
+      type: "SUMMARY_STORAGE_SET",
+      items: changes.summaryList.newValue || [],
+      timestamp: changes.timestamp?.newValue ?? state.getSnapshot().summary.timestamp,
+    });
+  }
+
+  if (changes.videoSummaryToggle) {
+    state.dispatch({ type: "VIDEO_TOGGLE", enabled: changes.videoSummaryToggle.newValue });
+  }
+
+  if (changes.geminiApiKey) {
+    if (skipNextApiKeyEcho) {
+      skipNextApiKeyEcho = false;
+    } else if (!changes.geminiApiKey.newValue) {
+      gemini.fetchAPIKey("");
+    } else {
+      chrome.runtime.sendMessage({ action: "getApiKey" }, ({ apiKey = "" } = {}) => {
+        gemini.fetchAPIKey(apiKey);
+      });
     }
   }
 
@@ -3136,33 +3157,30 @@ function applyI18n(root = document) {
 window.applyI18n = applyI18n;
 applyI18n();
 
-// Refresh dynamic strings (set imperatively, not via [data-locale])
-// after an in-place language swap from the settings modal.
-window.addEventListener("i18n:changed", () => {
-  const subtitleByTab = {
-    searchHistoryButton: "searchHistorySubtitle",
-    favoriteListButton: "favoriteListSubtitle",
-    geminiSummaryButton: "geminiSummarySubtitle",
-  };
-  const activeTab = document.querySelector(".active-button");
-  const key = activeTab && subtitleByTab[activeTab.id];
-  if (key && subtitleElement) {
-    const v = chrome.i18n.getMessage(key);
-    if (v) subtitleElement.textContent = v;
+// On window, not a module-scope const, so re-requiring this file (tests)
+// replaces the old listener instead of stacking another one.
+if (window.__popupI18nChangedHandler) {
+  window.removeEventListener("i18n:changed", window.__popupI18nChangedHandler);
+}
+window.__popupI18nChangedHandler = () => {
+  // force: nothing in the snapshot changed, but every getMessage() result did.
+  if (state?.getSnapshot) renderPopup(state.getSnapshot(), null, true);
+  // Re-localize the API key placeholder (set imperatively, not via [data-locale]).
+  if (gemini) {
+    chrome.runtime.sendMessage({ action: "getApiKey" }, ({ apiKey = "" } = {}) => {
+      gemini?.fetchAPIKey(apiKey);
+    });
   }
-  // Re-run fetchAPIKey to update imperative locales.
-  if (gemini) gemini.fetchAPIKey(lastGeminiApiKey);
-  // Reset buttons to their default width
   [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {
     btn.classList.remove("w-auto");
     btn.classList.add("w-25");
   });
-  // Re-measure after the new strings paint
-  requestAnimationFrame(() => {
-    checkTextOverflow();
-    measureContentSize();
-  });
-});
+  // Re-measure after the new strings paint, through the same coalescing
+  // scheduler renderPopup uses instead of a raw, uncoordinated rAF.
+  requestAnimationFrame(checkTextOverflow);
+  scheduleContentMeasurement();
+};
+window.addEventListener("i18n:changed", window.__popupI18nChangedHandler);
 
 // Handle IME composition for CJK input
 let isComposing = false;
@@ -3189,6 +3207,19 @@ const configureElements = document.querySelectorAll(".modal-body p");
 
 // Resize utils
 const body = document.body;
+let measurementFrame = null;
+let measurementTargetTabId = null;
+
+function scheduleContentMeasurement(targetTabId = null) {
+  if (targetTabId != null) measurementTargetTabId = targetTabId;
+  if (measurementFrame != null) cancelAnimationFrame(measurementFrame);
+  measurementFrame = requestAnimationFrame(() => {
+    measurementFrame = null;
+    const target = measurementTargetTabId;
+    measurementTargetTabId = null;
+    measureContentSize(false, target);
+  });
+}
 
 function currentDimensions() {
   return {
@@ -3217,18 +3248,18 @@ function retryMeasureContentSize() {
     setTimeout(retryMeasureContentSize, 100);
   } else {
     measureContentSize();
-    state.hasInit = true;
   }
 }
 
-function measureContentSize(summary = false) {
+function measureContentSize(summary = false, targetTabId = null) {
   const { width: currentWidth, height: currentHeight } = currentDimensions();
 
   if (currentWidth !== state.previousWidth || currentHeight !== state.previousHeight) {
     state.updateDimensions(currentWidth, currentHeight);
+    persistPopupHeight(currentHeight);
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      let contentTabId = summary ? state.summarizedTabId : tabs[0]?.id;
+      let contentTabId = targetTabId ?? (summary ? state.summarizedTabId : tabs[0]?.id);
 
       if (contentTabId == null) return;
 
@@ -3239,6 +3270,19 @@ function measureContentSize(summary = false) {
       }
     });
   }
+}
+
+// Lets inject.js pre-size the iframe next time this tab opens. Debounced so a
+// transient height (e.g. a search query briefly narrowing the list) doesn't
+// get persisted as the tab's height if the user closes the popup mid-change.
+let persistHeightTimer = null;
+function persistPopupHeight(height) {
+  const tab = state.getSnapshot().activeTab;
+  if (!tab) return;
+  clearTimeout(persistHeightTimer);
+  persistHeightTimer = setTimeout(() => {
+    chrome.storage.local.set({ [`popupHeight_${tab}`]: height });
+  }, 300);
 }
 
 function measureContentSizeLast() {
@@ -3265,7 +3309,6 @@ function measureContentSizeLast() {
   }
 }
 
-// Close by Esc key
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -3306,7 +3349,6 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 
   if (message.action === "checkYoutube") {
-    state.videoSummaryMode = undefined;
     gemini.checkCurrentTabForYoutube();
   }
 });
@@ -3316,7 +3358,8 @@ if (typeof module !== "undefined" && module.exports) {
     initializeDependencies,
     initializePopup,
     popupLayout,
-    showPage,
+    hydratePopup,
+    renderPopup,
     checkTextOverflow,
     getWarmState,
     fetchData,
@@ -3326,5 +3369,6 @@ if (typeof module !== "undefined" && module.exports) {
     retryMeasureContentSize,
     measureContentSize,
     measureContentSizeLast,
+    persistPopupHeight,
   };
 }

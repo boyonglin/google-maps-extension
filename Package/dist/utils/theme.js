@@ -1,7 +1,4 @@
-/**
- * Theme Utilities Module
- * Centralized dark mode management for the extension
- */
+// Theme Utilities
 
 const ThemeUtils = {
   STORAGE_KEY: "isDarkMode",
@@ -10,12 +7,10 @@ const ThemeUtils = {
   DARK: "dark",
   LIGHT: "light",
 
-  // Check if system prefers dark mode
   getSystemPreference() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   },
 
-  // Get stored theme preference from Chrome storage
   getStoredPreference() {
     return new Promise((resolve) => {
       chrome.storage.local.get(this.STORAGE_KEY, (result) => {
@@ -24,14 +19,12 @@ const ThemeUtils = {
     });
   },
 
-  // Save theme preference to Chrome storage
   savePreference(isDarkMode) {
     return new Promise((resolve) => {
       chrome.storage.local.set({ [this.STORAGE_KEY]: isDarkMode }, resolve);
     });
   },
 
-  // Apply theme to a DOM element
   applyToElement(element, isDarkMode, includeBootstrap = false) {
     if (!element) return;
 
@@ -43,11 +36,9 @@ const ThemeUtils = {
     }
   },
 
-  // Initialize theme based on stored preference or system preference
   async initialize(element, includeBootstrap = false, callback = null) {
     let isDarkMode = await this.getStoredPreference();
 
-    // If no stored preference, check system preference
     if (isDarkMode === undefined) {
       isDarkMode = this.getSystemPreference();
       await this.savePreference(isDarkMode);
@@ -62,7 +53,6 @@ const ThemeUtils = {
     return isDarkMode;
   },
 
-  // Toggle theme and save preference
   async toggle(element, includeBootstrap = false, callback = null) {
     const currentValue = (await this.getStoredPreference()) || false;
     const newValue = !currentValue;
@@ -77,7 +67,6 @@ const ThemeUtils = {
     return newValue;
   },
 
-  // Send theme update message to content script
   notifyContentScript(isDarkMode) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
@@ -86,15 +75,12 @@ const ThemeUtils = {
             action: "updateTheme",
             isDarkMode: isDarkMode,
           })
-          .catch(() => {
-            // Ignore errors if content script isn't loaded
-          });
+          .catch(() => {});
       }
     });
   },
 };
 
-// Export for both module and script contexts
 if (typeof module !== "undefined" && module.exports) {
   module.exports = ThemeUtils;
 }

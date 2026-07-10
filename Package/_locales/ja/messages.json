@@ -11,6 +11,9 @@
   "searchHistorySubtitle": {
     "message": "検索履歴"
   },
+  "loadingMsg": {
+    "message": "読み込み中です、しばらくお待ちください..."
+  },
   "favoriteListSubtitle": {
     "message": "お気に入り"
   },
@@ -36,7 +39,15 @@
     "message": "AI で場所の要約を試してみてください！\n結果が期待に合わない場合は再生成できます\uD83D\uDC4C\uD83C\uDFFC"
   },
   "geminiLoadMsg": {
-    "message": "海をおやつのようにして、\n待つことがロマンチックになる...（約 NaN 秒）"
+    "message": "海をおやつのようにして、\n待つことがロマンチックになる...（約 $estimatedSeconds$ 秒）",
+    "placeholders": {
+      "estimatedSeconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "geminiLoadMsgNoEstimate": {
+    "message": "海をおやつのようにして、\n待つことがロマンチックになる..."
   },
   "geminiErrorMsg": {
     "message": "エラーが発生しました！\nページを再読み込みして再試行してください\ud83d\udea7"
@@ -224,9 +235,6 @@
   },
   "premiumNote": {
     "message": "どうも、魔法使いの友よ\ud83e\uddd9ぜひフィードバックを気軽に共有して、もっと良くしよう。"
-  },
-  "freeNote": {
-    "message": "ExtensionPay で安全に支払い、The Maps Express をあなたの導きの鍵にしましょう。"
   },
   "apiTitle": {
     "message": "API キーの設定"

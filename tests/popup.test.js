@@ -1,13 +1,5 @@
 /**
  * Unit Tests for popup.js
- *
- * Tests cover:
- * - Initialization and DOM setup
- * - Page navigation and switching
- * - Event handlers (search, clear, buttons)
- * - Chrome storage integration
- * - Dimension tracking and iframe communication
- * - Edge cases and error handling
  */
 
 const { setupPopupDOM, teardownPopupDOM } = require("./popupDOMFixture");
@@ -20,16 +12,13 @@ const Gemini = require("../Package/dist/components/gemini");
 const Modal = require("../Package/dist/components/modal");
 const Payment = require("../Package/dist/utils/payment");
 
-// Mock module dependencies for popup.js
 let popup;
 let mockState, mockRemove, mockFavorite, mockHistory, mockGemini, mockModal, mockPayment;
 
 describe("popup.js", () => {
   beforeEach(() => {
-    // Setup DOM FIRST
     setupPopupDOM();
 
-    // Create mocked instances
     mockState = new State();
     mockRemove = new Remove();
     mockFavorite = new Favorite();
@@ -38,11 +27,7 @@ describe("popup.js", () => {
     mockModal = new Modal();
     mockPayment = new Payment();
 
-    // Mock their methods
     jest.spyOn(mockRemove, "addRemoveListener").mockImplementation(() => {});
-    jest.spyOn(mockRemove, "updateInput").mockImplementation(() => {});
-    jest.spyOn(mockRemove, "updateDeleteCount").mockImplementation(() => {});
-    jest.spyOn(mockRemove, "attachCheckboxEventListener").mockImplementation(() => {});
     jest.spyOn(mockFavorite, "addFavoritePageListener").mockImplementation(() => {});
     jest.spyOn(mockFavorite, "updateFavorite").mockImplementation(() => {});
     jest.spyOn(mockHistory, "addHistoryPageListener").mockImplementation(() => {});
@@ -56,7 +41,6 @@ describe("popup.js", () => {
     jest.spyOn(mockPayment, "checkPay").mockImplementation(() => {});
     jest.spyOn(mockState, "buildMapsButtonUrl").mockImplementation(() => {});
 
-    // Setup chrome.runtime.sendMessage to resolve with warm state
     chrome.runtime.sendMessage.mockImplementation((message, callback) => {
       if (message.action === "getWarmState") {
         callback?.({
@@ -74,8 +58,7 @@ describe("popup.js", () => {
       return true;
     });
 
-    // Provide the component constructors popup.js resolves as globals in
-    // the browser (top-level class declarations from the other scripts)
+    // Provide globals for browser environment
     global.State = State;
     global.Remove = Remove;
     global.Favorite = Favorite;
@@ -84,7 +67,23 @@ describe("popup.js", () => {
     global.Modal = Modal;
     global.Payment = Payment;
 
-    // Load popup module AFTER DOM is set up
+    // Mock DOM globals required by render methods
+    global.searchHistoryListContainer = document.getElementById("searchHistoryList");
+    global.emptyMessage = document.getElementById("emptyMessage");
+    global.clearButton = document.getElementById("clearButton");
+    global.favoriteListContainer = document.getElementById("favoriteList");
+    global.favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
+    global.exportButton = document.getElementById("exportButton");
+    global.deleteListButton = document.getElementById("deleteListButton");
+    global.deleteButtonGroup = document.getElementById("deleteButtonGroup");
+    global.searchButtonGroup = document.getElementById("searchButtonGroup");
+    global.exportButtonGroup = document.getElementById("exportButtonGroup");
+    global.geminiButtonGroup = document.getElementById("geminiButtonGroup");
+    global.searchHistoryButton = document.getElementById("searchHistoryButton");
+    global.favoriteListButton = document.getElementById("favoriteListButton");
+    global.geminiSummaryButton = document.getElementById("geminiSummaryButton");
+    global.deleteButton = document.getElementById("deleteButton");
+
     popup = require("../Package/dist/popup");
   });
 
@@ -93,8 +92,7 @@ describe("popup.js", () => {
     jest.resetModules();
     jest.clearAllMocks();
 
-    // Clean up the component constructor globals set in beforeEach to keep
-    // the test environment isolated between tests.
+    // Clean up globals
     delete global.State;
     delete global.Remove;
     delete global.Favorite;
@@ -130,7 +128,6 @@ describe("popup.js", () => {
     });
 
     test("initializePopup sets up event listeners and calls initialization methods", async () => {
-      // Initialize with mocked dependencies
       popup.initializeDependencies({
         state: mockState,
         remove: mockRemove,
@@ -143,7 +140,6 @@ describe("popup.js", () => {
 
       popup.initializePopup();
 
-      // Wait for async operations
       await flushPromises();
 
       expect(mockRemove.addRemoveListener).toHaveBeenCalled();
@@ -196,20 +192,33 @@ describe("popup.js", () => {
   });
 
   describe("popupLayout", () => {
-    test("popupLayout defaults to history page when no lastActiveTab saved", () => {
+    test("shows the loading message before hydration and hides it once ready", async () => {
+      const loadingMessage = document.getElementById("loadingMessage");
+      expect(loadingMessage.classList.contains("d-none")).toBe(false);
+
+      popup.initializeDependencies({ state: mockState });
+      chrome.storage.local.get.mockImplementation((key, callback) => callback({}));
+
+      await popup.popupLayout();
+
+      expect(mockState.getSnapshot().boot).toBe("ready");
+      expect(loadingMessage.classList.contains("d-none")).toBe(true);
+    });
+
+    test("popupLayout defaults to history page when no lastActiveTab saved", async () => {
       popup.initializeDependencies({ state: mockState });
 
       chrome.storage.local.get.mockImplementation((key, callback) => {
         callback({});
       });
 
-      popup.popupLayout();
+      await popup.popupLayout();
 
       const searchHistoryButton = document.getElementById("searchHistoryButton");
       expect(searchHistoryButton.classList.contains("active-button")).toBe(true);
 
-      const historyElements = document.getElementsByClassName("page-H");
-      expect(historyElements[0].classList.contains("d-none")).toBe(false);
+      const historyPanel = document.querySelector('[data-tab-panel="history"]');
+      expect(historyPanel.classList.contains("d-none")).toBe(false);
     });
 
     test("popupLayout restores favorite tab from lastActiveTab", async () => {
@@ -225,181 +234,170 @@ describe("popup.js", () => {
 
       chrome.runtime.sendMessage.mockImplementation((message, callback) => {
         if (message.action === "getWarmState") {
-          callback?.({ favoriteList: ["place1"] });
+          callback?.({ favoriteList: ["place1"], lastActiveTab: "favorite" });
         }
         return true;
       });
 
-      popup.popupLayout();
-
-      await flushPromises();
+      await popup.popupLayout();
 
       const favoriteListButton = document.getElementById("favoriteListButton");
       expect(favoriteListButton.classList.contains("active-button")).toBe(true);
 
-      const favoriteElements = document.getElementsByClassName("page-F");
-      Array.from(favoriteElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(false);
-      });
+      const favoritePanel = document.querySelector('[data-tab-panel="favorite"]');
+      expect(favoritePanel.classList.contains("d-none")).toBe(false);
 
-      expect(mockFavorite.updateFavorite).toHaveBeenCalledWith(["place1"]);
-      expect(mockState.hasFavorite).toBe(true);
+      expect(mockState.getSnapshot().favorite.items).toEqual(["place1"]);
     });
 
-    test("popupLayout restores gemini tab from lastActiveTab", () => {
+    test("popupLayout restores gemini tab from lastActiveTab", async () => {
       popup.initializeDependencies({
         state: mockState,
         gemini: mockGemini,
       });
 
-      chrome.storage.local.get.mockImplementation((key, callback) => {
-        callback({ lastActiveTab: "gemini" });
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getWarmState") callback?.({ lastActiveTab: "gemini" });
+        return true;
       });
 
-      popup.popupLayout();
+      await popup.popupLayout();
 
       const geminiSummaryButton = document.getElementById("geminiSummaryButton");
       expect(geminiSummaryButton.classList.contains("active-button")).toBe(true);
 
       const deleteListButton = document.getElementById("deleteListButton");
       expect(deleteListButton.disabled).toBe(true);
-      expect(mockGemini.clearExpiredSummary).toHaveBeenCalled();
+      expect(mockState.getSnapshot().activeTab).toBe("gemini");
     });
 
-    test("popupLayout re-checks YouTube state after restoring the gemini tab", () => {
-      // Must re-run since checkCurrentTabForYoutube() ran before this tab became active
+    test("popupLayout re-checks YouTube state after restoring the gemini tab", async () => {
       popup.initializeDependencies({
         state: mockState,
         gemini: mockGemini,
       });
 
-      chrome.storage.local.get.mockImplementation((key, callback) => {
-        callback({ lastActiveTab: "gemini" });
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getWarmState") callback?.({ lastActiveTab: "gemini" });
+        return true;
       });
 
-      popup.popupLayout();
+      await popup.popupLayout();
 
       expect(mockGemini.checkCurrentTabForYoutube).toHaveBeenCalled();
     });
 
-    test("popupLayout ignores invalid lastActiveTab value", () => {
+    test("popupLayout ignores invalid lastActiveTab value", async () => {
       popup.initializeDependencies({ state: mockState });
 
-      chrome.storage.local.get.mockImplementation((key, callback) => {
-        callback({ lastActiveTab: "invalid" });
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getWarmState") callback?.({ lastActiveTab: "invalid" });
+        return true;
       });
 
-      popup.popupLayout();
+      await popup.popupLayout();
 
       const searchHistoryButton = document.getElementById("searchHistoryButton");
       expect(searchHistoryButton.classList.contains("active-button")).toBe(true);
     });
 
-    test("popupLayout is exported and callable", () => {
+    test("popupLayout is exported and callable", async () => {
       popup.initializeDependencies({ state: mockState });
 
       chrome.storage.local.get.mockImplementation((key, callback) => {
         callback({});
       });
 
-      // Should not throw
-      expect(() => popup.popupLayout()).not.toThrow();
+      await expect(popup.popupLayout()).resolves.toBeDefined();
     });
   });
 
-  describe("showPage", () => {
+  describe("tab switching via SET_ACTIVE_TAB", () => {
     beforeEach(() => {
       popup.initializeDependencies({ state: mockState });
+      mockState.dispatch({ type: "HYDRATE", payload: {} });
     });
 
-    test("showPage(history) shows history page elements and hides others", () => {
-      popup.showPage("history");
+    const showPage = (tab) => mockState.dispatch({ type: "SET_ACTIVE_TAB", tab });
 
-      const historyElements = document.getElementsByClassName("page-H");
-      const favoriteElements = document.getElementsByClassName("page-F");
-      const geminiElements = document.getElementsByClassName("page-G");
+    const getPanel = (tab) => document.querySelector(`[data-tab-panel="${tab}"]`);
 
-      Array.from(historyElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(false);
-      });
+    test("SET_ACTIVE_TAB history shows history page elements and hides others", () => {
+      showPage("history");
 
-      Array.from(favoriteElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(true);
-      });
-
-      Array.from(geminiElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(true);
-      });
+      expect(getPanel("history").classList.contains("d-none")).toBe(false);
+      expect(getPanel("favorite").classList.contains("d-none")).toBe(true);
+      expect(getPanel("gemini").classList.contains("d-none")).toBe(true);
     });
 
-    test("showPage(favorite) shows favorite page elements", () => {
-      popup.showPage("favorite");
+    test("SET_ACTIVE_TAB favorite shows favorite page elements", () => {
+      showPage("favorite");
 
-      const favoriteElements = document.getElementsByClassName("page-F");
-      const historyElements = document.getElementsByClassName("page-H");
-
-      Array.from(favoriteElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(false);
-      });
-
-      Array.from(historyElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(true);
-      });
+      expect(getPanel("favorite").classList.contains("d-none")).toBe(false);
+      expect(getPanel("history").classList.contains("d-none")).toBe(true);
     });
 
-    test("showPage(gemini) shows gemini page elements", () => {
-      popup.showPage("gemini");
+    test("SET_ACTIVE_TAB gemini shows gemini page elements", () => {
+      showPage("gemini");
 
-      const geminiElements = document.getElementsByClassName("page-G");
-      const historyElements = document.getElementsByClassName("page-H");
-
-      Array.from(geminiElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(false);
-      });
-
-      Array.from(historyElements).forEach((el) => {
-        expect(el.classList.contains("d-none")).toBe(true);
-      });
+      expect(getPanel("gemini").classList.contains("d-none")).toBe(false);
+      expect(getPanel("history").classList.contains("d-none")).toBe(true);
     });
 
-    test("showPage updates active button classes correctly", () => {
+    test("SET_ACTIVE_TAB updates active button classes correctly", () => {
       const searchHistoryButton = document.getElementById("searchHistoryButton");
       const favoriteListButton = document.getElementById("favoriteListButton");
       const geminiSummaryButton = document.getElementById("geminiSummaryButton");
 
-      popup.showPage("history");
+      showPage("history");
       expect(searchHistoryButton.classList.contains("active-button")).toBe(true);
       expect(favoriteListButton.classList.contains("active-button")).toBe(false);
 
-      popup.showPage("favorite");
+      showPage("favorite");
       expect(searchHistoryButton.classList.contains("active-button")).toBe(false);
       expect(favoriteListButton.classList.contains("active-button")).toBe(true);
 
-      popup.showPage("gemini");
+      showPage("gemini");
       expect(geminiSummaryButton.classList.contains("active-button")).toBe(true);
       expect(favoriteListButton.classList.contains("active-button")).toBe(false);
     });
 
-    test("showPage updates subtitle text based on page", () => {
+    test("SET_ACTIVE_TAB updates subtitle text based on page", () => {
       const subtitleElement = document.getElementById("subtitle");
 
-      popup.showPage("history");
+      showPage("history");
       expect(subtitleElement.textContent).toBe("Search History");
 
-      popup.showPage("favorite");
+      showPage("favorite");
       expect(subtitleElement.textContent).toBe("Favorite List");
 
-      popup.showPage("gemini");
+      showPage("gemini");
       expect(subtitleElement.textContent).toBe("Gemini Summary");
     });
 
-    test("showPage hides video summary button for history and favorite pages", () => {
+    test("history empty to cached summary shows the list on the first rendered frame", () => {
+      const loadingMessage = document.getElementById("geminiEmptyMessage");
+      loadingMessage.textContent = "Loading summary";
+      mockState.dispatch({
+        type: "SUMMARY_STORAGE_SET",
+        items: [{ name: "Taipei 101", clue: "Taipei" }],
+        timestamp: Date.now(),
+      });
+
+      showPage("gemini");
+
+      expect(document.getElementById("summaryList").textContent).toContain("Taipei 101");
+      expect(loadingMessage.classList.contains("d-none")).toBe(true);
+      expect(mockState.getSnapshot().summary.phase).toBe("ready");
+    });
+
+    test("SET_ACTIVE_TAB hides video summary button for history and favorite pages", () => {
       const videoSummaryButton = document.getElementById("videoSummaryButton");
 
-      popup.showPage("history");
+      showPage("history");
       expect(videoSummaryButton.classList.contains("d-none")).toBe(true);
 
-      popup.showPage("favorite");
+      showPage("favorite");
       expect(videoSummaryButton.classList.contains("d-none")).toBe(true);
     });
   });
@@ -410,7 +408,6 @@ describe("popup.js", () => {
 
       const clearButton = document.getElementById("clearButton");
 
-      // Mock offsetHeight to simulate overflow
       const mapsButtonSpan = document.getElementById("mapsButtonSpan");
       const clearButtonSpan = clearButton.querySelector("span");
 
@@ -572,9 +569,13 @@ describe("popup.js", () => {
       const emptyMessage = document.getElementById("emptyMessage");
       const clearButton = document.getElementById("clearButton");
 
-      expect(emptyMessage.style.display).toBe("none");
+      expect(emptyMessage.classList.contains("d-none")).toBe(true);
       expect(clearButton.disabled).toBe(false);
-      expect(mockState.hasHistory).toBe(true);
+      expect(mockState.getSnapshot().history.items).toEqual([
+        "Location 1",
+        "Location 2",
+        "Location 3",
+      ]);
       expect(searchHistoryListContainer.querySelector("ul")).not.toBeNull();
     });
 
@@ -606,9 +607,9 @@ describe("popup.js", () => {
       const emptyMessage = document.getElementById("emptyMessage");
       const clearButton = document.getElementById("clearButton");
 
-      expect(emptyMessage.style.display).toBe("block");
+      expect(emptyMessage.classList.contains("d-none")).toBe(false);
       expect(clearButton.disabled).toBe(true);
-      expect(mockState.hasHistory).toBe(false);
+      expect(mockState.getSnapshot().history.items).toHaveLength(0);
     });
 
     test("fetchData calls gemini.fetchAPIKey with stored API key", async () => {
@@ -702,9 +703,7 @@ describe("popup.js", () => {
 
       await popup.fetchData();
 
-      const videoSummaryButton = document.getElementById("videoSummaryButton");
-      expect(mockState.localVideoToggle).toBe(true);
-      expect(videoSummaryButton.classList.contains("active-button")).toBe(true);
+      expect(mockState.getSnapshot().video.enabled).toBe(true);
     });
   });
 
@@ -797,36 +796,27 @@ describe("popup.js", () => {
       });
     });
 
-    test("showPage function is exposed for history page", () => {
-      const showPageSpy = jest.spyOn(popup, "showPage");
-
-      popup.showPage("history");
-
-      expect(showPageSpy).toHaveBeenCalledWith("history");
-
+    test("clicking the history tab button marks it active", () => {
       const searchHistoryButton = document.getElementById("searchHistoryButton");
+
+      searchHistoryButton.click();
+
       expect(searchHistoryButton.classList.contains("active-button")).toBe(true);
     });
 
-    test("showPage function is exposed for favorite page", () => {
-      const showPageSpy = jest.spyOn(popup, "showPage");
-
-      popup.showPage("favorite");
-
-      expect(showPageSpy).toHaveBeenCalledWith("favorite");
-
+    test("clicking the favorite tab button marks it active", () => {
       const favoriteListButton = document.getElementById("favoriteListButton");
+
+      favoriteListButton.click();
+
       expect(favoriteListButton.classList.contains("active-button")).toBe(true);
     });
 
-    test("showPage function is exposed for gemini page", () => {
-      const showPageSpy = jest.spyOn(popup, "showPage");
-
-      popup.showPage("gemini");
-
-      expect(showPageSpy).toHaveBeenCalledWith("gemini");
-
+    test("clicking the gemini tab button marks it active", () => {
       const geminiSummaryButton = document.getElementById("geminiSummaryButton");
+
+      geminiSummaryButton.click();
+
       expect(geminiSummaryButton.classList.contains("active-button")).toBe(true);
     });
   });
@@ -836,6 +826,7 @@ describe("popup.js", () => {
       popup.initializeDependencies({
         state: mockState,
         favorite: mockFavorite,
+        gemini: mockGemini,
         modal: mockModal,
       });
 
@@ -843,7 +834,7 @@ describe("popup.js", () => {
       jest.spyOn(popup, "fetchData").mockResolvedValue(undefined);
     });
 
-    test("storage change updates favoriteListChanged flag", () => {
+    test("storage change updates favorite items", () => {
       const changes = {
         favoriteList: {
           newValue: ["New Favorite"],
@@ -857,11 +848,10 @@ describe("popup.js", () => {
       const listener = chrome.storage.onChanged.addListener.mock.calls[0][0];
       listener(changes, "local");
 
-      expect(mockState.favoriteListChanged).toBe(changes.favoriteList);
-      expect(mockFavorite.updateFavorite).toHaveBeenCalledWith(["New Favorite"]);
+      expect(mockState.getSnapshot().favorite.items).toEqual(["New Favorite"]);
     });
 
-    test("storage change updates historyListChanged flag when list grows", () => {
+    test("storage change updates history items when list grows", () => {
       const changes = {
         searchHistoryList: {
           newValue: ["Item 1", "Item 2"],
@@ -876,10 +866,10 @@ describe("popup.js", () => {
       const listener = listenerCalls[listenerCalls.length - 1][0];
       listener(changes, "local");
 
-      expect(mockState.historyListChanged).toBe(changes.searchHistoryList);
+      expect(mockState.getSnapshot().history.items).toEqual(["Item 1", "Item 2"]);
     });
 
-    test("storage change updates historyListChanged flag when list shrinks", () => {
+    test("storage change updates history items when list shrinks", () => {
       const changes = {
         searchHistoryList: {
           newValue: ["Item 1"],
@@ -894,7 +884,7 @@ describe("popup.js", () => {
       const listener = listenerCalls[listenerCalls.length - 1][0];
       listener(changes, "local");
 
-      expect(mockState.historyListChanged).toBe(changes.searchHistoryList);
+      expect(mockState.getSnapshot().history.items).toEqual(["Item 1"]);
     });
 
     test("storage change updates incognito mode", () => {
@@ -923,6 +913,44 @@ describe("popup.js", () => {
       listener(changes, "local");
 
       expect(mockState.buildMapsButtonUrl).toHaveBeenCalled();
+    });
+
+    test("does not double-react to the storage echo of its own onApiKeyChange call", () => {
+      chrome.runtime.sendMessage.mockClear();
+      mockGemini.fetchAPIKey.mockClear();
+      const listener = chrome.storage.onChanged.addListener.mock.calls[0][0];
+
+      // Mirrors modal.js: onApiKeyChange fires fetchAPIKey directly, then
+      // the resulting storage write's onChanged echo arrives right after.
+      mockModal.onApiKeyChange("plain-key");
+      listener({ geminiApiKey: { newValue: "encrypted-key" } }, "local");
+
+      expect(mockGemini.fetchAPIKey).toHaveBeenCalledTimes(1);
+      expect(mockGemini.fetchAPIKey).toHaveBeenCalledWith("plain-key");
+      expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith(
+        { action: "getApiKey" },
+        expect.any(Function)
+      );
+    });
+
+    test("reacts to a geminiApiKey change from another context", () => {
+      chrome.runtime.sendMessage.mockClear();
+      mockGemini.fetchAPIKey.mockClear();
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getApiKey") callback({ apiKey: "decrypted-key" });
+        return true;
+      });
+      const listener = chrome.storage.onChanged.addListener.mock.calls[0][0];
+
+      // No preceding onApiKeyChange call - this key change came from
+      // elsewhere (e.g. a second popup instance).
+      listener({ geminiApiKey: { newValue: "encrypted-key" } }, "local");
+
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        { action: "getApiKey" },
+        expect.any(Function)
+      );
+      expect(mockGemini.fetchAPIKey).toHaveBeenCalledWith("decrypted-key");
     });
   });
 
@@ -1001,6 +1029,95 @@ describe("popup.js", () => {
         expect.objectContaining({ action: "updateIframeSize" })
       );
       expect(mockState.summarizedTabId).toBeUndefined();
+    });
+
+    describe("persistPopupHeight", () => {
+      beforeEach(() => {
+        jest.useFakeTimers();
+      });
+
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+
+      test("debounces rapid successive calls into a single write for the last height", () => {
+        popup.persistPopupHeight(100);
+        popup.persistPopupHeight(200);
+        popup.persistPopupHeight(300);
+
+        jest.advanceTimersByTime(299);
+        expect(chrome.storage.local.set).not.toHaveBeenCalled();
+
+        jest.advanceTimersByTime(1);
+        expect(chrome.storage.local.set).toHaveBeenCalledTimes(1);
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({ popupHeight_history: 300 });
+      });
+
+      test("does not persist when there is no active tab", () => {
+        jest.spyOn(mockState, "getSnapshot").mockReturnValue({ activeTab: null });
+
+        popup.persistPopupHeight(400);
+        jest.advanceTimersByTime(300);
+
+        expect(chrome.storage.local.set).not.toHaveBeenCalled();
+      });
+
+      test("measureContentSize schedules a persist of the freshly measured height", () => {
+        chrome.tabs.query.mockImplementation((queryInfo, callback) => {
+          callback([{ id: 456 }]);
+        });
+        mockState.previousWidth = 0;
+        mockState.previousHeight = 0;
+
+        popup.measureContentSize();
+        jest.advanceTimersByTime(300);
+
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({
+          popupHeight_history: document.body.offsetHeight,
+        });
+      });
+
+      test("a transient height superseded before the debounce fires is never persisted", () => {
+        // Simulates a search query briefly shrinking the list, then the
+        // real content height winning before the popup closes.
+        popup.persistPopupHeight(120); // transient, e.g. filtered list
+        jest.advanceTimersByTime(250);
+        popup.persistPopupHeight(560); // settled height
+
+        jest.advanceTimersByTime(300);
+
+        expect(chrome.storage.local.set).toHaveBeenCalledTimes(1);
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({ popupHeight_history: 560 });
+      });
+    });
+
+    test("summary success resize targets the browser tab that started the request", () => {
+      Object.defineProperty(document.body, "offsetWidth", { value: 360, configurable: true });
+      Object.defineProperty(document.body, "offsetHeight", { value: 480, configurable: true });
+      chrome.tabs.query.mockImplementation((_queryInfo, callback) => callback([{ id: 456 }]));
+
+      // Build the snapshot via the pure reducer (not mockState.dispatch) so this
+      // test exercises renderPopup's own scheduling logic in isolation, without
+      // mockState's subscription firing earlier, unrelated automatic renders
+      // that would otherwise consume the one-shot "dimensions changed" signal.
+      let snapshot = State.reduce(State.initialSnapshot(), { type: "HYDRATE", payload: {} });
+      snapshot = State.reduce(snapshot, {
+        type: "SUMMARY_START",
+        requestId: "request-1",
+        originTabId: 789,
+      });
+      snapshot = State.reduce(snapshot, {
+        type: "SUMMARY_SUCCESS",
+        requestId: "request-1",
+        items: [{ name: "Place", clue: "Clue" }],
+      });
+
+      popup.renderPopup(snapshot, { type: "SUMMARY_SUCCESS" });
+
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
+        789,
+        expect.objectContaining({ action: "updateIframeSize" })
+      );
     });
 
     test("measureContentSizeLast uses last focused tab when current is not active", () => {
@@ -1093,13 +1210,10 @@ describe("popup.js", () => {
       expect(clickSpy).toHaveBeenCalled();
     });
 
-    test("checkYoutube message resets videoSummaryMode and checks YouTube", () => {
-      mockState.videoSummaryMode = true;
-
+    test("checkYoutube message refreshes YouTube context", () => {
       const listener = chrome.runtime.onMessage.addListener.mock.calls[0][0];
       listener({ action: "checkYoutube" }, {}, () => {});
 
-      expect(mockState.videoSummaryMode).toBeUndefined();
       expect(mockGemini.checkCurrentTabForYoutube).toHaveBeenCalled();
     });
 
@@ -1161,21 +1275,45 @@ describe("popup.js", () => {
     });
   });
 
-  describe("Document Readystate Listener", () => {
-    test("readystatechange complete sends finishIframe message", () => {
-      popup.initializeDependencies({ state: mockState });
+  describe("Iframe reveal", () => {
+    test("hydration completion sends finishIframe message", async () => {
+      popup.initializeDependencies({ state: mockState, gemini: mockGemini, modal: mockModal });
 
       chrome.tabs.query.mockImplementation((queryInfo, callback) => {
-        callback([{ id: 888 }]);
+        const tabs = [{ id: 888, url: "https://example.com" }];
+        callback?.(tabs);
+        return Promise.resolve(tabs);
       });
 
-      Object.defineProperty(document, "readyState", {
-        writable: true,
-        value: "complete",
+      await popup.hydratePopup();
+
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(888, { action: "finishIframe" });
+    });
+
+    test("finishIframe is not sent before delayed warm state is rendered", async () => {
+      popup.initializeDependencies({ state: mockState, gemini: mockGemini, modal: mockModal });
+      let resolveWarmState;
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getWarmState") resolveWarmState = callback;
+        return true;
+      });
+      chrome.tabs.query.mockImplementation((_queryInfo, callback) => {
+        callback?.([{ id: 888, url: "https://example.com" }]);
       });
 
-      document.dispatchEvent(new Event("readystatechange"));
+      const hydration = popup.hydratePopup();
+      expect(chrome.tabs.sendMessage).not.toHaveBeenCalledWith(888, { action: "finishIframe" });
 
+      resolveWarmState({
+        searchHistoryList: [],
+        favoriteList: [],
+        summaryList: [{ name: "Cached place", clue: "Cached clue" }],
+        timestamp: Date.now(),
+        lastActiveTab: "gemini",
+      });
+      await hydration;
+
+      expect(document.getElementById("summaryList").textContent).toContain("Cached place");
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(888, { action: "finishIframe" });
     });
 
@@ -1250,6 +1388,7 @@ describe("popup.js", () => {
         modal: mockModal,
         payment: mockPayment,
       });
+      mockState.dispatch({ type: "HYDRATE", payload: {} });
 
       popup.initializePopup();
 
@@ -1328,7 +1467,6 @@ describe("popup.js", () => {
       mockState.previousHeight = 0;
       popup.retryMeasureContentSize();
 
-      expect(mockState.hasInit).toBe(true);
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
         123,
         expect.objectContaining({ action: "updateIframeSize" })
@@ -1397,8 +1535,6 @@ describe("popup.js", () => {
       const searchHistoryButton = document.getElementById("searchHistoryButton");
       const deleteListButton = document.getElementById("deleteListButton");
 
-      mockState.hasHistory = true;
-
       chrome.tabs.query.mockImplementation((queryInfo, callback) => {
         callback([{ id: 123 }]);
       });
@@ -1406,7 +1542,7 @@ describe("popup.js", () => {
       searchHistoryButton.click();
 
       expect(deleteListButton.disabled).toBe(false);
-      expect(mockRemove.updateInput).toHaveBeenCalled();
+      expect(mockState.getSnapshot().activeTab).toBe("history");
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ lastActiveTab: "history" });
     });
 
@@ -1415,20 +1551,21 @@ describe("popup.js", () => {
       const emptyMessage = document.getElementById("emptyMessage");
       const clearButton = document.getElementById("clearButton");
 
-      mockState.hasHistory = false;
       jest.spyOn(popup, "measureContentSize").mockImplementation(() => {});
 
+      // Establish the initial render (as HYDRATE always does in the real app)
+      // before clicking a tab that's already active, since re-clicking the
+      // active tab is a no-op dispatch and won't re-render on its own.
+      mockState.dispatch({ type: "HYDRATE", payload: {} });
       searchHistoryButton.click();
 
-      expect(emptyMessage.style.display).toBe("block");
+      expect(emptyMessage.classList.contains("d-none")).toBe(false);
       expect(clearButton.disabled).toBe(true);
     });
 
     test("favoriteListButton click shows favorite page and updates UI", async () => {
       const favoriteListButton = document.getElementById("favoriteListButton");
       const deleteListButton = document.getElementById("deleteListButton");
-
-      mockState.hasFavorite = true;
 
       chrome.runtime.sendMessage.mockImplementation((message, callback) => {
         if (message.action === "getWarmState") {
@@ -1443,16 +1580,13 @@ describe("popup.js", () => {
       await new Promise((resolve) => process.nextTick(resolve));
 
       expect(deleteListButton.disabled).toBe(false);
-      expect(mockRemove.updateInput).toHaveBeenCalled();
-      expect(mockState.favoriteListChanged).toBe(false);
+      expect(mockState.getSnapshot().activeTab).toBe("favorite");
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ lastActiveTab: "favorite" });
     });
 
     test("favoriteListButton click handles no favorites case", () => {
       const favoriteListButton = document.getElementById("favoriteListButton");
       const favoriteEmptyMessage = document.getElementById("favoriteEmptyMessage");
-
-      mockState.hasFavorite = false;
 
       chrome.runtime.sendMessage.mockImplementation((message, callback) => {
         if (message.action === "getWarmState") {
@@ -1463,7 +1597,7 @@ describe("popup.js", () => {
 
       favoriteListButton.click();
 
-      expect(favoriteEmptyMessage.style.display).toBe("block");
+      expect(favoriteEmptyMessage.classList.contains("d-none")).toBe(false);
     });
 
     test("geminiSummaryButton click updates page and checks YouTube", () => {
@@ -1474,8 +1608,7 @@ describe("popup.js", () => {
 
       expect(deleteListButton.disabled).toBe(true);
       expect(mockGemini.checkCurrentTabForYoutube).toHaveBeenCalled();
-      expect(mockGemini.clearExpiredSummary).toHaveBeenCalled();
-      expect(mockState.summaryListChanged).toBe(false);
+      expect(mockState.getSnapshot().activeTab).toBe("gemini");
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ lastActiveTab: "gemini" });
     });
   });
@@ -1499,8 +1632,7 @@ describe("popup.js", () => {
       const clearButtonSummary = document.getElementById("clearButtonSummary");
 
       popup.initializeDependencies({ state: mockState });
-      document.getElementById("searchHistoryButton").classList.remove("active-button");
-      document.getElementById("favoriteListButton").classList.add("active-button");
+      mockState.dispatch({ type: "HYDRATE", payload: { lastActiveTab: "favorite" } });
       clearButton.classList.replace("w-25", "w-auto");
       cancelButton.classList.replace("w-25", "w-auto");
       clearButtonSummary.classList.replace("w-25", "w-auto");
@@ -1529,12 +1661,35 @@ describe("popup.js", () => {
       window.requestAnimationFrame = jest.fn();
 
       popup.initializeDependencies({ state: mockState, gemini: mockGemini });
-      mockGemini.fetchAPIKey.mockClear();
+      const renderSpy = jest.spyOn(mockGemini, "render");
 
       window.dispatchEvent(new Event("i18n:changed"));
 
-      // Needs re-run to pick up new bundle on language change.
-      expect(mockGemini.fetchAPIKey).toHaveBeenCalled();
+      expect(renderSpy).toHaveBeenCalled();
+
+      global.requestAnimationFrame = originalGlobalRaf;
+      window.requestAnimationFrame = originalWindowRaf;
+    });
+
+    test("i18n changed event re-localizes the API key placeholder", () => {
+      const originalGlobalRaf = global.requestAnimationFrame;
+      const originalWindowRaf = window.requestAnimationFrame;
+      global.requestAnimationFrame = jest.fn();
+      window.requestAnimationFrame = jest.fn();
+
+      popup.initializeDependencies({ state: mockState, gemini: mockGemini });
+      chrome.runtime.sendMessage.mockImplementation((message, callback) => {
+        if (message.action === "getApiKey") {
+          callback?.({ apiKey: "secret-key" });
+        }
+        return true;
+      });
+
+      window.dispatchEvent(new Event("i18n:changed"));
+
+      // Re-fetches and re-localizes the placeholder instead of leaving it in
+      // whatever language it was set to before the live language switch.
+      expect(mockGemini.fetchAPIKey).toHaveBeenCalledWith("secret-key");
 
       global.requestAnimationFrame = originalGlobalRaf;
       window.requestAnimationFrame = originalWindowRaf;

@@ -1,10 +1,6 @@
-/**
- * Jest Unit Tests for analytics.js
- * Tests for GA4 Analytics Module: client ID, session management, event tracking
- *
- * Note: analytics.js is now a thin wrapper that imports from analytics.module.js
- * These tests verify the wrapper correctly re-exports the Analytics object.
- */
+// Tests for analytics.js
+// Note: analytics.js is now a thin wrapper that imports from analytics.module.js
+// These tests verify the wrapper correctly re-exports the Analytics object.
 
 const { flushPromises } = require("./testHelpers");
 
@@ -42,10 +38,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
     // Cleanup
   });
 
-  // ============================================================================
-  // Module Structure Tests
-  // ============================================================================
-
   describe("Module Structure", () => {
     test("should export Analytics object", () => {
       expect(Analytics).toBeDefined();
@@ -76,10 +68,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
       expect(typeof Analytics.trackPageView).toBe("function");
     });
   });
-
-  // ============================================================================
-  // getOrCreateClientId Tests
-  // ============================================================================
 
   describe("getOrCreateClientId", () => {
     test("should return existing client ID from storage", async () => {
@@ -133,10 +121,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
       expect(firstId).toBe(secondId);
     });
   });
-
-  // ============================================================================
-  // getOrCreateSessionId Tests
-  // ============================================================================
 
   describe("getOrCreateSessionId", () => {
     test("should return existing session ID if within timeout", async () => {
@@ -247,10 +231,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
     });
   });
 
-  // ============================================================================
-  // trackEvent Tests
-  // ============================================================================
-
   describe("trackEvent", () => {
     beforeEach(() => {
       chrome.storage.local.get.mockImplementation((keys, callback) => {
@@ -342,10 +322,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
     });
   });
 
-  // ============================================================================
-  // trackExtensionOpened Tests
-  // ============================================================================
-
   describe("trackExtensionOpened", () => {
     beforeEach(() => {
       chrome.storage.local.get.mockImplementation((keys, callback) => {
@@ -378,10 +354,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
       expect(requestBody.events[0].params.source).toBe("popup");
     });
   });
-
-  // ============================================================================
-  // trackFeatureClick Tests
-  // ============================================================================
 
   describe("trackFeatureClick", () => {
     beforeEach(() => {
@@ -426,10 +398,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
     });
   });
 
-  // ============================================================================
-  // trackSearch Tests
-  // ============================================================================
-
   describe("trackSearch", () => {
     beforeEach(() => {
       chrome.storage.local.get.mockImplementation((keys, callback) => {
@@ -462,10 +430,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
       expect(requestBody.events[0].params.feature_name).toBe("search");
     });
   });
-
-  // ============================================================================
-  // trackPageView Tests
-  // ============================================================================
 
   describe("trackPageView", () => {
     beforeEach(() => {
@@ -500,10 +464,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
     });
   });
 
-  // ============================================================================
-  // Module Export Tests
-  // ============================================================================
-
   describe("Module Exports", () => {
     test("should export Analytics as named export", () => {
       const module = require("../Package/dist/utils/analytics.module.js");
@@ -527,10 +487,6 @@ describe("analytics.js - Analytics Module (Popup Wrapper)", () => {
       expect(typeof Analytics.trackContextMenu).toBe("function");
     });
   });
-
-  // ============================================================================
-  // Edge Cases and Error Handling
-  // ============================================================================
 
   describe("Edge Cases", () => {
     test("should handle undefined eventParams gracefully", async () => {

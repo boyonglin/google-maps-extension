@@ -11,6 +11,9 @@
   "searchHistorySubtitle": {
     "message": "搜尋記錄"
   },
+  "loadingMsg": {
+    "message": "載入中，請稍候..."
+  },
   "favoriteListSubtitle": {
     "message": "收藏清單"
   },
@@ -36,7 +39,15 @@
     "message": "試試用 AI 來摘要地點！\n如果結果不符合預期你可以重新生成\uD83D\uDC4C\uD83C\uDFFC"
   },
   "geminiLoadMsg": {
-    "message": "把海當作零食配著，\n等待就變浪漫了...（約 NaN 秒）"
+    "message": "把海當作零食配著，\n等待就變浪漫了...（約 $estimatedSeconds$ 秒）",
+    "placeholders": {
+      "estimatedSeconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "geminiLoadMsgNoEstimate": {
+    "message": "把海當作零食配著，\n等待就變浪漫了..."
   },
   "geminiErrorMsg": {
     "message": "出錯了！\n請重新整理頁面並再試一次\ud83d\udea7"
@@ -224,9 +235,6 @@
   },
   "premiumNote": {
     "message": "你好啊，巫師朋友\ud83e\uddd9歡迎隨時分享你的回饋，幫助我們做得更好"
-  },
-  "freeNote": {
-    "message": "透過 ExtensionPay 安全且快速地付款，讓 The Maps Express 成為指引你的鑰匙"
   },
   "apiTitle": {
     "message": "配置你的 API 金鑰"

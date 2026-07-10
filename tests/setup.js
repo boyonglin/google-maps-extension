@@ -1,9 +1,7 @@
 /**
  * Jest Setup File for Chrome Extension Testing
- * This file configures the test environment for testing Chrome extension code
  */
 
-// Mock Web Crypto API
 global.crypto = {
   subtle: {
     generateKey: jest.fn(),
@@ -21,17 +19,14 @@ global.crypto = {
   randomUUID: jest.fn(() => "mock-uuid-1234-5678-9abc-def012345678"),
 };
 
-// Mock btoa and atob for Node.js environment
 global.btoa = (str) => Buffer.from(str, "binary").toString("base64");
 global.atob = (str) => Buffer.from(str, "base64").toString("binary");
 
-// Mock TextEncoder and TextDecoder for Node.js environment
 const { TextEncoder, TextDecoder } = require("util");
 const { createMockThemeUtils } = require("./testHelpers");
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
-// Mock Chrome API
 global.chrome = {
   runtime: {
     id: "mock-extension-id",
@@ -108,7 +103,6 @@ global.chrome = {
   i18n: {
     getUILanguage: jest.fn(() => "en-US"),
     getMessage: jest.fn((key, substitutions) => {
-      // Return a reasonable default for i18n messages
       const messages = {
         searchHistorySubtitle: "Search History",
         favoriteListSubtitle: "Favorite List",
@@ -179,22 +173,18 @@ global.chrome = {
         firstNote: "First time note",
         trialNote: `Trial ends on ${substitutions}`,
         remindNote: "Trial reminder",
-        freeNote: "Free version note",
       };
       return messages[key] || key;
     }),
   },
 };
 
-// Mock DOM elements that might be referenced in the code
 global.mapsButton = {
   href: "",
 };
 
-// Mock ThemeUtils
 global.ThemeUtils = createMockThemeUtils();
 
-// Mock DOMUtils
 global.DOMUtils = {
   findClosestListItem: jest.fn((event) => {
     if (event.target.tagName === "LI") {
@@ -210,10 +200,8 @@ global.DOMUtils = {
       iconElement.classList.remove("spring-animation");
     }, 500);
   }),
-  refreshFavoriteList: jest.fn(),
 };
 
-// Mock requestAnimationFrame and requestIdleCallback
 global.requestAnimationFrame = jest.fn((cb) => {
   cb();
   return 1;
@@ -224,14 +212,12 @@ global.requestIdleCallback = jest.fn((cb) => {
   return 1;
 });
 
-// Reset all mocks before each test
 beforeEach(() => {
   jest.clearAllMocks();
   global.chrome.runtime.lastError = null;
   global.mapsButton = { href: "" };
 
-  // Restore crypto mocks after clearAllMocks
-  // clearAllMocks removes the subtle object entirely, so we need to recreate it
+  // Restore crypto mocks (clearAllMocks removes subtle object)
   if (!global.crypto.subtle) {
     global.crypto.subtle = {};
   }
@@ -251,7 +237,6 @@ beforeEach(() => {
 
   global.crypto.randomUUID = jest.fn(() => "mock-uuid-1234-5678-9abc-def012345678");
 
-  // Reset animation frame and idle callback
   global.requestAnimationFrame = jest.fn((cb) => {
     cb();
     return 1;
@@ -263,18 +248,15 @@ beforeEach(() => {
   });
 });
 
-// Console warnings/errors configuration
 const originalError = console.error;
 const originalWarn = console.warn;
 const originalLog = console.log;
 
 beforeAll(() => {
-  // Suppress expected warnings in tests
   console.error = jest.fn((...args) => {
     const firstArg = args[0];
     const errorString = String(firstArg);
 
-    // Check for JSDOM navigation errors
     if (
       (typeof firstArg === "string" &&
         (firstArg.includes("Not implemented: HTMLFormElement.prototype.submit") ||
@@ -297,10 +279,9 @@ beforeAll(() => {
     originalWarn.call(console, ...args);
   });
 
-  // Suppress specific console.log output during tests (e.g., inject.js ASCII art)
   console.log = jest.fn((...args) => {
     const firstArg = String(args[0] ?? "");
-    // Filter out inject.js ASCII art banner and activation messages
+
     if (
       firstArg.includes("_____  _     ____") ||
       firstArg.includes("| |/|  / /\\  | |_)") ||
