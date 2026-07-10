@@ -160,7 +160,7 @@ describe("background.js", () => {
 
   // Listener indices for different onMessage handlers
   // Based on registration order in background.js
-  const BASIC_ACTIONS_LISTENER = 0; // clearSearchHistoryList, searchInput, addToFavoriteList, openTab, canGroup, openInGroup, organizeLocations
+  const BASIC_ACTIONS_LISTENER = 0; // clearSearchHistoryList, searchInput, openTab, canGroup, openInGroup, organizeLocations
   const GEMINI_API_LISTENER = 1; // summarizeApi, summarizeVideo
   const VERIFY_API_LISTENER = 2; // verifyApiKey
   const PAYMENT_LISTENER = 3; // extPay, restorePay, checkPay
@@ -791,23 +791,6 @@ describe("background.js", () => {
 
       expect(buildSearchUrl).toHaveBeenCalledWith("Tokyo");
       expect(chrome.tabs.create).toHaveBeenCalled();
-    });
-
-    test("should add to favorite list", () => {
-      chrome.storage.local.get.mockImplementation((keys, callback) => {
-        callback({ favoriteList: [] });
-      });
-
-      const request = {
-        action: "addToFavoriteList",
-        selectedText: "Tokyo Tower",
-      };
-
-      listeners.onMessage[0](request, {}, jest.fn());
-
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        favoriteList: ["Tokyo Tower"],
-      });
     });
 
     test("should handle openTab action", () => {
@@ -1948,42 +1931,6 @@ describe("background.js", () => {
 
       // Should return the original text since regex doesn't match
       expect(sendResponse).toHaveBeenCalledWith('<ul class="other-class"><li>Item 1</li></ul>');
-    });
-  });
-
-  describe("Favorite list management", () => {
-    test("should add item to empty favorite list", () => {
-      chrome.storage.local.get.mockImplementation((keys, callback) => {
-        callback({ favoriteList: null });
-      });
-
-      const request = {
-        action: "addToFavoriteList",
-        selectedText: "First Favorite",
-      };
-
-      listeners.onMessage[0](request, {}, jest.fn());
-
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        favoriteList: ["First Favorite"],
-      });
-    });
-
-    test("should move existing favorite to end", () => {
-      chrome.storage.local.get.mockImplementation((keys, callback) => {
-        callback({ favoriteList: ["Fav A", "Fav B", "Fav C"] });
-      });
-
-      const request = {
-        action: "addToFavoriteList",
-        selectedText: "Fav B",
-      };
-
-      listeners.onMessage[BASIC_ACTIONS_LISTENER](request, {}, jest.fn());
-
-      const savedList = chrome.storage.local.set.mock.calls[0][0].favoriteList;
-      expect(savedList[savedList.length - 1]).toBe("Fav B");
-      expect(savedList.filter((f) => f === "Fav B").length).toBe(1);
     });
   });
 

@@ -594,7 +594,6 @@ li i:hover {
 li i.matched {
   display: flex;
   opacity: 0.5;
-  pointer-events: none;
 }
 li:hover i.matched {
   opacity: 1;
