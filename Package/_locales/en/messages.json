@@ -368,10 +368,6 @@
     "message": "Add to Favorites",
     "description": "tooltips add to favorites label"
   },
-  "removeFavoriteLabel": {
-    "message": "Remove from Favorites",
-    "description": "tooltips remove from favorites label"
-  },
   "clearSummaryLabel": {
     "message": "The results will be preserved and automatically cleared after 1 day",
     "description": "tooltips clear summary label"

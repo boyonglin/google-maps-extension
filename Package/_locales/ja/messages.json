@@ -278,9 +278,6 @@
   "plusLabel": {
     "message": "お気に入りに追加"
   },
-  "removeFavoriteLabel": {
-    "message": "お気に入りから削除"
-  },
   "clearSummaryLabel": {
     "message": "要約結果は 1 日後に自動的に削除されます"
   },

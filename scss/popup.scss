@@ -615,14 +615,7 @@ li {
     &.matched {
       display: flex;
       opacity: 0.5;
-    }
-
-    // Force the icon visible while the toggle animation plays, regardless of
-    // hover state — otherwise a just-unfavorited icon can briefly vanish if
-    // the cursor hasn't moved since the click (li:hover isn't re-evaluated).
-    &.spring-animation {
-      display: flex;
-      opacity: 1;
+      pointer-events: none;
     }
   }
 

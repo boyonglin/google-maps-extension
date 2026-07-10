@@ -93,18 +93,6 @@ class Favorite {
           state.dispatch({ type: "DELETE_TOGGLE", value: liElement.dataset.itemValue || "" });
         }
       } else {
-        if (event.target.classList.contains("form-check-input")) {
-          return;
-        }
-
-        if (event.target.classList.contains("bi")) {
-          if (event.button !== 0) return;
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("remove_favorite_item", "favoriteListContainer");
-          this.removeFavoriteItem(liElement.dataset.itemValue || "", event);
-          return;
-        }
-
         const spans = liElement.querySelectorAll("span");
         const selectedText = Array.from(spans)
           .map((span) => span.textContent)
@@ -112,13 +100,19 @@ class Favorite {
           .trim();
 
         state.buildSearchUrl(selectedText).then((searchUrl) => {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("click_favorite_item", "favoriteListContainer");
-          if (event.button === 1) {
-            event.preventDefault();
-            chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
-          } else if (event.button === 0) {
-            window.open(searchUrl, "_blank");
+          if (event.target.classList.contains("bi")) {
+            return;
+          } else if (event.target.classList.contains("form-check-input")) {
+            return;
+          } else {
+            if (window.Analytics)
+              window.Analytics.trackFeatureClick("click_favorite_item", "favoriteListContainer");
+            if (event.button === 1) {
+              event.preventDefault();
+              chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
+            } else if (event.button === 0) {
+              window.open(searchUrl, "_blank");
+            }
           }
         });
       }
@@ -175,68 +169,17 @@ class Favorite {
   }
 
   createFavoriteIcon(itemName, favoriteList) {
-    const matched = Boolean(favoriteList && favoriteList.includes(itemName));
     const favoriteIcon = document.createElement("i");
-    favoriteIcon.className = matched ? "bi bi-patch-check-fill matched" : "bi bi-patch-plus-fill";
-    favoriteIcon.title = chrome.i18n.getMessage(matched ? "removeFavoriteLabel" : "plusLabel");
+    favoriteIcon.className =
+      favoriteList && favoriteList.includes(itemName)
+        ? "bi bi-patch-check-fill matched"
+        : "bi bi-patch-plus-fill";
+    favoriteIcon.title = chrome.i18n.getMessage("plusLabel");
     return favoriteIcon;
   }
 
   addToFavoriteList(selectedText) {
-    // Runs through the same write queue as removeFavoriteItem (rather than a
-    // separate background.js round-trip) so an add and a remove can never
-    // race each other and silently drop one of the two changes.
-    this.queueFavoriteWrite((latest) => {
-      const next = latest.filter((item) => item !== selectedText);
-      next.push(selectedText);
-      return next;
-    });
-  }
-
-  // Chain get-then-set writes to favoriteList so each get() reads storage after
-  // the previous set() has landed, avoiding a lost update when several writes
-  // happen in quick succession. Recovers on failure instead of permanently
-  // blocking every later call behind a rejected promise.
-  queueFavoriteWrite(computeNext) {
-    this._favoriteWriteQueue = (this._favoriteWriteQueue || Promise.resolve())
-      .then(
-        () =>
-          new Promise((resolve) => {
-            chrome.storage.local.get("favoriteList", ({ favoriteList }) => {
-              const latest = Array.isArray(favoriteList) ? favoriteList : [];
-              chrome.storage.local.set({ favoriteList: computeNext(latest) }, resolve);
-            });
-          })
-      )
-      .catch((error) => {
-        console.error("Failed to persist favoriteList change:", error);
-        this._favoriteWriteQueue = Promise.resolve();
-      });
-    return this._favoriteWriteQueue;
-  }
-
-  removeFavoriteItem(itemValue, event) {
-    if (!itemValue) return;
-
-    // Ignore a second removal within 300ms at nearly the same screen position:
-    // the list re-renders synchronously on removal, so a fast double-click can
-    // otherwise land on a different item that reflowed into the same spot.
-    const now = Date.now();
-    const last = this._lastFavoriteRemoveClick;
-    if (
-      last &&
-      now - last.time < 300 &&
-      Math.abs(event.clientX - last.x) < 10 &&
-      Math.abs(event.clientY - last.y) < 10
-    ) {
-      return;
-    }
-    this._lastFavoriteRemoveClick = { time: now, x: event.clientX, y: event.clientY };
-
-    const items = state.getSnapshot().favorite.items.filter((item) => item !== itemValue);
-    state.dispatch({ type: "FAVORITE_SET", items });
-
-    this.queueFavoriteWrite((latest) => latest.filter((item) => item !== itemValue));
+    chrome.runtime.sendMessage({ action: "addToFavoriteList", selectedText });
   }
 
   updateFavorite(favoriteList) {
@@ -286,7 +229,6 @@ class Favorite {
         const icon = document.createElement("i");
         icon.className = "bi bi-patch-check-fill matched";
         icon.classList.toggle("d-none", deleting);
-        icon.title = chrome.i18n.getMessage("removeFavoriteLabel");
         li.appendChild(icon);
 
         const checkbox = document.createElement("input");
