@@ -269,6 +269,21 @@ describe("Modal Component - Full Coverage", () => {
       expect(getRow("auto-attach").textContent).toBe("Alt+S");
     });
 
+    test("should still show shortcuts when chrome.runtime.getPlatformInfo is unavailable", async () => {
+      const originalGetPlatformInfo = chrome.runtime.getPlatformInfo;
+      delete chrome.runtime.getPlatformInfo;
+
+      chrome.commands.getAll.mockImplementation((callback) =>
+        callback([{ name: "run-search", shortcut: "Ctrl+Shift+S" }])
+      );
+
+      await modalInstance.addModalListener();
+
+      expect(getRow("run-search").textContent).toBe("Ctrl+Shift+S");
+
+      chrome.runtime.getPlatformInfo = originalGetPlatformInfo;
+    });
+
     test("should append the Not Set suffix to the default text when no key is assigned", async () => {
       chrome.i18n.getMessage.mockImplementation((key) =>
         key === "shortcutUnsetLabel" ? "Not Set" : key
