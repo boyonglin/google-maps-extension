@@ -666,12 +666,8 @@ li:hover .form-check-input {
 #searchButtonGroup .btn,
 #geminiButtonGroup .btn {
   overflow: hidden;
-}
-#searchButtonGroup .btn span,
-#geminiButtonGroup .btn span {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 #exportButton:disabled {

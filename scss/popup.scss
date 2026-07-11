@@ -699,16 +699,12 @@ li:hover .form-check-input {
 }
 
 // Locale strings can be long enough to wrap inside these narrow w-25 buttons;
-// clip instead of letting the text wrap and misalign with the icon.
+// clip instead of letting the icon and text break onto separate lines.
 #searchButtonGroup .btn,
 #geminiButtonGroup .btn {
   overflow: hidden;
-
-  span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 #exportButton:disabled {
