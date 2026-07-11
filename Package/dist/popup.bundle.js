@@ -1970,6 +1970,7 @@ class Modal {
     await this.loadCrypto();
 
     this._setupShortcutsLinks();
+    this._setupShortcutsDisplay();
     this._setupApiForm();
     this._setupSettingsScrollFade();
     this._setupOptionalModalLifecycle();
@@ -2003,6 +2004,56 @@ class Modal {
         event.preventDefault();
       };
     }
+  }
+
+  // Suggested keys can be taken by the OS or another extension and silently do nothing;
+  // show what's actually bound instead.
+  _setupShortcutsDisplay() {
+    if (chrome.runtime && typeof chrome.runtime.getPlatformInfo === "function") {
+      chrome.runtime.getPlatformInfo((info) => {
+        this._isMac = info?.os === "mac";
+        this._updateShortcutsDisplay();
+      });
+    } else {
+      this._updateShortcutsDisplay();
+    }
+
+    // The user may (re)assign shortcuts in chrome://extensions/shortcuts without reloading the popup
+    const tipsModal = document.getElementById("tipsModal");
+    if (tipsModal) {
+      tipsModal.addEventListener("show.bs.modal", () => {
+        this._updateShortcutsDisplay();
+      });
+    }
+  }
+
+  // "Alt+R / ⌥+R" -> "Alt+R" on Windows/Linux, "⌥+R" on Mac
+  _defaultShortcutForPlatform(defaultText) {
+    const [primary, mac] = defaultText.split(" / ");
+    return this._isMac && mac ? mac : primary;
+  }
+
+  _updateShortcutsDisplay() {
+    if (!chrome.commands || typeof chrome.commands.getAll !== "function") return;
+
+    chrome.commands.getAll((commands) => {
+      commands.forEach((command) => {
+        const el = document.querySelector(`#tipsModal p[data-command="${command.name}"]`);
+        if (!el) return;
+
+        // Cache the original default text so re-renders don't stack "(Not Set)" onto it
+        if (el.dataset.defaultShortcut === undefined) {
+          el.dataset.defaultShortcut = el.textContent.trim();
+        }
+
+        if (command.shortcut) {
+          el.textContent = command.shortcut;
+        } else {
+          const defaultText = this._defaultShortcutForPlatform(el.dataset.defaultShortcut);
+          el.textContent = `${defaultText} (${chrome.i18n.getMessage("shortcutUnsetLabel")})`;
+        }
+      });
+    });
   }
 
   _setupApiForm() {

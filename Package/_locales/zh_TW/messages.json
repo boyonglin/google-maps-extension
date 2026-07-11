@@ -97,7 +97,7 @@
     "message": "快速搜尋"
   },
   "searchBarKeyLabel": {
-    "message": "搜尋方塊"
+    "message": "開啟搜尋欄"
   },
   "autoAttachKeyLabel": {
     "message": "自動附加連結"
@@ -289,5 +289,9 @@
   },
   "tidyLocations" : {
     "message": "整理地點"
+  },
+  "shortcutUnsetLabel": {
+    "message": "未設定",
+    "description": "tips modal suffix appended to the default shortcut when no key is assigned"
   }
 }

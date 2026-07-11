@@ -41,6 +41,7 @@ global.chrome = {
     lastError: null,
     getURL: jest.fn((path) => `chrome-extension://mock-id/${path}`),
     getManifest: jest.fn(() => ({ version: "1.0.0" })),
+    getPlatformInfo: jest.fn((callback) => callback && callback({ os: "win" })),
   },
   storage: {
     local: {
@@ -84,6 +85,7 @@ global.chrome = {
     onCommand: {
       addListener: jest.fn(),
     },
+    getAll: jest.fn((callback) => callback && callback([])),
   },
   action: {
     onClicked: {
@@ -157,7 +159,7 @@ global.chrome = {
         tidyLocations: "Tidy Locations",
         getDirections: "Get Directions",
         quickSearchKeyLabel: "Quick Search",
-        searchBarKeyLabel: "Search Bar",
+        searchBarKeyLabel: "Open Search Bar",
         autoAttachKeyLabel: "Auto Attach",
         directionsKeyLabel: "Directions",
         shortcutsNote: "Configure shortcuts in browser settings",

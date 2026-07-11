@@ -97,7 +97,7 @@
     "message": "クイック検索"
   },
   "searchBarKeyLabel": {
-    "message": "検索バー"
+    "message": "検索バーを開く"
   },
   "autoAttachKeyLabel": {
     "message": "リンク自動添付"
@@ -289,5 +289,9 @@
   },
   "tidyLocations" : {
     "message": "場所を整頓"
+  },
+  "shortcutUnsetLabel": {
+    "message": "未設定",
+    "description": "tips modal suffix appended to the default shortcut when no key is assigned"
   }
 }
