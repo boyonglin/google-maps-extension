@@ -55,6 +55,7 @@ describe("History Component", () => {
     global.clearButton = document.getElementById("clearButton");
     global.undoButtonHistory = document.getElementById("undoButtonHistory");
     global.emptyMessage = document.getElementById("emptyMessage");
+    global.checkTextOverflow = jest.fn();
 
     global.state = new State();
     global.state.buildSearchUrl = jest.fn();
@@ -645,6 +646,22 @@ describe("History Component", () => {
 
           expect(clearButton.classList.contains("d-none")).toBe(true);
           expect(undoButtonHistory.classList.contains("d-none")).toBe(false);
+        });
+
+        test("should re-measure undoButtonHistory's width once it becomes visible", () => {
+          const originalRaf = global.requestAnimationFrame;
+          const rafMock = jest.fn();
+          global.requestAnimationFrame = rafMock;
+
+          state.dispatch({ type: "HISTORY_SET", items: ["Tokyo", "Paris"] });
+          undoButtonHistory.classList.replace("w-25", "w-auto");
+
+          clearButton.dispatchEvent(new Event("click"));
+
+          expect(undoButtonHistory.classList.contains("w-25")).toBe(true);
+          expect(rafMock).toHaveBeenCalledWith(checkTextOverflow);
+
+          global.requestAnimationFrame = originalRaf;
         });
 
         test("should not show undoButtonHistory when history was already empty", () => {

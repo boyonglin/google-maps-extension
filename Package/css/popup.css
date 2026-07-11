@@ -663,13 +663,6 @@ li:hover .form-check-input {
   color: var(--text-on-color);
 }
 
-#searchButtonGroup .btn,
-#geminiButtonGroup .btn {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
 #exportButton:disabled {
   color: var(--gray-600);
 }

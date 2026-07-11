@@ -419,6 +419,44 @@ describe("popup.js", () => {
       expect(clearButton.classList.contains("w-25")).toBe(false);
       expect(clearButton.classList.contains("w-auto")).toBe(true);
     });
+
+    test("checkTextOverflow adjusts undoButtonHistory width when text overflows", () => {
+      popup.initializeDependencies({ state: mockState });
+
+      const undoButtonHistory = document.getElementById("undoButtonHistory");
+      const undoButtonHistorySpan = document.querySelector("#undoButtonHistory > i + span");
+      const mapsButtonSpan = document.getElementById("mapsButtonSpan");
+
+      Object.defineProperty(mapsButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(undoButtonHistorySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
+
+      popup.checkTextOverflow();
+
+      expect(undoButtonHistory.classList.contains("w-25")).toBe(false);
+      expect(undoButtonHistory.classList.contains("w-auto")).toBe(true);
+    });
+
+    test("checkTextOverflow adjusts undoButtonSummary width when text overflows", () => {
+      popup.initializeDependencies({ state: mockState });
+
+      const undoButtonSummary = document.getElementById("undoButtonSummary");
+      const undoButtonSummarySpan = document.querySelector("#undoButtonSummary > i + span");
+      const sendButtonSpan = document.querySelector("#sendButton > i + span");
+
+      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(undoButtonSummarySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
+
+      popup.checkTextOverflow();
+
+      expect(undoButtonSummary.classList.contains("w-25")).toBe(false);
+      expect(undoButtonSummary.classList.contains("w-auto")).toBe(true);
+    });
   });
 
   describe("getWarmState", () => {
@@ -1630,12 +1668,16 @@ describe("popup.js", () => {
       const clearButton = document.getElementById("clearButton");
       const cancelButton = document.getElementById("cancelButton");
       const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const undoButtonHistory = document.getElementById("undoButtonHistory");
+      const undoButtonSummary = document.getElementById("undoButtonSummary");
 
       popup.initializeDependencies({ state: mockState });
       mockState.dispatch({ type: "HYDRATE", payload: { lastActiveTab: "favorite" } });
       clearButton.classList.replace("w-25", "w-auto");
       cancelButton.classList.replace("w-25", "w-auto");
       clearButtonSummary.classList.replace("w-25", "w-auto");
+      undoButtonHistory.classList.replace("w-25", "w-auto");
+      undoButtonSummary.classList.replace("w-25", "w-auto");
       const originalGlobalRaf = global.requestAnimationFrame;
       const originalWindowRaf = window.requestAnimationFrame;
       const requestAnimationFrameMock = jest.fn();
@@ -1645,10 +1687,12 @@ describe("popup.js", () => {
       window.dispatchEvent(new Event("i18n:changed"));
 
       expect(subtitle.textContent).toBe(chrome.i18n.getMessage("favoriteListSubtitle"));
-      [clearButton, cancelButton, clearButtonSummary].forEach((button) => {
-        expect(button.classList.contains("w-25")).toBe(true);
-        expect(button.classList.contains("w-auto")).toBe(false);
-      });
+      [clearButton, cancelButton, clearButtonSummary, undoButtonHistory, undoButtonSummary].forEach(
+        (button) => {
+          expect(button.classList.contains("w-25")).toBe(true);
+          expect(button.classList.contains("w-auto")).toBe(false);
+        }
+      );
       expect(requestAnimationFrameMock).toHaveBeenCalled();
       global.requestAnimationFrame = originalGlobalRaf;
       window.requestAnimationFrame = originalWindowRaf;

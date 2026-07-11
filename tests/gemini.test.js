@@ -81,6 +81,7 @@ describe("Gemini Component", () => {
     apiInput = global.apiInput = document.getElementById("apiInput");
     responseField = global.responseField = document.getElementById("response");
     videoSummaryButton = global.videoSummaryButton = document.getElementById("videoSummaryButton");
+    global.checkTextOverflow = jest.fn();
     geminiSummaryButton = global.geminiSummaryButton =
       document.getElementById("geminiSummaryButton");
 
@@ -429,6 +430,29 @@ describe("Gemini Component", () => {
 
         expect(apiButton.classList.contains("d-none")).toBe(true);
         expect(undoButtonSummary.classList.contains("d-none")).toBe(false);
+      });
+
+      test("should re-measure undoButtonSummary's width once it becomes visible", () => {
+        const originalRaf = global.requestAnimationFrame;
+        const rafMock = jest.fn();
+        global.requestAnimationFrame = rafMock;
+
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
+        undoButtonSummary.classList.replace("w-25", "w-auto");
+
+        clearButtonSummary.click();
+
+        expect(undoButtonSummary.classList.contains("w-25")).toBe(true);
+        expect(rafMock).toHaveBeenCalledWith(checkTextOverflow);
+
+        global.requestAnimationFrame = originalRaf;
       });
 
       test("should not show undoButtonSummary when the summary was already empty", () => {

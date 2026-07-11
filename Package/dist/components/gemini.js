@@ -132,12 +132,17 @@ class Gemini {
     });
   }
 
-  // clearButtonSummary swaps in place for undoButtonSummary for 6 seconds; if the
-  // window lapses without a click, render() falls back to the normal empty state.
+  // Swaps clearButtonSummary for undoButtonSummary; reverts after 6s if unused.
   _startUndoWindow(items, timestamp) {
     clearTimeout(this._undoTimer);
     this._pendingUndo = { items, timestamp };
     this.render(this.getStore().getSnapshot());
+
+    // undoButtonSummary was just unhidden; re-measure once it has a real layout
+    // box so a long translated label can widen it instead of wrapping.
+    undoButtonSummary.classList.remove("w-auto");
+    undoButtonSummary.classList.add("w-25");
+    if (typeof checkTextOverflow === "function") requestAnimationFrame(checkTextOverflow);
 
     this._undoTimer = setTimeout(() => {
       this._pendingUndo = null;

@@ -59,6 +59,8 @@ const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
+const undoButtonHistorySpan = document.querySelector("#undoButtonHistory > i + span");
+const undoButtonSummarySpan = document.querySelector("#undoButtonSummary > i + span");
 
 let state, remove, favorite, history, gemini, modal, payment, onboarding;
 let unsubscribeState = null;
@@ -176,6 +178,8 @@ function checkTextOverflow() {
   const cancelButtonHeight = cancelButtonSpan.offsetHeight;
   const sendButtonHeight = sendButtonSpan.offsetHeight;
   const clearButtonSummaryHeight = clearButtonSummarySpan.offsetHeight;
+  const undoButtonHistoryHeight = undoButtonHistorySpan.offsetHeight;
+  const undoButtonSummaryHeight = undoButtonSummarySpan.offsetHeight;
 
   if (clearButtonHeight > mapsButtonHeight) {
     clearButton.classList.remove("w-25");
@@ -188,6 +192,14 @@ function checkTextOverflow() {
   if (clearButtonSummaryHeight > sendButtonHeight) {
     clearButtonSummary.classList.remove("w-25");
     clearButtonSummary.classList.add("w-auto");
+  }
+  if (undoButtonHistoryHeight > mapsButtonHeight) {
+    undoButtonHistory.classList.remove("w-25");
+    undoButtonHistory.classList.add("w-auto");
+  }
+  if (undoButtonSummaryHeight > sendButtonHeight) {
+    undoButtonSummary.classList.remove("w-25");
+    undoButtonSummary.classList.add("w-auto");
   }
 }
 
@@ -490,10 +502,12 @@ window.__popupI18nChangedHandler = () => {
       gemini?.fetchAPIKey(apiKey);
     });
   }
-  [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {
-    btn.classList.remove("w-auto");
-    btn.classList.add("w-25");
-  });
+  [clearButton, cancelButton, clearButtonSummary, undoButtonHistory, undoButtonSummary].forEach(
+    (btn) => {
+      btn.classList.remove("w-auto");
+      btn.classList.add("w-25");
+    }
+  );
   // Re-measure after the new strings paint, through the same coalescing
   // scheduler renderPopup uses instead of a raw, uncoordinated rAF.
   requestAnimationFrame(checkTextOverflow);

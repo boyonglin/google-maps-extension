@@ -608,8 +608,7 @@ li {
       opacity: 0.5;
     }
 
-    // Fade out on unfavorite regardless of hover state, until the icon is
-    // swapped back once the pointer leaves the row (see fadeOutFavoriteIcon).
+    // Overrides hover opacity until fadeOutFavoriteIcon swaps the icon back.
     &.unfavoriting {
       display: flex;
       opacity: 0 !important;
@@ -696,15 +695,6 @@ li:hover .form-check-input {
   background-color: var(--danger-color);
   border: 1px solid var(--danger-color);
   color: var(--text-on-color);
-}
-
-// Locale strings can be long enough to wrap inside these narrow w-25 buttons;
-// clip instead of letting the icon and text break onto separate lines.
-#searchButtonGroup .btn,
-#geminiButtonGroup .btn {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 #exportButton:disabled {
