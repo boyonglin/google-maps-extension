@@ -84,10 +84,19 @@ class History {
 
     clearButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
+      const clearedItems = state.getSnapshot().history.items;
+
       chrome.storage.local.set({ searchHistoryList: [] });
       state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
 
       chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
+
+      if (clearedItems.length > 0) {
+        DOMUtils.showUndoToast(chrome.i18n.getMessage("historyClearedMsg"), () => {
+          chrome.storage.local.set({ searchHistoryList: clearedItems });
+          state.dispatch({ type: "HISTORY_SET", items: clearedItems });
+        });
+      }
     });
   }
 

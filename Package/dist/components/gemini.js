@@ -82,8 +82,17 @@ class Gemini {
     clearButtonSummary.addEventListener("click", () => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("clear_summary", "clearButtonSummary");
+      const { items, timestamp } = this.getStore().getSnapshot().summary;
+
       chrome.storage.local.remove(["summaryList", "timestamp"]);
       this.getStore().dispatch({ type: "SUMMARY_CLEAR" });
+
+      if (items.length > 0) {
+        DOMUtils.showUndoToast(chrome.i18n.getMessage("summaryClearedMsg"), () => {
+          chrome.storage.local.set({ summaryList: items, timestamp });
+          this.getStore().dispatch({ type: "SUMMARY_STORAGE_SET", items, timestamp });
+        });
+      }
     });
 
     videoSummaryButton.addEventListener("click", () => {

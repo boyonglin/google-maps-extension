@@ -31,6 +31,36 @@ const DOMUtils = {
 
     iconElement.addEventListener("mouseleave", restore, { once: true });
   },
+
+  _undoToastTimer: null,
+
+  // Transient toast with an Undo action after a destructive clear (history/summary).
+  // Only one at a time; auto-dismisses after 6 seconds.
+  showUndoToast(message, onUndo) {
+    document.querySelector(".undo-toast")?.remove();
+    clearTimeout(this._undoToastTimer);
+
+    const toast = document.createElement("div");
+    toast.className = "undo-toast";
+
+    const text = document.createElement("span");
+    text.textContent = message;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "undo-toast-btn";
+    button.textContent = chrome.i18n.getMessage("undoLabel");
+    button.addEventListener("click", () => {
+      clearTimeout(this._undoToastTimer);
+      toast.remove();
+      onUndo();
+    });
+
+    toast.append(text, button);
+    document.body.appendChild(toast);
+
+    this._undoToastTimer = setTimeout(() => toast.remove(), 6000);
+  },
 };
 
 if (typeof window !== "undefined") {

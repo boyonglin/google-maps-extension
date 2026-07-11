@@ -293,5 +293,17 @@
   "shortcutUnsetLabel": {
     "message": "未設定",
     "description": "tips modal suffix appended to the default shortcut when no key is assigned"
+  },
+  "undoLabel": {
+    "message": "元に戻す",
+    "description": "undo button in the clear toast"
+  },
+  "historyClearedMsg": {
+    "message": "検索履歴を消去しました",
+    "description": "toast after clearing search history"
+  },
+  "summaryClearedMsg": {
+    "message": "要約を消去しました",
+    "description": "toast after clearing the Gemini summary"
   }
 }

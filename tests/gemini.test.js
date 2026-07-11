@@ -403,6 +403,45 @@ describe("Gemini Component", () => {
       expect(geminiEmptyMessage.classList.contains("d-none")).toBe(false);
       expect(apiButton.classList.contains("d-none")).toBe(false);
     });
+
+    test("should show an undo toast when clearing a non-empty summary", () => {
+      favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+      const timestamp = Date.now();
+      state.dispatch({
+        type: "SUMMARY_STORAGE_SET",
+        items: [{ name: "Place", clue: "Info" }],
+        timestamp,
+        now: timestamp,
+      });
+      mockI18n({ summaryClearedMsg: "Summary cleared" });
+
+      clearButtonSummary.click();
+
+      expect(DOMUtils.showUndoToast).toHaveBeenCalledWith("Summary cleared", expect.any(Function));
+    });
+
+    test("should not show an undo toast when the summary was already empty", () => {
+      clearButtonSummary.click();
+
+      expect(DOMUtils.showUndoToast).not.toHaveBeenCalled();
+    });
+
+    test("should restore the summary and storage when Undo is clicked", () => {
+      favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+      const timestamp = Date.now();
+      const items = [{ name: "Place", clue: "Info" }];
+      state.dispatch({ type: "SUMMARY_STORAGE_SET", items, timestamp, now: timestamp });
+
+      clearButtonSummary.click();
+      expect(state.getSnapshot().summary.phase).toBe("empty");
+
+      const onUndo = DOMUtils.showUndoToast.mock.calls[0][1];
+      onUndo();
+
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({ summaryList: items, timestamp });
+      expect(state.getSnapshot().summary.phase).toBe("ready");
+      expect(state.getSnapshot().summary.items).toEqual(items);
+    });
   });
 
   // ============================================================================

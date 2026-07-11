@@ -39,6 +39,36 @@ const DOMUtils = {
 
     iconElement.addEventListener("mouseleave", restore, { once: true });
   },
+
+  _undoToastTimer: null,
+
+  // Transient toast with an Undo action after a destructive clear (history/summary).
+  // Only one at a time; auto-dismisses after 6 seconds.
+  showUndoToast(message, onUndo) {
+    document.querySelector(".undo-toast")?.remove();
+    clearTimeout(this._undoToastTimer);
+
+    const toast = document.createElement("div");
+    toast.className = "undo-toast";
+
+    const text = document.createElement("span");
+    text.textContent = message;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "undo-toast-btn";
+    button.textContent = chrome.i18n.getMessage("undoLabel");
+    button.addEventListener("click", () => {
+      clearTimeout(this._undoToastTimer);
+      toast.remove();
+      onUndo();
+    });
+
+    toast.append(text, button);
+    document.body.appendChild(toast);
+
+    this._undoToastTimer = setTimeout(() => toast.remove(), 6000);
+  },
 };
 
 if (typeof window !== "undefined") {
@@ -1338,10 +1368,19 @@ class History {
 
     clearButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
+      const clearedItems = state.getSnapshot().history.items;
+
       chrome.storage.local.set({ searchHistoryList: [] });
       state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
 
       chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
+
+      if (clearedItems.length > 0) {
+        DOMUtils.showUndoToast(chrome.i18n.getMessage("historyClearedMsg"), () => {
+          chrome.storage.local.set({ searchHistoryList: clearedItems });
+          state.dispatch({ type: "HISTORY_SET", items: clearedItems });
+        });
+      }
     });
   }
 
@@ -1535,8 +1574,17 @@ class Gemini {
     clearButtonSummary.addEventListener("click", () => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("clear_summary", "clearButtonSummary");
+      const { items, timestamp } = this.getStore().getSnapshot().summary;
+
       chrome.storage.local.remove(["summaryList", "timestamp"]);
       this.getStore().dispatch({ type: "SUMMARY_CLEAR" });
+
+      if (items.length > 0) {
+        DOMUtils.showUndoToast(chrome.i18n.getMessage("summaryClearedMsg"), () => {
+          chrome.storage.local.set({ summaryList: items, timestamp });
+          this.getStore().dispatch({ type: "SUMMARY_STORAGE_SET", items, timestamp });
+        });
+      }
     });
 
     videoSummaryButton.addEventListener("click", () => {

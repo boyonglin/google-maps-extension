@@ -1145,3 +1145,36 @@ html.no-expand-scroll {
     opacity: 1;
   }
 }
+
+// Undo toast shown after clearing history or a summary
+.undo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(32, 33, 36, 0.95);
+  color: #fff;
+  font-size: 13px;
+  white-space: nowrap;
+  z-index: 1080;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.undo-toast-btn {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: #8ab4f8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

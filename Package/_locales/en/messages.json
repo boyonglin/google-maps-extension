@@ -387,5 +387,17 @@
   "shortcutUnsetLabel": {
     "message": "Not Set",
     "description": "tips modal suffix appended to the default shortcut when no key is assigned"
+  },
+  "undoLabel": {
+    "message": "Undo",
+    "description": "undo button in the clear toast"
+  },
+  "historyClearedMsg": {
+    "message": "Search history cleared",
+    "description": "toast after clearing search history"
+  },
+  "summaryClearedMsg": {
+    "message": "Summary cleared",
+    "description": "toast after clearing the Gemini summary"
   }
 }

@@ -4,7 +4,7 @@
  */
 
 const DOMUtils = require("../Package/dist/utils/dom.js");
-const { mockChromeStorage } = require("./testHelpers");
+const { mockChromeStorage, mockI18n } = require("./testHelpers");
 
 describe("DOMUtils", () => {
   beforeEach(() => {
@@ -122,6 +122,60 @@ describe("DOMUtils", () => {
   });
 
   // ============================================================================
+  // showUndoToast Tests
+  // ============================================================================
+
+  describe("showUndoToast", () => {
+    beforeEach(() => {
+      document.body.innerHTML = "";
+      mockI18n({ undoLabel: "Undo" });
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    test("should render the message and an undo button", () => {
+      DOMUtils.showUndoToast("History cleared", jest.fn());
+
+      const toast = document.querySelector(".undo-toast");
+      expect(toast).not.toBeNull();
+      expect(toast.querySelector("span").textContent).toBe("History cleared");
+      expect(toast.querySelector(".undo-toast-btn").textContent).toBe("Undo");
+    });
+
+    test("should fire the callback and remove the toast when Undo is clicked", () => {
+      const onUndo = jest.fn();
+      DOMUtils.showUndoToast("History cleared", onUndo);
+
+      document.querySelector(".undo-toast-btn").click();
+
+      expect(onUndo).toHaveBeenCalledTimes(1);
+      expect(document.querySelector(".undo-toast")).toBeNull();
+    });
+
+    test("should auto-dismiss after 6 seconds without firing the callback", () => {
+      const onUndo = jest.fn();
+      DOMUtils.showUndoToast("History cleared", onUndo);
+
+      jest.advanceTimersByTime(6100);
+
+      expect(document.querySelector(".undo-toast")).toBeNull();
+      expect(onUndo).not.toHaveBeenCalled();
+    });
+
+    test("should replace a previous toast instead of stacking", () => {
+      DOMUtils.showUndoToast("First", jest.fn());
+      DOMUtils.showUndoToast("Second", jest.fn());
+
+      const toasts = document.querySelectorAll(".undo-toast");
+      expect(toasts.length).toBe(1);
+      expect(toasts[0].querySelector("span").textContent).toBe("Second");
+    });
+  });
+
+  // ============================================================================
   // Module Export Tests
   // ============================================================================
 
@@ -134,6 +188,8 @@ describe("DOMUtils", () => {
     test("should have all required methods", () => {
       expect(typeof DOMUtils.findClosestListItem).toBe("function");
       expect(typeof DOMUtils.animateFavoriteIcon).toBe("function");
+      expect(typeof DOMUtils.fadeOutFavoriteIcon).toBe("function");
+      expect(typeof DOMUtils.showUndoToast).toBe("function");
     });
   });
 });
