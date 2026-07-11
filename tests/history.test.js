@@ -345,6 +345,29 @@ describe("History Component", () => {
         expect(icon.className).toBe("bi bi-patch-plus-fill");
       });
 
+      test("should ignore a re-click on the icon while it is still fading out", () => {
+        window.Analytics = { trackFeatureClick: jest.fn() };
+
+        const li = createMockHistoryItem("Test Location", ["Test Location"]);
+        li.dataset.itemValue = "Test Location";
+        searchHistoryListContainer.appendChild(li);
+
+        const icon = li.querySelector("i");
+        icon.dispatchEvent(createMouseEvent(icon, 0));
+
+        expect(global.favorite.removeFavoriteItem).toHaveBeenCalledTimes(1);
+        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledTimes(1);
+
+        // Still "unfavoriting" (no mouseleave yet) — a second click must not
+        // trigger another removal or another analytics event.
+        icon.dispatchEvent(createMouseEvent(icon, 0));
+
+        expect(global.favorite.removeFavoriteItem).toHaveBeenCalledTimes(1);
+        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledTimes(1);
+
+        delete window.Analytics;
+      });
+
       test("should not remove a favorite when right- or middle-clicking a matched icon", () => {
         const li = createMockHistoryItem("Test Location", ["Test Location"]);
         li.dataset.itemValue = "Test Location";

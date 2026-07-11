@@ -1278,6 +1278,10 @@ class History {
         }
 
         if (event.target.classList.contains("bi")) {
+          // Icon is mid fade-out from a previous removal; ignore re-clicks
+          // until mouseleave restores it (see DOMUtils.fadeOutFavoriteIcon).
+          if (event.target.classList.contains("unfavoriting")) return;
+
           const selectedText = liElement.querySelector("span")?.textContent;
 
           if (event.target.classList.contains("matched")) {
@@ -1513,6 +1517,10 @@ class Gemini {
       const spans = liElement.querySelectorAll("span");
 
       if (event.target.classList.contains("bi")) {
+        // Icon is mid fade-out from a previous removal; ignore re-clicks
+        // until mouseleave restores it (see DOMUtils.fadeOutFavoriteIcon).
+        if (event.target.classList.contains("unfavoriting")) return;
+
         const nameSpan = spans[0].textContent;
         const reconstructedValue =
           spans.length >= 2 ? nameSpan + " @" + spans[1].textContent : nameSpan;
@@ -1520,11 +1528,15 @@ class Gemini {
         if (event.target.classList.contains("matched")) {
           // "matched" is determined by name only (ignoring clue), so the
           // stored favorite may carry a different clue than this summary
-          // item's own reconstructed value — resolve the actual stored
-          // entry by name instead of removing the reconstructed string.
+          // item's own reconstructed value. Prefer an exact name+clue match
+          // first — that's unambiguously this item — and only fall back to
+          // matching by name when no exact match exists (e.g. this item's
+          // stored favorite was saved with a different clue).
           const favoriteItems = this.getStore().getSnapshot().favorite.items;
           const storedItem =
-            favoriteItems.find((item) => item.split(" @")[0] === nameSpan) || reconstructedValue;
+            favoriteItems.find((item) => item === reconstructedValue) ||
+            favoriteItems.find((item) => item.split(" @")[0] === nameSpan) ||
+            reconstructedValue;
 
           if (window.Analytics)
             window.Analytics.trackFeatureClick(

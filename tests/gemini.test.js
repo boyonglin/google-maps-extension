@@ -284,6 +284,34 @@ describe("Gemini Component", () => {
       );
     });
 
+    test("should remove the exact matching entry, not an unrelated same-name favorite, when two favorites share a name but differ by clue", async () => {
+      // Two stored favorites share the name "Restaurant" but have different
+      // clues. The clicked summary item's own name+clue exactly matches the
+      // second entry, so that's the one that must be removed — not whichever
+      // same-named entry happens to come first in the array.
+      state.dispatch({
+        type: "FAVORITE_SET",
+        items: ["Restaurant @Elsewhere", "Restaurant @Downtown"],
+      });
+
+      const mockItem = createMockSummaryItem("Restaurant", "Downtown");
+      summaryListContainer.appendChild(mockItem);
+      const icon = mockItem.querySelector("i");
+      icon.className = "bi bi-patch-check-fill matched";
+
+      const clickEvent = new MouseEvent("click", { bubbles: true });
+      Object.defineProperty(clickEvent, "target", { value: icon, enumerable: true });
+
+      summaryListContainer.dispatchEvent(clickEvent);
+
+      await wait(50);
+
+      expect(favorite.removeFavoriteItem).toHaveBeenCalledWith(
+        "Restaurant @Downtown",
+        expect.any(MouseEvent)
+      );
+    });
+
     test("should fade the icon out immediately, restoring it only after the pointer leaves the icon", () => {
       const mockItem = createMockSummaryItem("Restaurant", "Downtown");
       summaryListContainer.appendChild(mockItem);
@@ -301,6 +329,35 @@ describe("Gemini Component", () => {
       icon.dispatchEvent(new Event("mouseleave"));
 
       expect(icon.className).toBe("bi bi-patch-plus-fill");
+    });
+
+    test("should ignore a re-click on the icon while it is still fading out", () => {
+      window.Analytics = { trackFeatureClick: jest.fn() };
+
+      const mockItem = createMockSummaryItem("Restaurant", "Downtown");
+      summaryListContainer.appendChild(mockItem);
+      const icon = mockItem.querySelector("i");
+      icon.className = "bi bi-patch-check-fill matched";
+
+      const clickEvent = () => {
+        const event = new MouseEvent("click", { bubbles: true });
+        Object.defineProperty(event, "target", { value: icon, enumerable: true });
+        summaryListContainer.dispatchEvent(event);
+      };
+
+      clickEvent();
+
+      expect(favorite.removeFavoriteItem).toHaveBeenCalledTimes(1);
+      expect(window.Analytics.trackFeatureClick).toHaveBeenCalledTimes(1);
+
+      // Still "unfavoriting" (no mouseleave yet) — a second click must not
+      // trigger another removal or another analytics event.
+      clickEvent();
+
+      expect(favorite.removeFavoriteItem).toHaveBeenCalledTimes(1);
+      expect(window.Analytics.trackFeatureClick).toHaveBeenCalledTimes(1);
+
+      delete window.Analytics;
     });
 
     test("should remove spring animation after 500ms", async () => {

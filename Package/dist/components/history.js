@@ -27,6 +27,10 @@ class History {
         }
 
         if (event.target.classList.contains("bi")) {
+          // Icon is mid fade-out from a previous removal; ignore re-clicks
+          // until mouseleave restores it (see DOMUtils.fadeOutFavoriteIcon).
+          if (event.target.classList.contains("unfavoriting")) return;
+
           const selectedText = liElement.querySelector("span")?.textContent;
 
           if (event.target.classList.contains("matched")) {

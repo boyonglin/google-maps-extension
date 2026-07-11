@@ -53,8 +53,10 @@
       .map((item) => item.trim())
       .filter((item) => item !== "");
 
-    // De-duplicate across nested elements, repeated model output, and
-    // subsequent auto-attach runs in the same document.
+    // Snapshot once so repeat runs skip candidates already pinned. Not updated
+    // as this run adds pins, so the same name in separate sibling elements can
+    // still each get a pin (only per-element repeats are caught, via
+    // processedCandidates below).
     const existingCandidates = getExistingCandidateKeys();
 
     function attachMapLink(element) {
