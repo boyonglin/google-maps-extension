@@ -22,7 +22,7 @@ global.ContextMenuUtil = {
 };
 
 global.measureContentSize = jest.fn();
-global.checkTextOverflow = jest.fn();
+global.scheduleTextOverflowCheck = jest.fn();
 global.delayMeasurement = jest.fn();
 
 // Mock fetch for YouTube video scraping
@@ -81,7 +81,7 @@ describe("Gemini Component", () => {
     apiInput = global.apiInput = document.getElementById("apiInput");
     responseField = global.responseField = document.getElementById("response");
     videoSummaryButton = global.videoSummaryButton = document.getElementById("videoSummaryButton");
-    global.checkTextOverflow = jest.fn();
+    global.scheduleTextOverflowCheck = jest.fn();
     geminiSummaryButton = global.geminiSummaryButton =
       document.getElementById("geminiSummaryButton");
 
@@ -432,11 +432,10 @@ describe("Gemini Component", () => {
         expect(undoButtonSummary.classList.contains("d-none")).toBe(false);
       });
 
-      test("should re-measure undoButtonSummary's width once it becomes visible", () => {
-        const originalRaf = global.requestAnimationFrame;
-        const rafMock = jest.fn();
-        global.requestAnimationFrame = rafMock;
-
+      test("should trigger a text-overflow re-check once undoButtonSummary becomes visible", () => {
+        // _startUndoWindow calls this.render() directly rather than going through
+        // state.dispatch(), so renderPopup's own auto re-check never sees this
+        // transition — the component has to trigger it itself.
         favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
         const timestamp = Date.now();
         state.dispatch({
@@ -445,14 +444,10 @@ describe("Gemini Component", () => {
           timestamp,
           now: timestamp,
         });
-        undoButtonSummary.classList.replace("w-25", "w-auto");
 
         clearButtonSummary.click();
 
-        expect(undoButtonSummary.classList.contains("w-25")).toBe(true);
-        expect(rafMock).toHaveBeenCalledWith(checkTextOverflow);
-
-        global.requestAnimationFrame = originalRaf;
+        expect(scheduleTextOverflowCheck).toHaveBeenCalled();
       });
 
       test("should not show undoButtonSummary when the summary was already empty", () => {

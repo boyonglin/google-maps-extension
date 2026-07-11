@@ -103,11 +103,10 @@ class History {
     this._pendingUndo = clearedItems;
     this.render(state.getSnapshot());
 
-    // undoButtonHistory was just unhidden; re-measure once it has a real layout
-    // box so a long translated label can widen it instead of wrapping.
-    undoButtonHistory.classList.remove("w-auto");
-    undoButtonHistory.classList.add("w-25");
-    if (typeof checkTextOverflow === "function") requestAnimationFrame(checkTextOverflow);
+    // This render() call bypasses renderPopup() (deliberately — _pendingUndo
+    // isn't reducer state), so its own scheduleTextOverflowCheck() hook never
+    // fires for it. Trigger it directly so undoButtonHistory gets measured.
+    if (typeof scheduleTextOverflowCheck === "function") scheduleTextOverflowCheck();
 
     this._undoTimer = setTimeout(() => {
       this._pendingUndo = null;

@@ -203,6 +203,18 @@ function checkTextOverflow() {
   }
 }
 
+// Coalesce repeated triggers (e.g. a dispatch followed by a direct component
+// render in the same tick) into a single measurement on the next frame.
+let textOverflowFrame = null;
+
+function scheduleTextOverflowCheck() {
+  if (textOverflowFrame != null) cancelAnimationFrame(textOverflowFrame);
+  textOverflowFrame = requestAnimationFrame(() => {
+    textOverflowFrame = null;
+    checkTextOverflow();
+  });
+}
+
 async function getWarmState(retries = 3, delay = 200) {
   return new Promise((resolve) => {
     if (!chrome.runtime?.id) {
@@ -387,12 +399,10 @@ function renderPopup(snapshot = state.getSnapshot(), action = null, force = fals
   if (deleteModeChanged || activeTabChanged) {
     remove.render(snapshot);
   }
-  if (activeTabChanged) {
-    // The panel that just became visible was d-none at hydrate time, so its
-    // buttons measured 0 height then and could never be promoted to w-auto —
-    // re-check now that it has a real layout box.
-    requestAnimationFrame(checkTextOverflow);
-  }
+  // Any of the above can newly reveal a width-adaptive button (tab switch,
+  // summary ready, undo pending clearing on restore, delete mode…) — always
+  // re-check instead of hooking every individual state transition by hand.
+  scheduleTextOverflowCheck();
 
   deleteListButton.disabled = tab === "gemini";
   if (tab !== "gemini") videoSummaryButton.classList.add("d-none");
@@ -508,15 +518,15 @@ window.__popupI18nChangedHandler = () => {
       gemini?.fetchAPIKey(apiKey);
     });
   }
+  // A shorter translation may no longer need the widened layout — reset so
+  // renderPopup's scheduleTextOverflowCheck() (already triggered above) can
+  // shrink it back instead of leaving a stale w-auto from the old language.
   [clearButton, cancelButton, clearButtonSummary, undoButtonHistory, undoButtonSummary].forEach(
     (btn) => {
       btn.classList.remove("w-auto");
       btn.classList.add("w-25");
     }
   );
-  // Re-measure after the new strings paint, through the same coalescing
-  // scheduler renderPopup uses instead of a raw, uncoordinated rAF.
-  requestAnimationFrame(checkTextOverflow);
   scheduleContentMeasurement();
 };
 window.addEventListener("i18n:changed", window.__popupI18nChangedHandler);
@@ -696,6 +706,7 @@ if (typeof module !== "undefined" && module.exports) {
     hydratePopup,
     renderPopup,
     checkTextOverflow,
+    scheduleTextOverflowCheck,
     getWarmState,
     fetchData,
     currentDimensions,

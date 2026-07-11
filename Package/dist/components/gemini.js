@@ -138,11 +138,10 @@ class Gemini {
     this._pendingUndo = { items, timestamp };
     this.render(this.getStore().getSnapshot());
 
-    // undoButtonSummary was just unhidden; re-measure once it has a real layout
-    // box so a long translated label can widen it instead of wrapping.
-    undoButtonSummary.classList.remove("w-auto");
-    undoButtonSummary.classList.add("w-25");
-    if (typeof checkTextOverflow === "function") requestAnimationFrame(checkTextOverflow);
+    // This render() call bypasses renderPopup() (deliberately — _pendingUndo
+    // isn't reducer state), so its own scheduleTextOverflowCheck() hook never
+    // fires for it. Trigger it directly so undoButtonSummary gets measured.
+    if (typeof scheduleTextOverflowCheck === "function") scheduleTextOverflowCheck();
 
     this._undoTimer = setTimeout(() => {
       this._pendingUndo = null;

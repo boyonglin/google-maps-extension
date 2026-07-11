@@ -55,7 +55,7 @@ describe("History Component", () => {
     global.clearButton = document.getElementById("clearButton");
     global.undoButtonHistory = document.getElementById("undoButtonHistory");
     global.emptyMessage = document.getElementById("emptyMessage");
-    global.checkTextOverflow = jest.fn();
+    global.scheduleTextOverflowCheck = jest.fn();
 
     global.state = new State();
     global.state.buildSearchUrl = jest.fn();
@@ -648,20 +648,15 @@ describe("History Component", () => {
           expect(undoButtonHistory.classList.contains("d-none")).toBe(false);
         });
 
-        test("should re-measure undoButtonHistory's width once it becomes visible", () => {
-          const originalRaf = global.requestAnimationFrame;
-          const rafMock = jest.fn();
-          global.requestAnimationFrame = rafMock;
-
+        test("should trigger a text-overflow re-check once undoButtonHistory becomes visible", () => {
+          // _startUndoWindow calls this.render() directly rather than going through
+          // state.dispatch(), so renderPopup's own auto re-check never sees this
+          // transition — the component has to trigger it itself.
           state.dispatch({ type: "HISTORY_SET", items: ["Tokyo", "Paris"] });
-          undoButtonHistory.classList.replace("w-25", "w-auto");
 
           clearButton.dispatchEvent(new Event("click"));
 
-          expect(undoButtonHistory.classList.contains("w-25")).toBe(true);
-          expect(rafMock).toHaveBeenCalledWith(checkTextOverflow);
-
-          global.requestAnimationFrame = originalRaf;
+          expect(scheduleTextOverflowCheck).toHaveBeenCalled();
         });
 
         test("should not show undoButtonHistory when history was already empty", () => {

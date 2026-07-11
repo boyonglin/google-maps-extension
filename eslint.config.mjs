@@ -32,6 +32,7 @@ const popupSharedGlobals = {
   fetchData: "readonly",
   showPage: "readonly",
   checkTextOverflow: "readonly",
+  scheduleTextOverflowCheck: "readonly",
   measureContentSize: "readonly",
   measureContentSizeLast: "readonly",
   delayMeasurement: "readonly",

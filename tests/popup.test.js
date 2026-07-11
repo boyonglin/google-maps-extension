@@ -405,15 +405,69 @@ describe("popup.js", () => {
       // The inactive tab's buttons were d-none at hydrate time (0 offsetHeight),
       // so they were never correctly measured — switching to that tab must
       // trigger a fresh check now that it has a real layout box.
-      const originalRaf = global.requestAnimationFrame;
-      const rafMock = jest.fn();
-      global.requestAnimationFrame = rafMock;
+      const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+      const sendButtonSpan = document.querySelector("#sendButton > i + span");
+
+      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(clearButtonSummarySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
 
       showPage("gemini");
 
-      expect(rafMock).toHaveBeenCalledWith(popup.checkTextOverflow);
+      expect(clearButtonSummary.classList.contains("w-25")).toBe(false);
+      expect(clearButtonSummary.classList.contains("w-auto")).toBe(true);
+    });
+  });
 
-      global.requestAnimationFrame = originalRaf;
+  describe("renderPopup re-checks text overflow on any state change", () => {
+    beforeEach(() => {
+      popup.initializeDependencies({ state: mockState });
+      mockState.dispatch({ type: "HYDRATE", payload: {} });
+    });
+
+    test("re-checks clearButtonSummary when a generate finishes for the first time (SUMMARY_SUCCESS)", () => {
+      const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+      const sendButtonSpan = document.querySelector("#sendButton > i + span");
+      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(clearButtonSummarySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
+
+      mockState.dispatch({ type: "SUMMARY_START", requestId: "req-1", originTabId: 1 });
+      mockState.dispatch({
+        type: "SUMMARY_SUCCESS",
+        requestId: "req-1",
+        items: [{ name: "Place", clue: "Info" }],
+        timestamp: Date.now(),
+      });
+
+      expect(clearButtonSummary.classList.contains("w-auto")).toBe(true);
+    });
+
+    test("re-checks clearButtonSummary when a summary is restored from storage (SUMMARY_STORAGE_SET)", () => {
+      const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+      const sendButtonSpan = document.querySelector("#sendButton > i + span");
+      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(clearButtonSummarySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
+
+      const timestamp = Date.now();
+      mockState.dispatch({
+        type: "SUMMARY_STORAGE_SET",
+        items: [{ name: "Place", clue: "Info" }],
+        timestamp,
+        now: timestamp,
+      });
+
+      expect(clearButtonSummary.classList.contains("w-auto")).toBe(true);
     });
   });
 
