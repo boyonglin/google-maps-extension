@@ -103,11 +103,6 @@ class History {
     this._pendingUndo = clearedItems;
     this.render(state.getSnapshot());
 
-    // This render() call bypasses renderPopup() (deliberately — _pendingUndo
-    // isn't reducer state), so its own scheduleTextOverflowCheck() hook never
-    // fires for it. Trigger it directly so undoButtonHistory gets measured.
-    if (typeof scheduleTextOverflowCheck === "function") scheduleTextOverflowCheck();
-
     this._undoTimer = setTimeout(() => {
       this._pendingUndo = null;
       this.render(state.getSnapshot());

@@ -1354,11 +1354,6 @@ class History {
     this._pendingUndo = clearedItems;
     this.render(state.getSnapshot());
 
-    // This render() call bypasses renderPopup() (deliberately — _pendingUndo
-    // isn't reducer state), so its own scheduleTextOverflowCheck() hook never
-    // fires for it. Trigger it directly so undoButtonHistory gets measured.
-    if (typeof scheduleTextOverflowCheck === "function") scheduleTextOverflowCheck();
-
     this._undoTimer = setTimeout(() => {
       this._pendingUndo = null;
       this.render(state.getSnapshot());
@@ -1624,11 +1619,6 @@ class Gemini {
     clearTimeout(this._undoTimer);
     this._pendingUndo = { items, timestamp };
     this.render(this.getStore().getSnapshot());
-
-    // This render() call bypasses renderPopup() (deliberately — _pendingUndo
-    // isn't reducer state), so its own scheduleTextOverflowCheck() hook never
-    // fires for it. Trigger it directly so undoButtonSummary gets measured.
-    if (typeof scheduleTextOverflowCheck === "function") scheduleTextOverflowCheck();
 
     this._undoTimer = setTimeout(() => {
       this._pendingUndo = null;
@@ -2908,8 +2898,6 @@ const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
-const undoButtonHistorySpan = document.querySelector("#undoButtonHistory > i + span");
-const undoButtonSummarySpan = document.querySelector("#undoButtonSummary > i + span");
 
 let state, remove, favorite, history, gemini, modal, payment, onboarding;
 let unsubscribeState = null;
@@ -3027,8 +3015,6 @@ function checkTextOverflow() {
   const cancelButtonHeight = cancelButtonSpan.offsetHeight;
   const sendButtonHeight = sendButtonSpan.offsetHeight;
   const clearButtonSummaryHeight = clearButtonSummarySpan.offsetHeight;
-  const undoButtonHistoryHeight = undoButtonHistorySpan.offsetHeight;
-  const undoButtonSummaryHeight = undoButtonSummarySpan.offsetHeight;
 
   if (clearButtonHeight > mapsButtonHeight) {
     clearButton.classList.remove("w-25");
@@ -3042,14 +3028,6 @@ function checkTextOverflow() {
     clearButtonSummary.classList.remove("w-25");
     clearButtonSummary.classList.add("w-auto");
   }
-  if (undoButtonHistoryHeight > mapsButtonHeight) {
-    undoButtonHistory.classList.remove("w-25");
-    undoButtonHistory.classList.add("w-auto");
-  }
-  if (undoButtonSummaryHeight > sendButtonHeight) {
-    undoButtonSummary.classList.remove("w-25");
-    undoButtonSummary.classList.add("w-auto");
-  }
 }
 
 // Coalesce repeated triggers (e.g. a dispatch followed by a direct component
@@ -3062,6 +3040,10 @@ function scheduleTextOverflowCheck() {
     textOverflowFrame = null;
     checkTextOverflow();
   });
+}
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => scheduleTextOverflowCheck());
 }
 
 async function getWarmState(retries = 3, delay = 200) {

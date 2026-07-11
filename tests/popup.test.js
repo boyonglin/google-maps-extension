@@ -471,7 +471,46 @@ describe("popup.js", () => {
     });
   });
 
+  describe("web font loading", () => {
+    test("re-checks text overflow once the custom web font (document.fonts.ready) resolves", async () => {
+      // A check that ran before Satoshi-Variable finished swapping in measured
+      // fallback-font widths — text that fit the fallback can still wrap once
+      // the real font lands, with nothing re-checking after the fact.
+      let resolveFontsReady;
+      document.fonts = {
+        ready: new Promise((resolve) => {
+          resolveFontsReady = resolve;
+        }),
+      };
+
+      jest.resetModules();
+      const freshPopup = require("../Package/dist/popup");
+      freshPopup.initializeDependencies({ state: mockState });
+
+      const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+      const sendButtonSpan = document.querySelector("#sendButton > i + span");
+      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(clearButtonSummarySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
+
+      resolveFontsReady();
+      await flushPromises();
+
+      expect(clearButtonSummary.classList.contains("w-auto")).toBe(true);
+
+      delete document.fonts;
+    });
+  });
+
   describe("checkTextOverflow", () => {
+    test("uses the shared non-wrapping icon-label layout for both Undo buttons", () => {
+      expect(document.getElementById("undoButtonHistory").classList).toContain("btn-icon-label");
+      expect(document.getElementById("undoButtonSummary").classList).toContain("btn-icon-label");
+    });
+
     test("checkTextOverflow adjusts button width classes based on content height", () => {
       popup.initializeDependencies({ state: mockState });
 
@@ -487,44 +526,6 @@ describe("popup.js", () => {
 
       expect(clearButton.classList.contains("w-25")).toBe(false);
       expect(clearButton.classList.contains("w-auto")).toBe(true);
-    });
-
-    test("checkTextOverflow adjusts undoButtonHistory width when text overflows", () => {
-      popup.initializeDependencies({ state: mockState });
-
-      const undoButtonHistory = document.getElementById("undoButtonHistory");
-      const undoButtonHistorySpan = document.querySelector("#undoButtonHistory > i + span");
-      const mapsButtonSpan = document.getElementById("mapsButtonSpan");
-
-      Object.defineProperty(mapsButtonSpan, "offsetHeight", { value: 20, configurable: true });
-      Object.defineProperty(undoButtonHistorySpan, "offsetHeight", {
-        value: 40,
-        configurable: true,
-      });
-
-      popup.checkTextOverflow();
-
-      expect(undoButtonHistory.classList.contains("w-25")).toBe(false);
-      expect(undoButtonHistory.classList.contains("w-auto")).toBe(true);
-    });
-
-    test("checkTextOverflow adjusts undoButtonSummary width when text overflows", () => {
-      popup.initializeDependencies({ state: mockState });
-
-      const undoButtonSummary = document.getElementById("undoButtonSummary");
-      const undoButtonSummarySpan = document.querySelector("#undoButtonSummary > i + span");
-      const sendButtonSpan = document.querySelector("#sendButton > i + span");
-
-      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
-      Object.defineProperty(undoButtonSummarySpan, "offsetHeight", {
-        value: 40,
-        configurable: true,
-      });
-
-      popup.checkTextOverflow();
-
-      expect(undoButtonSummary.classList.contains("w-25")).toBe(false);
-      expect(undoButtonSummary.classList.contains("w-auto")).toBe(true);
     });
   });
 

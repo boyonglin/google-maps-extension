@@ -619,6 +619,13 @@ li:hover .form-check-input {
 }
 
 /* buttons */
+.btn-icon-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
 .nav-link {
   padding-right: 0.75rem;
   padding-left: 0.75rem;

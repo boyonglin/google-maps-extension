@@ -22,7 +22,6 @@ global.ContextMenuUtil = {
 };
 
 global.measureContentSize = jest.fn();
-global.scheduleTextOverflowCheck = jest.fn();
 global.delayMeasurement = jest.fn();
 
 // Mock fetch for YouTube video scraping
@@ -81,7 +80,6 @@ describe("Gemini Component", () => {
     apiInput = global.apiInput = document.getElementById("apiInput");
     responseField = global.responseField = document.getElementById("response");
     videoSummaryButton = global.videoSummaryButton = document.getElementById("videoSummaryButton");
-    global.scheduleTextOverflowCheck = jest.fn();
     geminiSummaryButton = global.geminiSummaryButton =
       document.getElementById("geminiSummaryButton");
 
@@ -430,24 +428,6 @@ describe("Gemini Component", () => {
 
         expect(apiButton.classList.contains("d-none")).toBe(true);
         expect(undoButtonSummary.classList.contains("d-none")).toBe(false);
-      });
-
-      test("should trigger a text-overflow re-check once undoButtonSummary becomes visible", () => {
-        // _startUndoWindow calls this.render() directly rather than going through
-        // state.dispatch(), so renderPopup's own auto re-check never sees this
-        // transition — the component has to trigger it itself.
-        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
-        const timestamp = Date.now();
-        state.dispatch({
-          type: "SUMMARY_STORAGE_SET",
-          items: [{ name: "Place", clue: "Info" }],
-          timestamp,
-          now: timestamp,
-        });
-
-        clearButtonSummary.click();
-
-        expect(scheduleTextOverflowCheck).toHaveBeenCalled();
       });
 
       test("should not show undoButtonSummary when the summary was already empty", () => {

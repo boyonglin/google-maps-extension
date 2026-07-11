@@ -138,11 +138,6 @@ class Gemini {
     this._pendingUndo = { items, timestamp };
     this.render(this.getStore().getSnapshot());
 
-    // This render() call bypasses renderPopup() (deliberately — _pendingUndo
-    // isn't reducer state), so its own scheduleTextOverflowCheck() hook never
-    // fires for it. Trigger it directly so undoButtonSummary gets measured.
-    if (typeof scheduleTextOverflowCheck === "function") scheduleTextOverflowCheck();
-
     this._undoTimer = setTimeout(() => {
       this._pendingUndo = null;
       this.render(this.getStore().getSnapshot());

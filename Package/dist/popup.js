@@ -59,8 +59,6 @@ const mapsButtonSpan = document.getElementById("mapsButtonSpan");
 const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
 const sendButtonSpan = document.querySelector("#sendButton > i + span");
 const paymentSpan = document.querySelector("#paymentButton > span");
-const undoButtonHistorySpan = document.querySelector("#undoButtonHistory > i + span");
-const undoButtonSummarySpan = document.querySelector("#undoButtonSummary > i + span");
 
 let state, remove, favorite, history, gemini, modal, payment, onboarding;
 let unsubscribeState = null;
@@ -178,8 +176,6 @@ function checkTextOverflow() {
   const cancelButtonHeight = cancelButtonSpan.offsetHeight;
   const sendButtonHeight = sendButtonSpan.offsetHeight;
   const clearButtonSummaryHeight = clearButtonSummarySpan.offsetHeight;
-  const undoButtonHistoryHeight = undoButtonHistorySpan.offsetHeight;
-  const undoButtonSummaryHeight = undoButtonSummarySpan.offsetHeight;
 
   if (clearButtonHeight > mapsButtonHeight) {
     clearButton.classList.remove("w-25");
@@ -193,14 +189,6 @@ function checkTextOverflow() {
     clearButtonSummary.classList.remove("w-25");
     clearButtonSummary.classList.add("w-auto");
   }
-  if (undoButtonHistoryHeight > mapsButtonHeight) {
-    undoButtonHistory.classList.remove("w-25");
-    undoButtonHistory.classList.add("w-auto");
-  }
-  if (undoButtonSummaryHeight > sendButtonHeight) {
-    undoButtonSummary.classList.remove("w-25");
-    undoButtonSummary.classList.add("w-auto");
-  }
 }
 
 // Coalesce repeated triggers (e.g. a dispatch followed by a direct component
@@ -213,6 +201,10 @@ function scheduleTextOverflowCheck() {
     textOverflowFrame = null;
     checkTextOverflow();
   });
+}
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => scheduleTextOverflowCheck());
 }
 
 async function getWarmState(retries = 3, delay = 200) {
