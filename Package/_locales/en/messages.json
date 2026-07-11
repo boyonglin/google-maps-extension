@@ -127,7 +127,7 @@
     "description": "modal tips quick search key label"
   },
   "searchBarKeyLabel": {
-    "message": "Search Bar",
+    "message": "Open Search Bar",
     "description": "modal tips search bar key label"
   },
   "autoAttachKeyLabel": {
@@ -383,5 +383,9 @@
   "tidyLocations" : {
     "message": "Tidy Locations",
     "description": "context menu tidy locations option"
+  },
+  "shortcutUnsetLabel": {
+    "message": "Not Set",
+    "description": "tips modal suffix appended to the default shortcut when no key is assigned"
   }
 }

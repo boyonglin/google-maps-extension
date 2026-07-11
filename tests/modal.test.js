@@ -38,6 +38,12 @@ const setupGlobalDOMElements = () => {
         <p class="modal-body-configure"></p>
         <p class="modal-body-configure"></p>
         <p class="modal-body-configure"></p>
+        <div id="tipsModal">
+            <p class="text-muted" data-command="_execute_action">Alt+Shift+S</p>
+            <p class="text-muted premium-only" data-command="auto-attach">Alt+S</p>
+            <p class="text-muted" data-command="run-directions">Alt+R</p>
+            <p class="text-muted" data-command="run-search">Ctrl+Shift+S</p>
+        </div>
         <p id="geminiEmptyMessage" class="d-none"></p>
         <button id="sendButton"></button>
         <div id="incognitoToggle" class="settings-toggle-item">
@@ -242,6 +248,112 @@ describe("Modal Component - Full Coverage", () => {
     // is captured in closure when addModalListener() runs, making it hard to mock.
     // Lines 28-29 (Opera URL) remain uncovered. This is acceptable as it's just
     // browser detection logic that's better tested in E2E tests.
+  });
+
+  // addModalListener - Shortcuts Display (actual assignments)
+
+  describe("addModalListener - Shortcuts Display", () => {
+    const getRow = (command) => document.querySelector(`#tipsModal p[data-command="${command}"]`);
+
+    test("should show the actually assigned shortcut for each command", async () => {
+      chrome.commands.getAll.mockImplementation((callback) =>
+        callback([
+          { name: "run-search", shortcut: "Ctrl+Shift+S" },
+          { name: "auto-attach", shortcut: "Alt+S" },
+        ])
+      );
+
+      await modalInstance.addModalListener();
+
+      expect(getRow("run-search").textContent).toBe("Ctrl+Shift+S");
+      expect(getRow("auto-attach").textContent).toBe("Alt+S");
+    });
+
+    test("should append the Not Set suffix to the default text when no key is assigned", async () => {
+      chrome.i18n.getMessage.mockImplementation((key) =>
+        key === "shortcutUnsetLabel" ? "Not Set" : key
+      );
+      chrome.commands.getAll.mockImplementation((callback) =>
+        callback([{ name: "auto-attach", shortcut: "" }])
+      );
+
+      await modalInstance.addModalListener();
+
+      // "Alt+S" is the row's original (default) text from popup.html
+      expect(getRow("auto-attach").textContent).toBe("Alt+S (Not Set)");
+    });
+
+    test("should not stack the Not Set suffix across repeated opens while still unassigned", async () => {
+      chrome.i18n.getMessage.mockImplementation((key) =>
+        key === "shortcutUnsetLabel" ? "Not Set" : key
+      );
+      chrome.commands.getAll.mockImplementation((callback) =>
+        callback([{ name: "auto-attach", shortcut: "" }])
+      );
+
+      await modalInstance.addModalListener();
+      document.getElementById("tipsModal").dispatchEvent(new Event("show.bs.modal"));
+      document.getElementById("tipsModal").dispatchEvent(new Event("show.bs.modal"));
+
+      expect(getRow("auto-attach").textContent).toBe("Alt+S (Not Set)");
+    });
+
+    test("should show the plain assigned shortcut once a key is assigned again", async () => {
+      chrome.i18n.getMessage.mockImplementation((key) =>
+        key === "shortcutUnsetLabel" ? "Not Set" : key
+      );
+      chrome.commands.getAll.mockImplementation((callback) =>
+        callback([{ name: "auto-attach", shortcut: "" }])
+      );
+      await modalInstance.addModalListener();
+      expect(getRow("auto-attach").textContent).toBe("Alt+S (Not Set)");
+
+      // User assigns a key, then reopens the tips modal
+      chrome.commands.getAll.mockImplementation((callback) =>
+        callback([{ name: "auto-attach", shortcut: "Alt+S" }])
+      );
+      document.getElementById("tipsModal").dispatchEvent(new Event("show.bs.modal"));
+
+      expect(getRow("auto-attach").textContent).toBe("Alt+S");
+    });
+
+    test("should show the Mac half of the default text when the platform is mac", async () => {
+      chrome.runtime.getPlatformInfo.mockImplementation((callback) => callback({ os: "mac" }));
+      chrome.i18n.getMessage.mockImplementation((key) =>
+        key === "shortcutUnsetLabel" ? "Not Set" : key
+      );
+      getRow("run-directions").textContent = "Alt+R / ⌥+R";
+      chrome.commands.getAll.mockImplementation((callback) =>
+        callback([{ name: "run-directions", shortcut: "" }])
+      );
+
+      await modalInstance.addModalListener();
+
+      expect(getRow("run-directions").textContent).toBe("⌥+R (Not Set)");
+    });
+
+    test("should show the Windows/Linux half of the default text on other platforms", async () => {
+      chrome.runtime.getPlatformInfo.mockImplementation((callback) => callback({ os: "win" }));
+      chrome.i18n.getMessage.mockImplementation((key) =>
+        key === "shortcutUnsetLabel" ? "Not Set" : key
+      );
+      getRow("run-directions").textContent = "Alt+R / ⌥+R";
+      chrome.commands.getAll.mockImplementation((callback) =>
+        callback([{ name: "run-directions", shortcut: "" }])
+      );
+
+      await modalInstance.addModalListener();
+
+      expect(getRow("run-directions").textContent).toBe("Alt+R (Not Set)");
+    });
+
+    test("should ignore commands without a matching row", async () => {
+      chrome.commands.getAll.mockImplementation((callback) =>
+        callback([{ name: "unknown-command", shortcut: "Alt+X" }])
+      );
+
+      await expect(modalInstance.addModalListener()).resolves.not.toThrow();
+    });
   });
 
   // addModalListener - API Form Submission
