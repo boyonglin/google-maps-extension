@@ -1644,6 +1644,11 @@ class Gemini {
     this._pendingUndo = null;
     if (!pending) return;
 
+    // SUMMARY_STORAGE_SET itself is a no-op while generating (see reducer), but
+    // the storage write isn't guarded there — skip it too, or a failed generate
+    // leaves stale pre-clear data in storage that resurrects on next popup open.
+    if (this.getStore().getSnapshot().summary.phase === "generating") return;
+
     chrome.storage.local.set({ summaryList: pending.items, timestamp: pending.timestamp });
     this.getStore().dispatch({
       type: "SUMMARY_STORAGE_SET",
@@ -1973,7 +1978,9 @@ class Gemini {
     const { summary, api, favorite: favoriteState } = snapshot;
     const ready = summary.phase === "ready" && summary.items.length > 0;
     const generating = summary.phase === "generating";
-    const undoing = Boolean(this._pendingUndo) && !ready;
+    // Starting a new generate consumes the undo window: SUMMARY_STORAGE_SET is a
+    // no-op while generating, so a still-visible Undo button would just be a dead click.
+    const undoing = Boolean(this._pendingUndo) && !ready && !generating;
     let messageKey = "geminiEmptyMsg";
     let substitutions;
 

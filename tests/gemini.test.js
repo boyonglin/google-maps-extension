@@ -515,6 +515,47 @@ describe("Gemini Component", () => {
         expect(chrome.storage.local.set).not.toHaveBeenCalled();
         expect(state.getSnapshot().summary.phase).toBe("empty");
       });
+
+      test("should hide undoButtonSummary once a new generate starts, even with a pending undo", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
+        clearButtonSummary.click();
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(false);
+
+        state.dispatch({ type: "SUMMARY_START", requestId: "req-1", originTabId: 1 });
+
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
+        expect(apiButton.classList.contains("d-none")).toBe(false);
+      });
+
+      test("should not persist stale pre-clear data when Undo is clicked mid-generate", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        const staleItems = [{ name: "Old Place", clue: "Old Info" }];
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: staleItems,
+          timestamp,
+          now: timestamp,
+        });
+        clearButtonSummary.click();
+        state.dispatch({ type: "SUMMARY_START", requestId: "req-1", originTabId: 1 });
+        chrome.storage.local.set.mockClear();
+
+        // undoButtonSummary is hidden by render(), but the click handler itself
+        // must also refuse to act — a stray click event (or a race between the
+        // hide and a queued click) shouldn't be able to write stale data.
+        undoButtonSummary.click();
+
+        expect(chrome.storage.local.set).not.toHaveBeenCalled();
+        expect(state.getSnapshot().summary.phase).toBe("generating");
+      });
     });
   });
 
