@@ -31,6 +31,7 @@ const AUTO_ATTACH_BADGE_TEXT = {
   loading: "…",
   error: "!",
 };
+const AUTO_ATTACH_BADGE_STATES = new Set(["loading", "error", "success"]);
 const activeAutoAttachRuns = new Map();
 let nextAutoAttachRunId = 0;
 
@@ -56,7 +57,7 @@ function formatBadgeCount(count) {
 }
 
 function setAutoAttachBadge(tabId, state, count = 0) {
-  if (!(state in AUTO_ATTACH_BADGE_TEXT || state === "success")) return;
+  if (!AUTO_ATTACH_BADGE_STATES.has(state)) return;
   if (!Number.isSafeInteger(tabId)) return;
 
   const text = state === "success" ? formatBadgeCount(count) : AUTO_ATTACH_BADGE_TEXT[state];
