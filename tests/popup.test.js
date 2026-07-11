@@ -400,6 +400,21 @@ describe("popup.js", () => {
       showPage("favorite");
       expect(videoSummaryButton.classList.contains("d-none")).toBe(true);
     });
+
+    test("SET_ACTIVE_TAB re-checks text overflow for the panel that just became visible", () => {
+      // The inactive tab's buttons were d-none at hydrate time (0 offsetHeight),
+      // so they were never correctly measured — switching to that tab must
+      // trigger a fresh check now that it has a real layout box.
+      const originalRaf = global.requestAnimationFrame;
+      const rafMock = jest.fn();
+      global.requestAnimationFrame = rafMock;
+
+      showPage("gemini");
+
+      expect(rafMock).toHaveBeenCalledWith(popup.checkTextOverflow);
+
+      global.requestAnimationFrame = originalRaf;
+    });
   });
 
   describe("checkTextOverflow", () => {

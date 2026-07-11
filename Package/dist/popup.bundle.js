@@ -3238,6 +3238,12 @@ function renderPopup(snapshot = state.getSnapshot(), action = null, force = fals
   if (deleteModeChanged || activeTabChanged) {
     remove.render(snapshot);
   }
+  if (activeTabChanged) {
+    // The panel that just became visible was d-none at hydrate time, so its
+    // buttons measured 0 height then and could never be promoted to w-auto —
+    // re-check now that it has a real layout box.
+    requestAnimationFrame(checkTextOverflow);
+  }
 
   deleteListButton.disabled = tab === "gemini";
   if (tab !== "gemini") videoSummaryButton.classList.add("d-none");
