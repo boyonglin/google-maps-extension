@@ -17,6 +17,7 @@ const popupSharedGlobals = {
   DOMUtils: "readonly",
   ThemeUtils: "readonly",
   I18nUtils: "readonly",
+  UndoWindow: "readonly",
   // Component instances + helpers declared at top level of popup.js
   state: "writable",
   remove: "writable",
@@ -99,6 +100,7 @@ const popupClassicScriptFiles = [
   "Package/dist/themeInit.js",
   "Package/dist/utils/i18n.js",
   "Package/dist/utils/dom.js",
+  "Package/dist/utils/undoWindow.js",
   "Package/dist/hooks/popupState.js",
   "Package/dist/utils/theme.js",
   "Package/dist/components/*.js",

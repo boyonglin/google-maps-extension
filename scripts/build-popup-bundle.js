@@ -24,6 +24,7 @@ const OUTPUT_FILE = path.join(DIST_DIR, "popup.bundle.js");
 // popup.html, since later files reference globals declared by earlier ones.
 const SOURCE_FILES = [
   "utils/dom.js",
+  "utils/undoWindow.js",
   "hooks/popupState.js",
   "utils/theme.js",
   "components/menu.js",

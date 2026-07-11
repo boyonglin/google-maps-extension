@@ -1,4 +1,8 @@
 class History {
+  constructor() {
+    this._undoWindow = new UndoWindow(() => this.render(state.getSnapshot()));
+  }
+
   addHistoryPageListener() {
     searchHistoryListContainer.addEventListener("mousedown", (event) => {
       const liElement = DOMUtils.findClosestListItem(event);
@@ -105,20 +109,12 @@ class History {
 
   // Swaps clearButton for undoButtonHistory; reverts after 6s if unused.
   _startUndoWindow(clearedItems) {
-    clearTimeout(this._undoTimer);
-    this._pendingUndo = clearedItems;
+    this._undoWindow.start(clearedItems);
     this.render(state.getSnapshot());
-
-    this._undoTimer = setTimeout(() => {
-      this._pendingUndo = null;
-      this.render(state.getSnapshot());
-    }, 6000);
   }
 
   _undoClear() {
-    clearTimeout(this._undoTimer);
-    const items = this._pendingUndo;
-    this._pendingUndo = null;
+    const items = this._undoWindow.consume();
     if (!items) return;
 
     chrome.storage.local.set({ searchHistoryList: items });
@@ -159,7 +155,7 @@ class History {
     const selected = new Set(snapshot.deleteMode.selectedValues);
     const deleting = snapshot.deleteMode.source === "history";
     const showDemo = snapshot.onboarding.demoHistoryVisible;
-    const undoing = Boolean(this._pendingUndo) && items.length === 0;
+    const undoing = Boolean(this._undoWindow.pending) && items.length === 0;
 
     statusMessage.style.whiteSpace = "pre-line";
     statusMessage.textContent = chrome.i18n.getMessage(

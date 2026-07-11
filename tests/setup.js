@@ -27,6 +27,10 @@ const { createMockThemeUtils } = require("./testHelpers");
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
+// Real module (not a mock): History/Gemini's undo-window timing is the
+// behavior under test in their own suites, so it must run for real.
+global.UndoWindow = require("../Package/dist/utils/undoWindow.js");
+
 global.chrome = {
   runtime: {
     id: "mock-extension-id",

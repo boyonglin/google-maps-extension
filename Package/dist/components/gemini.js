@@ -3,6 +3,7 @@ class Gemini {
     this.apiToken = 0;
     this.videoToken = 0;
     this.summarySequence = 0;
+    this._undoWindow = new UndoWindow(() => this.render(this.getStore().getSnapshot()));
   }
 
   getStore() {
@@ -147,20 +148,12 @@ class Gemini {
 
   // Swaps clearButtonSummary for undoButtonSummary; reverts after 6s if unused.
   _startUndoWindow(items, timestamp) {
-    clearTimeout(this._undoTimer);
-    this._pendingUndo = { items, timestamp };
+    this._undoWindow.start({ items, timestamp });
     this.render(this.getStore().getSnapshot());
-
-    this._undoTimer = setTimeout(() => {
-      this._pendingUndo = null;
-      this.render(this.getStore().getSnapshot());
-    }, 6000);
   }
 
   _undoClear() {
-    clearTimeout(this._undoTimer);
-    const pending = this._pendingUndo;
-    this._pendingUndo = null;
+    const pending = this._undoWindow.consume();
     if (!pending) return;
 
     // SUMMARY_STORAGE_SET itself is a no-op while generating (see reducer), but
@@ -499,7 +492,7 @@ class Gemini {
     const generating = summary.phase === "generating";
     // Starting a new generate consumes the undo window: SUMMARY_STORAGE_SET is a
     // no-op while generating, so a still-visible Undo button would just be a dead click.
-    const undoing = Boolean(this._pendingUndo) && !ready && !generating;
+    const undoing = Boolean(this._undoWindow.pending) && !ready && !generating;
     let messageKey = "geminiEmptyMsg";
     let substitutions;
 

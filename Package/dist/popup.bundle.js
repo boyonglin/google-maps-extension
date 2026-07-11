@@ -46,6 +46,48 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = DOMUtils;
 }
 
+// ---- utils/undoWindow.js ----
+const UNDO_WINDOW_MS = 6000;
+
+// Tracks a single pending "undo" payload behind a countdown, shared by
+// History/Gemini's clear-then-undo button-swap behavior.
+class UndoWindow {
+  constructor(onExpire) {
+    this._onExpire = onExpire;
+    this._timer = null;
+    this._pending = null;
+  }
+
+  get pending() {
+    return this._pending;
+  }
+
+  start(payload) {
+    clearTimeout(this._timer);
+    this._pending = payload;
+    this._timer = setTimeout(() => {
+      this._pending = null;
+      this._onExpire();
+    }, UNDO_WINDOW_MS);
+  }
+
+  // Cancels the window and returns its payload (null if none was pending or it already expired).
+  consume() {
+    clearTimeout(this._timer);
+    const pending = this._pending;
+    this._pending = null;
+    return pending;
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.UndoWindow = UndoWindow;
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = UndoWindow;
+}
+
 // ---- hooks/popupState.js ----
 const SUMMARY_TTL_MS = 24 * 60 * 60 * 1000;
 const POPUP_TABS = new Set(["history", "favorite", "gemini"]);
@@ -1250,6 +1292,10 @@ if (typeof module !== "undefined" && module.exports) {
 
 // ---- components/history.js ----
 class History {
+  constructor() {
+    this._undoWindow = new UndoWindow(() => this.render(state.getSnapshot()));
+  }
+
   addHistoryPageListener() {
     searchHistoryListContainer.addEventListener("mousedown", (event) => {
       const liElement = DOMUtils.findClosestListItem(event);
@@ -1356,20 +1402,12 @@ class History {
 
   // Swaps clearButton for undoButtonHistory; reverts after 6s if unused.
   _startUndoWindow(clearedItems) {
-    clearTimeout(this._undoTimer);
-    this._pendingUndo = clearedItems;
+    this._undoWindow.start(clearedItems);
     this.render(state.getSnapshot());
-
-    this._undoTimer = setTimeout(() => {
-      this._pendingUndo = null;
-      this.render(state.getSnapshot());
-    }, 6000);
   }
 
   _undoClear() {
-    clearTimeout(this._undoTimer);
-    const items = this._pendingUndo;
-    this._pendingUndo = null;
+    const items = this._undoWindow.consume();
     if (!items) return;
 
     chrome.storage.local.set({ searchHistoryList: items });
@@ -1410,7 +1448,7 @@ class History {
     const selected = new Set(snapshot.deleteMode.selectedValues);
     const deleting = snapshot.deleteMode.source === "history";
     const showDemo = snapshot.onboarding.demoHistoryVisible;
-    const undoing = Boolean(this._pendingUndo) && items.length === 0;
+    const undoing = Boolean(this._undoWindow.pending) && items.length === 0;
 
     statusMessage.style.whiteSpace = "pre-line";
     statusMessage.textContent = chrome.i18n.getMessage(
@@ -1491,6 +1529,7 @@ class Gemini {
     this.apiToken = 0;
     this.videoToken = 0;
     this.summarySequence = 0;
+    this._undoWindow = new UndoWindow(() => this.render(this.getStore().getSnapshot()));
   }
 
   getStore() {
@@ -1635,20 +1674,12 @@ class Gemini {
 
   // Swaps clearButtonSummary for undoButtonSummary; reverts after 6s if unused.
   _startUndoWindow(items, timestamp) {
-    clearTimeout(this._undoTimer);
-    this._pendingUndo = { items, timestamp };
+    this._undoWindow.start({ items, timestamp });
     this.render(this.getStore().getSnapshot());
-
-    this._undoTimer = setTimeout(() => {
-      this._pendingUndo = null;
-      this.render(this.getStore().getSnapshot());
-    }, 6000);
   }
 
   _undoClear() {
-    clearTimeout(this._undoTimer);
-    const pending = this._pendingUndo;
-    this._pendingUndo = null;
+    const pending = this._undoWindow.consume();
     if (!pending) return;
 
     // SUMMARY_STORAGE_SET itself is a no-op while generating (see reducer), but
@@ -1987,7 +2018,7 @@ class Gemini {
     const generating = summary.phase === "generating";
     // Starting a new generate consumes the undo window: SUMMARY_STORAGE_SET is a
     // no-op while generating, so a still-visible Undo button would just be a dead click.
-    const undoing = Boolean(this._pendingUndo) && !ready && !generating;
+    const undoing = Boolean(this._undoWindow.pending) && !ready && !generating;
     let messageKey = "geminiEmptyMsg";
     let substitutions;
 
