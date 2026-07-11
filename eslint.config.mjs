@@ -111,6 +111,7 @@ const extensionModuleFiles = [
   "Package/dist/hooks/backgroundState.js",
   "Package/dist/utils/analytics.js",
   "Package/dist/utils/analytics.module.js",
+  "Package/dist/utils/autoAttachBadge.js",
   "Package/dist/utils/crypto.js",
   "Package/dist/utils/prompt.js",
 ];

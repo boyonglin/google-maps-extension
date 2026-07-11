@@ -11,6 +11,13 @@ import {
 } from "./hooks/backgroundState.js";
 import ExtPay from "./utils/ExtPay.module.js";
 import { Analytics } from "./utils/analytics.module.js";
+import {
+  beginAutoAttachRun,
+  isCurrentAutoAttachRun,
+  finishAutoAttachRun,
+  setAutoAttachBadge,
+  cancelAutoAttachRun,
+} from "./utils/autoAttachBadge.js";
 
 const DEFAULT_MAX_HISTORY = 10;
 
@@ -24,52 +31,6 @@ const RECEIVING_END_ERR = "Receiving end does not exist";
 const DEFAULT_CAN_RETRY = (err) => String(err?.message ?? err).includes(RECEIVING_END_ERR);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const MAX_RETRY_DELAY = 5000; // Cap exponential backoff at 5 seconds
-
-const AUTO_ATTACH_BADGE_COLOR = "#dadce0";
-const AUTO_ATTACH_BADGE_TEXT_COLOR = "#3c4043";
-const AUTO_ATTACH_BADGE_TEXT = {
-  loading: "…",
-  error: "!",
-};
-const AUTO_ATTACH_BADGE_STATES = new Set(["loading", "error", "success"]);
-const activeAutoAttachRuns = new Map();
-let nextAutoAttachRunId = 0;
-
-function beginAutoAttachRun(tabId) {
-  const runId = ++nextAutoAttachRunId;
-  activeAutoAttachRuns.set(tabId, runId);
-  return runId;
-}
-
-function isCurrentAutoAttachRun(tabId, runId) {
-  return activeAutoAttachRuns.get(tabId) === runId;
-}
-
-function finishAutoAttachRun(tabId, runId, state, count = 0) {
-  if (!isCurrentAutoAttachRun(tabId, runId)) return false;
-  setAutoAttachBadge(tabId, state, count);
-  activeAutoAttachRuns.delete(tabId);
-  return true;
-}
-
-function formatBadgeCount(count) {
-  return count > 999 ? "999+" : String(count);
-}
-
-function setAutoAttachBadge(tabId, state, count = 0) {
-  if (!AUTO_ATTACH_BADGE_STATES.has(state)) return;
-  if (!Number.isSafeInteger(tabId)) return;
-
-  const text = state === "success" ? formatBadgeCount(count) : AUTO_ATTACH_BADGE_TEXT[state];
-  chrome.action.setBadgeBackgroundColor({ tabId, color: AUTO_ATTACH_BADGE_COLOR });
-  chrome.action.setBadgeTextColor?.({ tabId, color: AUTO_ATTACH_BADGE_TEXT_COLOR });
-  chrome.action.setBadgeText({ tabId, text });
-}
-
-function clearAutoAttachBadge(tabId) {
-  if (!Number.isSafeInteger(tabId)) return;
-  chrome.action.setBadgeText({ tabId, text: "" });
-}
 
 async function withRetry(
   attempt,
@@ -125,8 +86,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 // A completed count stays visible for the life of the current document.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === "loading") {
-    activeAutoAttachRuns.delete(tabId);
-    clearAutoAttachBadge(tabId);
+    cancelAutoAttachRun(tabId);
   }
 });
 
