@@ -79,14 +79,20 @@
     });
   }
 
+  // Protect literal "$$" (Chrome's escape for a literal "$") from the
+  // placeholder/substitution regexes below, then restore it at the end.
+  const DOLLAR_SENTINEL = "@@DOLLAR@@";
+
   function applySubstitutions(message, substitutions, placeholders) {
-    let result = resolveNamedPlaceholders(message, placeholders);
-    if (substitutions == null) return result;
-    const subs = Array.isArray(substitutions) ? substitutions : [substitutions];
-    subs.forEach((value, index) => {
-      result = result.replace(new RegExp("\\$" + (index + 1), "g"), String(value));
-    });
-    return result;
+    let result = message.replace(/\$\$/g, DOLLAR_SENTINEL);
+    result = resolveNamedPlaceholders(result, placeholders);
+    if (substitutions != null) {
+      const subs = Array.isArray(substitutions) ? substitutions : [substitutions];
+      subs.forEach((value, index) => {
+        result = result.replace(new RegExp("\\$" + (index + 1), "g"), String(value));
+      });
+    }
+    return result.split(DOLLAR_SENTINEL).join("$");
   }
 
   chrome.i18n.getMessage = function (key, substitutions) {

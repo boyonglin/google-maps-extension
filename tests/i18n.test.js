@@ -341,5 +341,16 @@ describe("i18n.js", () => {
 
       expect(chrome.i18n.getMessage("deleteBtnText", "3")).toBe("3 件の場所を削除");
     });
+
+    test("$$ escapes to a literal $ instead of being consumed as a placeholder", async () => {
+      localStorage.setItem("userLanguage", "ja");
+      installFakeFetch({
+        body: { paymentLabel: { message: "永久使用 $$9.00" } },
+      });
+      loadI18n();
+      await flushPromises();
+
+      expect(chrome.i18n.getMessage("paymentLabel")).toBe("永久使用 $9.00");
+    });
   });
 });
