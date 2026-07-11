@@ -39,36 +39,6 @@ const DOMUtils = {
 
     iconElement.addEventListener("mouseleave", restore, { once: true });
   },
-
-  _undoToastTimer: null,
-
-  // Transient toast with an Undo action after a destructive clear (history/summary).
-  // Only one at a time; auto-dismisses after 6 seconds.
-  showUndoToast(message, onUndo) {
-    document.querySelector(".undo-toast")?.remove();
-    clearTimeout(this._undoToastTimer);
-
-    const toast = document.createElement("div");
-    toast.className = "undo-toast";
-
-    const text = document.createElement("span");
-    text.textContent = message;
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "undo-toast-btn";
-    button.textContent = chrome.i18n.getMessage("undoLabel");
-    button.addEventListener("click", () => {
-      clearTimeout(this._undoToastTimer);
-      toast.remove();
-      onUndo();
-    });
-
-    toast.append(text, button);
-    document.body.appendChild(toast);
-
-    this._undoToastTimer = setTimeout(() => toast.remove(), 6000);
-  },
 };
 
 if (typeof window !== "undefined") {
@@ -1375,13 +1345,33 @@ class History {
 
       chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
 
-      if (clearedItems.length > 0) {
-        DOMUtils.showUndoToast(chrome.i18n.getMessage("historyClearedMsg"), () => {
-          chrome.storage.local.set({ searchHistoryList: clearedItems });
-          state.dispatch({ type: "HISTORY_SET", items: clearedItems });
-        });
-      }
+      if (clearedItems.length > 0) this._startUndoWindow(clearedItems);
     });
+
+    undoButtonHistory.addEventListener("click", () => this._undoClear());
+  }
+
+  // clearButton swaps in place for undoButtonHistory for 6 seconds; if the
+  // window lapses without a click, render() falls back to the normal empty state.
+  _startUndoWindow(clearedItems) {
+    clearTimeout(this._undoTimer);
+    this._pendingUndo = clearedItems;
+    this.render(state.getSnapshot());
+
+    this._undoTimer = setTimeout(() => {
+      this._pendingUndo = null;
+      this.render(state.getSnapshot());
+    }, 6000);
+  }
+
+  _undoClear() {
+    clearTimeout(this._undoTimer);
+    const items = this._pendingUndo;
+    this._pendingUndo = null;
+    if (!items) return;
+
+    chrome.storage.local.set({ searchHistoryList: items });
+    state.dispatch({ type: "HISTORY_SET", items });
   }
 
   createListItem(itemName, favoriteList) {
@@ -1412,11 +1402,13 @@ class History {
     const container = searchHistoryListContainer;
     const statusMessage = emptyMessage;
     const clearAction = clearButton;
-    if (!container || !statusMessage || !clearAction) return;
+    const undoAction = undoButtonHistory;
+    if (!container || !statusMessage || !clearAction || !undoAction) return;
     const { items, emptyReason } = snapshot.history;
     const selected = new Set(snapshot.deleteMode.selectedValues);
     const deleting = snapshot.deleteMode.source === "history";
     const showDemo = snapshot.onboarding.demoHistoryVisible;
+    const undoing = Boolean(this._pendingUndo) && items.length === 0;
 
     statusMessage.style.whiteSpace = "pre-line";
     statusMessage.textContent = chrome.i18n.getMessage(
@@ -1424,6 +1416,8 @@ class History {
     );
     statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
     clearAction.disabled = items.length === 0;
+    clearAction.classList.toggle("d-none", undoing);
+    undoAction.classList.toggle("d-none", !undoing);
 
     // Patch icon classNames in place to preserve animation
     const structuralChange =
@@ -1579,13 +1573,10 @@ class Gemini {
       chrome.storage.local.remove(["summaryList", "timestamp"]);
       this.getStore().dispatch({ type: "SUMMARY_CLEAR" });
 
-      if (items.length > 0) {
-        DOMUtils.showUndoToast(chrome.i18n.getMessage("summaryClearedMsg"), () => {
-          chrome.storage.local.set({ summaryList: items, timestamp });
-          this.getStore().dispatch({ type: "SUMMARY_STORAGE_SET", items, timestamp });
-        });
-      }
+      if (items.length > 0) this._startUndoWindow(items, timestamp);
     });
+
+    undoButtonSummary.addEventListener("click", () => this._undoClear());
 
     videoSummaryButton.addEventListener("click", () => {
       if (window.Analytics)
@@ -1624,6 +1615,33 @@ class Gemini {
           this.performNormalContentSummary(requestId, tabs[0]);
         }
       });
+    });
+  }
+
+  // clearButtonSummary swaps in place for undoButtonSummary for 6 seconds; if the
+  // window lapses without a click, render() falls back to the normal empty state.
+  _startUndoWindow(items, timestamp) {
+    clearTimeout(this._undoTimer);
+    this._pendingUndo = { items, timestamp };
+    this.render(this.getStore().getSnapshot());
+
+    this._undoTimer = setTimeout(() => {
+      this._pendingUndo = null;
+      this.render(this.getStore().getSnapshot());
+    }, 6000);
+  }
+
+  _undoClear() {
+    clearTimeout(this._undoTimer);
+    const pending = this._pendingUndo;
+    this._pendingUndo = null;
+    if (!pending) return;
+
+    chrome.storage.local.set({ summaryList: pending.items, timestamp: pending.timestamp });
+    this.getStore().dispatch({
+      type: "SUMMARY_STORAGE_SET",
+      items: pending.items,
+      timestamp: pending.timestamp,
     });
   }
 
@@ -1935,10 +1953,20 @@ class Gemini {
     const apiAction = document.getElementById("apiButton");
     const sendAction = document.getElementById("sendButton");
     const videoAction = document.getElementById("videoSummaryButton");
-    if (!statusMessage || !listContainer || !clearAction || !apiAction || !sendAction) return;
+    const undoAction = document.getElementById("undoButtonSummary");
+    if (
+      !statusMessage ||
+      !listContainer ||
+      !clearAction ||
+      !apiAction ||
+      !sendAction ||
+      !undoAction
+    )
+      return;
     const { summary, api, favorite: favoriteState } = snapshot;
     const ready = summary.phase === "ready" && summary.items.length > 0;
     const generating = summary.phase === "generating";
+    const undoing = Boolean(this._pendingUndo) && !ready;
     let messageKey = "geminiEmptyMsg";
     let substitutions;
 
@@ -1988,7 +2016,8 @@ class Gemini {
 
     clearAction.classList.toggle("d-none", !ready);
     clearAction.disabled = !ready || generating;
-    apiAction.classList.toggle("d-none", ready);
+    apiAction.classList.toggle("d-none", ready || undoing);
+    undoAction.classList.toggle("d-none", !undoing);
     sendAction.disabled = api.status !== "valid" || generating;
     if (videoAction) {
       videoAction.classList.toggle("d-none", !snapshot.video.available);
@@ -2840,6 +2869,7 @@ const deleteButtonGroup = document.getElementById("deleteButtonGroup");
 const exportButtonGroup = document.getElementById("exportButtonGroup");
 const geminiButtonGroup = document.getElementById("geminiButtonGroup");
 const clearButton = document.getElementById("clearButton");
+const undoButtonHistory = document.getElementById("undoButtonHistory");
 const cancelButton = document.getElementById("cancelButton");
 const deleteButton = document.getElementById("deleteButton");
 const exportButton = document.getElementById("exportButton");
@@ -2849,6 +2879,7 @@ const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
 const enterButton = document.getElementById("enterButton");
 const clearButtonSummary = document.getElementById("clearButtonSummary");
+const undoButtonSummary = document.getElementById("undoButtonSummary");
 const premiumModal = document.getElementById("premiumModalLabel");
 const closeButton = premiumModal.parentElement.querySelector(".btn-close");
 const optionalButton = document.getElementById("optionalButton");

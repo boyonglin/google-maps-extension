@@ -296,14 +296,14 @@
   },
   "undoLabel": {
     "message": "復原",
-    "description": "undo button in the clear toast"
+    "description": "label for the button that briefly replaces Clear after clearing history/summary"
   },
   "historyClearedMsg": {
     "message": "已清空搜尋紀錄",
-    "description": "toast after clearing search history"
+    "description": "tooltip on the undo button after clearing search history"
   },
   "summaryClearedMsg": {
     "message": "已清空摘要",
-    "description": "toast after clearing the Gemini summary"
+    "description": "tooltip on the undo button after clearing the Gemini summary"
   }
 }

@@ -46,7 +46,7 @@ describe("Gemini Component", () => {
 
   // Global DOM elements that gemini.js expects to exist
   let summaryListContainer, geminiEmptyMessage, clearButtonSummary;
-  let apiButton, sendButton, apiInput, responseField;
+  let apiButton, sendButton, apiInput, responseField, undoButtonSummary;
   let videoSummaryButton, geminiSummaryButton;
 
   // ============================================================================
@@ -62,6 +62,7 @@ describe("Gemini Component", () => {
             <div id="summaryList"></div>
             <div id="geminiEmptyMessage"></div>
             <button id="clearButtonSummary" class="d-none"></button>
+            <button id="undoButtonSummary" class="d-none"></button>
             <button id="apiButton"></button>
             <button id="sendButton"></button>
             <input id="apiInput" />
@@ -74,6 +75,7 @@ describe("Gemini Component", () => {
     summaryListContainer = global.summaryListContainer = document.getElementById("summaryList");
     geminiEmptyMessage = global.geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
     clearButtonSummary = global.clearButtonSummary = document.getElementById("clearButtonSummary");
+    undoButtonSummary = global.undoButtonSummary = document.getElementById("undoButtonSummary");
     apiButton = global.apiButton = document.getElementById("apiButton");
     sendButton = global.sendButton = document.getElementById("sendButton");
     apiInput = global.apiInput = document.getElementById("apiInput");
@@ -404,43 +406,91 @@ describe("Gemini Component", () => {
       expect(apiButton.classList.contains("d-none")).toBe(false);
     });
 
-    test("should show an undo toast when clearing a non-empty summary", () => {
-      favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
-      const timestamp = Date.now();
-      state.dispatch({
-        type: "SUMMARY_STORAGE_SET",
-        items: [{ name: "Place", clue: "Info" }],
-        timestamp,
-        now: timestamp,
+    describe("undo window", () => {
+      beforeEach(() => {
+        jest.useFakeTimers();
       });
-      mockI18n({ summaryClearedMsg: "Summary cleared" });
 
-      clearButtonSummary.click();
+      afterEach(() => {
+        jest.useRealTimers();
+      });
 
-      expect(DOMUtils.showUndoToast).toHaveBeenCalledWith("Summary cleared", expect.any(Function));
-    });
+      test("should swap apiButton for undoButtonSummary when clearing a non-empty summary", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
 
-    test("should not show an undo toast when the summary was already empty", () => {
-      clearButtonSummary.click();
+        clearButtonSummary.click();
 
-      expect(DOMUtils.showUndoToast).not.toHaveBeenCalled();
-    });
+        expect(apiButton.classList.contains("d-none")).toBe(true);
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(false);
+      });
 
-    test("should restore the summary and storage when Undo is clicked", () => {
-      favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
-      const timestamp = Date.now();
-      const items = [{ name: "Place", clue: "Info" }];
-      state.dispatch({ type: "SUMMARY_STORAGE_SET", items, timestamp, now: timestamp });
+      test("should not show undoButtonSummary when the summary was already empty", () => {
+        clearButtonSummary.click();
 
-      clearButtonSummary.click();
-      expect(state.getSnapshot().summary.phase).toBe("empty");
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
+        expect(apiButton.classList.contains("d-none")).toBe(false);
+      });
 
-      const onUndo = DOMUtils.showUndoToast.mock.calls[0][1];
-      onUndo();
+      test("should restore the summary and storage when Undo is clicked", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        const items = [{ name: "Place", clue: "Info" }];
+        state.dispatch({ type: "SUMMARY_STORAGE_SET", items, timestamp, now: timestamp });
 
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({ summaryList: items, timestamp });
-      expect(state.getSnapshot().summary.phase).toBe("ready");
-      expect(state.getSnapshot().summary.items).toEqual(items);
+        clearButtonSummary.click();
+        expect(state.getSnapshot().summary.phase).toBe("empty");
+
+        undoButtonSummary.click();
+
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({ summaryList: items, timestamp });
+        expect(state.getSnapshot().summary.phase).toBe("ready");
+        expect(state.getSnapshot().summary.items).toEqual(items);
+        expect(apiButton.classList.contains("d-none")).toBe(true);
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
+      });
+
+      test("should fall back to apiButton after 6 seconds without Undo", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
+
+        clearButtonSummary.click();
+        jest.advanceTimersByTime(6000);
+
+        expect(apiButton.classList.contains("d-none")).toBe(false);
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
+      });
+
+      test("should not restore stale data once the undo window has lapsed", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
+        clearButtonSummary.click();
+        jest.advanceTimersByTime(6000);
+        chrome.storage.local.set.mockClear();
+
+        undoButtonSummary.click();
+
+        expect(chrome.storage.local.set).not.toHaveBeenCalled();
+        expect(state.getSnapshot().summary.phase).toBe("empty");
+      });
     });
   });
 

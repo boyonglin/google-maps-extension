@@ -79,6 +79,7 @@ function createPopupDOM() {
       <div id="searchHistoryList" class="overflow-auto mb-4"></div>
       <div id="searchButtonGroup" class="d-flex justify-content-evenly mt-3">
         <button id="clearButton" class="btn btn-light me-3 w-25"><i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span></button>
+        <button id="undoButtonHistory" class="btn btn-light me-3 w-25 d-none"><i class="bi bi-arrow-counterclockwise me-2"></i><span data-locale="undoLabel">Undo</span></button>
         <a id="mapsButton" href="#" target="_blank" class="btn btn-primary btn-maps flex-fill"><i class="bi bi-geo-alt-fill me-2"></i><span id="mapsButtonSpan" data-locale="mapsBtnText">Open Maps</span></a>
       </div>
     </div>
@@ -100,6 +101,7 @@ function createPopupDOM() {
       <div id="geminiButtonGroup" class="d-flex justify-content-evenly mt-3">
         <button id="apiButton" class="btn btn-light me-3 w-25" data-bs-toggle="modal" data-bs-target="#apiModal"><i class="bi bi-code-slash me-2"></i><span data-locale="apiBtnText">API</span></button>
         <button id="clearButtonSummary" class="btn btn-light me-3 w-25 d-none"><i class="bi bi-trash-fill me-2"></i><span data-locale="clearBtnText">Clear</span></button>
+        <button id="undoButtonSummary" class="btn btn-light me-3 w-25 d-none"><i class="bi bi-arrow-counterclockwise me-2"></i><span data-locale="undoLabel">Undo</span></button>
         <button id="sendButton" class="btn btn-send flex-fill"><i class="bi bi-stars me-2"></i><span data-locale="sendBtnText">Send</span></button>
       </div>
     </div>

@@ -87,13 +87,10 @@ class Gemini {
       chrome.storage.local.remove(["summaryList", "timestamp"]);
       this.getStore().dispatch({ type: "SUMMARY_CLEAR" });
 
-      if (items.length > 0) {
-        DOMUtils.showUndoToast(chrome.i18n.getMessage("summaryClearedMsg"), () => {
-          chrome.storage.local.set({ summaryList: items, timestamp });
-          this.getStore().dispatch({ type: "SUMMARY_STORAGE_SET", items, timestamp });
-        });
-      }
+      if (items.length > 0) this._startUndoWindow(items, timestamp);
     });
+
+    undoButtonSummary.addEventListener("click", () => this._undoClear());
 
     videoSummaryButton.addEventListener("click", () => {
       if (window.Analytics)
@@ -132,6 +129,33 @@ class Gemini {
           this.performNormalContentSummary(requestId, tabs[0]);
         }
       });
+    });
+  }
+
+  // clearButtonSummary swaps in place for undoButtonSummary for 6 seconds; if the
+  // window lapses without a click, render() falls back to the normal empty state.
+  _startUndoWindow(items, timestamp) {
+    clearTimeout(this._undoTimer);
+    this._pendingUndo = { items, timestamp };
+    this.render(this.getStore().getSnapshot());
+
+    this._undoTimer = setTimeout(() => {
+      this._pendingUndo = null;
+      this.render(this.getStore().getSnapshot());
+    }, 6000);
+  }
+
+  _undoClear() {
+    clearTimeout(this._undoTimer);
+    const pending = this._pendingUndo;
+    this._pendingUndo = null;
+    if (!pending) return;
+
+    chrome.storage.local.set({ summaryList: pending.items, timestamp: pending.timestamp });
+    this.getStore().dispatch({
+      type: "SUMMARY_STORAGE_SET",
+      items: pending.items,
+      timestamp: pending.timestamp,
     });
   }
 
@@ -443,10 +467,20 @@ class Gemini {
     const apiAction = document.getElementById("apiButton");
     const sendAction = document.getElementById("sendButton");
     const videoAction = document.getElementById("videoSummaryButton");
-    if (!statusMessage || !listContainer || !clearAction || !apiAction || !sendAction) return;
+    const undoAction = document.getElementById("undoButtonSummary");
+    if (
+      !statusMessage ||
+      !listContainer ||
+      !clearAction ||
+      !apiAction ||
+      !sendAction ||
+      !undoAction
+    )
+      return;
     const { summary, api, favorite: favoriteState } = snapshot;
     const ready = summary.phase === "ready" && summary.items.length > 0;
     const generating = summary.phase === "generating";
+    const undoing = Boolean(this._pendingUndo) && !ready;
     let messageKey = "geminiEmptyMsg";
     let substitutions;
 
@@ -496,7 +530,8 @@ class Gemini {
 
     clearAction.classList.toggle("d-none", !ready);
     clearAction.disabled = !ready || generating;
-    apiAction.classList.toggle("d-none", ready);
+    apiAction.classList.toggle("d-none", ready || undoing);
+    undoAction.classList.toggle("d-none", !undoing);
     sendAction.disabled = api.status !== "valid" || generating;
     if (videoAction) {
       videoAction.classList.toggle("d-none", !snapshot.video.available);

@@ -210,7 +210,6 @@ global.DOMUtils = {
     };
     iconElement.addEventListener("mouseleave", restore, { once: true });
   }),
-  showUndoToast: jest.fn(),
 };
 
 global.requestAnimationFrame = jest.fn((cb) => {
