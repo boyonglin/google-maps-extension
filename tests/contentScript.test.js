@@ -361,6 +361,15 @@ describe("contentScript.js - attachMapLink Action", () => {
     expect(globalThis.attachMapLinkToPage).toHaveBeenCalledWith(request);
   });
 
+  test("should respond with the number of attached map links", () => {
+    globalThis.attachMapLinkToPage.mockReturnValue(3);
+    const sendResponse = jest.fn();
+
+    messageListener({ action: "attachMapLink", content: "Map link data" }, {}, sendResponse);
+
+    expect(sendResponse).toHaveBeenCalledWith({ attachedCount: 3 });
+  });
+
   test("should not call attachMapLinkToPage when content is missing", () => {
     const request = { action: "attachMapLink" };
     const sendResponse = jest.fn();

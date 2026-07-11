@@ -132,6 +132,9 @@ describe("background.js", () => {
     chrome.tabs.onActivated.addListener.mockImplementation((fn) => {
       listeners.onTabActivated = fn;
     });
+    chrome.tabs.onUpdated.addListener.mockImplementation((fn) => {
+      listeners.onTabUpdated = fn;
+    });
 
     // Setup global fetch mock using helper
     mockFetch = setupMockFetch();
@@ -176,6 +179,8 @@ describe("background.js", () => {
     chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
       if (message.action === "getContent" && callback) {
         callback({ content: "test content" });
+      } else if (message.action === "attachMapLink" && callback) {
+        callback({ attachedCount: 2 });
       }
     });
     mockFetch.mockResolvedValue({
@@ -684,6 +689,190 @@ describe("background.js", () => {
       await runAutoAttachCommand();
 
       expectConsoleQuoteStage("trial");
+      expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ tabId: 1, text: "…" });
+      expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ tabId: 1, text: "2" });
+      expect(chrome.action.setBadgeBackgroundColor).toHaveBeenCalledWith({
+        tabId: 1,
+        color: "#dadce0",
+      });
+      expect(chrome.action.setBadgeTextColor).toHaveBeenCalledWith({
+        tabId: 1,
+        color: "#3c4043",
+      });
+    });
+
+    test("should continue auto-attach when setBadgeTextColor is unavailable", async () => {
+      const originalSetBadgeTextColor = chrome.action.setBadgeTextColor;
+      chrome.action.setBadgeTextColor = undefined;
+
+      try {
+        mockExtPayUser({ trialStartedAt: daysAgo(3) });
+        mockAutoAttachContentFlow();
+        await runAutoAttachCommand();
+
+        expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
+          1,
+          expect.objectContaining({ action: "attachMapLink" }),
+          expect.any(Function)
+        );
+        expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ tabId: 1, text: "2" });
+      } finally {
+        chrome.action.setBadgeTextColor = originalSetBadgeTextColor;
+      }
+    });
+
+    test("should ignore an in-flight auto-attach result after reload", async () => {
+      let resolveFetch;
+      mockExtPayUser({ trialStartedAt: daysAgo(3) });
+      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        if (message.action === "getContent" && callback) {
+          callback({ content: "old page content" });
+        }
+      });
+      mockFetch.mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        })
+      );
+
+      await runAutoAttachCommand();
+      listeners.onTabUpdated(1, { status: "loading" });
+      resolveFetch({
+        json: () =>
+          Promise.resolve({
+            candidates: [{ content: { parts: [{ text: "Old Page Place" }] } }],
+          }),
+      });
+      await flushPromises();
+      await flushPromises();
+
+      expect(chrome.tabs.sendMessage).not.toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ action: "attachMapLink" }),
+        expect.any(Function)
+      );
+      expect(chrome.action.setBadgeText).toHaveBeenLastCalledWith({ tabId: 1, text: "" });
+    });
+
+    test("should show an error badge when the payment status lookup fails", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      getExtPay().mockExtPay.getUser.mockRejectedValueOnce(
+        new Error("Payment service unavailable")
+      );
+
+      await runAutoAttachCommand();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Auto-attach failed:",
+        expect.objectContaining({ message: "Payment service unavailable" })
+      );
+      expect(chrome.action.setBadgeText).toHaveBeenLastCalledWith({ tabId: 1, text: "!" });
+      consoleSpy.mockRestore();
+    });
+
+    test("should show an error badge instead of attaching an API error response", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      mockExtPayUser({ trialStartedAt: daysAgo(3) });
+      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        if (message.action === "getContent" && callback) {
+          callback({ content: "test content" });
+        }
+      });
+      mockFetch.mockResolvedValue({
+        json: () => Promise.resolve({ error: { message: "Quota exceeded" } }),
+      });
+
+      await runAutoAttachCommand();
+      await flushPromises();
+
+      expect(chrome.action.setBadgeText).toHaveBeenLastCalledWith({ tabId: 1, text: "!" });
+      expect(chrome.tabs.sendMessage).not.toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ action: "attachMapLink" }),
+        expect.any(Function)
+      );
+      consoleSpy.mockRestore();
+    });
+
+    test("should show an error badge when the content script omits the attached count", async () => {
+      mockExtPayUser({ paid: true });
+      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        if (message.action === "getContent" && callback) {
+          callback({ content: "test content" });
+        } else if (message.action === "attachMapLink" && callback) {
+          callback(undefined);
+        }
+      });
+      mockFetch.mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            candidates: [{ content: { parts: [{ text: "Tokyo Tower" }] } }],
+          }),
+      });
+
+      await runAutoAttachCommand();
+      await flushPromises();
+
+      expect(chrome.action.setBadgeText).toHaveBeenLastCalledWith({ tabId: 1, text: "!" });
+    });
+
+    test("should complete auto-attach for a user without a trial", async () => {
+      mockExtPayUser();
+      mockAutoAttachContentFlow();
+
+      await runAutoAttachCommand();
+
+      expectConsoleQuoteStage("trial");
+      expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ tabId: 1, text: "2" });
+    });
+
+    test("should reject auto-attach when the active tab has no valid numeric ID", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      mockExtPayUser({ paid: true });
+      chrome.tabs.query.mockImplementation((query, callback) => {
+        callback([{ id: "invalid", url: "https://example.com" }]);
+      });
+
+      await runAutoAttachCommand();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Auto-attach failed:",
+        expect.objectContaining({ message: "Invalid tabId for getContent" })
+      );
+      consoleSpy.mockRestore();
+    });
+
+    test("should show an error badge when getContent reports runtime.lastError", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      mockExtPayUser({ paid: true });
+      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+        if (message.action === "getContent" && callback) {
+          chrome.runtime.lastError = { message: "Tab was closed" };
+          callback(undefined);
+          chrome.runtime.lastError = null;
+        }
+      });
+
+      await runAutoAttachCommand();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Auto-attach failed:",
+        expect.objectContaining({ message: "Tab was closed" })
+      );
+      expect(chrome.action.setBadgeText).toHaveBeenLastCalledWith({ tabId: 1, text: "!" });
+      consoleSpy.mockRestore();
+    });
+
+    test("should clear the auto-attach badge when the tab reloads", () => {
+      listeners.onTabUpdated(1, { status: "loading" });
+
+      expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ tabId: 1, text: "" });
+    });
+
+    test("should keep the auto-attach badge during non-loading tab updates", () => {
+      listeners.onTabUpdated(1, { title: "Updated title" });
+
+      expect(chrome.action.setBadgeText).not.toHaveBeenCalled();
     });
 
     test("should handle auto-attach command for paid user", async () => {
