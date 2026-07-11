@@ -387,5 +387,17 @@
   "shortcutUnsetLabel": {
     "message": "Not Set",
     "description": "tips modal suffix appended to the default shortcut when no key is assigned"
+  },
+  "undoLabel": {
+    "message": "Undo",
+    "description": "label for the button that briefly replaces Clear after clearing history/summary"
+  },
+  "historyClearedMsg": {
+    "message": "Search history cleared",
+    "description": "tooltip on the undo button after clearing search history"
+  },
+  "summaryClearedMsg": {
+    "message": "Summary cleared",
+    "description": "tooltip on the undo button after clearing the Gemini summary"
   }
 }

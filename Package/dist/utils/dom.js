@@ -17,10 +17,7 @@ const DOMUtils = {
     }, 500);
   },
 
-  // Fade the icon out on unfavorite instead of reusing the "add" spring
-  // animation (which would read as the opposite action). The icon is only
-  // swapped to its unfavorited state once the pointer leaves the icon's own
-  // hit area, so the user doesn't see it flip while still hovering it.
+  // Fade out (not the "add" animation) and wait for mouseleave so the icon doesn't flip mid-hover.
   fadeOutFavoriteIcon(iconElement) {
     iconElement.classList.add("unfavoriting");
 

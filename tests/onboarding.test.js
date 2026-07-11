@@ -16,6 +16,7 @@ const setupOnboardingDOM = () => {
     <div id="searchHistoryList"></div>
     <p id="emptyMessage" style="display:block;">No history</p>
     <button id="clearButton"></button>
+    <button id="undoButtonHistory" class="d-none"></button>
     <ul>
       <li class="footer-li" data-bs-toggle="modal" data-bs-target="#tipsModal" style="position:absolute; top:300px; left:50px; width:60px; height:24px;"></li>
       <li class="footer-li" data-bs-toggle="modal" data-bs-target="#premiumModal" style="position:absolute; top:300px; left:130px; width:60px; height:24px;"></li>

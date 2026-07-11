@@ -53,6 +53,7 @@ describe("History Component", () => {
 
     global.searchHistoryListContainer = document.getElementById("searchHistoryList");
     global.clearButton = document.getElementById("clearButton");
+    global.undoButtonHistory = document.getElementById("undoButtonHistory");
     global.emptyMessage = document.getElementById("emptyMessage");
 
     global.state = new State();
@@ -588,14 +589,6 @@ describe("History Component", () => {
         expect(state.getSnapshot().history.items).toEqual([]);
       });
 
-      test("should send message to background to clear history", () => {
-        clearButton.dispatchEvent(new Event("click"));
-
-        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-          action: "clearSearchHistoryList",
-        });
-      });
-
       test("should update empty message with i18n text", () => {
         clearButton.dispatchEvent(new Event("click"));
 
@@ -625,7 +618,71 @@ describe("History Component", () => {
         clearButton.dispatchEvent(new Event("click"));
 
         expect(chrome.storage.local.set).toHaveBeenCalledTimes(3);
-        expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(3);
+      });
+
+      describe("undo window", () => {
+        beforeEach(() => {
+          jest.useFakeTimers();
+        });
+
+        afterEach(() => {
+          jest.useRealTimers();
+        });
+
+        test("should swap clearButton for undoButtonHistory when clearing a non-empty history", () => {
+          state.dispatch({ type: "HISTORY_SET", items: ["Tokyo", "Paris"] });
+
+          clearButton.dispatchEvent(new Event("click"));
+
+          expect(clearButton.classList.contains("d-none")).toBe(true);
+          expect(undoButtonHistory.classList.contains("d-none")).toBe(false);
+        });
+
+        test("should not show undoButtonHistory when history was already empty", () => {
+          clearButton.dispatchEvent(new Event("click"));
+
+          expect(undoButtonHistory.classList.contains("d-none")).toBe(true);
+          expect(clearButton.classList.contains("d-none")).toBe(false);
+        });
+
+        test("should restore the history and storage when Undo is clicked", () => {
+          state.dispatch({ type: "HISTORY_SET", items: ["Tokyo", "Paris"] });
+
+          clearButton.dispatchEvent(new Event("click"));
+          expect(state.getSnapshot().history.items).toEqual([]);
+
+          undoButtonHistory.dispatchEvent(new Event("click"));
+
+          expect(chrome.storage.local.set).toHaveBeenCalledWith({
+            searchHistoryList: ["Tokyo", "Paris"],
+          });
+          expect(state.getSnapshot().history.items).toEqual(["Tokyo", "Paris"]);
+          expect(clearButton.classList.contains("d-none")).toBe(false);
+          expect(undoButtonHistory.classList.contains("d-none")).toBe(true);
+        });
+
+        test("should fall back to the normal empty state after 6 seconds without Undo", () => {
+          state.dispatch({ type: "HISTORY_SET", items: ["Tokyo", "Paris"] });
+
+          clearButton.dispatchEvent(new Event("click"));
+          jest.advanceTimersByTime(6000);
+
+          expect(clearButton.classList.contains("d-none")).toBe(false);
+          expect(clearButton.disabled).toBe(true);
+          expect(undoButtonHistory.classList.contains("d-none")).toBe(true);
+        });
+
+        test("should not restore stale data once the undo window has lapsed", () => {
+          state.dispatch({ type: "HISTORY_SET", items: ["Tokyo", "Paris"] });
+          clearButton.dispatchEvent(new Event("click"));
+          jest.advanceTimersByTime(6000);
+          chrome.storage.local.set.mockClear();
+
+          undoButtonHistory.dispatchEvent(new Event("click"));
+
+          expect(chrome.storage.local.set).not.toHaveBeenCalled();
+          expect(state.getSnapshot().history.items).toEqual([]);
+        });
       });
     });
   });
@@ -1060,9 +1117,6 @@ describe("History Component", () => {
       expect(emptyMessage.classList.contains("d-none")).toBe(false);
       expect(state.getSnapshot().history.items).toEqual([]);
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ searchHistoryList: [] });
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-        action: "clearSearchHistoryList",
-      });
     });
 
     test("complete workflow: toggle delete mode and check items", () => {

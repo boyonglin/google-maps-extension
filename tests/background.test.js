@@ -160,7 +160,7 @@ describe("background.js", () => {
 
   // Listener indices for different onMessage handlers
   // Based on registration order in background.js
-  const BASIC_ACTIONS_LISTENER = 0; // clearSearchHistoryList, searchInput, openTab, canGroup, openInGroup, organizeLocations
+  const BASIC_ACTIONS_LISTENER = 0; // searchInput, openTab, canGroup, openInGroup, organizeLocations
   const GEMINI_API_LISTENER = 1; // summarizeApi, summarizeVideo
   const VERIFY_API_LISTENER = 2; // verifyApiKey
   const PAYMENT_LISTENER = 3; // extPay, restorePay, checkPay
@@ -761,16 +761,6 @@ describe("background.js", () => {
   describe("chrome.runtime.onMessage listener - Basic actions", () => {
     // These actions are handled by the first onMessage listener (index 0)
     const BASIC_ACTIONS_LISTENER = 0;
-
-    test("should clear search history", () => {
-      const request = { action: "clearSearchHistoryList" };
-
-      listeners.onMessage[BASIC_ACTIONS_LISTENER](request, {}, jest.fn());
-
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        searchHistoryList: [],
-      });
-    });
 
     test("should handle searchInput action", async () => {
       const { buildSearchUrl } = require("../Package/dist/hooks/backgroundState.js");

@@ -84,11 +84,37 @@ class History {
 
     clearButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
+      const clearedItems = state.getSnapshot().history.items;
+
       chrome.storage.local.set({ searchHistoryList: [] });
       state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
 
-      chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
+      if (clearedItems.length > 0) this._startUndoWindow(clearedItems);
     });
+
+    undoButtonHistory.addEventListener("click", () => this._undoClear());
+  }
+
+  // Swaps clearButton for undoButtonHistory; reverts after 6s if unused.
+  _startUndoWindow(clearedItems) {
+    clearTimeout(this._undoTimer);
+    this._pendingUndo = clearedItems;
+    this.render(state.getSnapshot());
+
+    this._undoTimer = setTimeout(() => {
+      this._pendingUndo = null;
+      this.render(state.getSnapshot());
+    }, 6000);
+  }
+
+  _undoClear() {
+    clearTimeout(this._undoTimer);
+    const items = this._pendingUndo;
+    this._pendingUndo = null;
+    if (!items) return;
+
+    chrome.storage.local.set({ searchHistoryList: items });
+    state.dispatch({ type: "HISTORY_SET", items });
   }
 
   createListItem(itemName, favoriteList) {
@@ -119,11 +145,13 @@ class History {
     const container = searchHistoryListContainer;
     const statusMessage = emptyMessage;
     const clearAction = clearButton;
-    if (!container || !statusMessage || !clearAction) return;
+    const undoAction = undoButtonHistory;
+    if (!container || !statusMessage || !clearAction || !undoAction) return;
     const { items, emptyReason } = snapshot.history;
     const selected = new Set(snapshot.deleteMode.selectedValues);
     const deleting = snapshot.deleteMode.source === "history";
     const showDemo = snapshot.onboarding.demoHistoryVisible;
+    const undoing = Boolean(this._pendingUndo) && items.length === 0;
 
     statusMessage.style.whiteSpace = "pre-line";
     statusMessage.textContent = chrome.i18n.getMessage(
@@ -131,6 +159,8 @@ class History {
     );
     statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
     clearAction.disabled = items.length === 0;
+    clearAction.classList.toggle("d-none", undoing);
+    undoAction.classList.toggle("d-none", !undoing);
 
     // Patch icon classNames in place to preserve animation
     const structuralChange =

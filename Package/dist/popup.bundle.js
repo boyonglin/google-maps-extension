@@ -25,10 +25,7 @@ const DOMUtils = {
     }, 500);
   },
 
-  // Fade the icon out on unfavorite instead of reusing the "add" spring
-  // animation (which would read as the opposite action). The icon is only
-  // swapped to its unfavorited state once the pointer leaves the icon's own
-  // hit area, so the user doesn't see it flip while still hovering it.
+  // Fade out (not the "add" animation) and wait for mouseleave so the icon doesn't flip mid-hover.
   fadeOutFavoriteIcon(iconElement) {
     iconElement.classList.add("unfavoriting");
 
@@ -1338,11 +1335,39 @@ class History {
 
     clearButton.addEventListener("click", () => {
       if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
+      const clearedItems = state.getSnapshot().history.items;
+
       chrome.storage.local.set({ searchHistoryList: [] });
       state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
 
       chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
+
+      if (clearedItems.length > 0) this._startUndoWindow(clearedItems);
     });
+
+    undoButtonHistory.addEventListener("click", () => this._undoClear());
+  }
+
+  // Swaps clearButton for undoButtonHistory; reverts after 6s if unused.
+  _startUndoWindow(clearedItems) {
+    clearTimeout(this._undoTimer);
+    this._pendingUndo = clearedItems;
+    this.render(state.getSnapshot());
+
+    this._undoTimer = setTimeout(() => {
+      this._pendingUndo = null;
+      this.render(state.getSnapshot());
+    }, 6000);
+  }
+
+  _undoClear() {
+    clearTimeout(this._undoTimer);
+    const items = this._pendingUndo;
+    this._pendingUndo = null;
+    if (!items) return;
+
+    chrome.storage.local.set({ searchHistoryList: items });
+    state.dispatch({ type: "HISTORY_SET", items });
   }
 
   createListItem(itemName, favoriteList) {
@@ -1373,11 +1398,13 @@ class History {
     const container = searchHistoryListContainer;
     const statusMessage = emptyMessage;
     const clearAction = clearButton;
-    if (!container || !statusMessage || !clearAction) return;
+    const undoAction = undoButtonHistory;
+    if (!container || !statusMessage || !clearAction || !undoAction) return;
     const { items, emptyReason } = snapshot.history;
     const selected = new Set(snapshot.deleteMode.selectedValues);
     const deleting = snapshot.deleteMode.source === "history";
     const showDemo = snapshot.onboarding.demoHistoryVisible;
+    const undoing = Boolean(this._pendingUndo) && items.length === 0;
 
     statusMessage.style.whiteSpace = "pre-line";
     statusMessage.textContent = chrome.i18n.getMessage(
@@ -1385,6 +1412,8 @@ class History {
     );
     statusMessage.classList.toggle("d-none", items.length > 0 || showDemo);
     clearAction.disabled = items.length === 0;
+    clearAction.classList.toggle("d-none", undoing);
+    undoAction.classList.toggle("d-none", !undoing);
 
     // Patch icon classNames in place to preserve animation
     const structuralChange =
@@ -1535,9 +1564,15 @@ class Gemini {
     clearButtonSummary.addEventListener("click", () => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("clear_summary", "clearButtonSummary");
+      const { items, timestamp } = this.getStore().getSnapshot().summary;
+
       chrome.storage.local.remove(["summaryList", "timestamp"]);
       this.getStore().dispatch({ type: "SUMMARY_CLEAR" });
+
+      if (items.length > 0) this._startUndoWindow(items, timestamp);
     });
+
+    undoButtonSummary.addEventListener("click", () => this._undoClear());
 
     videoSummaryButton.addEventListener("click", () => {
       if (window.Analytics)
@@ -1576,6 +1611,37 @@ class Gemini {
           this.performNormalContentSummary(requestId, tabs[0]);
         }
       });
+    });
+  }
+
+  // Swaps clearButtonSummary for undoButtonSummary; reverts after 6s if unused.
+  _startUndoWindow(items, timestamp) {
+    clearTimeout(this._undoTimer);
+    this._pendingUndo = { items, timestamp };
+    this.render(this.getStore().getSnapshot());
+
+    this._undoTimer = setTimeout(() => {
+      this._pendingUndo = null;
+      this.render(this.getStore().getSnapshot());
+    }, 6000);
+  }
+
+  _undoClear() {
+    clearTimeout(this._undoTimer);
+    const pending = this._pendingUndo;
+    this._pendingUndo = null;
+    if (!pending) return;
+
+    // SUMMARY_STORAGE_SET itself is a no-op while generating (see reducer), but
+    // the storage write isn't guarded there — skip it too, or a failed generate
+    // leaves stale pre-clear data in storage that resurrects on next popup open.
+    if (this.getStore().getSnapshot().summary.phase === "generating") return;
+
+    chrome.storage.local.set({ summaryList: pending.items, timestamp: pending.timestamp });
+    this.getStore().dispatch({
+      type: "SUMMARY_STORAGE_SET",
+      items: pending.items,
+      timestamp: pending.timestamp,
     });
   }
 
@@ -1887,10 +1953,22 @@ class Gemini {
     const apiAction = document.getElementById("apiButton");
     const sendAction = document.getElementById("sendButton");
     const videoAction = document.getElementById("videoSummaryButton");
-    if (!statusMessage || !listContainer || !clearAction || !apiAction || !sendAction) return;
+    const undoAction = document.getElementById("undoButtonSummary");
+    if (
+      !statusMessage ||
+      !listContainer ||
+      !clearAction ||
+      !apiAction ||
+      !sendAction ||
+      !undoAction
+    )
+      return;
     const { summary, api, favorite: favoriteState } = snapshot;
     const ready = summary.phase === "ready" && summary.items.length > 0;
     const generating = summary.phase === "generating";
+    // Starting a new generate consumes the undo window: SUMMARY_STORAGE_SET is a
+    // no-op while generating, so a still-visible Undo button would just be a dead click.
+    const undoing = Boolean(this._pendingUndo) && !ready && !generating;
     let messageKey = "geminiEmptyMsg";
     let substitutions;
 
@@ -1940,7 +2018,8 @@ class Gemini {
 
     clearAction.classList.toggle("d-none", !ready);
     clearAction.disabled = !ready || generating;
-    apiAction.classList.toggle("d-none", ready);
+    apiAction.classList.toggle("d-none", ready || undoing);
+    undoAction.classList.toggle("d-none", !undoing);
     sendAction.disabled = api.status !== "valid" || generating;
     if (videoAction) {
       videoAction.classList.toggle("d-none", !snapshot.video.available);
@@ -2006,8 +2085,7 @@ class Modal {
     }
   }
 
-  // Suggested keys can be taken by the OS or another extension and silently do nothing;
-  // show what's actually bound instead.
+  // Suggested keys can silently fail if taken by the OS or another extension.
   _setupShortcutsDisplay() {
     if (chrome.runtime && typeof chrome.runtime.getPlatformInfo === "function") {
       chrome.runtime.getPlatformInfo((info) => {
@@ -2792,6 +2870,7 @@ const deleteButtonGroup = document.getElementById("deleteButtonGroup");
 const exportButtonGroup = document.getElementById("exportButtonGroup");
 const geminiButtonGroup = document.getElementById("geminiButtonGroup");
 const clearButton = document.getElementById("clearButton");
+const undoButtonHistory = document.getElementById("undoButtonHistory");
 const cancelButton = document.getElementById("cancelButton");
 const deleteButton = document.getElementById("deleteButton");
 const exportButton = document.getElementById("exportButton");
@@ -2801,6 +2880,7 @@ const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
 const enterButton = document.getElementById("enterButton");
 const clearButtonSummary = document.getElementById("clearButtonSummary");
+const undoButtonSummary = document.getElementById("undoButtonSummary");
 const premiumModal = document.getElementById("premiumModalLabel");
 const closeButton = premiumModal.parentElement.querySelector(".btn-close");
 const optionalButton = document.getElementById("optionalButton");
@@ -2948,6 +3028,22 @@ function checkTextOverflow() {
     clearButtonSummary.classList.remove("w-25");
     clearButtonSummary.classList.add("w-auto");
   }
+}
+
+// Coalesce repeated triggers (e.g. a dispatch followed by a direct component
+// render in the same tick) into a single measurement on the next frame.
+let textOverflowFrame = null;
+
+function scheduleTextOverflowCheck() {
+  if (textOverflowFrame != null) cancelAnimationFrame(textOverflowFrame);
+  textOverflowFrame = requestAnimationFrame(() => {
+    textOverflowFrame = null;
+    checkTextOverflow();
+  });
+}
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => scheduleTextOverflowCheck());
 }
 
 async function getWarmState(retries = 3, delay = 200) {
@@ -3134,6 +3230,10 @@ function renderPopup(snapshot = state.getSnapshot(), action = null, force = fals
   if (deleteModeChanged || activeTabChanged) {
     remove.render(snapshot);
   }
+  // Any of the above can newly reveal a width-adaptive button (tab switch,
+  // summary ready, undo pending clearing on restore, delete mode…) — always
+  // re-check instead of hooking every individual state transition by hand.
+  scheduleTextOverflowCheck();
 
   deleteListButton.disabled = tab === "gemini";
   if (tab !== "gemini") videoSummaryButton.classList.add("d-none");
@@ -3249,13 +3349,15 @@ window.__popupI18nChangedHandler = () => {
       gemini?.fetchAPIKey(apiKey);
     });
   }
-  [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {
-    btn.classList.remove("w-auto");
-    btn.classList.add("w-25");
-  });
-  // Re-measure after the new strings paint, through the same coalescing
-  // scheduler renderPopup uses instead of a raw, uncoordinated rAF.
-  requestAnimationFrame(checkTextOverflow);
+  // A shorter translation may no longer need the widened layout — reset so
+  // renderPopup's scheduleTextOverflowCheck() (already triggered above) can
+  // shrink it back instead of leaving a stale w-auto from the old language.
+  [clearButton, cancelButton, clearButtonSummary, undoButtonHistory, undoButtonSummary].forEach(
+    (btn) => {
+      btn.classList.remove("w-auto");
+      btn.classList.add("w-25");
+    }
+  );
   scheduleContentMeasurement();
 };
 window.addEventListener("i18n:changed", window.__popupI18nChangedHandler);
@@ -3435,6 +3537,7 @@ if (typeof module !== "undefined" && module.exports) {
     hydratePopup,
     renderPopup,
     checkTextOverflow,
+    scheduleTextOverflowCheck,
     getWarmState,
     fetchData,
     currentDimensions,

@@ -82,9 +82,15 @@ class Gemini {
     clearButtonSummary.addEventListener("click", () => {
       if (window.Analytics)
         window.Analytics.trackFeatureClick("clear_summary", "clearButtonSummary");
+      const { items, timestamp } = this.getStore().getSnapshot().summary;
+
       chrome.storage.local.remove(["summaryList", "timestamp"]);
       this.getStore().dispatch({ type: "SUMMARY_CLEAR" });
+
+      if (items.length > 0) this._startUndoWindow(items, timestamp);
     });
+
+    undoButtonSummary.addEventListener("click", () => this._undoClear());
 
     videoSummaryButton.addEventListener("click", () => {
       if (window.Analytics)
@@ -123,6 +129,37 @@ class Gemini {
           this.performNormalContentSummary(requestId, tabs[0]);
         }
       });
+    });
+  }
+
+  // Swaps clearButtonSummary for undoButtonSummary; reverts after 6s if unused.
+  _startUndoWindow(items, timestamp) {
+    clearTimeout(this._undoTimer);
+    this._pendingUndo = { items, timestamp };
+    this.render(this.getStore().getSnapshot());
+
+    this._undoTimer = setTimeout(() => {
+      this._pendingUndo = null;
+      this.render(this.getStore().getSnapshot());
+    }, 6000);
+  }
+
+  _undoClear() {
+    clearTimeout(this._undoTimer);
+    const pending = this._pendingUndo;
+    this._pendingUndo = null;
+    if (!pending) return;
+
+    // SUMMARY_STORAGE_SET itself is a no-op while generating (see reducer), but
+    // the storage write isn't guarded there — skip it too, or a failed generate
+    // leaves stale pre-clear data in storage that resurrects on next popup open.
+    if (this.getStore().getSnapshot().summary.phase === "generating") return;
+
+    chrome.storage.local.set({ summaryList: pending.items, timestamp: pending.timestamp });
+    this.getStore().dispatch({
+      type: "SUMMARY_STORAGE_SET",
+      items: pending.items,
+      timestamp: pending.timestamp,
     });
   }
 
@@ -434,10 +471,22 @@ class Gemini {
     const apiAction = document.getElementById("apiButton");
     const sendAction = document.getElementById("sendButton");
     const videoAction = document.getElementById("videoSummaryButton");
-    if (!statusMessage || !listContainer || !clearAction || !apiAction || !sendAction) return;
+    const undoAction = document.getElementById("undoButtonSummary");
+    if (
+      !statusMessage ||
+      !listContainer ||
+      !clearAction ||
+      !apiAction ||
+      !sendAction ||
+      !undoAction
+    )
+      return;
     const { summary, api, favorite: favoriteState } = snapshot;
     const ready = summary.phase === "ready" && summary.items.length > 0;
     const generating = summary.phase === "generating";
+    // Starting a new generate consumes the undo window: SUMMARY_STORAGE_SET is a
+    // no-op while generating, so a still-visible Undo button would just be a dead click.
+    const undoing = Boolean(this._pendingUndo) && !ready && !generating;
     let messageKey = "geminiEmptyMsg";
     let substitutions;
 
@@ -487,7 +536,8 @@ class Gemini {
 
     clearAction.classList.toggle("d-none", !ready);
     clearAction.disabled = !ready || generating;
-    apiAction.classList.toggle("d-none", ready);
+    apiAction.classList.toggle("d-none", ready || undoing);
+    undoAction.classList.toggle("d-none", !undoing);
     sendAction.disabled = api.status !== "valid" || generating;
     if (videoAction) {
       videoAction.classList.toggle("d-none", !snapshot.video.available);

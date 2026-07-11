@@ -134,6 +134,7 @@ describe("DOMUtils", () => {
     test("should have all required methods", () => {
       expect(typeof DOMUtils.findClosestListItem).toBe("function");
       expect(typeof DOMUtils.animateFavoriteIcon).toBe("function");
+      expect(typeof DOMUtils.fadeOutFavoriteIcon).toBe("function");
     });
   });
 });

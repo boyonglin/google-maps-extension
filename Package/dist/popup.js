@@ -31,6 +31,7 @@ const deleteButtonGroup = document.getElementById("deleteButtonGroup");
 const exportButtonGroup = document.getElementById("exportButtonGroup");
 const geminiButtonGroup = document.getElementById("geminiButtonGroup");
 const clearButton = document.getElementById("clearButton");
+const undoButtonHistory = document.getElementById("undoButtonHistory");
 const cancelButton = document.getElementById("cancelButton");
 const deleteButton = document.getElementById("deleteButton");
 const exportButton = document.getElementById("exportButton");
@@ -40,6 +41,7 @@ const apiButton = document.getElementById("apiButton");
 const sendButton = document.getElementById("sendButton");
 const enterButton = document.getElementById("enterButton");
 const clearButtonSummary = document.getElementById("clearButtonSummary");
+const undoButtonSummary = document.getElementById("undoButtonSummary");
 const premiumModal = document.getElementById("premiumModalLabel");
 const closeButton = premiumModal.parentElement.querySelector(".btn-close");
 const optionalButton = document.getElementById("optionalButton");
@@ -187,6 +189,22 @@ function checkTextOverflow() {
     clearButtonSummary.classList.remove("w-25");
     clearButtonSummary.classList.add("w-auto");
   }
+}
+
+// Coalesce repeated triggers (e.g. a dispatch followed by a direct component
+// render in the same tick) into a single measurement on the next frame.
+let textOverflowFrame = null;
+
+function scheduleTextOverflowCheck() {
+  if (textOverflowFrame != null) cancelAnimationFrame(textOverflowFrame);
+  textOverflowFrame = requestAnimationFrame(() => {
+    textOverflowFrame = null;
+    checkTextOverflow();
+  });
+}
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => scheduleTextOverflowCheck());
 }
 
 async function getWarmState(retries = 3, delay = 200) {
@@ -373,6 +391,10 @@ function renderPopup(snapshot = state.getSnapshot(), action = null, force = fals
   if (deleteModeChanged || activeTabChanged) {
     remove.render(snapshot);
   }
+  // Any of the above can newly reveal a width-adaptive button (tab switch,
+  // summary ready, undo pending clearing on restore, delete mode…) — always
+  // re-check instead of hooking every individual state transition by hand.
+  scheduleTextOverflowCheck();
 
   deleteListButton.disabled = tab === "gemini";
   if (tab !== "gemini") videoSummaryButton.classList.add("d-none");
@@ -488,13 +510,15 @@ window.__popupI18nChangedHandler = () => {
       gemini?.fetchAPIKey(apiKey);
     });
   }
-  [clearButton, cancelButton, clearButtonSummary].forEach((btn) => {
-    btn.classList.remove("w-auto");
-    btn.classList.add("w-25");
-  });
-  // Re-measure after the new strings paint, through the same coalescing
-  // scheduler renderPopup uses instead of a raw, uncoordinated rAF.
-  requestAnimationFrame(checkTextOverflow);
+  // A shorter translation may no longer need the widened layout — reset so
+  // renderPopup's scheduleTextOverflowCheck() (already triggered above) can
+  // shrink it back instead of leaving a stale w-auto from the old language.
+  [clearButton, cancelButton, clearButtonSummary, undoButtonHistory, undoButtonSummary].forEach(
+    (btn) => {
+      btn.classList.remove("w-auto");
+      btn.classList.add("w-25");
+    }
+  );
   scheduleContentMeasurement();
 };
 window.addEventListener("i18n:changed", window.__popupI18nChangedHandler);
@@ -674,6 +698,7 @@ if (typeof module !== "undefined" && module.exports) {
     hydratePopup,
     renderPopup,
     checkTextOverflow,
+    scheduleTextOverflowCheck,
     getWarmState,
     fetchData,
     currentDimensions,

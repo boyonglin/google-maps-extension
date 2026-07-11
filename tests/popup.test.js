@@ -400,9 +400,117 @@ describe("popup.js", () => {
       showPage("favorite");
       expect(videoSummaryButton.classList.contains("d-none")).toBe(true);
     });
+
+    test("SET_ACTIVE_TAB re-checks text overflow for the panel that just became visible", () => {
+      // The inactive tab's buttons were d-none at hydrate time (0 offsetHeight),
+      // so they were never correctly measured — switching to that tab must
+      // trigger a fresh check now that it has a real layout box.
+      const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+      const sendButtonSpan = document.querySelector("#sendButton > i + span");
+
+      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(clearButtonSummarySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
+
+      showPage("gemini");
+
+      expect(clearButtonSummary.classList.contains("w-25")).toBe(false);
+      expect(clearButtonSummary.classList.contains("w-auto")).toBe(true);
+    });
+  });
+
+  describe("renderPopup re-checks text overflow on any state change", () => {
+    beforeEach(() => {
+      popup.initializeDependencies({ state: mockState });
+      mockState.dispatch({ type: "HYDRATE", payload: {} });
+    });
+
+    test("re-checks clearButtonSummary when a generate finishes for the first time (SUMMARY_SUCCESS)", () => {
+      const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+      const sendButtonSpan = document.querySelector("#sendButton > i + span");
+      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(clearButtonSummarySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
+
+      mockState.dispatch({ type: "SUMMARY_START", requestId: "req-1", originTabId: 1 });
+      mockState.dispatch({
+        type: "SUMMARY_SUCCESS",
+        requestId: "req-1",
+        items: [{ name: "Place", clue: "Info" }],
+        timestamp: Date.now(),
+      });
+
+      expect(clearButtonSummary.classList.contains("w-auto")).toBe(true);
+    });
+
+    test("re-checks clearButtonSummary when a summary is restored from storage (SUMMARY_STORAGE_SET)", () => {
+      const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+      const sendButtonSpan = document.querySelector("#sendButton > i + span");
+      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(clearButtonSummarySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
+
+      const timestamp = Date.now();
+      mockState.dispatch({
+        type: "SUMMARY_STORAGE_SET",
+        items: [{ name: "Place", clue: "Info" }],
+        timestamp,
+        now: timestamp,
+      });
+
+      expect(clearButtonSummary.classList.contains("w-auto")).toBe(true);
+    });
+  });
+
+  describe("web font loading", () => {
+    test("re-checks text overflow once the custom web font (document.fonts.ready) resolves", async () => {
+      // A check that ran before Satoshi-Variable finished swapping in measured
+      // fallback-font widths — text that fit the fallback can still wrap once
+      // the real font lands, with nothing re-checking after the fact.
+      let resolveFontsReady;
+      document.fonts = {
+        ready: new Promise((resolve) => {
+          resolveFontsReady = resolve;
+        }),
+      };
+
+      jest.resetModules();
+      const freshPopup = require("../Package/dist/popup");
+      freshPopup.initializeDependencies({ state: mockState });
+
+      const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const clearButtonSummarySpan = document.querySelector("#clearButtonSummary > i + span");
+      const sendButtonSpan = document.querySelector("#sendButton > i + span");
+      Object.defineProperty(sendButtonSpan, "offsetHeight", { value: 20, configurable: true });
+      Object.defineProperty(clearButtonSummarySpan, "offsetHeight", {
+        value: 40,
+        configurable: true,
+      });
+
+      resolveFontsReady();
+      await flushPromises();
+
+      expect(clearButtonSummary.classList.contains("w-auto")).toBe(true);
+
+      delete document.fonts;
+    });
   });
 
   describe("checkTextOverflow", () => {
+    test("uses the shared non-wrapping icon-label layout for both Undo buttons", () => {
+      expect(document.getElementById("undoButtonHistory").classList).toContain("btn-icon-label");
+      expect(document.getElementById("undoButtonSummary").classList).toContain("btn-icon-label");
+    });
+
     test("checkTextOverflow adjusts button width classes based on content height", () => {
       popup.initializeDependencies({ state: mockState });
 
@@ -1630,12 +1738,16 @@ describe("popup.js", () => {
       const clearButton = document.getElementById("clearButton");
       const cancelButton = document.getElementById("cancelButton");
       const clearButtonSummary = document.getElementById("clearButtonSummary");
+      const undoButtonHistory = document.getElementById("undoButtonHistory");
+      const undoButtonSummary = document.getElementById("undoButtonSummary");
 
       popup.initializeDependencies({ state: mockState });
       mockState.dispatch({ type: "HYDRATE", payload: { lastActiveTab: "favorite" } });
       clearButton.classList.replace("w-25", "w-auto");
       cancelButton.classList.replace("w-25", "w-auto");
       clearButtonSummary.classList.replace("w-25", "w-auto");
+      undoButtonHistory.classList.replace("w-25", "w-auto");
+      undoButtonSummary.classList.replace("w-25", "w-auto");
       const originalGlobalRaf = global.requestAnimationFrame;
       const originalWindowRaf = window.requestAnimationFrame;
       const requestAnimationFrameMock = jest.fn();
@@ -1645,10 +1757,12 @@ describe("popup.js", () => {
       window.dispatchEvent(new Event("i18n:changed"));
 
       expect(subtitle.textContent).toBe(chrome.i18n.getMessage("favoriteListSubtitle"));
-      [clearButton, cancelButton, clearButtonSummary].forEach((button) => {
-        expect(button.classList.contains("w-25")).toBe(true);
-        expect(button.classList.contains("w-auto")).toBe(false);
-      });
+      [clearButton, cancelButton, clearButtonSummary, undoButtonHistory, undoButtonSummary].forEach(
+        (button) => {
+          expect(button.classList.contains("w-25")).toBe(true);
+          expect(button.classList.contains("w-auto")).toBe(false);
+        }
+      );
       expect(requestAnimationFrameMock).toHaveBeenCalled();
       global.requestAnimationFrame = originalGlobalRaf;
       window.requestAnimationFrame = originalWindowRaf;

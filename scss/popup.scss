@@ -608,8 +608,7 @@ li {
       opacity: 0.5;
     }
 
-    // Fade out on unfavorite regardless of hover state, until the icon is
-    // swapped back once the pointer leaves the row (see fadeOutFavoriteIcon).
+    // Overrides hover opacity until fadeOutFavoriteIcon swaps the icon back.
     &.unfavoriting {
       display: flex;
       opacity: 0 !important;
@@ -650,6 +649,13 @@ li:hover .form-check-input {
 }
 
 /* buttons */
+
+.btn-icon-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
 
 .nav-link {
   padding-right: 0.75rem;

@@ -22,7 +22,6 @@ global.ContextMenuUtil = {
 };
 
 global.measureContentSize = jest.fn();
-global.checkTextOverflow = jest.fn();
 global.delayMeasurement = jest.fn();
 
 // Mock fetch for YouTube video scraping
@@ -46,7 +45,7 @@ describe("Gemini Component", () => {
 
   // Global DOM elements that gemini.js expects to exist
   let summaryListContainer, geminiEmptyMessage, clearButtonSummary;
-  let apiButton, sendButton, apiInput, responseField;
+  let apiButton, sendButton, apiInput, responseField, undoButtonSummary;
   let videoSummaryButton, geminiSummaryButton;
 
   // ============================================================================
@@ -62,6 +61,7 @@ describe("Gemini Component", () => {
             <div id="summaryList"></div>
             <div id="geminiEmptyMessage"></div>
             <button id="clearButtonSummary" class="d-none"></button>
+            <button id="undoButtonSummary" class="d-none"></button>
             <button id="apiButton"></button>
             <button id="sendButton"></button>
             <input id="apiInput" />
@@ -74,6 +74,7 @@ describe("Gemini Component", () => {
     summaryListContainer = global.summaryListContainer = document.getElementById("summaryList");
     geminiEmptyMessage = global.geminiEmptyMessage = document.getElementById("geminiEmptyMessage");
     clearButtonSummary = global.clearButtonSummary = document.getElementById("clearButtonSummary");
+    undoButtonSummary = global.undoButtonSummary = document.getElementById("undoButtonSummary");
     apiButton = global.apiButton = document.getElementById("apiButton");
     sendButton = global.sendButton = document.getElementById("sendButton");
     apiInput = global.apiInput = document.getElementById("apiInput");
@@ -402,6 +403,134 @@ describe("Gemini Component", () => {
       expect(clearButtonSummary.classList.contains("d-none")).toBe(true);
       expect(geminiEmptyMessage.classList.contains("d-none")).toBe(false);
       expect(apiButton.classList.contains("d-none")).toBe(false);
+    });
+
+    describe("undo window", () => {
+      beforeEach(() => {
+        jest.useFakeTimers();
+      });
+
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+
+      test("should swap apiButton for undoButtonSummary when clearing a non-empty summary", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
+
+        clearButtonSummary.click();
+
+        expect(apiButton.classList.contains("d-none")).toBe(true);
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(false);
+      });
+
+      test("should not show undoButtonSummary when the summary was already empty", () => {
+        clearButtonSummary.click();
+
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
+        expect(apiButton.classList.contains("d-none")).toBe(false);
+      });
+
+      test("should restore the summary and storage when Undo is clicked", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        const items = [{ name: "Place", clue: "Info" }];
+        state.dispatch({ type: "SUMMARY_STORAGE_SET", items, timestamp, now: timestamp });
+
+        clearButtonSummary.click();
+        expect(state.getSnapshot().summary.phase).toBe("empty");
+
+        undoButtonSummary.click();
+
+        expect(chrome.storage.local.set).toHaveBeenCalledWith({ summaryList: items, timestamp });
+        expect(state.getSnapshot().summary.phase).toBe("ready");
+        expect(state.getSnapshot().summary.items).toEqual(items);
+        expect(apiButton.classList.contains("d-none")).toBe(true);
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
+      });
+
+      test("should fall back to apiButton after 6 seconds without Undo", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
+
+        clearButtonSummary.click();
+        jest.advanceTimersByTime(6000);
+
+        expect(apiButton.classList.contains("d-none")).toBe(false);
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
+      });
+
+      test("should not restore stale data once the undo window has lapsed", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
+        clearButtonSummary.click();
+        jest.advanceTimersByTime(6000);
+        chrome.storage.local.set.mockClear();
+
+        undoButtonSummary.click();
+
+        expect(chrome.storage.local.set).not.toHaveBeenCalled();
+        expect(state.getSnapshot().summary.phase).toBe("empty");
+      });
+
+      test("should hide undoButtonSummary once a new generate starts, even with a pending undo", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
+        clearButtonSummary.click();
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(false);
+
+        state.dispatch({ type: "SUMMARY_START", requestId: "req-1", originTabId: 1 });
+
+        expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
+        expect(apiButton.classList.contains("d-none")).toBe(false);
+      });
+
+      test("should not persist stale pre-clear data when Undo is clicked mid-generate", () => {
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        const staleItems = [{ name: "Old Place", clue: "Old Info" }];
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: staleItems,
+          timestamp,
+          now: timestamp,
+        });
+        clearButtonSummary.click();
+        state.dispatch({ type: "SUMMARY_START", requestId: "req-1", originTabId: 1 });
+        chrome.storage.local.set.mockClear();
+
+        // undoButtonSummary is hidden by render(), but the click handler itself
+        // must also refuse to act — a stray click event (or a race between the
+        // hide and a queued click) shouldn't be able to write stale data.
+        undoButtonSummary.click();
+
+        expect(chrome.storage.local.set).not.toHaveBeenCalled();
+        expect(state.getSnapshot().summary.phase).toBe("generating");
+      });
     });
   });
 
