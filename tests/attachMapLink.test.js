@@ -899,5 +899,15 @@ describe("attachMapLink.js - Map Link Attachment", () => {
       expect(getMapLinks()).toHaveLength(1);
       expect(getMapLinks()[0].hasAttribute("data-tme-map-pin")).toBe(true);
     });
+
+    test("does not count an ordinary host-page Maps link as an extension pin", () => {
+      setBodyHTML(
+        '<a href="https://www.google.com/maps?q=Existing%20Place">Open map</a><p>Tokyo Tower</p>'
+      );
+
+      expect(attachMapLinkToPage(createRequest("Tokyo Tower"))).toBe(1);
+      expect(getMapLinks()).toHaveLength(2);
+      expect(getMapLinks()[0].hasAttribute("data-tme-map-pin")).toBe(false);
+    });
   });
 });
