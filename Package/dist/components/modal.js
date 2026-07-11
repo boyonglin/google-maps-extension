@@ -50,8 +50,7 @@ class Modal {
     }
   }
 
-  // Suggested keys can be taken by the OS or another extension and silently do nothing;
-  // show what's actually bound instead.
+  // Suggested keys can silently fail if taken by the OS or another extension.
   _setupShortcutsDisplay() {
     if (chrome.runtime && typeof chrome.runtime.getPlatformInfo === "function") {
       chrome.runtime.getPlatformInfo((info) => {
