@@ -25,6 +25,51 @@ const DEFAULT_CAN_RETRY = (err) => String(err?.message ?? err).includes(RECEIVIN
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const MAX_RETRY_DELAY = 5000; // Cap exponential backoff at 5 seconds
 
+const AUTO_ATTACH_BADGE_COLOR = "#dadce0";
+const AUTO_ATTACH_BADGE_TEXT_COLOR = "#3c4043";
+const AUTO_ATTACH_BADGE_TEXT = {
+  loading: "…",
+  error: "!",
+};
+const activeAutoAttachRuns = new Map();
+let nextAutoAttachRunId = 0;
+
+function beginAutoAttachRun(tabId) {
+  const runId = ++nextAutoAttachRunId;
+  activeAutoAttachRuns.set(tabId, runId);
+  return runId;
+}
+
+function isCurrentAutoAttachRun(tabId, runId) {
+  return activeAutoAttachRuns.get(tabId) === runId;
+}
+
+function finishAutoAttachRun(tabId, runId, state, count = 0) {
+  if (!isCurrentAutoAttachRun(tabId, runId)) return false;
+  setAutoAttachBadge(tabId, state, count);
+  activeAutoAttachRuns.delete(tabId);
+  return true;
+}
+
+function formatBadgeCount(count) {
+  return count > 999 ? "999+" : String(count);
+}
+
+function setAutoAttachBadge(tabId, state, count = 0) {
+  if (!(state in AUTO_ATTACH_BADGE_TEXT || state === "success")) return;
+  if (!Number.isSafeInteger(tabId)) return;
+
+  const text = state === "success" ? formatBadgeCount(count) : AUTO_ATTACH_BADGE_TEXT[state];
+  chrome.action.setBadgeBackgroundColor({ tabId, color: AUTO_ATTACH_BADGE_COLOR });
+  chrome.action.setBadgeTextColor?.({ tabId, color: AUTO_ATTACH_BADGE_TEXT_COLOR });
+  chrome.action.setBadgeText({ tabId, text });
+}
+
+function clearAutoAttachBadge(tabId) {
+  if (!Number.isSafeInteger(tabId)) return;
+  chrome.action.setBadgeText({ tabId, text: "" });
+}
+
 async function withRetry(
   attempt,
   { retries = 10, delay = 100, canRetry = DEFAULT_CAN_RETRY } = {}
@@ -73,6 +118,14 @@ chrome.runtime.onInstalled.addListener((details) => {
         url: "https://the-maps-express.notion.site/384675c4183b4799852e5b298f999645",
       });
     }
+  }
+});
+
+// A completed count stays visible for the life of the current document.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === "loading") {
+    activeAutoAttachRuns.delete(tabId);
+    clearAutoAttachBadge(tabId);
   }
 });
 
@@ -161,24 +214,33 @@ chrome.commands.onCommand.addListener(async (command) => {
           }
         });
       } else if (command === "auto-attach") {
-        extpay.getUser().then(async (user) => {
-          const now = new Date();
+        const runId = beginAutoAttachRun(tabId);
+        setAutoAttachBadge(tabId, "loading");
+        extpay
+          .getUser()
+          .then(async (user) => {
+            const now = new Date();
 
-          if (user.paid) {
-            await tryAndCheckApi(tabId);
-            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
-          } else if (user.trialStartedAt && now - user.trialStartedAt < trialPeriod) {
-            await tryAndCheckApi(tabId);
-            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
-          } else if (user.trialStartedAt) {
-            await tryAndCheckApi(tabId);
-            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
-            tryPremiumNotify().catch(() => {});
-          } else {
-            await tryAndCheckApi(tabId);
-            chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
-          }
-        });
+            if (user.paid) {
+              if (!(await tryAndCheckApi(tabId, runId))) return;
+              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "premium" });
+            } else if (user.trialStartedAt && now - user.trialStartedAt < trialPeriod) {
+              if (!(await tryAndCheckApi(tabId, runId))) return;
+              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
+            } else if (user.trialStartedAt) {
+              if (!(await tryAndCheckApi(tabId, runId))) return;
+              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
+              tryPremiumNotify().catch(() => {});
+            } else {
+              if (!(await tryAndCheckApi(tabId, runId))) return;
+              chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "trial" });
+            }
+          })
+          .catch((error) => {
+            if (!isCurrentAutoAttachRun(tabId, runId)) return;
+            console.error("Auto-attach failed:", error);
+            finishAutoAttachRun(tabId, runId, "error");
+          });
       } else if (command === "run-directions") {
         chrome.storage.local.get("startAddr", async ({ startAddr }) => {
           if (startAddr) {
@@ -201,33 +263,57 @@ chrome.commands.onCommand.addListener(async (command) => {
   });
 });
 
-async function tryAndCheckApi(tabId) {
+async function tryAndCheckApi(tabId, runId) {
   try {
     await getApiKey();
   } catch (error) {
+    if (!finishAutoAttachRun(tabId, runId, "error")) return false;
     chrome.tabs.sendMessage(tabId, { action: "consoleQuote", stage: "missing" });
     meow();
     tryAPINotify().catch(() => {});
-    return;
+    return false;
   }
-  await trySuggest(tabId);
+  return trySuggest(tabId, runId);
 }
 
-async function trySuggest(tabId, retries = 10) {
+async function trySuggest(tabId, runId, retries = 10) {
   return withRetry(
     async () => {
+      if (!isCurrentAutoAttachRun(tabId, runId)) return false;
+
       const apiKey = await getApiKey();
       const response = await getContent(tabId);
+
+      if (!isCurrentAutoAttachRun(tabId, runId)) return false;
 
       // Treat as transient: trigger retry
       if (!response?.content) throw new Error(RECEIVING_END_ERR);
 
       callApi(geminiPrompts.attach, response.content, apiKey, (apiResponse) => {
-        chrome.tabs.sendMessage(tabId, {
-          action: "attachMapLink",
-          content: apiResponse,
-          queryUrl: queryUrl,
-        });
+        if (!isCurrentAutoAttachRun(tabId, runId)) return;
+
+        if (typeof apiResponse !== "string") {
+          finishAutoAttachRun(tabId, runId, "error");
+          return;
+        }
+
+        chrome.tabs.sendMessage(
+          tabId,
+          {
+            action: "attachMapLink",
+            content: apiResponse,
+            queryUrl: queryUrl,
+          },
+          (result) => {
+            if (!isCurrentAutoAttachRun(tabId, runId)) return;
+
+            if (chrome.runtime.lastError || !Number.isFinite(result?.attachedCount)) {
+              finishAutoAttachRun(tabId, runId, "error");
+              return;
+            }
+            finishAutoAttachRun(tabId, runId, "success", result.attachedCount);
+          }
+        );
       });
 
       return true;

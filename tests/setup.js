@@ -70,6 +70,9 @@ global.chrome = {
     onActivated: {
       addListener: jest.fn(),
     },
+    onUpdated: {
+      addListener: jest.fn(),
+    },
   },
   scripting: {
     executeScript: jest.fn(),
@@ -92,6 +95,9 @@ global.chrome = {
       addListener: jest.fn(),
     },
     setIcon: jest.fn(),
+    setBadgeText: jest.fn(),
+    setBadgeBackgroundColor: jest.fn(),
+    setBadgeTextColor: jest.fn(),
   },
   windows: {
     getCurrent: jest.fn(),

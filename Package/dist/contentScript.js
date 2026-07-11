@@ -19,7 +19,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "attachMapLink" && request.content) {
-    globalThis.attachMapLinkToPage(request);
+    const attachedCount = globalThis.attachMapLinkToPage(request);
+    sendResponse({ attachedCount });
   }
 
   if (request.message === "ping") {

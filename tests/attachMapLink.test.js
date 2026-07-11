@@ -357,7 +357,7 @@ describe("attachMapLink.js - Map Link Attachment", () => {
       expect(getMapLinks().length).toBe(0);
     });
 
-    test("should handle multiple elements with same candidate", () => {
+    test("should attach the same candidate at each occurrence on the page", () => {
       setupAndAttach(
         "<h1>Central Park</h1><h2>Central Park</h2><p>Central Park</p>",
         "Central Park"
@@ -829,6 +829,75 @@ describe("attachMapLink.js - Map Link Attachment", () => {
       // The candidate is split by newlines, so 'Central' and 'Park' are separate
       const links = document.querySelectorAll('a[href*="https://www.google.com/maps"]');
       expect(links.length).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe("Attached pin count", () => {
+    test("returns the number of pins inserted", () => {
+      setBodyHTML("<p>Visit Tokyo Tower</p><p>Then see Eiffel Tower</p>");
+
+      const count = attachMapLinkToPage(createRequest("Tokyo Tower\nEiffel Tower"));
+
+      expect(count).toBe(2);
+      expect(getMapLinks()).toHaveLength(2);
+    });
+
+    test("returns zero when no candidate matches", () => {
+      setBodyHTML("<p>Nothing relevant here</p>");
+
+      expect(attachMapLinkToPage(createRequest("Louvre Museum"))).toBe(0);
+    });
+
+    test("returns zero for missing content", () => {
+      expect(attachMapLinkToPage(createRequest(""))).toBe(0);
+      expect(attachMapLinkToPage(null)).toBe(0);
+    });
+
+    test("inserts repeated model output only once per matching element", () => {
+      setBodyHTML("<p>Tokyo Tower is open</p><p>Return to Tokyo Tower later</p>");
+
+      const count = attachMapLinkToPage(createRequest("Tokyo Tower\nTokyo Tower"));
+
+      expect(count).toBe(1);
+      expect(getMapLinks()).toHaveLength(2);
+    });
+
+    test("does not insert the same candidate again on a subsequent run", () => {
+      setBodyHTML("<p>Tokyo Tower is open</p>");
+      const request = createRequest("Tokyo Tower");
+
+      expect(attachMapLinkToPage(request)).toBe(1);
+      expect(attachMapLinkToPage(request)).toBe(1);
+      expect(getMapLinks()).toHaveLength(1);
+      expect(getMapLinks()[0].dataset.tmeCandidate).toBe("tokyo tower");
+    });
+
+    test("returns the existing total when auto-attach runs again", () => {
+      setBodyHTML("<p>Tokyo Tower is open</p><p>Tokyo Tower closes later</p>");
+      const request = createRequest("Tokyo Tower");
+
+      expect(attachMapLinkToPage(request)).toBe(1);
+      expect(attachMapLinkToPage(request)).toBe(1);
+      expect(getMapLinks()).toHaveLength(2);
+    });
+
+    test("counts unique candidates independently from repeated pins", () => {
+      setBodyHTML(
+        "<p>Tiny Ponta Coffee</p><p>Tiny Ponta Coffee is cozy</p><p>Visit Tokyo Tower</p>"
+      );
+
+      const count = attachMapLinkToPage(createRequest("Tiny Ponta Coffee\nTokyo Tower"));
+
+      expect(getMapLinks()).toHaveLength(3);
+      expect(count).toBe(2);
+    });
+
+    test("upgrades and counts a legacy extension pin", () => {
+      setBodyHTML('<p>Tokyo Tower<a href="https://www.google.com/maps?q=Tokyo%20Tower">📌</a></p>');
+
+      expect(attachMapLinkToPage(createRequest("Tokyo Tower"))).toBe(1);
+      expect(getMapLinks()).toHaveLength(1);
+      expect(getMapLinks()[0].hasAttribute("data-tme-map-pin")).toBe(true);
     });
   });
 });
