@@ -455,6 +455,28 @@ describe("Gemini Component", () => {
         expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
       });
 
+      test("should track undo_clear_summary when Undo is clicked", () => {
+        window.Analytics = { trackFeatureClick: jest.fn() };
+        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
+        const timestamp = Date.now();
+        state.dispatch({
+          type: "SUMMARY_STORAGE_SET",
+          items: [{ name: "Place", clue: "Info" }],
+          timestamp,
+          now: timestamp,
+        });
+
+        clearButtonSummary.click();
+        undoButtonSummary.click();
+
+        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledWith(
+          "undo_clear_summary",
+          "undoButtonSummary"
+        );
+
+        delete window.Analytics;
+      });
+
       test("should fall back to apiButton after 6 seconds without Undo", () => {
         favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
         const timestamp = Date.now();

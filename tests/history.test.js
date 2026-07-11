@@ -661,6 +661,21 @@ describe("History Component", () => {
           expect(undoButtonHistory.classList.contains("d-none")).toBe(true);
         });
 
+        test("should track undo_clear_history when Undo is clicked", () => {
+          window.Analytics = { trackFeatureClick: jest.fn() };
+
+          state.dispatch({ type: "HISTORY_SET", items: ["Tokyo", "Paris"] });
+          clearButton.dispatchEvent(new Event("click"));
+          undoButtonHistory.dispatchEvent(new Event("click"));
+
+          expect(window.Analytics.trackFeatureClick).toHaveBeenCalledWith(
+            "undo_clear_history",
+            "undoButtonHistory"
+          );
+
+          delete window.Analytics;
+        });
+
         test("should fall back to the normal empty state after 6 seconds without Undo", () => {
           state.dispatch({ type: "HISTORY_SET", items: ["Tokyo", "Paris"] });
 

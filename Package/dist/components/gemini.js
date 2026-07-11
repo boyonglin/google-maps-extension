@@ -90,7 +90,11 @@ class Gemini {
       if (items.length > 0) this._startUndoWindow(items, timestamp);
     });
 
-    undoButtonSummary.addEventListener("click", () => this._undoClear());
+    undoButtonSummary.addEventListener("click", () => {
+      if (window.Analytics)
+        window.Analytics.trackFeatureClick("undo_clear_summary", "undoButtonSummary");
+      this._undoClear();
+    });
 
     videoSummaryButton.addEventListener("click", () => {
       if (window.Analytics)

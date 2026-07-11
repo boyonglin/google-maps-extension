@@ -1343,7 +1343,11 @@ class History {
       if (clearedItems.length > 0) this._startUndoWindow(clearedItems);
     });
 
-    undoButtonHistory.addEventListener("click", () => this._undoClear());
+    undoButtonHistory.addEventListener("click", () => {
+      if (window.Analytics)
+        window.Analytics.trackFeatureClick("undo_clear_history", "undoButtonHistory");
+      this._undoClear();
+    });
   }
 
   // Swaps clearButton for undoButtonHistory; reverts after 6s if unused.
@@ -1570,7 +1574,11 @@ class Gemini {
       if (items.length > 0) this._startUndoWindow(items, timestamp);
     });
 
-    undoButtonSummary.addEventListener("click", () => this._undoClear());
+    undoButtonSummary.addEventListener("click", () => {
+      if (window.Analytics)
+        window.Analytics.trackFeatureClick("undo_clear_summary", "undoButtonSummary");
+      this._undoClear();
+    });
 
     videoSummaryButton.addEventListener("click", () => {
       if (window.Analytics)
