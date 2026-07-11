@@ -89,8 +89,6 @@ class History {
       chrome.storage.local.set({ searchHistoryList: [] });
       state.dispatch({ type: "HISTORY_SET", items: [], emptyReason: "cleared" });
 
-      chrome.runtime.sendMessage({ action: "clearSearchHistoryList" });
-
       if (clearedItems.length > 0) this._startUndoWindow(clearedItems);
     });
 

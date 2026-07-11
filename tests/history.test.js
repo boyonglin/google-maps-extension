@@ -589,14 +589,6 @@ describe("History Component", () => {
         expect(state.getSnapshot().history.items).toEqual([]);
       });
 
-      test("should send message to background to clear history", () => {
-        clearButton.dispatchEvent(new Event("click"));
-
-        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-          action: "clearSearchHistoryList",
-        });
-      });
-
       test("should update empty message with i18n text", () => {
         clearButton.dispatchEvent(new Event("click"));
 
@@ -626,7 +618,6 @@ describe("History Component", () => {
         clearButton.dispatchEvent(new Event("click"));
 
         expect(chrome.storage.local.set).toHaveBeenCalledTimes(3);
-        expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(3);
       });
 
       describe("undo window", () => {
@@ -1126,9 +1117,6 @@ describe("History Component", () => {
       expect(emptyMessage.classList.contains("d-none")).toBe(false);
       expect(state.getSnapshot().history.items).toEqual([]);
       expect(chrome.storage.local.set).toHaveBeenCalledWith({ searchHistoryList: [] });
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-        action: "clearSearchHistoryList",
-      });
     });
 
     test("complete workflow: toggle delete mode and check items", () => {

@@ -298,9 +298,7 @@ function handleSelectedDir(selectedText) {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "clearSearchHistoryList") {
-    chrome.storage.local.set({ searchHistoryList: [] });
-  } else if (request.action === "searchInput") {
+  if (request.action === "searchInput") {
     let searchTerm = request.searchTerm;
     if (searchTerm) {
       ensureWarm().then(() => {
