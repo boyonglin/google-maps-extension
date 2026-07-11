@@ -380,6 +380,18 @@ describe("History Component", () => {
         expect(global.favorite.removeFavoriteItem).not.toHaveBeenCalled();
       });
 
+      test("should not add to favorites when right- or middle-clicking an unmatched icon", () => {
+        const li = createMockHistoryItem("Test Location");
+        searchHistoryListContainer.appendChild(li);
+
+        const icon = li.querySelector("i");
+        icon.classList.add("bi");
+        icon.dispatchEvent(createMouseEvent(icon, 2));
+        icon.dispatchEvent(createMouseEvent(icon, 1));
+
+        expect(global.favorite.addToFavoriteList).not.toHaveBeenCalled();
+      });
+
       test("should not open URL when clicking an already-matched icon", async () => {
         const li = createMockHistoryItem("Test Location", ["Test Location"]);
         li.dataset.itemValue = "Test Location";

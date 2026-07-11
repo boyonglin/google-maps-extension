@@ -32,6 +32,7 @@ class Gemini {
         // Icon is mid fade-out from a previous removal; ignore re-clicks
         // until mouseleave restores it (see DOMUtils.fadeOutFavoriteIcon).
         if (event.target.classList.contains("unfavoriting")) return;
+        if (event.button !== 0) return;
 
         const nameSpan = spans[0].textContent;
         const reconstructedValue =

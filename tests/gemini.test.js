@@ -200,6 +200,23 @@ describe("Gemini Component", () => {
       expect(icon.className).toContain("spring-animation");
     });
 
+    test("should not add to or remove from favorites when right- or middle-clicking the icon", () => {
+      const mockItem = createMockSummaryItem("Restaurant", "Downtown");
+      summaryListContainer.appendChild(mockItem);
+      const icon = mockItem.querySelector("i");
+
+      const rightClick = new MouseEvent("click", { bubbles: true, button: 2 });
+      Object.defineProperty(rightClick, "target", { value: icon, enumerable: true });
+      summaryListContainer.dispatchEvent(rightClick);
+
+      const middleClick = new MouseEvent("click", { bubbles: true, button: 1 });
+      Object.defineProperty(middleClick, "target", { value: icon, enumerable: true });
+      summaryListContainer.dispatchEvent(middleClick);
+
+      expect(favorite.addToFavoriteList).not.toHaveBeenCalled();
+      expect(favorite.removeFavoriteItem).not.toHaveBeenCalled();
+    });
+
     test("should add to favorites when clicking favorite icon without clue", async () => {
       const mockItem = createMockSummaryItem("Restaurant");
       summaryListContainer.appendChild(mockItem);

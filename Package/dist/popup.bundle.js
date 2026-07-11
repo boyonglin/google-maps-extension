@@ -1281,11 +1281,11 @@ class History {
           // Icon is mid fade-out from a previous removal; ignore re-clicks
           // until mouseleave restores it (see DOMUtils.fadeOutFavoriteIcon).
           if (event.target.classList.contains("unfavoriting")) return;
+          if (event.button !== 0) return;
 
           const selectedText = liElement.querySelector("span")?.textContent;
 
           if (event.target.classList.contains("matched")) {
-            if (event.button !== 0) return;
             if (window.Analytics)
               window.Analytics.trackFeatureClick(
                 "remove_favorite_from_history",
@@ -1520,6 +1520,7 @@ class Gemini {
         // Icon is mid fade-out from a previous removal; ignore re-clicks
         // until mouseleave restores it (see DOMUtils.fadeOutFavoriteIcon).
         if (event.target.classList.contains("unfavoriting")) return;
+        if (event.button !== 0) return;
 
         const nameSpan = spans[0].textContent;
         const reconstructedValue =
