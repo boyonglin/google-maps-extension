@@ -52,7 +52,7 @@
   "geminiErrorMsg": {
     "message": "エラーが発生しました！\nページを再読み込みして再試行してください\ud83d\udea7"
   },
-    "geminiOverloadMsg": {
+  "geminiOverloadMsg": {
     "message": "モデルが過負荷です！\n後でもう一度お試しください。\ud83d\udea7"
   },
   "apiInvalidMsg": {
@@ -113,6 +113,9 @@
   },
   "aboutBtnText": {
     "message": "について"
+  },
+  "privacyBtnText": {
+    "message": "プライバシー"
   },
   "premiumBtnText": {
     "message": "まほう"
@@ -199,7 +202,7 @@
     "message": "AI でスポットを要約"
   },
   "onboardingApiDesc": {
-    "message": "無料の Gemini API キーを追加すると、検索した場所の AI 要約をすぐに確認できます。"
+    "message": "Gemini API キーを追加します。AI 機能の実行時、現在のページの関連テキストまたは選択した YouTube URL が Google Gemini に送信されます。"
   },
   "onboardingPremiumTitle": {
     "message": "40 日間無料でお試し"
@@ -240,7 +243,13 @@
     "message": "API キーの設定"
   },
   "apiNote": {
-    "message": "Google AI Studio から無料の API キーを取得できます。リクエスト数の制限は 15 回/分、1,500 回/日です。"
+    "message": "Google AI Studio でキーを取得してください。AI リクエストでは、現在のページの関連テキストまたは選択した YouTube URL が Google Gemini に送信されます。制限と料金は Google プロジェクトによって異なります。Google によると、無償サービスの入出力は製品改善に使用され、人間のレビュアーが処理する場合があります。機密情報、秘密情報、個人情報には無償サービスを使用しないでください。"
+  },
+  "geminiDataDisclosure": {
+    "message": "「Gemini 要約」をクリックすると、API キーを使用して、現在のページタイトルと関連する表示テキスト、または選択した YouTube 動画 URL が暗号化通信で Google Gemini に送信されます。Google によると、無償サービスの内容は製品改善に使用され、人間のレビュアーが処理する場合があります。機密情報、秘密情報、個人情報を送信しないでください。"
+  },
+  "autoAttachDataDisclosure": {
+    "message": "リンク自動添付と場所の整理は、実行したときだけ、関連するページテキストまたは保存済みの場所名を Google Gemini に送信します。Google によると、無償サービスの内容は製品改善に使用され、人間のレビュアーが処理する場合があります。機密情報、秘密情報、個人情報を送信しないでください。"
   },
   "apiPlaceholder": {
     "message": "Gemini API キー"
@@ -287,7 +296,7 @@
   "getDirections": {
     "message": "ルートを検索"
   },
-  "tidyLocations" : {
+  "tidyLocations": {
     "message": "場所を整頓"
   },
   "shortcutUnsetLabel": {

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "The Maps Express",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "description": "A Shortcut to Google Maps, but Rich and Beautiful.",
   "icons": {
     "16": "images/icon-16.png",
@@ -18,13 +18,7 @@
       "128": "images/icon-128.png"
     }
   },
-  "permissions": [
-    "activeTab",
-    "contextMenus",
-    "storage",
-    "scripting",
-    "tabGroups"
-  ],
+  "permissions": ["activeTab", "contextMenus", "storage", "scripting", "tabGroups"],
   "background": {
     "service_worker": "dist/background.js",
     "type": "module"
@@ -59,27 +53,15 @@
       "description": "Get Google Maps directions"
     }
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": [
-        "dist/utils/attachMapLink.js",
-        "dist/contentScript.js"
-      ],
-      "css": ["css/iframe.css"]
-    }
-  ],
   "default_locale": "en",
-  "host_permissions": [
-    "https://generativelanguage.googleapis.com/*",
-    "https://extensionpay.com/*",
-    "https://www.youtube.com/*",
-    "https://www.google-analytics.com/*"
-  ],
+  "host_permissions": ["https://generativelanguage.googleapis.com/*", "https://extensionpay.com/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  },
   "web_accessible_resources": [
     {
-      "matches": ["<all_urls>"],
-      "resources": ["vendor/fonts/*.woff2", "popup.html", "css/iframe.css"]
+      "matches": ["http://*/*", "https://*/*"],
+      "resources": ["popup.html", "css/iframe.css"]
     }
   ]
 }

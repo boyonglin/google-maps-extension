@@ -114,6 +114,9 @@
   "aboutBtnText": {
     "message": "關於"
   },
+  "privacyBtnText": {
+    "message": "隱私權"
+  },
   "premiumBtnText": {
     "message": "魔法"
   },
@@ -199,7 +202,7 @@
     "message": "AI 地點摘要"
   },
   "onboardingApiDesc": {
-    "message": "填入免費的 Gemini API 金鑰，即可查看任何地點的 AI 整理重點。"
+    "message": "填入 Gemini API 金鑰。使用 AI 功能時，會將目前頁面的相關文字或所選 YouTube 網址傳送給 Google Gemini。"
   },
   "onboardingPremiumTitle": {
     "message": "40 天免費體驗"
@@ -240,7 +243,13 @@
     "message": "配置你的 API 金鑰"
   },
   "apiNote": {
-    "message": "你可以從 Google AI Studio 取得免費 API 金鑰，請求數量限制為 15 次/分鐘、1,500 次/天"
+    "message": "請從 Google AI Studio 取得金鑰。AI 請求會將目前頁面的相關文字或所選 YouTube 網址傳送給 Google Gemini；限制與費用依你的 Google 專案而定。Google 表示，未付費服務的輸入與輸出可能用於改善其產品，並可能由人工審閱；請勿以未付費服務處理敏感、機密或個人內容。"
+  },
+  "geminiDataDisclosure": {
+    "message": "點擊「Gemini 摘要」時，會使用你的 API 金鑰，將目前頁面標題與相關可見文字，或所選 YouTube 影片網址，加密傳送給 Google Gemini。Google 表示，未付費服務的內容可能用於改善其產品，並可能由人工審閱；請勿提交敏感、機密或個人內容。"
+  },
+  "autoAttachDataDisclosure": {
+    "message": "只有在你執行功能時，「自動附加」與「整理地點」才會將相關頁面文字或已儲存的地點名稱傳送給 Google Gemini。Google 表示，未付費服務的內容可能用於改善其產品，並可能由人工審閱；請勿提交敏感、機密或個人內容。"
   },
   "apiPlaceholder": {
     "message": "Gemini API 金鑰"
@@ -287,7 +296,7 @@
   "getDirections": {
     "message": "規劃路線"
   },
-  "tidyLocations" : {
+  "tidyLocations": {
     "message": "整理地點"
   },
   "shortcutUnsetLabel": {

@@ -346,8 +346,6 @@ describe("History Component", () => {
       });
 
       test("should ignore a re-click on the icon while it is still fading out", () => {
-        window.Analytics = { trackFeatureClick: jest.fn() };
-
         const li = createMockHistoryItem("Test Location", ["Test Location"]);
         li.dataset.itemValue = "Test Location";
         searchHistoryListContainer.appendChild(li);
@@ -356,16 +354,12 @@ describe("History Component", () => {
         icon.dispatchEvent(createMouseEvent(icon, 0));
 
         expect(global.favorite.removeFavoriteItem).toHaveBeenCalledTimes(1);
-        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledTimes(1);
 
         // Still "unfavoriting" (no mouseleave yet) — a second click must not
-        // trigger another removal or another analytics event.
+        // trigger another removal.
         icon.dispatchEvent(createMouseEvent(icon, 0));
 
         expect(global.favorite.removeFavoriteItem).toHaveBeenCalledTimes(1);
-        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledTimes(1);
-
-        delete window.Analytics;
       });
 
       test("should not remove a favorite when right- or middle-clicking a matched icon", () => {
@@ -694,21 +688,6 @@ describe("History Component", () => {
           expect(state.getSnapshot().history.items).toEqual(["Tokyo", "Paris"]);
           expect(clearButton.classList.contains("d-none")).toBe(false);
           expect(undoButtonHistory.classList.contains("d-none")).toBe(true);
-        });
-
-        test("should track undo_clear_history when Undo is clicked", () => {
-          window.Analytics = { trackFeatureClick: jest.fn() };
-
-          state.dispatch({ type: "HISTORY_SET", items: ["Tokyo", "Paris"] });
-          clearButton.dispatchEvent(new Event("click"));
-          undoButtonHistory.dispatchEvent(new Event("click"));
-
-          expect(window.Analytics.trackFeatureClick).toHaveBeenCalledWith(
-            "undo_clear_history",
-            "undoButtonHistory"
-          );
-
-          delete window.Analytics;
         });
 
         test("should fall back to the normal empty state after 6 seconds without Undo", () => {

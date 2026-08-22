@@ -122,8 +122,6 @@ function initializePopup() {
   // Initialize theme first to prevent flash
   initializeTheme();
 
-  if (window.Analytics) window.Analytics.trackExtensionOpened();
-
   searchInput.focus();
 
   // Run payment check in background to avoid blocking UI
@@ -157,12 +155,6 @@ function initializePopup() {
 
 document.addEventListener("DOMContentLoaded", () => {
   initializePopup();
-});
-
-document.addEventListener("visibilitychange", () => {
-  if (window.Analytics) {
-    window.Analytics.handleVisibilityChange(document.visibilityState === "visible");
-  }
 });
 
 function popupLayout() {
@@ -288,7 +280,6 @@ async function hydratePopup() {
   measureContentSize();
   revealIframe();
 
-  if (window.Analytics) window.Analytics.trackPageView(state.getSnapshot().activeTab);
   return state.getSnapshot();
 }
 
@@ -306,7 +297,6 @@ searchInput.addEventListener("keydown", (event) => {
     if (searchInput.value.trim() === "") {
       event.preventDefault();
     } else {
-      if (window.Analytics) window.Analytics.trackSearch();
       chrome.runtime.sendMessage({
         searchTerm: searchInput.value,
         action: "searchInput",
@@ -329,7 +319,6 @@ enterButton.addEventListener("click", () => {
   if (searchInput.value.trim() === "") {
     return;
   } else {
-    if (window.Analytics) window.Analytics.trackSearch();
     chrome.runtime.sendMessage({
       searchTerm: searchInput.value,
       action: "searchInput",
@@ -339,9 +328,7 @@ enterButton.addEventListener("click", () => {
   }
 });
 
-mapsButton.addEventListener("click", () => {
-  if (window.Analytics) window.Analytics.trackFeatureClick("open_maps", "mapsButton");
-});
+mapsButton.addEventListener("click", () => {});
 
 let previousPopupSnapshot = null;
 
@@ -403,28 +390,21 @@ function renderPopup(snapshot = state.getSnapshot(), action = null, force = fals
   );
 }
 
-apiButton.addEventListener("click", () => {
-  if (window.Analytics) window.Analytics.trackFeatureClick("open_api_modal", "apiButton");
-});
+apiButton.addEventListener("click", () => {});
 
-optionalButton.addEventListener("click", () => {
-  if (window.Analytics) window.Analytics.trackFeatureClick("open_settings", "optionalButton");
-});
+optionalButton.addEventListener("click", () => {});
 
 searchHistoryButton.addEventListener("click", () => {
-  if (window.Analytics) window.Analytics.trackPageView("history");
   chrome.storage.local.set({ lastActiveTab: "history" });
   state.dispatch({ type: "SET_ACTIVE_TAB", tab: "history" });
 });
 
 favoriteListButton.addEventListener("click", () => {
-  if (window.Analytics) window.Analytics.trackPageView("favorite");
   chrome.storage.local.set({ lastActiveTab: "favorite" });
   state.dispatch({ type: "SET_ACTIVE_TAB", tab: "favorite" });
 });
 
 geminiSummaryButton.addEventListener("click", () => {
-  if (window.Analytics) window.Analytics.trackPageView("gemini");
   chrome.storage.local.set({ lastActiveTab: "gemini" });
   state.dispatch({ type: "SET_ACTIVE_TAB", tab: "gemini" });
   gemini.clearExpiredSummary();

@@ -35,8 +35,6 @@ class Modal {
   _setupShortcutsLinks() {
     for (let i = 0; i < configureElements.length; i++) {
       configureElements[i].onclick = function (event) {
-        if (window.Analytics)
-          window.Analytics.trackFeatureClick("configure_shortcuts", "configureLink");
         let userAgent = navigator.userAgent;
 
         if (/Chrome/i.test(userAgent)) {
@@ -102,7 +100,6 @@ class Modal {
   _setupApiForm() {
     document.getElementById("apiForm").addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (window.Analytics) window.Analytics.trackFeatureClick("save_api_key", "apiForm");
       const apiKey = apiInput.value.trim();
 
       const encrypted = apiKey ? await this.encryptApiKey(apiKey) : "";
@@ -171,7 +168,6 @@ class Modal {
   _setupDirForm() {
     document.getElementById("dirForm").addEventListener("submit", (event) => {
       event.preventDefault();
-      if (window.Analytics) window.Analytics.trackFeatureClick("save_start_address", "dirForm");
 
       const startAddr = dirInput.value.trim();
 
@@ -192,7 +188,6 @@ class Modal {
   _setupAuthUserForm() {
     document.getElementById("authUserForm").addEventListener("submit", (event) => {
       event.preventDefault();
-      if (window.Analytics) window.Analytics.trackFeatureClick("save_auth_user", "authUserForm");
 
       const authUser = parseInt(authUserInput.value.trim(), 10);
 
@@ -236,16 +231,12 @@ class Modal {
 
   _setupIncognitoToggle() {
     this._setupToggle(incognitoToggle, "isIncognito", (newState) => {
-      if (window.Analytics)
-        window.Analytics.trackFeatureClick("incognito_toggle", "incognitoToggle");
       this.updateIncognitoModal(newState);
     });
   }
 
   _setupDarkModeToggle() {
     this._setupToggle(darkModeToggle, "isDarkMode", (newState) => {
-      if (window.Analytics)
-        window.Analytics.trackFeatureClick("dark_mode_toggle", "darkModeToggle");
       applyTheme(newState);
     });
   }
@@ -287,8 +278,6 @@ class Modal {
       item.addEventListener("click", async () => {
         const newLang = item.dataset.value;
         if (newLang === window.I18nUtils.getCurrentLanguage()) return;
-        if (window.Analytics)
-          window.Analytics.trackFeatureClick("change_language_" + newLang, "languageDropdown");
         // setLanguage applies override synchronously
         await window.I18nUtils.setLanguage(newLang);
         if (typeof window.applyI18n === "function") window.applyI18n();
@@ -300,12 +289,10 @@ class Modal {
 
   _setupPremiumPanel() {
     paymentButton.addEventListener("click", () => {
-      if (window.Analytics) window.Analytics.trackFeatureClick("payment", "paymentButton");
       chrome.runtime.sendMessage({ action: "extPay" });
     });
 
     restoreButton.addEventListener("click", () => {
-      if (window.Analytics) window.Analytics.trackFeatureClick("restore_payment", "restoreButton");
       chrome.runtime.sendMessage({ action: "restorePay" });
     });
 
@@ -357,8 +344,6 @@ class Modal {
       const clampedValue = Math.min(Math.max(historyMax, 1), 100);
       chrome.storage.local.set({ historyMax: clampedValue });
       historyMaxInput.placeholder = String(clampedValue);
-      if (window.Analytics)
-        window.Analytics.trackFeatureClick("save_history_max", "historyMaxStepper");
     }
     historyMaxInput.value = "";
   }
@@ -428,9 +413,6 @@ class Modal {
     resetButton.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-
-      if (window.Analytics)
-        window.Analytics.trackFeatureClick("reset_" + storageKey, "resetButton");
 
       if (isNumeric) {
         chrome.storage.local.set({ [storageKey]: 0 });

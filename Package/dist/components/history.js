@@ -39,19 +39,9 @@ class History {
           const selectedText = liElement.querySelector("span")?.textContent;
 
           if (event.target.classList.contains("matched")) {
-            if (window.Analytics)
-              window.Analytics.trackFeatureClick(
-                "remove_favorite_from_history",
-                "searchHistoryListContainer"
-              );
             favorite.removeFavoriteItem(liElement.dataset.itemValue || "", event);
             DOMUtils.fadeOutFavoriteIcon(event.target);
           } else {
-            if (window.Analytics)
-              window.Analytics.trackFeatureClick(
-                "add_to_favorite_from_history",
-                "searchHistoryListContainer"
-              );
             favorite.addToFavoriteList(selectedText);
             DOMUtils.animateFavoriteIcon(event.target);
           }
@@ -63,11 +53,6 @@ class History {
         state
           .buildSearchUrl(selectedText)
           .then((searchUrl) => {
-            if (window.Analytics)
-              window.Analytics.trackFeatureClick(
-                "click_history_item",
-                "searchHistoryListContainer"
-              );
             if (event.button === 1) {
               event.preventDefault();
               chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
@@ -91,7 +76,6 @@ class History {
     });
 
     clearButton.addEventListener("click", () => {
-      if (window.Analytics) window.Analytics.trackFeatureClick("clear_history", "clearButton");
       const clearedItems = state.getSnapshot().history.items;
 
       chrome.storage.local.set({ searchHistoryList: [] });
@@ -101,8 +85,6 @@ class History {
     });
 
     undoButtonHistory.addEventListener("click", () => {
-      if (window.Analytics)
-        window.Analytics.trackFeatureClick("undo_clear_history", "undoButtonHistory");
       this._undoClear();
     });
   }

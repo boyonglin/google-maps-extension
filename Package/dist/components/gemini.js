@@ -52,19 +52,9 @@ class Gemini {
             favoriteItems.find((item) => item.split(" @")[0] === nameSpan) ||
             reconstructedValue;
 
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick(
-              "remove_favorite_from_summary",
-              "summaryListContainer"
-            );
           favorite.removeFavoriteItem(storedItem, event);
           DOMUtils.fadeOutFavoriteIcon(event.target);
         } else {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick(
-              "add_to_favorite_from_summary",
-              "summaryListContainer"
-            );
           favorite.addToFavoriteList(reconstructedValue);
           DOMUtils.animateFavoriteIcon(event.target);
         }
@@ -79,8 +69,6 @@ class Gemini {
       this.getStore()
         .buildSearchUrl(selectedText)
         .then((searchUrl) => {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("click_summary_item", "summaryListContainer");
           chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });
         });
     });
@@ -90,8 +78,6 @@ class Gemini {
     });
 
     clearButtonSummary.addEventListener("click", () => {
-      if (window.Analytics)
-        window.Analytics.trackFeatureClick("clear_summary", "clearButtonSummary");
       const { items, timestamp } = this.getStore().getSnapshot().summary;
 
       chrome.storage.local.remove(["summaryList", "timestamp"]);
@@ -101,14 +87,10 @@ class Gemini {
     });
 
     undoButtonSummary.addEventListener("click", () => {
-      if (window.Analytics)
-        window.Analytics.trackFeatureClick("undo_clear_summary", "undoButtonSummary");
       this._undoClear();
     });
 
     videoSummaryButton.addEventListener("click", () => {
-      if (window.Analytics)
-        window.Analytics.trackFeatureClick("video_summary_toggle", "videoSummaryButton");
       const enabled = !this.getStore().getSnapshot().video.enabled;
       this.getStore().dispatch({ type: "VIDEO_TOGGLE", enabled });
 
@@ -124,7 +106,6 @@ class Gemini {
     });
 
     sendButton.addEventListener("click", () => {
-      if (window.Analytics) window.Analytics.trackFeatureClick("send_gemini", "sendButton");
       if (this.getStore().getSnapshot().summary.phase === "generating") return;
       const requestId = this.beginSummary(null);
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -196,40 +177,12 @@ class Gemini {
     const youtubeMatch = currentTabUrl.match(/youtube\.com\/(?:watch\?v=|shorts\/)(.{11})/);
 
     if (youtubeMatch) {
-      const videoId = youtubeMatch[1];
       this.getStore().dispatch({ type: "VIDEO_CONTEXT_RESULT", token, available: true });
-
-      this.scrapeLen(videoId)
-        .then((videoLength) => {
-          if (token === this.videoToken) {
-            chrome.storage.local.set({
-              currentVideoInfo: {
-                videoId,
-                length: videoLength,
-              },
-            });
-          }
-        })
-        .catch((error) => console.error("Error scraping video length:", error));
     } else {
       this.getStore().dispatch({ type: "VIDEO_CONTEXT_RESULT", token, available: false });
-      chrome.storage.local.remove("currentVideoInfo");
     }
 
     // Token prevents stale tab callbacks
-  }
-
-  async scrapeLen(id) {
-    try {
-      const html = await fetch(`https://www.youtube.com/watch?v=${id}`, {
-        credentials: "omit",
-      }).then((r) => r.text());
-      const m = html.match(/"lengthSeconds":"(\d+)"/);
-      return m ? Number(m[1]) : null;
-    } catch (error) {
-      console.error("Failed to scrape video length:", error);
-      return null;
-    }
   }
 
   // Clear stale summary data
@@ -324,17 +277,6 @@ class Gemini {
   summarizeFromGeminiVideoUnderstanding(videoUrl, requestId = null) {
     requestId = requestId || this.beginSummary(null);
 
-    chrome.storage.local.get("currentVideoInfo", ({ currentVideoInfo }) => {
-      if (currentVideoInfo && currentVideoInfo.length) {
-        const estTime = Math.ceil(currentVideoInfo.length / 30);
-        this.getStore().dispatch({
-          type: "SUMMARY_ESTIMATE",
-          requestId,
-          estimateSeconds: estTime,
-        });
-      }
-    });
-
     chrome.runtime.sendMessage({ action: "summarizeVideo", text: videoUrl }, (response) => {
       // Success on <ul> fragment
       if (typeof response === "string") {
@@ -350,40 +292,36 @@ class Gemini {
   }
 
   performNormalContentSummary(requestId = null, knownTab = null) {
-    chrome.runtime.sendMessage({ action: "getApiKey" }, (res) => {
-      const apiKey = res ? res.apiKey : "";
-
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (knownTab) tabs = [knownTab];
-        if (!tabs.length) {
-          if (requestId) this.ResponseErrorMsg(null, requestId);
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (knownTab) tabs = [knownTab];
+      if (!tabs.length) {
+        if (requestId) this.ResponseErrorMsg(null, requestId);
+        return;
+      }
+      requestId = requestId || this.beginSummary(tabs[0].id);
+      chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
+        if (chrome.runtime.lastError) {
+          this.ResponseErrorMsg(response, requestId);
           return;
         }
-        requestId = requestId || this.beginSummary(tabs[0].id);
-        chrome.tabs.sendMessage(tabs[0].id, { message: "ping" }, (response) => {
-          if (chrome.runtime.lastError) {
-            this.ResponseErrorMsg(response, requestId);
-            return;
-          }
-        });
-
-        const isYouTube = tabs[0].url && tabs[0].url.toLowerCase().includes("youtube");
-
-        if (isYouTube) {
-          chrome.tabs.sendMessage(tabs[0].id, { action: "expandYouTubeDescription" }, () => {
-            // Wait for expansion before scraping
-            setTimeout(() => {
-              this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
-            }, 500);
-          });
-        } else {
-          this.getContentAndSummarize(tabs[0].id, apiKey, tabs[0].url, requestId);
-        }
       });
+
+      const isYouTube = tabs[0].url && tabs[0].url.toLowerCase().includes("youtube");
+
+      if (isYouTube) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "expandYouTubeDescription" }, () => {
+          // Wait for expansion before scraping
+          setTimeout(() => {
+            this.getContentAndSummarize(tabs[0].id, tabs[0].url, requestId);
+          }, 500);
+        });
+      } else {
+        this.getContentAndSummarize(tabs[0].id, tabs[0].url, requestId);
+      }
     });
   }
 
-  getContentAndSummarize(tabId, apiKey, url, requestId) {
+  getContentAndSummarize(tabId, url, requestId) {
     requestId = requestId || this.beginSummary(tabId);
     chrome.tabs.sendMessage(tabId, { action: "getContent" }, (response) => {
       if (response && response.content) {
@@ -394,7 +332,7 @@ class Gemini {
           estimateSeconds: Math.ceil(response.content.length / divisor),
         });
 
-        this.summarizeContent(response.content, apiKey, url, requestId);
+        this.summarizeContent(response.content, url, requestId);
       } else {
         this.ResponseErrorMsg(response, requestId);
       }
@@ -408,27 +346,24 @@ class Gemini {
     return latinChars > squareChars;
   }
 
-  summarizeContent(content, apiKey, url, requestId) {
+  summarizeContent(content, url, requestId) {
     responseField.value = "";
 
-    chrome.runtime.sendMessage(
-      { action: "summarizeApi", text: content, apiKey: apiKey, url: url },
-      (response) => {
-        // Treat early close as error
-        if (!response || response.error) {
-          responseField.value = `API Error: ${response?.error || "No response from background"}`;
+    chrome.runtime.sendMessage({ action: "summarizeApi", text: content, url: url }, (response) => {
+      // Treat early close as error
+      if (!response || response.error) {
+        responseField.value = `API Error: ${response?.error || "No response from background"}`;
+        this.ResponseErrorMsg(response, requestId);
+      } else {
+        responseField.value = response;
+        try {
+          this.createSummaryList(response, requestId);
+        } catch (error) {
+          responseField.value = `HTML Error: ${error}`;
           this.ResponseErrorMsg(response, requestId);
-        } else {
-          responseField.value = response;
-          try {
-            this.createSummaryList(response, requestId);
-          } catch (error) {
-            responseField.value = `HTML Error: ${error}`;
-            this.ResponseErrorMsg(response, requestId);
-          }
         }
       }
-    );
+    });
   }
 
   createSummaryList(response, requestId = null) {

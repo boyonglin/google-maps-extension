@@ -20,6 +20,15 @@ window.TME = {
     const signal = abortController.signal;
     window.TMEcleanup = abortController;
 
+    let stylesheet = document.getElementById("TMEstyles");
+    if (!stylesheet) {
+      stylesheet = document.createElement("link");
+      stylesheet.id = "TMEstyles";
+      stylesheet.rel = "stylesheet";
+      stylesheet.href = chrome.runtime.getURL("css/iframe.css");
+      document.head.appendChild(stylesheet);
+    }
+
     let iframeContainer = document.createElement("div");
     iframeContainer.id = "TMEiframe";
     iframeContainer.style.left = defaultX + "px";
@@ -206,6 +215,7 @@ window.TME = {
     let iframeContainer = document.getElementById("TMEiframe");
     if (iframeContainer) {
       iframeContainer.remove();
+      document.getElementById("TMEstyles")?.remove();
       window.TMEhasRun = false;
       console.log("The Maps Express Deactivated - " + Date());
     }
@@ -230,4 +240,5 @@ _____  _     ____
   console.log("Activated - " + Date());
 
   TME.setup();
+  window.TMEhasRun = true;
 })();

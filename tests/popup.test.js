@@ -1424,19 +1424,6 @@ describe("popup.js", () => {
       expect(document.getElementById("summaryList").textContent).toContain("Cached place");
       expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(888, { action: "finishIframe" });
     });
-
-    test("visibilitychange reports visibility to Analytics", () => {
-      window.Analytics = { handleVisibilityChange: jest.fn() };
-      Object.defineProperty(document, "visibilityState", {
-        configurable: true,
-        value: "visible",
-      });
-
-      document.dispatchEvent(new Event("visibilitychange"));
-
-      expect(window.Analytics.handleVisibilityChange).toHaveBeenCalledWith(true);
-      delete window.Analytics;
-    });
   });
 
   describe("Edge Cases and Error Handling", () => {

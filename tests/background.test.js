@@ -82,21 +82,6 @@ jest.mock("../Package/dist/hooks/backgroundState.js", () => ({
   __resetCacheForTesting: jest.fn(),
 }));
 
-// Mock Analytics module
-jest.mock("../Package/dist/utils/analytics.module.js", () => ({
-  Analytics: {
-    trackShortcut: jest.fn(),
-    trackContextMenu: jest.fn(),
-    trackEvent: jest.fn(),
-    trackFeatureClick: jest.fn(),
-    trackSearch: jest.fn(),
-    trackPageView: jest.fn(),
-    trackExtensionOpened: jest.fn(),
-    getOrCreateClientId: jest.fn(() => Promise.resolve("test-client-id")),
-    getOrCreateSessionId: jest.fn(() => Promise.resolve("test-session-id")),
-  },
-}));
-
 describe("background.js", () => {
   let listeners = {};
   let mockFetch;
@@ -156,6 +141,7 @@ describe("background.js", () => {
     chrome.tabs.sendMessage.mockClear();
     chrome.tabs.update.mockClear();
     chrome.scripting.executeScript.mockClear();
+    chrome.scripting.executeScript.mockImplementation((_options, callback) => callback?.([]));
 
     // Reset fetch mock
     mockFetch.mockClear();
@@ -486,7 +472,6 @@ describe("background.js", () => {
 
     test("should handle googleMapsSearch context menu click", async () => {
       const { buildSearchUrl } = require("../Package/dist/hooks/backgroundState.js");
-      const { Analytics } = require("../Package/dist/utils/analytics.module.js");
       const info = {
         menuItemId: "googleMapsSearch",
         selectionText: "Tokyo Tower",
@@ -494,7 +479,6 @@ describe("background.js", () => {
 
       await listeners.onContextMenuClicked(info);
 
-      expect(Analytics.trackContextMenu).toHaveBeenCalledWith("search");
       expect(buildSearchUrl).toHaveBeenCalledWith("Tokyo Tower");
       expect(chrome.tabs.create).toHaveBeenCalled();
     });
@@ -513,7 +497,6 @@ describe("background.js", () => {
 
     test("should handle googleMapsDirections context menu click", async () => {
       const { buildDirectionsUrl } = require("../Package/dist/hooks/backgroundState.js");
-      const { Analytics } = require("../Package/dist/utils/analytics.module.js");
       const info = {
         menuItemId: "googleMapsDirections",
         selectionText: "Tokyo Tower",
@@ -521,7 +504,6 @@ describe("background.js", () => {
 
       await listeners.onContextMenuClicked(info);
 
-      expect(Analytics.trackContextMenu).toHaveBeenCalledWith("directions");
       expect(buildDirectionsUrl).toHaveBeenCalledWith("123 Main St", "Tokyo Tower");
       expect(chrome.tabs.create).toHaveBeenCalled();
     });
@@ -644,27 +626,6 @@ describe("background.js", () => {
       chrome.tabs.query.mockImplementation((query, callback) => {
         callback([{ id: 1, url: "https://example.com" }]);
       });
-    });
-
-    test("should track shortcut usage for all commands", async () => {
-      const { Analytics } = require("../Package/dist/utils/analytics.module.js");
-
-      chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
-        if (message.action === "getSelectedText") {
-          callback({ selectedText: "Search Term" });
-        }
-      });
-
-      await listeners.onCommand("run-search");
-      expect(Analytics.trackShortcut).toHaveBeenCalledWith("run-search");
-
-      Analytics.trackShortcut.mockClear();
-      listeners.onCommand("auto-attach");
-      expect(Analytics.trackShortcut).toHaveBeenCalledWith("auto-attach");
-
-      Analytics.trackShortcut.mockClear();
-      listeners.onCommand("run-directions");
-      expect(Analytics.trackShortcut).toHaveBeenCalledWith("run-directions");
     });
 
     test("should handle run-search command", async () => {
@@ -836,8 +797,8 @@ describe("background.js", () => {
       await runAutoAttachCommand();
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        "Auto-attach failed:",
-        expect.objectContaining({ message: "Invalid tabId for getContent" })
+        "Cannot access the active page:",
+        expect.objectContaining({ message: "Invalid active tab" })
       );
       consoleSpy.mockRestore();
     });
@@ -1676,7 +1637,7 @@ describe("background.js", () => {
 
       expect(chrome.scripting.executeScript).toHaveBeenCalledWith(
         expect.objectContaining({
-          files: ["dist/inject.js"],
+          files: ["dist/utils/attachMapLink.js", "dist/contentScript.js", "dist/inject.js"],
         })
       );
     });
@@ -2047,8 +2008,8 @@ describe("background.js", () => {
     test("should handle YouTube URI in callApi", async () => {
       const sendResponse = jest.fn();
       const request = {
-        action: "summarizeApi",
-        text: "https://youtube.com/watch?v=abc",
+        action: "summarizeVideo",
+        text: "https://www.youtube.com/watch?v=abc12345678",
         apiKey: "test-key",
         url: "https://example.com",
       };
@@ -2075,6 +2036,29 @@ describe("background.js", () => {
 
       // YouTube URI should use file_data format
       expect(body.contents[0].parts.some((part) => part.file_data)).toBe(true);
+    });
+
+    test("should never treat normal page text as a video URI", async () => {
+      const sendResponse = jest.fn();
+      const request = {
+        action: "summarizeApi",
+        text: "https://www.youtube.com/watch?v=abc12345678",
+        url: "https://example.com",
+      };
+
+      mockFetch.mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            candidates: [{ content: { parts: [{ text: "Summary" }] } }],
+          }),
+      });
+
+      listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
+      await flushPromises();
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.contents[0].parts.some((part) => part.file_data)).toBe(false);
+      expect(body.contents[0].parts[0].text).toContain(request.text);
     });
 
     test("should return original text when ul tag exists but regex does not match", async () => {

@@ -394,6 +394,7 @@ describe("contentScript.js - updateTheme Action", () => {
     document.body.innerHTML = "";
     document.head.innerHTML = "";
     delete globalThis.attachMapLinkToPage;
+    delete globalThis.TME_CONTENT_SCRIPT_LOADED;
     global.window.getSelection = jest.fn();
 
     jest.resetModules();

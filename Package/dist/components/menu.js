@@ -28,8 +28,6 @@ class ContextMenuUtil {
       contextMenu,
       `${chrome.i18n.getMessage("openAll")} (${listItems.length})`,
       () => {
-        if (window.Analytics)
-          window.Analytics.trackFeatureClick("context_menu_open_all", "contextMenu");
         this.openAllUrls(listItems);
       }
     );
@@ -40,8 +38,6 @@ class ContextMenuUtil {
       contextMenu,
       chrome.i18n.getMessage("tidyLocations"),
       () => {
-        if (window.Analytics)
-          window.Analytics.trackFeatureClick("context_menu_tidy_locations", "contextMenu");
         if (!canTidy) {
           document.querySelector('[data-bs-target="#premiumModal"]').click();
         } else {
@@ -60,8 +56,6 @@ class ContextMenuUtil {
           contextMenu,
           chrome.i18n.getMessage("getDirections"),
           () => {
-            if (window.Analytics)
-              window.Analytics.trackFeatureClick("context_menu_get_directions", "contextMenu");
             this.getDirections(clickedItem, startAddr);
           }
         );

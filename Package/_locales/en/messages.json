@@ -150,6 +150,10 @@
     "message": "About",
     "description": "popup about button text"
   },
+  "privacyBtnText": {
+    "message": "Privacy",
+    "description": "popup privacy policy link"
+  },
   "premiumBtnText": {
     "message": "Premium",
     "description": "popup premium button text"
@@ -263,7 +267,7 @@
     "description": "onboarding step 3 (API) title"
   },
   "onboardingApiDesc": {
-    "message": "Add a free Gemini API key to get AI-powered insights on any place you search.",
+    "message": "Add a Gemini API key. When you run an AI feature, relevant current-page text or the selected YouTube URL is sent to Google Gemini.",
     "description": "onboarding step 3 (API) description"
   },
   "onboardingPremiumTitle": {
@@ -317,8 +321,16 @@
     "description": "modal api title"
   },
   "apiNote": {
-    "message": "You can obtain a free API key from Google AI Studio, with a limit of 15 requests/minute and 1,500 requests/day.",
+    "message": "Get a key from Google AI Studio. AI requests send relevant current-page text or the selected YouTube URL to Google Gemini. Limits and charges depend on your Google project. Google says unpaid-service inputs and outputs may be used to improve its products and processed by human reviewers; do not use unpaid service with sensitive, confidential, or personal content.",
     "description": "modal api key input note"
+  },
+  "geminiDataDisclosure": {
+    "message": "When you click Gemini Summary, the current page title and relevant visible text—or the selected YouTube video URL—are sent securely to Google Gemini using your API key. Google says unpaid-service content may be used to improve its products and processed by human reviewers; do not submit sensitive, confidential, or personal content.",
+    "description": "prominent disclosure shown beside the Gemini action"
+  },
+  "autoAttachDataDisclosure": {
+    "message": "Auto-attach and Tidy send relevant page text or saved location names to Google Gemini only when you run those features. Google says unpaid-service content may be used to improve its products and processed by human reviewers; do not submit sensitive, confidential, or personal content.",
+    "description": "prominent disclosure for premium AI features"
   },
   "apiPlaceholder": {
     "message": "Gemini API Key",
@@ -380,7 +392,7 @@
     "message": "Get Directions",
     "description": "context menu get directions option"
   },
-  "tidyLocations" : {
+  "tidyLocations": {
     "message": "Tidy Locations",
     "description": "context menu tidy locations option"
   },

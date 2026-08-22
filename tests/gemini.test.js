@@ -105,6 +105,7 @@ describe("Gemini Component", () => {
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     cleanupDOM();
   });
 
@@ -349,8 +350,6 @@ describe("Gemini Component", () => {
     });
 
     test("should ignore a re-click on the icon while it is still fading out", () => {
-      window.Analytics = { trackFeatureClick: jest.fn() };
-
       const mockItem = createMockSummaryItem("Restaurant", "Downtown");
       summaryListContainer.appendChild(mockItem);
       const icon = mockItem.querySelector("i");
@@ -365,16 +364,12 @@ describe("Gemini Component", () => {
       clickEvent();
 
       expect(favorite.removeFavoriteItem).toHaveBeenCalledTimes(1);
-      expect(window.Analytics.trackFeatureClick).toHaveBeenCalledTimes(1);
 
       // Still "unfavoriting" (no mouseleave yet) — a second click must not
-      // trigger another removal or another analytics event.
+      // trigger another removal.
       clickEvent();
 
       expect(favorite.removeFavoriteItem).toHaveBeenCalledTimes(1);
-      expect(window.Analytics.trackFeatureClick).toHaveBeenCalledTimes(1);
-
-      delete window.Analytics;
     });
 
     test("should remove spring animation after 500ms", async () => {
@@ -527,28 +522,6 @@ describe("Gemini Component", () => {
         expect(state.getSnapshot().summary.items).toEqual(items);
         expect(apiButton.classList.contains("d-none")).toBe(true);
         expect(undoButtonSummary.classList.contains("d-none")).toBe(true);
-      });
-
-      test("should track undo_clear_summary when Undo is clicked", () => {
-        window.Analytics = { trackFeatureClick: jest.fn() };
-        favorite.createFavoriteIcon.mockReturnValue(document.createElement("i"));
-        const timestamp = Date.now();
-        state.dispatch({
-          type: "SUMMARY_STORAGE_SET",
-          items: [{ name: "Place", clue: "Info" }],
-          timestamp,
-          now: timestamp,
-        });
-
-        clearButtonSummary.click();
-        undoButtonSummary.click();
-
-        expect(window.Analytics.trackFeatureClick).toHaveBeenCalledWith(
-          "undo_clear_summary",
-          "undoButtonSummary"
-        );
-
-        delete window.Analytics;
       });
 
       test("should fall back to apiButton after 6 seconds without Undo", () => {
@@ -877,23 +850,13 @@ describe("Gemini Component", () => {
   // ============================================================================
 
   describe("checkCurrentTabForYoutube", () => {
-    beforeEach(() => {
-      geminiInstance.scrapeLen = jest.fn().mockResolvedValue(600);
-    });
-
     test("should detect YouTube watch URL and set video summary mode", async () => {
       mockTabsQuery([{ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }]);
 
       await geminiInstance.checkCurrentTabForYoutube();
 
       expect(state.getSnapshot().video.available).toBe(true);
-      expect(geminiInstance.scrapeLen).toHaveBeenCalledWith("dQw4w9WgXcQ");
-      expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        currentVideoInfo: {
-          videoId: "dQw4w9WgXcQ",
-          length: 600,
-        },
-      });
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     test("should detect YouTube shorts URL", async () => {
@@ -902,7 +865,6 @@ describe("Gemini Component", () => {
       await geminiInstance.checkCurrentTabForYoutube();
 
       expect(state.getSnapshot().video.available).toBe(true);
-      expect(geminiInstance.scrapeLen).toHaveBeenCalledWith("abc12345678");
     });
 
     test("should not set video summary mode for non-YouTube URL", async () => {
@@ -911,12 +873,7 @@ describe("Gemini Component", () => {
       await geminiInstance.checkCurrentTabForYoutube();
 
       expect(state.getSnapshot().video.available).toBe(false);
-      expect(chrome.storage.local.remove).toHaveBeenCalledWith("currentVideoInfo");
     });
-
-    // Note: Testing error handling during async scrapeLen is too fragile due to
-    // callback timing and try-catch blocks. The error is caught and logged but
-    // doesn't affect the main flow. Manual testing shows this works correctly.
 
     test("should toggle videoSummaryButton visibility when gemini is active", async () => {
       state.dispatch({ type: "VIDEO_CONTEXT_RESULT", token: 0, available: true });
@@ -944,69 +901,6 @@ describe("Gemini Component", () => {
       await geminiInstance.checkCurrentTabForYoutube();
 
       expect(state.getSnapshot().video.available).toBe(false);
-    });
-
-    test("should not block toggle visibility on the video length scrape", async () => {
-      let resolveScrapeLen;
-      geminiInstance.scrapeLen = jest.fn(
-        () =>
-          new Promise((resolve) => {
-            resolveScrapeLen = resolve;
-          })
-      );
-      geminiSummaryButton.classList.add("active-button");
-      videoSummaryButton.classList.add("d-none");
-      mockTabsQuery([{ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }]);
-
-      await geminiInstance.checkCurrentTabForYoutube();
-
-      expect(videoSummaryButton.classList.contains("d-none")).toBe(false);
-
-      resolveScrapeLen(600);
-      await flushPromises();
-    });
-  });
-
-  // ============================================================================
-  // Test: scrapeLen
-  // ============================================================================
-
-  describe("scrapeLen", () => {
-    test("should extract video length from YouTube HTML", async () => {
-      global.fetch.mockResolvedValue({
-        text: () => Promise.resolve('"lengthSeconds":"300"'),
-      });
-
-      const length = await geminiInstance.scrapeLen("test12345");
-
-      expect(fetch).toHaveBeenCalledWith("https://www.youtube.com/watch?v=test12345", {
-        credentials: "omit",
-      });
-      expect(length).toBe(300);
-    });
-
-    test("should return null when lengthSeconds is not found", async () => {
-      global.fetch.mockResolvedValue({
-        text: () => Promise.resolve("<html>no length data</html>"),
-      });
-
-      const length = await geminiInstance.scrapeLen("test12345");
-
-      expect(length).toBeNull();
-    });
-
-    test("should handle fetch errors gracefully and return null", async () => {
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-      global.fetch.mockRejectedValue(new Error("Network error"));
-
-      const length = await geminiInstance.scrapeLen("test12345");
-
-      expect(length).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Failed to scrape video length:",
-        expect.any(Error)
-      );
-      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -1386,7 +1280,6 @@ describe("Gemini Component", () => {
     test("should handle video summarization error", async () => {
       const mockError = { error: "API error" };
 
-      mockChromeStorage({ currentVideoInfo: null });
       chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
         if (callback) callback(mockError);
       });
@@ -1396,76 +1289,6 @@ describe("Gemini Component", () => {
       await wait(50);
 
       expect(geminiInstance.ResponseErrorMsg).toHaveBeenCalledWith(mockError, expect.any(String));
-    });
-
-    test("should call chrome.storage to get video info for time estimate", async () => {
-      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback("<ul></ul>");
-      });
-
-      geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
-
-      await wait(50);
-
-      // Verify storage is queried for video info (implementation detail but important flow)
-      expect(chrome.storage.local.get).toHaveBeenCalledWith(
-        "currentVideoInfo",
-        expect.any(Function)
-      );
-    });
-
-    test("should update loading message with estimated time from video info", async () => {
-      // Create a mock that returns video info when queried
-      chrome.storage.local.get.mockImplementation((_key, callback) => {
-        callback({ currentVideoInfo: { videoId: "test123", length: 300 } });
-      });
-
-      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback("<ul></ul>");
-      });
-
-      geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
-
-      await wait(100);
-
-      // The loading message should have been updated with estimated time
-      // 300 seconds / 30 = 10, rounded up = 10
-      expect(geminiEmptyMessage.innerHTML).toContain("10");
-    });
-
-    test("should not update loading message if no video info available", async () => {
-      // Setup storage mock to return no video info
-      chrome.storage.local.get.mockImplementation((key, callback) => {
-        callback({ currentVideoInfo: null });
-      });
-
-      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback("<ul></ul>");
-      });
-
-      geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
-
-      await wait(100);
-
-      expect(geminiEmptyMessage.textContent).toBe("Loading...");
-    });
-
-    test("should not update loading message if video info has no length", async () => {
-      // Setup storage mock to return video info without length
-      chrome.storage.local.get.mockImplementation((key, callback) => {
-        callback({ currentVideoInfo: { videoId: "test123" } }); // No length property
-      });
-
-      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (callback) callback("<ul></ul>");
-      });
-
-      geminiInstance.summarizeFromGeminiVideoUnderstanding("https://youtube.com/watch?v=test123");
-
-      await wait(100);
-
-      // Message should still contain NaN since no length
-      expect(geminiEmptyMessage.textContent).toBe("Loading...");
     });
   });
 
@@ -1501,7 +1324,6 @@ describe("Gemini Component", () => {
 
       expect(geminiInstance.getContentAndSummarize).toHaveBeenCalledWith(
         1,
-        "test-api-key",
         "https://www.youtube.com/watch?v=test",
         expect.any(String)
       );
@@ -1522,7 +1344,6 @@ describe("Gemini Component", () => {
 
       expect(geminiInstance.getContentAndSummarize).toHaveBeenCalledWith(
         1,
-        "test-api-key",
         "https://www.example.com",
         expect.any(String)
       );
@@ -1575,7 +1396,7 @@ describe("Gemini Component", () => {
       const mockContent = "A".repeat(1500);
       mockTabsSendMessage({ content: mockContent });
 
-      geminiInstance.getContentAndSummarize(1, "api-key", "https://example.com");
+      geminiInstance.getContentAndSummarize(1, "https://example.com");
 
       await wait(50);
 
@@ -1588,7 +1409,6 @@ describe("Gemini Component", () => {
       expect(geminiEmptyMessage.classList.contains("shineText")).toBe(true);
       expect(geminiInstance.summarizeContent).toHaveBeenCalledWith(
         mockContent,
-        "api-key",
         "https://example.com",
         expect.any(String)
       );
@@ -1666,7 +1486,7 @@ describe("Gemini Component", () => {
         if (callback) callback(mockResponse);
       });
 
-      geminiInstance.summarizeContent("content", "api-key", "https://example.com");
+      geminiInstance.summarizeContent("content", "https://example.com");
 
       await wait(50);
 
@@ -1674,7 +1494,6 @@ describe("Gemini Component", () => {
         {
           action: "summarizeApi",
           text: "content",
-          apiKey: "api-key",
           url: "https://example.com",
         },
         expect.any(Function)
@@ -1689,7 +1508,7 @@ describe("Gemini Component", () => {
         if (callback) callback(mockError);
       });
 
-      geminiInstance.summarizeContent("content", "api-key", "https://example.com");
+      geminiInstance.summarizeContent("content", "https://example.com");
 
       await wait(50);
 
@@ -1703,7 +1522,7 @@ describe("Gemini Component", () => {
       });
 
       sendButton.disabled = true;
-      geminiInstance.summarizeContent("content", "api-key", "https://example.com");
+      geminiInstance.summarizeContent("content", "https://example.com");
 
       await wait(50);
 
@@ -1720,7 +1539,7 @@ describe("Gemini Component", () => {
         throw new Error("Parse error");
       });
 
-      geminiInstance.summarizeContent("content", "api-key", "https://example.com");
+      geminiInstance.summarizeContent("content", "https://example.com");
 
       await wait(50);
 

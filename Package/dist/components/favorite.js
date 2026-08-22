@@ -1,7 +1,6 @@
 class Favorite {
   addFavoritePageListener() {
     exportButton.addEventListener("click", () => {
-      if (window.Analytics) window.Analytics.trackFeatureClick("export_favorite", "exportButton");
       chrome.storage.local.get(["favoriteList"], ({ favoriteList }) => {
         if (!favoriteList || !Array.isArray(favoriteList)) {
           return;
@@ -29,14 +28,12 @@ class Favorite {
     });
 
     importButton.addEventListener("click", () => {
-      if (window.Analytics) window.Analytics.trackFeatureClick("import_favorite", "importButton");
       fileInput.click();
     });
 
     fileInput.addEventListener("change", (event) => {
       const file = event.target.files[0];
       if (!file) return;
-      if (window.Analytics) window.Analytics.trackFeatureClick("file_imported", "fileInput");
 
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -99,8 +96,6 @@ class Favorite {
 
         if (event.target.classList.contains("bi")) {
           if (event.button !== 0) return;
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("remove_favorite_item", "favoriteListContainer");
           this.removeFavoriteItem(liElement.dataset.itemValue || "", event);
           return;
         }
@@ -112,8 +107,6 @@ class Favorite {
           .trim();
 
         state.buildSearchUrl(selectedText).then((searchUrl) => {
-          if (window.Analytics)
-            window.Analytics.trackFeatureClick("click_favorite_item", "favoriteListContainer");
           if (event.button === 1) {
             event.preventDefault();
             chrome.runtime.sendMessage({ action: "openTab", url: searchUrl });

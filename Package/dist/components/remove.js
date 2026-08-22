@@ -1,12 +1,10 @@
 class Remove {
   addRemoveListener() {
     cancelButton.addEventListener("click", () => {
-      if (window.Analytics) window.Analytics.trackFeatureClick("cancel_delete", "cancelButton");
       this.backToNormal();
     });
 
     deleteButton.addEventListener("click", () => {
-      if (window.Analytics) window.Analytics.trackFeatureClick("delete_items", "deleteButton");
       if (state.getSnapshot().deleteMode.source === "history") {
         this.deleteFromHistoryList();
       } else {
@@ -16,7 +14,6 @@ class Remove {
     });
 
     deleteListButton.addEventListener("click", () => {
-      if (window.Analytics) window.Analytics.trackFeatureClick("delete_mode", "deleteListButton");
       const snapshot = state.getSnapshot();
       state.dispatch(
         snapshot.deleteMode.source

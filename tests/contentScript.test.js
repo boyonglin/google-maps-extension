@@ -8,6 +8,7 @@ const setupContentScriptTest = () => {
   document.body.innerHTML = "";
   document.head.innerHTML = "";
   delete globalThis.attachMapLinkToPage;
+  delete globalThis.TME_CONTENT_SCRIPT_LOADED;
   global.window.getSelection = jest.fn();
 
   let messageListener;
@@ -915,7 +916,7 @@ describe("contentScript.js - getContent() Helper Function Edge Cases", () => {
 
   test("should handle very long text content", () => {
     document.head.innerHTML = "<title>Test</title>";
-    const longText = "a".repeat(10000);
+    const longText = "a".repeat(100000);
     // Use textContent to avoid XSS linter warnings (this is controlled test data)
     const paragraph = document.createElement("p");
     paragraph.textContent = longText;
@@ -927,7 +928,7 @@ describe("contentScript.js - getContent() Helper Function Edge Cases", () => {
     messageListener(request, {}, sendResponse);
 
     const response = sendResponse.mock.calls[0][0];
-    expect(response.content.length).toBeGreaterThan(10000);
+    expect(response.content.length).toBe(60000);
     expect(response.length).toBe(response.content.length);
   });
 

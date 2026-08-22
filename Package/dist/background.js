@@ -10,7 +10,6 @@ import {
   buildMapsUrl,
 } from "./hooks/backgroundState.js";
 import ExtPay from "./utils/ExtPay.module.js";
-import { Analytics } from "./utils/analytics.module.js";
 import {
   beginAutoAttachRun,
   isCurrentAutoAttachRun,
@@ -149,24 +148,27 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
   await ensureWarm();
   const selectedText = info.selectionText;
   if (info.menuItemId === "googleMapsSearch") {
-    Analytics.trackContextMenu("search");
     handleSelectedText(selectedText);
   } else if (info.menuItemId === "googleMapsDirections") {
-    Analytics.trackContextMenu("directions");
     handleSelectedDir(selectedText);
   }
 });
 
 chrome.commands.onCommand.addListener(async (command) => {
-  Analytics.trackShortcut(command);
   await ensureWarm();
 
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     // No active tab when focus is on devtools or a detached window
     if (!tabs.length) return;
     const url = tabs[0].url;
     const tabId = tabs[0].id;
     if (url && url.startsWith("http")) {
+      try {
+        await ensurePageRuntime(tabId);
+      } catch (error) {
+        console.error("Cannot access the active page:", error);
+        return;
+      }
       if (command === "run-search") {
         chrome.tabs.sendMessage(tabs[0].id, { action: "getSelectedText" }, (response) => {
           if (response && response.selectedText) {
@@ -479,23 +481,16 @@ async function updateHistoryList(selectedText) {
 
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "summarizeApi" && request.text) {
-    // Special case for YouTube video descriptions
-    if (request.url.startsWith("https://www.youtube")) {
-      const ytSummaryPrompt = geminiPrompts.summary.replace(
-        "(marked by <h1>, <h2>, <h3>, or <strong>) ",
-        ""
-      );
-      callApi(ytSummaryPrompt, request.text, request.apiKey, sendResponse);
-    } else {
-      callApi(geminiPrompts.summary, request.text, request.apiKey, sendResponse);
-    }
+    getApiKey()
+      .then((apiKey) => callApi(geminiPrompts.summary, request.text, apiKey, sendResponse))
+      .catch((err) => sendResponse({ error: err.message }));
     return true; // Will respond asynchronously
   }
 
   if (request.action === "summarizeVideo" && request.text) {
     getApiKey()
       .then((apiKey) => {
-        callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
+        callApi(geminiPrompts.summary, request.text, apiKey, sendResponse, { isVideo: true });
       })
       .catch((err) => {
         sendResponse({ error: err.message });
@@ -559,12 +554,11 @@ async function verifyApiKey(apiKey) {
   return { valid: res.ok };
 }
 
-function callApi(prompt, content, apiKey, sendResponse) {
+function callApi(prompt, content, apiKey, sendResponse, { isVideo = false } = {}) {
   const url = `${endpoint}:generateContent`;
 
-  // Handle YouTube URI vs plain text
-  const isYouTubeUri = content.includes("youtube.com") || content.includes("youtu.be");
-  const contents = isYouTubeUri
+  // Only the explicit video-summary flow may submit a YouTube URI as media.
+  const contents = isVideo
     ? [{ parts: [{ text: prompt }, { file_data: { file_uri: content.trim() } }] }]
     : [{ parts: [{ text: `${prompt}${content}` }] }];
 
@@ -610,6 +604,28 @@ function callApi(prompt, content, apiKey, sendResponse) {
 
 chrome.action.onClicked.addListener(meow);
 
+function ensurePageRuntime(tabId) {
+  if (!Number.isSafeInteger(tabId)) {
+    return Promise.reject(new Error("Invalid active tab"));
+  }
+
+  return new Promise((resolve, reject) => {
+    chrome.scripting.executeScript(
+      {
+        target: { tabId },
+        files: ["dist/utils/attachMapLink.js", "dist/contentScript.js"],
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else {
+          resolve();
+        }
+      }
+    );
+  });
+}
+
 function meow() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs.length) return;
@@ -624,11 +640,9 @@ function meow() {
         }
         let result = results[0].result;
         if (result !== true) {
-          // chrome.action.setIcon({ path: "iconON.png", tabId: tabs[0].id });
-
           chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
-            files: ["dist/inject.js"],
+            files: ["dist/utils/attachMapLink.js", "dist/contentScript.js", "dist/inject.js"],
           });
         } else {
           chrome.scripting.executeScript({
