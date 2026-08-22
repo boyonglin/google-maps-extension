@@ -495,7 +495,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "summarizeVideo" && request.text) {
     getApiKey()
       .then((apiKey) => {
-        callApi(geminiPrompts.summary, request.text, apiKey, sendResponse);
+        callApi(geminiPrompts.summary, request.text, apiKey, sendResponse, true);
       })
       .catch((err) => {
         sendResponse({ error: err.message });
@@ -559,24 +559,25 @@ async function verifyApiKey(apiKey) {
   return { valid: res.ok };
 }
 
-function callApi(prompt, content, apiKey, sendResponse) {
+function callApi(prompt, content, apiKey, sendResponse, isVideoUri = false) {
   const url = `${endpoint}:generateContent`;
 
-  // Handle YouTube URI vs plain text
-  const isYouTubeUri = content.includes("youtube.com") || content.includes("youtu.be");
-  const contents = isYouTubeUri
+  // isVideoUri must come from the caller -- scraped page text can mention
+  // "youtube.com" without being a video URI.
+  const contents = isVideoUri
     ? [{ parts: [{ text: prompt }, { file_data: { file_uri: content.trim() } }] }]
     : [{ parts: [{ text: `${prompt}${content}` }] }];
 
-  // Use thinking config only when organizing
+  // gemini-flash-lite-latest now resolves to a Gemini 3.x model, which uses
+  // thinkingLevel instead of the old numeric thinkingBudget.
   const needsThinking = prompt.includes("Organize");
   const generationConfig = {
     thinkingConfig: {
-      thinkingBudget: needsThinking ? -1 : 0,
+      thinkingLevel: needsThinking ? "high" : "minimal",
     },
   };
 
-  const data = { contents, generationConfig };
+  const requestBody = { contents, generationConfig };
 
   fetch(url, {
     method: "POST",
@@ -584,12 +585,12 @@ function callApi(prompt, content, apiKey, sendResponse) {
       "Content-Type": "application/json",
       "x-goog-api-key": apiKey,
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(requestBody),
   })
     .then((response) => response.json())
     .then((data) => {
       if (data.error) {
-        console.error("Gemini API returned an error:", data.error.message);
+        console.error("Gemini API returned an error:", JSON.stringify(data.error));
         sendResponse({ error: data.error.message });
         return;
       }

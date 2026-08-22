@@ -107,6 +107,15 @@ function getTextContent(element) {
   return element.innerText || element.textContent;
 }
 
+function sanitizeForGemini(text) {
+  return (
+    text
+      // eslint-disable-next-line no-control-regex -- intentionally stripping control chars
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+      .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "")
+  );
+}
+
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -129,7 +138,7 @@ function getContent() {
       "#description-inline-expander, div#description ytd-text-inline-expander"
     );
     const descriptionText = getTextContent(descriptionElement);
-    return summaryTopic + `\n\nPage body content: ` + descriptionText;
+    return sanitizeForGemini(summaryTopic + `\n\nPage body content: ` + descriptionText);
   }
 
   const headerElement = document.querySelector("header");
@@ -162,5 +171,5 @@ function getContent() {
 
   ["h1", "h2", "h3", "strong"].forEach((tag) => wrapTag(tag));
 
-  return summaryTopic + `\n\nPage body content: ` + bodyElement;
+  return sanitizeForGemini(summaryTopic + `\n\nPage body content: ` + bodyElement);
 }

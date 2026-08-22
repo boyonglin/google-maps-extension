@@ -272,6 +272,35 @@ describe("contentScript.js - getContent Action", () => {
     expect(response.content).toContain("<strong>");
   });
 
+  test("should strip control characters that the Gemini API rejects", () => {
+    document.head.innerHTML = "<title>Test</title>";
+    document.body.textContent = "Before\u0000\u000bAfter";
+
+    const request = { action: "getContent" };
+    const sendResponse = jest.fn();
+
+    messageListener(request, {}, sendResponse);
+
+    const response = sendResponse.mock.calls[0][0];
+    expect(response.content).toContain("BeforeAfter");
+    // eslint-disable-next-line no-control-regex -- intentionally checking for stripped control chars
+    expect(response.content).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+  });
+
+  test("should strip lone surrogates while keeping valid surrogate pairs intact", () => {
+    document.head.innerHTML = "<title>Test</title>";
+    document.body.textContent = "Lone\uD800surrogate and emoji \u{1F38C} kept";
+
+    const request = { action: "getContent" };
+    const sendResponse = jest.fn();
+
+    messageListener(request, {}, sendResponse);
+
+    const response = sendResponse.mock.calls[0][0];
+    expect(response.content).toContain("Lonesurrogate");
+    expect(response.content).toContain("\u{1F38C}");
+  });
+
   describe("on a YouTube watch page", () => {
     let restoreLocation;
 

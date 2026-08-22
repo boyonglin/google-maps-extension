@@ -1130,10 +1130,11 @@ describe("background.js", () => {
         url: "https://example.com",
       };
 
+      const apiError = { message: "Invalid URI provided" };
       mockFetch.mockResolvedValue({
         json: () =>
           Promise.resolve({
-            error: { message: "Invalid URI provided" },
+            error: apiError,
           }),
       });
 
@@ -1143,7 +1144,7 @@ describe("background.js", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "Gemini API returned an error:",
-        "Invalid URI provided"
+        JSON.stringify(apiError)
       );
       consoleSpy.mockRestore();
     });
@@ -2044,15 +2045,7 @@ describe("background.js", () => {
       );
     });
 
-    test("should handle YouTube URI in callApi", async () => {
-      const sendResponse = jest.fn();
-      const request = {
-        action: "summarizeApi",
-        text: "https://youtube.com/watch?v=abc",
-        apiKey: "test-key",
-        url: "https://example.com",
-      };
-
+    test("should use file_data format only for summarizeVideo, never summarizeApi", async () => {
       mockFetch.mockResolvedValue({
         json: () =>
           Promise.resolve({
@@ -2066,15 +2059,47 @@ describe("background.js", () => {
           }),
       });
 
-      listeners.onMessage[GEMINI_API_LISTENER](request, {}, sendResponse);
-
+      listeners.onMessage[GEMINI_API_LISTENER](
+        { action: "summarizeVideo", text: "https://youtube.com/watch?v=abc" },
+        {},
+        jest.fn()
+      );
       await flushPromises();
 
-      const fetchCall = mockFetch.mock.calls[0];
-      const body = JSON.parse(fetchCall[1].body);
+      const videoBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(videoBody.contents[0].parts.some((part) => part.file_data)).toBe(true);
+    });
 
-      // YouTube URI should use file_data format
-      expect(body.contents[0].parts.some((part) => part.file_data)).toBe(true);
+    test("should not mistake scraped page text mentioning youtube.com for a video URI", async () => {
+      // Regression test: a normal page whose text happens to contain a
+      // "youtube.com" link (e.g. a social share button or article link) must
+      // still be summarized as plain text, not sent as an (invalid) file_uri.
+      mockFetch.mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: "Summary" }],
+                },
+              },
+            ],
+          }),
+      });
+
+      const request = {
+        action: "summarizeApi",
+        text: "Article body mentioning https://youtube.com/watch?v=abc as a related link.",
+        apiKey: "test-key",
+        url: "https://example.com",
+      };
+
+      listeners.onMessage[GEMINI_API_LISTENER](request, {}, jest.fn());
+      await flushPromises();
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.contents[0].parts.some((part) => part.file_data)).toBe(false);
+      expect(body.contents[0].parts[0].text).toContain(request.text);
     });
 
     test("should return original text when ul tag exists but regex does not match", async () => {
