@@ -8,7 +8,7 @@
 [![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/lfkhadednlnfhmhagkhapejkhpjibaic)](https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/)
-[![Gemini](https://img.shields.io/badge/Gemini_Flash_(latest)-supported-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
+[![Gemini](<https://img.shields.io/badge/Gemini_Flash_(latest)-supported-4285F4?logo=google&logoColor=white>)](https://ai.google.dev/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](../../../issues)
 
 🌐 [English](../README.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md)
@@ -41,18 +41,18 @@ https://youtu.be/xv0tVQAi3qo
 
 ## 機能一覧
 
-| 機能 | 詳細 |
-|------|------|
-| **クイック検索** | テキスト選択 + `Ctrl+Shift+S` / `⌘+⇧+S` または右クリック → 即座に Google マップ検索 |
-| **検索バー** | `Alt+Shift+S` / `⌥+⇧+S` またはアイコンクリックで開く — ページを離れずに検索 |
-| **クイックルート** | 選択テキストを右クリック、または `Alt+R` / `⌥+R` → 即座にルート案内を取得 |
-| **検索履歴** | 直近 10 件の検索を自動保存、すぐにアクセス可能 |
-| **お気に入りリスト** | お気に入りの場所を保存・インポート・エクスポート（CSV）— Google My Maps 対応 |
-| **場所サマリー** | Gemini Flash AI がページ上の場所の要約を自動生成 |
-| **動画サマリー** | YouTube 動画内で言及された場所を抽出・要約 |
-| **リンク自動付加** | Web ページ上の地名を自動検出し、Google マップリンクを付加 |
-| **3 つの UI 言語** | English · 繁體中文 · 日本語 — 自動検出 |
-| **ダーク / ライトテーマ** | お好みに合わせたテーマ切り替え |
+| 機能                      | 詳細                                                                                |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| **クイック検索**          | テキスト選択 + `Ctrl+Shift+S` / `⌘+⇧+S` または右クリック → 即座に Google マップ検索 |
+| **検索バー**              | `Alt+Shift+S` / `⌥+⇧+S` またはアイコンクリックで開く — ページを離れずに検索         |
+| **クイックルート**        | 選択テキストを右クリック、または `Alt+R` / `⌥+R` → 即座にルート案内を取得           |
+| **検索履歴**              | 直近 10 件の検索を自動保存、すぐにアクセス可能                                      |
+| **お気に入りリスト**      | お気に入りの場所を保存・インポート・エクスポート（CSV）— Google My Maps 対応        |
+| **場所サマリー**          | Gemini Flash AI がページ上の場所の要約を自動生成                                    |
+| **動画サマリー**          | YouTube 動画内で言及された場所を抽出・要約                                          |
+| **リンク自動付加**        | Web ページ上の地名を自動検出し、Google マップリンクを付加                           |
+| **3 つの UI 言語**        | English · 繁體中文 · 日本語 — 自動検出                                              |
+| **ダーク / ライトテーマ** | お好みに合わせたテーマ切り替え                                                      |
 
 ---
 
@@ -87,6 +87,7 @@ https://youtu.be/xv0tVQAi3qo
 ### 開発者 — ローカルセットアップ
 
 1. リポジトリをクローン：
+
    ```bash
    git clone https://github.com/boyonglin/google-maps-extension.git
    cd google-maps-extension
@@ -121,12 +122,12 @@ https://youtu.be/xv0tVQAi3qo
 
 ### キーボードショートカット
 
-| 操作 | デフォルトショートカット | Mac ショートカット |
-|------|----------------------|-------------------|
-| クイック検索 | `Ctrl+Shift+S` | `⌘+⇧+S` |
-| 検索バーを開く | `Alt+Shift+S` | `⌥+⇧+S` |
-| リンク自動付加 | `Alt+S` | `⌥+S` |
-| クイックルート | `Alt+R` | `⌥+R` |
+| 操作           | デフォルトショートカット | Mac ショートカット |
+| -------------- | ------------------------ | ------------------ |
+| クイック検索   | `Ctrl+Shift+S`           | `⌘+⇧+S`            |
+| 検索バーを開く | `Alt+Shift+S`            | `⌥+⇧+S`            |
+| リンク自動付加 | `Alt+S`                  | `⌥+S`              |
+| クイックルート | `Alt+R`                  | `⌥+R`              |
 
 ショートカットのカスタマイズ：
 
@@ -142,14 +143,14 @@ https://youtu.be/xv0tVQAi3qo
 3. 入力欄をクリックして希望のキーを設定<br>
    <img src="https://github.com/user-attachments/assets/f43d74c4-00d3-4954-be29-10299a8aef5a" width="600" alt="ショートカットを入力">
 
-4. *（任意）* ブラウザ外でも使えるようにスコープを「グローバル」に変更<br>
+4. _（任意）_ ブラウザ外でも使えるようにスコープを「グローバル」に変更<br>
    <img src="https://github.com/user-attachments/assets/9adf849e-a0d6-4a30-be01-048c6f3dae94" width="600" alt="ショートカットスコープ">
 
 </details>
 
 ### Gemini API キー（AI 機能用）
 
-**場所サマリー** と **動画サマリー** を有効化するには、無料の Gemini API キーが必要です：
+**場所サマリー** と **動画サマリー** を有効化するには Gemini API キーが必要です。利用可否、料金、レート制限は Google プロジェクトと最新の Gemini 規約によって異なります：
 
 1. [Google AI Studio](https://aistudio.google.com/) にアクセスしてサインイン
 2. 利用規約に同意
@@ -206,28 +207,28 @@ https://youtu.be/xv0tVQAi3qo
 
 ## プライバシーとセキュリティ
 
-| 質問 | 回答 |
-|------|------|
-| データはどこに保存されますか？ | **ブラウザローカルの `localStorage` のみ** — デバイスから外部に送信されることはありません |
-| ネットワークリクエストは発生しますか？ | AI 機能使用時の Gemini API 呼び出しと、ExtPay（決済）のみ。検索データのトラッキングや収集は行いません。 |
-| Web サイトが私のデータを見ることはできますか？ | できません。データは拡張機能のストレージに隔離されており、ページスクリプトからはアクセスできません。 |
-| データを削除できますか？ | はい — ポップアップから個別に削除するか、ブラウザ設定からすべてクリアできます。 |
+| 質問                                           | 回答                                                                                                                                                                                                                                            |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| データはどこに保存されますか？                 | 機能データはブラウザローカルの `chrome.storage.local` を使用します。ExtensionPay は購入状態に Chrome の同期ストレージも使用する場合があります。                                                                                                 |
+| ネットワークリクエストは発生しますか？         | 検索・ルートを開くと Google Maps に送信されます。AI 機能を実行した場合のみ、関連ページテキスト、YouTube URL、または保存済みの場所名を Gemini に送信します。購入・試用確認は ExtensionPay が処理します。利用分析や広告テレメトリは収集しません。 |
+| Web サイトが私のデータを見ることはできますか？ | できません。データは拡張機能のストレージに隔離されており、ページスクリプトからはアクセスできません。                                                                                                                                            |
+| データを削除できますか？                       | はい — ポップアップから個別に削除するか、ブラウザ設定からすべてクリアできます。                                                                                                                                                                 |
 
-> **検索履歴、お気に入り、履歴はすべてお使いのデバイスに保存されます。** 拡張機能がが外部 API を呼び出すのは、AI サマリー機能を明示的に使用した場合のみです。
+> 保存期間、第三者処理、Chrome Web Store Limited Use 開示を含む完全な[プライバシーポリシー](../PrivacyPolicy_en.html)をご確認ください。
 
 ---
 
 ## 技術スタック
 
-| レイヤー | 技術 |
-|---------|------|
-| 拡張機能フレームワーク | Chrome Manifest V3 |
-| UI | HTML + Bootstrap 5.3 + SCSS |
-| AI | Gemini Flash API（`gemini-flash-lite-latest`） |
-| 決済 | ExtPay |
-| データ永続化 | `localStorage` |
-| ローカライゼーション | Chrome i18n（en · zh-TW · ja） |
-| テスト | Jest + jsdom |
+| レイヤー               | 技術                                                                      |
+| ---------------------- | ------------------------------------------------------------------------- |
+| 拡張機能フレームワーク | Chrome Manifest V3                                                        |
+| UI                     | HTML + Bootstrap 5.3 + SCSS                                               |
+| AI                     | Gemini Flash API（`gemini-flash-lite-latest`）                            |
+| 決済                   | ExtPay                                                                    |
+| データ永続化           | `chrome.storage.local`（ExtensionPay の購入状態を含む拡張機能ストレージ） |
+| ローカライゼーション   | Chrome i18n（en · zh-TW · ja）                                            |
+| テスト                 | Jest + jsdom                                                              |
 
 <details>
 <summary><strong>📂 プロジェクト構成</strong></summary>
@@ -260,12 +261,12 @@ https://youtu.be/xv0tVQAi3qo
 
 ## デバッグとテスト
 
-| 対象 | アクセス方法 |
-|------|------------|
+| 対象                      | アクセス方法                                                   |
+| ------------------------- | -------------------------------------------------------------- |
 | Background Service Worker | `chrome://extensions/` → The Maps Express → **Service worker** |
-| ポップアップ | 拡張機能アイコンを右クリック → **ポップアップを検証** |
-| Content Scripts | DevTools → Sources → Content scripts |
-| localStorage | DevTools → Application → Local Storage |
+| ポップアップ              | 拡張機能アイコンを右クリック → **ポップアップを検証**          |
+| Content Scripts           | DevTools → Sources → Content scripts                           |
+| 拡張機能ストレージ        | DevTools → Application → Extension Storage                     |
 
 ```bash
 npm test              # 全ユニットテストを実行

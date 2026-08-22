@@ -8,7 +8,7 @@
 [![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/lfkhadednlnfhmhagkhapejkhpjibaic)](https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/)
-[![Gemini](https://img.shields.io/badge/Gemini_Flash_(latest)-supported-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
+[![Gemini](<https://img.shields.io/badge/Gemini_Flash_(latest)-supported-4285F4?logo=google&logoColor=white>)](https://ai.google.dev/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](../../issues)
 
 🌐 [English](README.md) | [繁體中文](README-multi-lan/README.zh-TW.md) | [日本語](README-multi-lan/README.ja.md)
@@ -44,18 +44,18 @@ https://youtu.be/xv0tVQAi3qo
 
 ## Features at a Glance
 
-| Feature | Details |
-|---------|---------|
-| **Quick Search** | Highlight text + `Ctrl+Shift+S` / `⌘+⇧+S` or right-click → instant Google Maps search |
-| **Search Bar** | Open via `Alt+Shift+S` / `⌥+⇧+S` or click icon — search without leaving the page |
-| **Quick Directions** | Right-click highlighted text or press `Alt+R` / `⌥+R` → get directions instantly |
-| **Search History** | Auto-saves your last 10 searches for quick re-access |
-| **Favorites List** | Save, import, and export favorite locations as CSV — works with Google My Maps |
-| **Place Summary** | AI-powered summaries of locations on any page via Gemini Flash |
-| **Video Summary** | Extract and summarize locations mentioned in YouTube videos |
-| **Auto-attach Links** | Automatically detect place names on web pages and attach Google Maps links |
-| **3 UI languages** | English · 繁體中文 · 日本語 — auto-detected |
-| **Dark / Light theme** | Theme toggle following your preference |
+| Feature                | Details                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| **Quick Search**       | Highlight text + `Ctrl+Shift+S` / `⌘+⇧+S` or right-click → instant Google Maps search |
+| **Search Bar**         | Open via `Alt+Shift+S` / `⌥+⇧+S` or click icon — search without leaving the page      |
+| **Quick Directions**   | Right-click highlighted text or press `Alt+R` / `⌥+R` → get directions instantly      |
+| **Search History**     | Auto-saves your last 10 searches for quick re-access                                  |
+| **Favorites List**     | Save, import, and export favorite locations as CSV — works with Google My Maps        |
+| **Place Summary**      | AI-powered summaries of locations on any page via Gemini Flash                        |
+| **Video Summary**      | Extract and summarize locations mentioned in YouTube videos                           |
+| **Auto-attach Links**  | Automatically detect place names on web pages and attach Google Maps links            |
+| **3 UI languages**     | English · 繁體中文 · 日本語 — auto-detected                                           |
+| **Dark / Light theme** | Theme toggle following your preference                                                |
 
 ---
 
@@ -90,6 +90,7 @@ Install directly from the [Chrome Web Store](https://chromewebstore.google.com/d
 ### For Developers — Local Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/boyonglin/google-maps-extension.git
    cd google-maps-extension
@@ -124,12 +125,12 @@ Install directly from the [Chrome Web Store](https://chromewebstore.google.com/d
 
 ### Keyboard Shortcuts
 
-| Action | Default Shortcut | Mac Shortcut |
-|--------|-----------------|--------------|
-| Quick Search | `Ctrl+Shift+S` | `⌘+⇧+S` |
-| Open Search Bar | `Alt+Shift+S` | `⌥+⇧+S` |
-| Auto-attach Links | `Alt+S` | `⌥+S` |
-| Quick Directions | `Alt+R` | `⌥+R` |
+| Action            | Default Shortcut | Mac Shortcut |
+| ----------------- | ---------------- | ------------ |
+| Quick Search      | `Ctrl+Shift+S`   | `⌘+⇧+S`      |
+| Open Search Bar   | `Alt+Shift+S`    | `⌥+⇧+S`      |
+| Auto-attach Links | `Alt+S`          | `⌥+S`        |
+| Quick Directions  | `Alt+R`          | `⌥+R`        |
 
 To customize shortcuts:
 
@@ -145,14 +146,14 @@ To customize shortcuts:
 3. Click the input field and set your desired key<br>
    <img src="https://github.com/user-attachments/assets/f43d74c4-00d3-4954-be29-10299a8aef5a" width="600" alt="Type the shortcut">
 
-4. *(Optional)* Change scope to "Global" for use outside the browser<br>
+4. _(Optional)_ Change scope to "Global" for use outside the browser<br>
    <img src="https://github.com/user-attachments/assets/9adf849e-a0d6-4a30-be01-048c6f3dae94" width="600" alt="Shortcut level">
 
 </details>
 
 ### Gemini API Key (for AI Features)
 
-To enable **Place Summary** and **Video Summary**, you need a free Gemini API key:
+To enable **Place Summary** and **Video Summary**, you need a Gemini API key. Availability, pricing, and rate limits depend on your Google project and current Gemini terms:
 
 1. Go to [Google AI Studio](https://aistudio.google.com/) and sign in
 2. Agree to the terms of service
@@ -209,28 +210,28 @@ Export your favorites as CSV and import them into Google My Maps to build a pers
 
 ## Privacy & Security
 
-| Question | Answer |
-|----------|--------|
-| Where is data stored? | **Browser-local `localStorage` only** — never leaves your device |
-| Does it make network requests? | Only for Gemini API calls (when you use AI features) and ExtPay (payment). No tracking or telemetry on your search data. |
-| Can websites see my data? | No. Data is isolated in the extension's storage, inaccessible to page scripts. |
-| Can I delete my data? | Yes — delete individual items via the popup, or clear all via browser settings. |
+| Question                       | Answer                                                                                                                                                                                                                                                               |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where is data stored?          | Feature data uses browser-local `chrome.storage.local`; ExtensionPay may also use Chrome sync storage for purchase state.                                                                                                                                            |
+| Does it make network requests? | Google Maps receives searches/directions you open; Gemini receives relevant page text, a YouTube URL, or saved location names only when you run an AI feature; ExtensionPay handles purchase/trial checks. No usage analytics or advertising telemetry is collected. |
+| Can websites see my data?      | No. Data is isolated in the extension's storage, inaccessible to page scripts.                                                                                                                                                                                       |
+| Can I delete my data?          | Yes — delete individual items via the popup, or clear all via browser settings.                                                                                                                                                                                      |
 
-> **Your searches, favorites, and history stay on your device.** The extension only calls external APIs when you explicitly use AI summary features.
+> Read the complete [Privacy Policy](PrivacyPolicy_en.html), including retention, third-party processing, and the Chrome Web Store Limited Use disclosure.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Extension framework | Chrome Manifest V3 |
-| UI | HTML + Bootstrap 5.3 + SCSS |
-| AI | Gemini Flash API (`gemini-flash-lite-latest`) |
-| Payment | ExtPay |
-| Persistence | `localStorage` |
-| Localization | Chrome i18n (en · zh-TW · ja) |
-| Testing | Jest + jsdom |
+| Layer               | Technology                                                                     |
+| ------------------- | ------------------------------------------------------------------------------ |
+| Extension framework | Chrome Manifest V3                                                             |
+| UI                  | HTML + Bootstrap 5.3 + SCSS                                                    |
+| AI                  | Gemini Flash API (`gemini-flash-lite-latest`)                                  |
+| Payment             | ExtPay                                                                         |
+| Persistence         | `chrome.storage.local` (plus ExtensionPay purchase state in extension storage) |
+| Localization        | Chrome i18n (en · zh-TW · ja)                                                  |
+| Testing             | Jest + jsdom                                                                   |
 
 <details>
 <summary><strong>📂 Project Structure</strong></summary>
@@ -263,12 +264,12 @@ Export your favorites as CSV and import them into Google My Maps to build a pers
 
 ## Debugging & Testing
 
-| Target | How to reach it |
-|--------|----------------|
+| Target                    | How to reach it                                                |
+| ------------------------- | -------------------------------------------------------------- |
 | Background Service Worker | `chrome://extensions/` → The Maps Express → **Service worker** |
-| Popup | Right-click extension icon → **Inspect popup** |
-| Content scripts | DevTools → Sources → Content scripts |
-| localStorage | DevTools → Application → Local Storage |
+| Popup                     | Right-click extension icon → **Inspect popup**                 |
+| Content scripts           | DevTools → Sources → Content scripts                           |
+| Extension storage         | DevTools → Application → Extension Storage                     |
 
 ```bash
 npm test              # Run all unit tests

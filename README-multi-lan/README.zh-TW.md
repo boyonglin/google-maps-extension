@@ -8,7 +8,7 @@
 [![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/lfkhadednlnfhmhagkhapejkhpjibaic)](https://chromewebstore.google.com/detail/lfkhadednlnfhmhagkhapejkhpjibaic)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/)
-[![Gemini](https://img.shields.io/badge/Gemini_Flash_(latest)-supported-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
+[![Gemini](<https://img.shields.io/badge/Gemini_Flash_(latest)-supported-4285F4?logo=google&logoColor=white>)](https://ai.google.dev/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](../../../issues)
 
 🌐 [English](../README.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md)
@@ -41,18 +41,18 @@ https://youtu.be/xv0tVQAi3qo
 
 ## 功能一覽
 
-| 功能 | 說明 |
-|------|------|
-| **快速搜尋** | 選取文字 + `Ctrl+Shift+S` / `⌘+⇧+S` 或右鍵選單 → 立即搜尋 Google 地圖 |
-| **搜尋列** | 透過 `Alt+Shift+S` / `⌥+⇧+S` 或點擊圖示開啟 — 不離開當前頁面即可搜尋 |
-| **快速路線** | 右鍵點擊選取文字或按 `Alt+R` / `⌥+R` → 立即取得導航路線 |
-| **搜尋歷史** | 自動儲存最近 10 筆搜尋紀錄，方便快速存取 |
-| **收藏清單** | 儲存、匯入、匯出收藏地點為 CSV — 可搭配 Google My Maps 使用 |
-| **地點摘要** | 透過 Gemini Flash AI 為頁面上的地點自動生成摘要 |
-| **影片摘要** | 擷取並摘要 YouTube 影片中提到的地點資訊 |
-| **自動附加連結** | 自動偵測網頁中的地名並附加 Google 地圖連結 |
-| **3 種介面語言** | English · 繁體中文 · 日本語 — 自動偵測 |
-| **深色 / 淺色主題** | 依使用者偏好切換主題 |
+| 功能                | 說明                                                                  |
+| ------------------- | --------------------------------------------------------------------- |
+| **快速搜尋**        | 選取文字 + `Ctrl+Shift+S` / `⌘+⇧+S` 或右鍵選單 → 立即搜尋 Google 地圖 |
+| **搜尋列**          | 透過 `Alt+Shift+S` / `⌥+⇧+S` 或點擊圖示開啟 — 不離開當前頁面即可搜尋  |
+| **快速路線**        | 右鍵點擊選取文字或按 `Alt+R` / `⌥+R` → 立即取得導航路線               |
+| **搜尋歷史**        | 自動儲存最近 10 筆搜尋紀錄，方便快速存取                              |
+| **收藏清單**        | 儲存、匯入、匯出收藏地點為 CSV — 可搭配 Google My Maps 使用           |
+| **地點摘要**        | 透過 Gemini Flash AI 為頁面上的地點自動生成摘要                       |
+| **影片摘要**        | 擷取並摘要 YouTube 影片中提到的地點資訊                               |
+| **自動附加連結**    | 自動偵測網頁中的地名並附加 Google 地圖連結                            |
+| **3 種介面語言**    | English · 繁體中文 · 日本語 — 自動偵測                                |
+| **深色 / 淺色主題** | 依使用者偏好切換主題                                                  |
 
 ---
 
@@ -87,6 +87,7 @@ https://youtu.be/xv0tVQAi3qo
 ### 開發者 — 本地開發設定
 
 1. 複製專案：
+
    ```bash
    git clone https://github.com/boyonglin/google-maps-extension.git
    cd google-maps-extension
@@ -121,12 +122,12 @@ https://youtu.be/xv0tVQAi3qo
 
 ### 鍵盤快捷鍵
 
-| 操作 | 預設快捷鍵 | Mac 快捷鍵 |
-|------|-----------|-----------|
-| 快速搜尋 | `Ctrl+Shift+S` | `⌘+⇧+S` |
-| 開啟搜尋列 | `Alt+Shift+S` | `⌥+⇧+S` |
-| 自動附加連結 | `Alt+S` | `⌥+S` |
-| 快速路線 | `Alt+R` | `⌥+R` |
+| 操作         | 預設快捷鍵     | Mac 快捷鍵 |
+| ------------ | -------------- | ---------- |
+| 快速搜尋     | `Ctrl+Shift+S` | `⌘+⇧+S`    |
+| 開啟搜尋列   | `Alt+Shift+S`  | `⌥+⇧+S`    |
+| 自動附加連結 | `Alt+S`        | `⌥+S`      |
+| 快速路線     | `Alt+R`        | `⌥+R`      |
 
 自訂快捷鍵：
 
@@ -142,14 +143,14 @@ https://youtu.be/xv0tVQAi3qo
 3. 點擊輸入欄位並設定你想要的按鍵<br>
    <img src="https://github.com/user-attachments/assets/f43d74c4-00d3-4954-be29-10299a8aef5a" width="600" alt="輸入快捷鍵">
 
-4. *（選用）* 將範圍改為「全域」以在瀏覽器外使用<br>
+4. _（選用）_ 將範圍改為「全域」以在瀏覽器外使用<br>
    <img src="https://github.com/user-attachments/assets/9adf849e-a0d6-4a30-be01-048c6f3dae94" width="600" alt="快捷鍵範圍">
 
 </details>
 
 ### Gemini API 金鑰（AI 功能用）
 
-啟用**地點摘要**和**影片摘要**功能，需要一組免費的 Gemini API 金鑰：
+啟用**地點摘要**和**影片摘要**功能，需要一組 Gemini API 金鑰；可用性、費用與速率限制依你的 Google 專案和 Gemini 最新條款而定：
 
 1. 前往 [Google AI Studio](https://aistudio.google.com/) 並登入
 2. 同意服務條款
@@ -206,28 +207,28 @@ https://youtu.be/xv0tVQAi3qo
 
 ## 隱私權與安全性
 
-| 問題 | 回答 |
-|------|------|
-| 資料儲存在哪裡？ | **僅存在瀏覽器本地的 `localStorage`** — 永遠不會離開你的裝置 |
-| 會發出網路請求嗎？ | 僅在使用 AI 功能時呼叫 Gemini API，以及 ExtPay（付款）。不會追蹤或蒐集你的搜尋資料。 |
-| 網站能看到我的資料嗎？ | 不能。資料隔離在擴充功能的儲存空間中，網頁腳本無法存取。 |
-| 我可以刪除資料嗎？ | 可以 — 透過 popup 刪除個別項目，或透過瀏覽器設定清除全部。 |
+| 問題                   | 回答                                                                                                                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 資料儲存在哪裡？       | 功能資料使用瀏覽器本地的 `chrome.storage.local`；ExtensionPay 也可能使用 Chrome 同步儲存空間保存購買狀態。                                                                                  |
+| 會發出網路請求嗎？     | 你開啟搜尋或路線時，資料會交給 Google Maps；只有執行 AI 功能時，才會將相關頁面文字、YouTube 網址或已儲存地點名稱傳給 Gemini；購買／試用檢查由 ExtensionPay 處理。不收集使用分析或廣告遙測。 |
+| 網站能看到我的資料嗎？ | 不能。資料隔離在擴充功能的儲存空間中，網頁腳本無法存取。                                                                                                                                    |
+| 我可以刪除資料嗎？     | 可以 — 透過 popup 刪除個別項目，或透過瀏覽器設定清除全部。                                                                                                                                  |
 
-> **你的搜尋紀錄、收藏和歷史都留在你的裝置上。** 擴充功能僅在你明確使用 AI 摘要功能時才會呼叫外部 API。
+> 請閱讀完整的[隱私權政策](../PrivacyPolicy_en.html)，其中包含保留期限、第三方處理與 Chrome Web Store Limited Use 聲明。
 
 ---
 
 ## 技術架構
 
-| 層級 | 技術 |
-|------|------|
-| 擴充功能框架 | Chrome Manifest V3 |
-| UI | HTML + Bootstrap 5.3 + SCSS |
-| AI | Gemini Flash API（`gemini-flash-lite-latest`） |
-| 付款 | ExtPay |
-| 資料儲存 | `localStorage` |
-| 在地化 | Chrome i18n（en · zh-TW · ja） |
-| 測試 | Jest + jsdom |
+| 層級         | 技術                                                           |
+| ------------ | -------------------------------------------------------------- |
+| 擴充功能框架 | Chrome Manifest V3                                             |
+| UI           | HTML + Bootstrap 5.3 + SCSS                                    |
+| AI           | Gemini Flash API（`gemini-flash-lite-latest`）                 |
+| 付款         | ExtPay                                                         |
+| 資料儲存     | `chrome.storage.local`（另含 ExtensionPay 的擴充功能購買狀態） |
+| 在地化       | Chrome i18n（en · zh-TW · ja）                                 |
+| 測試         | Jest + jsdom                                                   |
 
 <details>
 <summary><strong>📂 專案結構</strong></summary>
@@ -260,12 +261,12 @@ https://youtu.be/xv0tVQAi3qo
 
 ## 除錯與測試
 
-| 目標 | 開啟方式 |
-|------|---------|
+| 目標                      | 開啟方式                                                       |
+| ------------------------- | -------------------------------------------------------------- |
 | Background Service Worker | `chrome://extensions/` → The Maps Express → **Service worker** |
-| Popup | 右鍵點擊擴充功能圖示 → **檢查彈出式視窗** |
-| Content Scripts | DevTools → Sources → Content scripts |
-| localStorage | DevTools → Application → Local Storage |
+| Popup                     | 右鍵點擊擴充功能圖示 → **檢查彈出式視窗**                      |
+| Content Scripts           | DevTools → Sources → Content scripts                           |
+| 擴充功能儲存空間          | DevTools → Application → Extension Storage                     |
 
 ```bash
 npm test              # 執行所有單元測試
