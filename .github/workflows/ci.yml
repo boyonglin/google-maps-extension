@@ -4,17 +4,13 @@ permissions:
 
 on:
   push:
-    branches: ["**"]
-    paths-ignore: ["**.md"]
-  pull_request:
+    branches: ["main"]
     paths-ignore: ["**.md"]
 
 jobs:
   test:
     name: Run tests
     runs-on: ubuntu-latest
-    # Avoid duplicate runs when a PR branch also triggers the push event
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
